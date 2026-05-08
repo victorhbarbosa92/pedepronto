@@ -7,8 +7,8 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="PedePronto">
-<title>PedePronto PDV</title>
+<meta name="apple-mobile-web-app-title" content="FoodOS">
+<title>FoodOS PDV</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{
@@ -264,7 +264,9 @@ select.inp{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns=
 .pbar{height:5px;border-radius:99px;background:var(--s3);overflow:hidden}
 .pfill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--ac),#FF7A40);transition:width .5s}
 </style>
-<script src="https://accounts.google.com/gsi/client" async></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -277,12 +279,12 @@ select.inp{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns=
   <!-- DESKTOP: logo -->
   <div class="logo" style="display:none" id="tb-logo">Pede<s>Pronto</s></div>
   <!-- MOBILE: menu + home -->
-  <button class="tbtn" id="btn-menu" onclick="openMenuSheet()" style="display:none;gap:5px">☰ Menu</button>
+  <button class="tbtn" id="btn-menu" onclick="openMenuSheet()" style="display:none;gap:5px;background:var(--acbg);border-color:var(--acg);color:var(--ac)">☰ Menu</button>
   <button class="tbtn-ico" id="btn-home" onclick="nav('dash')" style="display:none" title="Início">🏠</button>
   <div id="top-title" style="font-size:13px;font-weight:700;flex:1;padding:0 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Dashboard</div>
   <div style="display:flex;gap:6px;align-items:center;flex-shrink:0">
     <button class="tbtn-ico" id="btn-bt" onclick="openMc('mc-bt')" title="Impressora">🖨️</button>
-    <button class="tbtn-ico" id="btn-drive" onclick="Drive.toggle()" title="Google Drive">☁️</button>
+    <button class="tbtn-ico" id="btn-drive" onclick="fbLogin()" title="Conectar Google">☁️</button>
     <button class="tbtn" onclick="showCaixaQuick()" title="Caixa" id="btn-caixa-st" style="font-size:11px;padding:0 10px">💰</button>
   </div>
 </div>
@@ -292,7 +294,7 @@ select.inp{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns=
   <!-- SIDEBAR desktop -->
   <div id="sidebar">
     <div style="padding:14px 10px 6px">
-      <div style="font-size:14px;font-weight:900;color:var(--ac);font-family:monospace">🍔 PedePronto</div>
+      <div style="font-size:14px;font-weight:900;color:var(--ac);font-family:monospace">🍔 FoodOS</div>
       <div id="sb-est" style="font-size:11px;color:var(--t2);margin-top:2px">Carregando...</div>
       <div id="sb-op" style="font-size:11px;color:var(--t3)"></div>
     </div>
@@ -505,7 +507,7 @@ select.inp{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns=
 <div class="mc" id="mc-login">
   <div class="mb" style="max-width:360px">
     <div style="font-size:36px;text-align:center;margin-bottom:8px">👤</div>
-    <div style="font-size:17px;font-weight:800;text-align:center;margin-bottom:4px">PedePronto PDV</div>
+    <div style="font-size:17px;font-weight:800;text-align:center;margin-bottom:4px">FoodOS PDV</div>
     <div style="font-size:13px;color:var(--t2);text-align:center;margin-bottom:18px">Selecione seu usuário para continuar</div>
     <div id="login-user-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px"></div>
     <div id="login-pin-area" style="display:none">
@@ -608,17 +610,11 @@ select.inp{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns=
 // ═══════════════════════════════════════════
 //  STORAGE
 // ═══════════════════════════════════════════
-// ═══════════════════════════════════════════
-//  CONFIGURAÇÃO — cole seu CLIENT_ID aqui após seguir o guia
-// ═══════════════════════════════════════════
-const CLIENT_ID = 'SEU_CLIENT_ID_AQUI.apps.googleusercontent.com';
-
-// Chave pública ECDSA gerada no PedePronto_Admin
-// Cole aqui a chave gerada na aba "Chaves" do Admin após gerar seu par
-const PUBLIC_KEY_B64 = '';  // <-- cole aqui
+// Firebase — inicializado no boot() após ST estar pronto
+var fbAuth=null, fbDB=null;
 
 const DB={
-  PFX:'pedepronto_',
+  PFX:'foodos2_',
   get(k,d=null){try{const v=localStorage.getItem(this.PFX+k);return v!=null?JSON.parse(v):d}catch{return d}},
   set(k,v){try{localStorage.setItem(this.PFX+k,JSON.stringify(v));return true}catch(e){toast('⚠️ Armazenamento cheio!','a');return false}},
   del(k){localStorage.removeItem(this.PFX+k)},
@@ -643,9 +639,38 @@ let ST={
   editProd:null,editCli:null,_prodFilter:'todos',_cardTab:'prods',_delTab:'preparo',_kdsTab:'cozinha',_relPer:'hoje',_cliSearch:'',
 };
 
-function save(k){DB.set(k,ST[k])}
-function saveAll(){Object.keys(ST).filter(k=>!['editProd','editCli'].includes(k)).forEach(k=>DB.set(k,ST[k]))}
-function loadAll(){['cfg','caixa','produtos','categorias','clientes','obs_grupos_globais','pedidos'].forEach(k=>{const v=DB.get(k);if(v!=null)ST[k]=v;})}
+let _fsTimer=null;
+function save(k){
+  ST.cfg._savedAt=new Date().toISOString();
+  DB.set(k,ST[k]);
+  clearTimeout(_fsTimer);
+  _fsTimer=setTimeout(fsPush,2000);
+}
+function saveAll(){
+  ST.cfg._savedAt=new Date().toISOString();
+  Object.keys(ST).filter(k=>!['editProd','editCli'].includes(k)).forEach(k=>DB.set(k,ST[k]));
+  clearTimeout(_fsTimer);
+  _fsTimer=setTimeout(fsPush,2000);
+}
+async function fsPush(){
+  if(!window.FIREBASE_READY||!fbAuth||!fbAuth.currentUser) return;
+  const uid=fbAuth.currentUser.uid;
+  try{
+    const d={_savedAt:new Date().toISOString()};
+    ['cfg','caixa','produtos','categorias','clientes','obs_grupos_globais','pedidos','funcionarios'].forEach(k=>d[k]=ST[k]);
+    await fbDB.collection('estabelecimentos').doc(uid).set(d,{merge:true});
+    const b=document.getElementById('btn-drive');if(b)b.textContent='☁️✅';
+  }catch(e){
+    console.warn('Firestore push:',e);
+    const b=document.getElementById('btn-drive');if(b)b.textContent='☁️⚠️';
+  }
+}
+function loadAll(){
+  ['cfg','caixa','produtos','categorias','clientes','obs_grupos_globais','pedidos','funcionarios'].forEach(k=>{
+    const v=DB.get(k);if(v!=null)ST[k]=v;
+  });
+  ST.pedido_seq=DB.get('pedido_seq',1);
+}
 
 // ═══════════════════════════════════════════
 //  UTILS
@@ -762,7 +787,7 @@ function openMenuSheet(){
   <div class="divider mt12 mb12"></div>
   <div style="display:flex;gap:8px">
     <button class="btn ba bw" onclick="closeOv('ov-menu');openMc('mc-bt')">🖨️ Impressora</button>
-    <button class="btn bb bw" onclick="closeOv('ov-menu');Drive.toggle()">☁️ Drive</button>
+    <button class="btn bb bw" onclick="closeOv('ov-menu');fbAuth.currentUser?fbLogout():fbLogin()">☁️ Drive</button>
   </div>`;
   openOv('ov-menu');
 }
@@ -1067,7 +1092,7 @@ const BT={
     async testPrint(){
     if(!this.char){toast('❌ Nenhuma impressora conectada','r');return}
     const W=this.paper===58?32:46;
-    const txt=['PedePronto PDV v2.0 - TESTE','='.repeat(W),'Impressora OK!','Papel: '+this.paper+'mm','Data: '+fmtDH(now()),'='.repeat(W),'1234567890abcdefghijklmnopqrstuvwxyz',cfg&&cfg.nome||'PedePronto','','',''].join('\n');
+    const txt=['FoodOS PDV v2.0 - TESTE','='.repeat(W),'Impressora OK!','Papel: '+this.paper+'mm','Data: '+fmtDH(now()),'='.repeat(W),'1234567890abcdefghijklmnopqrstuvwxyz',cfg&&cfg.nome||'FoodOS','','',''].join('\n');
     await this.printRaw(txt,true);
     toast('✅ Teste enviado!','g');
   }
@@ -1104,7 +1129,7 @@ const Drive={
     delete data.editProd;delete data.editCli;
     const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
     const url=URL.createObjectURL(blob);
-    const a=document.createElement('a');a.href=url;a.download='PedePronto_backup_'+new Date().toISOString().slice(0,10)+'.json';a.click();
+    const a=document.createElement('a');a.href=url;a.download='FoodOS_backup_'+new Date().toISOString().slice(0,10)+'.json';a.click();
     URL.revokeObjectURL(url);
     toast('💾 Backup exportado!','g');
   },
@@ -2207,32 +2232,6 @@ function renderConfig(){
     </div>
     <button class="btn ba bw mt8" onclick="BT.testPrint()">🖨️ Imprimir teste</button>
   </div>
-  <div class="sec-title">Google Drive & Licença</div>
-  <div class="card mb10">
-    <div class="rb" style="padding:8px 0;border-bottom:1px solid var(--br)">
-      <div>
-        <div class="fs13 bold">Conta Google</div>
-        <div class="fs12 t2">${GAuth.user?GAuth.user.email:'Não conectado'}</div>
-      </div>
-      ${GAuth.user
-        ? `<div style="display:flex;gap:6px">
-            <button class="btn bg bsm" onclick="DriveSync.sync().then(()=>renderConfig())">🔄 Sync</button>
-            <button class="btn br_ bsm" onclick="GAuth.logout();renderConfig()">Sair</button>
-           </div>`
-        : `<button class="btn bp bsm" onclick="GAuth.login()">☁️ Conectar</button>`}
-    </div>
-    <div class="rb" style="padding:8px 0;border-bottom:1px solid var(--br)">
-      <div>
-        <div class="fs13 bold">Licença PedePronto</div>
-        <div class="fs12 t2" id="lic-status-txt">Verificando...</div>
-      </div>
-      <button class="btn bb bsm" onclick="ativarLicenca()">🔐 Ativar</button>
-    </div>
-    <div style="padding:8px 0;font-size:11px;color:var(--t3)">
-      Dados sincronizados automaticamente após cada operação quando conectado ao Drive.
-      ${DriveSync.lastSync?'Última sync: '+DriveSync.lastSync.toLocaleTimeString('pt-BR'):''}
-    </div>
-  </div>
   <div class="sec-title">Segurança</div>
   <div class="card mb10">
     <div class="rb" style="padding:8px 0">
@@ -2244,7 +2243,7 @@ function renderConfig(){
   <div class="card mb10">
     <div class="rb" style="padding:8px 0;border-bottom:1px solid var(--br)">
       <div><div class="fs13 bold">Google Drive Sync</div><div class="fs12 t2">${cfg.drive_ativo?'Ativo':'Inativo'} · OAuth2 em produção</div></div>
-      <button class="sw ${cfg.drive_ativo?'on':''}" id="sw-drive" onclick="toggleSw(this);Drive.toggle()"></button>
+      <button class="sw ${cfg.drive_ativo?'on':''}" id="sw-drive" onclick="fbAuth.currentUser?fbLogout():fbLogin()"></button>
     </div>
     <div class="rb" style="padding:8px 0;border-bottom:1px solid var(--br)">
       <div><div class="fs13 bold">Exportar backup</div></div>
@@ -2257,8 +2256,7 @@ function renderConfig(){
   </div>
   <button class="btn bp bw mb10" onclick="requireAdmin('Salvar Configurações',()=>{save('cfg');toast('✅ Configurações salvas!','g');renderConfig()})">💾 Salvar configurações</button>
   <button class="btn br_ bw" onclick="confirm2('⚠️','Resetar sistema?','TODOS os dados serão apagados permanentemente!','Resetar','br_',()=>{DB.keys().forEach(k=>DB.del(k));location.reload()})">⚠️ Resetar sistema</button>`;
-  document.getElementById('sb-est').textContent=cfg.nome||'PedePronto';
-  setTimeout(checkLicStatus,100);
+  document.getElementById('sb-est').textContent=cfg.nome||'FoodOS';
 }
 function changePIN(){askPin('Alterar PIN','Digite o PIN atual',()=>{const n=prompt('Novo PIN de 4 dígitos:');if(!n||n.length!==4||isNaN(n)){toast('PIN deve ter 4 dígitos','r');return}ST.cfg.pin=n;save('cfg');toast('✅ PIN alterado!','g')})}
 
@@ -2266,240 +2264,6 @@ function changePIN(){askPin('Alterar PIN','Digite o PIN atual',()=>{const n=prom
 // ═══════════════════════════════════════════
 //  LOGO — UPLOAD E IMPRESSÃO ESC/POS
 // ═══════════════════════════════════════════
-// ═══════════════════════════════════════════════════════════
-//  AUTENTICAÇÃO GOOGLE + DRIVE SYNC + LICENÇA
-// ═══════════════════════════════════════════════════════════
-
-const GAuth = {
-  user: null,
-  accessToken: null,
-  tokenExpiry: 0,
-  tokenClient: null,
-
-  init(){
-    const saved = DB.get('google_user');
-    if(saved){ this.user=saved; updateTopbarUser(); }
-  },
-
-  initGIS(){
-    if(!window.google?.accounts?.oauth2) return;
-    if(CLIENT_ID.includes('SEU_CLIENT_ID')) return;
-    this.tokenClient = google.accounts.oauth2.initTokenClient({
-      client_id: CLIENT_ID,
-      scope: 'https://www.googleapis.com/auth/drive.appdata email profile',
-      callback: (resp) => {
-        if(resp.error){ toast('Erro Google: '+resp.error,'r'); return; }
-        this.accessToken = resp.access_token;
-        this.tokenExpiry = Date.now() + (resp.expires_in-60)*1000;
-        this.afterToken();
-      }
-    });
-  },
-
-  login(){
-    if(CLIENT_ID.includes('SEU_CLIENT_ID')){
-      toast('Configure o CLIENT_ID no arquivo para ativar o Drive','a',5000); return;
-    }
-    if(!this.tokenClient){ this.initGIS(); }
-    if(!this.tokenClient){ toast('Google Identity não carregou. Verifique a conexão.','r'); return; }
-    this.tokenClient.requestAccessToken({prompt:'consent'});
-  },
-
-  logout(){
-    if(this.accessToken) google.accounts.oauth2.revoke(this.accessToken,()=>{});
-    this.user=null; this.accessToken=null;
-    DB.del('google_user'); DB.del('google_token');
-    updateTopbarUser();
-    toast('Desconectado do Google','a');
-  },
-
-  async afterToken(){
-    // Buscar info do usuário
-    try{
-      const r = await fetch('https://www.googleapis.com/oauth2/v3/userinfo',{
-        headers:{ Authorization:'Bearer '+this.accessToken }
-      });
-      const u = await r.json();
-      this.user = { email:u.email, name:u.name, picture:u.picture };
-      DB.set('google_user', this.user);
-      updateTopbarUser();
-      toast('✅ Conectado: '+u.name,'g',4000);
-      // Sincronizar após login
-      await DriveSync.sync();
-    }catch(e){ toast('Erro ao buscar perfil: '+e.message,'r'); }
-  },
-
-  isConnected(){ return !!this.accessToken && Date.now()<this.tokenExpiry; },
-
-  async ensureToken(){
-    if(this.isConnected()) return true;
-    // Tentar renovar silenciosamente
-    return new Promise(resolve=>{
-      if(!this.tokenClient){ resolve(false); return; }
-      this.tokenClient.requestAccessToken({prompt:''});
-      const check=setInterval(()=>{
-        if(this.isConnected()){ clearInterval(check); resolve(true); }
-      },200);
-      setTimeout(()=>{ clearInterval(check); resolve(false); },5000);
-    });
-  }
-};
-
-// ═══════════════════════════════════════════════════════════
-//  DRIVE SYNC
-// ═══════════════════════════════════════════════════════════
-const DriveSync = {
-  FILE_NAME: 'pedepronto_data.json',
-  fileId: null,
-  lastSync: null,
-  syncing: false,
-
-  async sync(){
-    if(this.syncing||!GAuth.isConnected()) return;
-    this.syncing=true;
-    updateSyncBtn('⏳');
-    try{
-      // Tentar carregar do Drive primeiro
-      const remoteData = await this.load();
-      if(remoteData){
-        // Merge: usar dados mais recentes por timestamp
-        const localTime  = new Date(ST.cfg._saved||0).getTime();
-        const remoteTime = new Date(remoteData.cfg?._saved||0).getTime();
-        if(remoteTime > localTime){
-          ['cfg','caixa','produtos','categorias','clientes','obs_grupos_globais','pedidos','funcionarios'].forEach(k=>{
-            if(remoteData[k]!=null) ST[k]=remoteData[k];
-          });
-          saveAll();
-          toast('☁️ Dados sincronizados do Drive','b',3000);
-          nav(ST.curNav);
-        }
-      }
-      // Salvar estado local no Drive
-      await this.save();
-      this.lastSync=new Date();
-      updateSyncBtn('☁️✅');
-    }catch(e){
-      console.warn('Drive sync error:',e);
-      updateSyncBtn('☁️⚠️');
-    }
-    this.syncing=false;
-  },
-
-  async save(){
-    if(!GAuth.isConnected()) return;
-    const data = {};
-    ['cfg','caixa','produtos','categorias','clientes','obs_grupos_globais','pedidos','funcionarios'].forEach(k=>{ data[k]=ST[k]; });
-    data._version='2';
-    data._savedAt=new Date().toISOString();
-    const body = JSON.stringify(data);
-
-    if(!this.fileId) await this._findFile();
-
-    if(this.fileId){
-      // Update
-      await fetch(`https://www.googleapis.com/upload/drive/v3/files/${this.fileId}?uploadType=media`,{
-        method:'PATCH',
-        headers:{ Authorization:'Bearer '+GAuth.accessToken,'Content-Type':'application/json' },
-        body
-      });
-    } else {
-      // Create
-      const meta = { name:this.FILE_NAME, parents:['appDataFolder'] };
-      const form = new FormData();
-      form.append('metadata', new Blob([JSON.stringify(meta)],{type:'application/json'}));
-      form.append('file', new Blob([body],{type:'application/json'}));
-      const r = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id',{
-        method:'POST', headers:{ Authorization:'Bearer '+GAuth.accessToken }, body:form
-      });
-      const j = await r.json();
-      this.fileId = j.id;
-      DB.set('drive_file_id', this.fileId);
-    }
-  },
-
-  async load(){
-    if(!GAuth.isConnected()) return null;
-    if(!this.fileId) await this._findFile();
-    if(!this.fileId) return null;
-    try{
-      const r = await fetch(`https://www.googleapis.com/drive/v3/files/${this.fileId}?alt=media`,{
-        headers:{ Authorization:'Bearer '+GAuth.accessToken }
-      });
-      if(!r.ok) return null;
-      return await r.json();
-    }catch{ return null; }
-  },
-
-  async _findFile(){
-    this.fileId = DB.get('drive_file_id');
-    if(this.fileId) return;
-    try{
-      const r = await fetch(`https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=name='${this.FILE_NAME}'&fields=files(id,name)`,{
-        headers:{ Authorization:'Bearer '+GAuth.accessToken }
-      });
-      const j = await r.json();
-      if(j.files&&j.files.length){ this.fileId=j.files[0].id; DB.set('drive_file_id',this.fileId); }
-    }catch{}
-  }
-};
-
-function updateTopbarUser(){
-  const u=GAuth.user;
-  const btn=document.getElementById('btn-drive');
-  if(!btn) return;
-  if(u){
-    btn.textContent='☁️✅';
-    btn.title='Drive: '+u.email+' — Toque para sincronizar';
-    btn.onclick=()=>{ DriveSync.sync(); toast('🔄 Sincronizando...','b'); };
-  } else {
-    btn.textContent='☁️';
-    btn.title='Conectar Google Drive';
-    btn.onclick=()=>GAuth.login();
-  }
-}
-function updateSyncBtn(icon){
-  const btn=document.getElementById('btn-drive');
-  if(btn) btn.textContent=icon;
-}
-
-// ═══════════════════════════════════════════════════════════════
-//  VERIFICADOR DE LICENÇA
-// ═══════════════════════════════════════════════════════════════
-const License = {
-  publicKey: null,
-
-  async loadPublicKey(){
-    if(!PUBLIC_KEY_B64||PUBLIC_KEY_B64.length<10) return false;
-    try{
-      const bytes = Uint8Array.from(atob(PUBLIC_KEY_B64), c=>c.charCodeAt(0));
-      this.publicKey = await crypto.subtle.importKey(
-        'spki', bytes, { name:'ECDSA', namedCurve:'P-256' }, false, ['verify']
-      );
-      return true;
-    }catch(e){ console.warn('Chave pública inválida:',e); return false; }
-  },
-
-  async verify(tokenB64){
-    if(!this.publicKey) return { valid:false, reason:'Chave pública não configurada' };
-    try{
-      const obj  = JSON.parse(atob(tokenB64));
-      const { sig, ...data } = obj;
-      const enc  = new TextEncoder();
-      const sigB = Uint8Array.from(atob(sig), c=>c.charCodeAt(0));
-      const ok   = await crypto.subtle.verify(
-        { name:'ECDSA', hash:'SHA-256' }, this.publicKey, sigB, enc.encode(JSON.stringify(data))
-      );
-      if(!ok) return { valid:false, reason:'Assinatura inválida' };
-      if(new Date(data.expira)<new Date()) return { valid:false, reason:'Licença expirada em '+new Date(data.expira).toLocaleDateString('pt-BR') };
-      return { valid:true, data };
-    }catch(e){ return { valid:false, reason:'Token corrompido: '+e.message }; }
-  },
-
-  getSaved(){ return DB.get('license_token'); },
-  save(token){ DB.set('license_token', token); },
-};
-
-
 // ═══════════════════════════════════════════
 //  SISTEMA DE USUÁRIOS E PRIVILÉGIOS
 // ═══════════════════════════════════════════
@@ -2818,369 +2582,148 @@ setInterval(()=>{
   updateBadges();
 },30000);
 
-function ativarLicenca(){
-  const sh=document.getElementById('sh-obs');
-  sh.innerHTML=`<div class="sh-handle"></div>
-  <div class="sh-title">🔐 Ativar Licença</div>
-  <div class="fs12 t2 mb12" style="line-height:1.6">Cole o token de licença recebido do administrador do PedePronto.</div>
-  <div class="fg"><label class="fl">Token de licença</label>
-    <textarea class="inp mono" id="lic-token-input" rows="5" placeholder="Cole o token aqui..."></textarea>
-  </div>
-  <div class="g2">
-    <button class="btn bs bw" onclick="closeOv('ov-obs')">Cancelar</button>
-    <button class="btn bp bw" onclick="verificarEAtivarLicenca()">✅ Verificar e ativar</button>
+// ═══════════════════════════════════════════
+//  FIREBASE AUTH + FIRESTORE SYNC
+// ═══════════════════════════════════════════
+let _loginEl=null;
+
+function showLoginScreen(){
+  if(_loginEl)return;
+  _loginEl=document.createElement('div');
+  _loginEl.style.cssText='position:fixed;inset:0;z-index:9000;background:#080A0E;display:flex;align-items:center;justify-content:center;padding:20px';
+  _loginEl.innerHTML=`<div style="background:#0F1117;border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:36px 28px;max-width:360px;width:100%;text-align:center">
+    <div style="font-size:52px;margin-bottom:10px">🍽️</div>
+    <div style="font-size:22px;font-weight:900;color:#FF5C1A;font-family:monospace;margin-bottom:4px">PedePronto PDV</div>
+    <div style="font-size:13px;color:#8896B0;margin-bottom:28px;line-height:1.6">Sistema de pedidos para bares,<br>lanchonetes e restaurantes.</div>
+    <button onclick="fbLogin()" style="width:100%;padding:14px;border-radius:12px;background:linear-gradient(135deg,#FF5C1A,#CC4A14);border:none;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:10px">
+      <svg width="20" height="20" viewBox="0 0 24 24"><path fill="#fff" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#fff" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#fff" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#fff" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+      ${window.IS_HOSTED?'Entrar com Google':'Continuar (modo local)'}
+    </button>
+    <div style="font-size:11px;color:#3D4557;margin-top:14px;line-height:1.6">Dados sincronizados em todos os dispositivos.<br>Acesso seguro pela sua conta Google.</div>
   </div>`;
-  openOv('ov-obs');
+  document.body.appendChild(_loginEl);
 }
+function hideLoginScreen(){if(_loginEl){_loginEl.remove();_loginEl=null;}}
 
-async function verificarEAtivarLicenca(){
-  const token=document.getElementById('lic-token-input')?.value?.trim();
-  if(!token){ toast('Cole o token primeiro','r'); return; }
-  if(!License.publicKey){ toast('Chave pública não configurada no sistema','r',5000); return; }
-  const result=await License.verify(token);
-  if(result.valid){
-    License.save(token);
-    closeOv('ov-obs');
-    renderConfig();
-    toast('✅ Licença ativada! Válida até '+new Date(result.data.expira).toLocaleDateString('pt-BR'),'g',5000);
-  } else {
-    toast('❌ '+result.reason,'r',5000);
+function fbLogin(){
+  if(!window.FIREBASE_READY||!fbAuth){
+    // Modo local: esconder tela de login Google e ir para PIN
+    hideLoginScreen();
+    setTimeout(showLogin,200);
+    return;
   }
+  const p=new firebase.auth.GoogleAuthProvider();
+  p.setCustomParameters({prompt:'select_account'});
+  fbAuth.signInWithPopup(p).catch(e=>{
+    if(e.code!=='auth/popup-closed-by-user') toast('Erro: '+e.message,'r',5000);
+  });
+}
+function fbLogout(){
+  if(fbAuth&&window.FIREBASE_READY) fbAuth.signOut();
+  toast('Saiu da conta Google','a');
 }
 
-async function checkLicStatus(){
-  const el=document.getElementById('lic-status-txt');
-  if(!el) return;
-  if(!PUBLIC_KEY_B64||PUBLIC_KEY_B64.length<10){ el.textContent='Verificação desativada (sem chave pública)'; el.style.color='var(--am)'; return; }
-  const token=License.getSaved();
-  if(!token){ el.textContent='Sem licença ativa'; el.style.color='var(--rd)'; return; }
-  const r=await License.verify(token);
-  if(r.valid){ el.textContent='✅ Ativa até '+new Date(r.data.expira).toLocaleDateString('pt-BR')+' — '+r.data.plano; el.style.color='var(--gn)'; }
-  else { el.textContent='❌ '+r.reason; el.style.color='var(--rd)'; }
+function fsListen(uid){
+  if(!window.FIREBASE_READY||!fbDB) return;
+  const ref=fbDB.collection('estabelecimentos').doc(uid);
+  ref.onSnapshot(snap=>{
+    if(!snap.exists)return;
+    const r=snap.data();if(!r._savedAt)return;
+    const lt=new Date(ST.cfg._savedAt||0).getTime();
+    const rt=new Date(r._savedAt).getTime();
+    if(rt>lt+5000){
+      ['cfg','caixa','produtos','categorias','clientes','obs_grupos_globais','pedidos','funcionarios'].forEach(k=>{if(r[k]!=null)ST[k]=r[k];});
+      saveAll();nav(ST.curNav);
+      const b=document.getElementById('btn-drive');if(b)b.textContent='☁️✅';
+    }
+  },e=>console.warn('Firestore listen:',e));
 }
+
+function updateDriveBtn(){
+  const u=fbAuth.currentUser;
+  const b=document.getElementById('btn-drive');if(!b)return;
+  if(u){b.textContent='☁️✅';b.title=u.email;b.onclick=()=>{fsPush();toast('🔄 Sincronizando...','b');};}
+  else{b.textContent='☁️';b.title='Entrar com Google';b.onclick=fbLogin;}
+}
+
 
 // ═══════════════════════════════════════════
 //  BOOT
 // ═══════════════════════════════════════════
 (function boot(){
+  // Detectar modo: hosted (Firebase) ou local (sem Firebase)
+  const FIREBASE_CONFIG={
+    apiKey:"AIzaSyAFN3JI6bpPGYAJE9v8rjak3e7D0yS5eJI",
+    authDomain:"pedepronto-40790.firebaseapp.com",
+    projectId:"pedepronto-40790",
+    storageBucket:"pedepronto-40790.firebasestorage.app",
+    messagingSenderId:"603598896038",
+    appId:"1:603598896038:web:4a7e3139761aa23d3eed67"
+  };
+  const HOSTED = window.IS_HOSTED && typeof firebase !== 'undefined';
+  if(HOSTED){
+    try{
+      if(!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+      fbAuth=firebase.auth();
+      fbDB=firebase.firestore();
+      fbDB.enablePersistence({synchronizeTabs:true}).catch(()=>{});
+      window.FIREBASE_READY=true;
+    }catch(e){ console.warn('Firebase init failed:',e); }
+  }
+
   loadAll();
   initDefaults();
   applyResponsiveNav();
   window.addEventListener('resize',applyResponsiveNav);
-  Drive.ativo=ST.cfg.drive_ativo||false;Drive.updateBtn();
   BT.paper=ST.cfg.papel||80;BT.auto=ST.cfg.autoprint||false;
   updateBtUI();updateSbOperador();
   document.getElementById('sb-est').textContent=ST.cfg.nome||'PedePronto';
-  // Caixa é aberto após login do funcionário
-  // Login ao iniciar
-  if(!ST.currentUser){
-    setTimeout(showLogin, 300);
-  } else {
-    updateUserBar();
-    if(!ST.caixa.aberto)setTimeout(pedirAberturaCaixa,600);
-  }
-  // Init Google Auth
-  GAuth.init();
-  setTimeout(()=>{ GAuth.initGIS(); },1500);
-  updateTopbarUser();
-  // Init License
-  License.loadPublicKey().then(ok=>{
-    if(ok){ const t=License.getSaved(); if(t) toast('🔐 Licença ativa','g',2000); }
-  });
-  // Auto-sync a cada 5 minutos se conectado
-  setInterval(()=>{ if(GAuth.isConnected()) DriveSync.sync(); }, 5*60*1000);
   renderDash();
   registerSW();
-  document.addEventListener('keydown',e=>{
-    const mc=document.getElementById('mc-pin');
-    if(mc?.style.display!=='none'){
-      if(e.key>='0'&&e.key<='9')pinKey(e.key);
-      else if(e.key==='Backspace')pinKey('del');
-      else if(e.key==='Enter')pinKey('ok');
+
+  // Fluxo de autenticação baseado no ambiente
+  if(window.FIREBASE_READY && fbAuth){
+    // MODO HOSPEDADO: Firebase Auth
+    fbAuth.onAuthStateChanged(user=>{
+      updateDriveBtn();
+      if(user){
+        hideLoginScreen();
+        fsListen(user.uid);
+        setTimeout(()=>fsPush(),2000);
+        if(!ST.currentUser){
+          setTimeout(showLogin,500);
+        } else {
+          updateUserBar();
+          if(!ST.caixa.aberto) setTimeout(pedirAberturaCaixa,600);
+        }
+      } else {
+        showLoginScreen();
+      }
+    });
+  } else {
+    // MODO LOCAL: pular Firebase, ir direto para login de funcionário
+    updateDriveBtn();
+    if(!ST.currentUser){
+      setTimeout(showLogin,300);
+    } else {
+      updateUserBar();
+      if(!ST.caixa.aberto) setTimeout(pedirAberturaCaixa,600);
     }
+  }
+
+  // Keyboard para PINs
+  document.addEventListener('keydown',e=>{
+    ['mc-pin','mc-admin-auth'].forEach(id=>{
+      const mc=document.getElementById(id);
+      if(mc?.style.display==='flex'){
+        if(e.key>='0'&&e.key<='9') id==='mc-pin'?pinKey(e.key):adminPinKey(e.key);
+        else if(e.key==='Backspace') id==='mc-pin'?pinKey('del'):adminPinKey('del');
+        else if(e.key==='Enter') id==='mc-pin'?pinKey('ok'):adminPinKey('ok');
+      }
+    });
   });
-  // fix relatório forma pagamento display
-  const origRR=renderRelatorio;
-  // Corrige o template literal errado da função de relatório
-  console.log('%cPedePronto v2.0 🍔','font-size:16px;font-weight:bold;color:#FF5C1A');
-  console.log('PIN padrão: 1234 | localStorage: pedepronto_*');
+  console.log('%cPedePronto v2.0','font-size:16px;font-weight:bold;color:#FF5C1A');
 })();
 </script>
-
-<!-- ══════════ DEBUG PANEL ══════════ -->
-<div id="debug-panel" style="display:none;position:fixed;inset:0;z-index:9000;background:#000;flex-direction:column;font-family:monospace">
-  <div style="background:#111;border-bottom:1px solid #333;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
-    <div style="color:#0f0;font-size:14px;font-weight:700">🔬 PedePronto — Debug Bluetooth</div>
-    <button onclick="document.getElementById('debug-panel').style.display='none'" style="background:#333;border:none;color:#fff;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px">✕ Fechar</button>
-  </div>
-  <!-- STATUS -->
-  <div id="dbg-status" style="padding:10px 14px;background:#0a0a0a;border-bottom:1px solid #222;display:grid;grid-template-columns:1fr 1fr;gap:6px;flex-shrink:0;font-size:11px">
-    <div><span style="color:#888">Dispositivo: </span><span id="ds-device" style="color:#ff0">—</span></div>
-    <div><span style="color:#888">GATT: </span><span id="ds-gatt" style="color:#ff0">—</span></div>
-    <div><span style="color:#888">Serviço: </span><span id="ds-svc" style="color:#ff0">—</span></div>
-    <div><span style="color:#888">Característica: </span><span id="ds-char" style="color:#ff0">—</span></div>
-    <div><span style="color:#888">Propriedades: </span><span id="ds-props" style="color:#ff0">—</span></div>
-    <div><span style="color:#888">MTU/Chunk: </span><span id="ds-mtu" style="color:#ff0">512 bytes</span></div>
-  </div>
-  <!-- ACOES -->
-  <div style="padding:8px 14px;background:#0a0a0a;border-bottom:1px solid #222;display:flex;flex-wrap:wrap;gap:6px;flex-shrink:0">
-    <button onclick="dbg.checkStatus()" style="background:#1a3a1a;border:1px solid #0f0;color:#0f0;padding:6px 10px;border-radius:6px;cursor:pointer;font-size:11px;font-family:monospace">🔍 Status</button>
-    <button onclick="dbg.testMinimal()" style="background:#1a1a3a;border:1px solid #44f;color:#88f;padding:6px 10px;border-radius:6px;cursor:pointer;font-size:11px;font-family:monospace">📝 Mínimo (1 linha)</button>
-    <button onclick="dbg.testEscInit()" style="background:#1a1a3a;border:1px solid #44f;color:#88f;padding:6px 10px;border-radius:6px;cursor:pointer;font-size:11px;font-family:monospace">⚡ ESC @ only</button>
-    <button onclick="dbg.testFeed()" style="background:#1a1a3a;border:1px solid #44f;color:#88f;padding:6px 10px;border-radius:6px;cursor:pointer;font-size:11px;font-family:monospace">📄 Feed+Cut</button>
-    <button onclick="dbg.testText()" style="background:#1a2a1a;border:1px solid #0a0;color:#0f0;padding:6px 10px;border-radius:6px;cursor:pointer;font-size:11px;font-family:monospace">🖨️ Texto completo</button>
-    <button onclick="dbg.reconnect()" style="background:#3a1a00;border:1px solid #fa0;color:#fa0;padding:6px 10px;border-radius:6px;cursor:pointer;font-size:11px;font-family:monospace">🔄 Reconectar</button>
-    <button onclick="dbg.tryWriteMethod()" style="background:#2a0a2a;border:1px solid #a0a;color:#f0f;padding:6px 10px;border-radius:6px;cursor:pointer;font-size:11px;font-family:monospace">🔀 Alt write()</button>
-    <button onclick="dbg.clearLog()" style="background:#1a1a1a;border:1px solid #444;color:#888;padding:6px 10px;border-radius:6px;cursor:pointer;font-size:11px;font-family:monospace">🗑 Limpar</button>
-  </div>
-  <!-- LOG -->
-  <div id="dbg-log" style="flex:1;overflow-y:auto;padding:10px 14px;font-size:11px;line-height:1.8;color:#ccc"></div>
-</div>
-
-<script>
-// ═══════════════════════════════════════════════════════════
-//  DEBUG PANEL
-// ═══════════════════════════════════════════════════════════
-function openDebugPanel(){
-  document.getElementById('debug-panel').style.display='flex';
-  dbg.clearLog();
-  dbg.log('🔬 Painel de debug iniciado','info');
-  dbg.checkStatus();
-}
-
-const dbg={
-  log(msg,type='log'){
-    const el=document.getElementById('dbg-log');
-    const colors={log:'#ccc',info:'#0cf',ok:'#0f0',err:'#f44',warn:'#fa0',data:'#f0a',byte:'#888'};
-    const ts=new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit',second:'2-digit',fractionalSecondDigits:2});
-    const div=document.createElement('div');
-    div.innerHTML=`<span style="color:#555">[${ts}]</span> <span style="color:${colors[type]||'#ccc'}">${msg}</span>`;
-    el.appendChild(div);
-    el.scrollTop=el.scrollHeight;
-  },
-  clearLog(){document.getElementById('dbg-log').innerHTML=''},
-
-  updateStatus(){
-    const dev=BT.device;
-    const chr=BT.char;
-    const set=(id,val,col)=>{const e=document.getElementById(id);if(e){e.textContent=val;e.style.color=col||'#ff0'}};
-    set('ds-device', dev?dev.name:'Nenhum', dev?'#0f0':'#f44');
-    set('ds-gatt', dev?.gatt?.connected?'Conectado':'Desconectado', dev?.gatt?.connected?'#0f0':'#f44');
-    set('ds-svc', chr?'Encontrado':'—', chr?'#0f0':'#f44');
-    set('ds-char', chr?chr.uuid.substring(0,8)+'...':'—', chr?'#0f0':'#f44');
-    if(chr){
-      const p=chr.properties;
-      const props=[];
-      if(p.write)props.push('write');
-      if(p.writeWithoutResponse)props.push('writeNoResp');
-      if(p.notify)props.push('notify');
-      if(p.read)props.push('read');
-      set('ds-props', props.join(', ')||'—', props.length?'#0f0':'#fa0');
-    } else {
-      set('ds-props','—','#888');
-    }
-  },
-
-  async checkStatus(){
-    this.log('━━━ STATUS DO BLUETOOTH ━━━','info');
-    // 1. API disponível?
-    if(!navigator.bluetooth){this.log('❌ Web Bluetooth API não disponível neste navegador','err');this.log('→ Use Chrome ou Edge (não funciona em Firefox/Safari)','warn');return;}
-    this.log('✅ Web Bluetooth API disponível','ok');
-    // 2. Dispositivo pareado?
-    const dev=BT.device;
-    if(!dev){this.log('❌ Nenhum dispositivo pareado','err');this.log('→ Clique em "Reconectar" ou vá em Configurações → Impressora Bluetooth → Parear','warn');return;}
-    this.log('✅ Dispositivo: '+dev.name+' ('+dev.id+')','ok');
-    // 3. GATT conectado?
-    if(!dev.gatt){this.log('❌ GATT não disponível','err');return;}
-    this.log('GATT connected: '+dev.gatt.connected,'info');
-    if(!dev.gatt.connected){
-      this.log('⚠️ GATT desconectado — tentando reconectar...','warn');
-      try{await dev.gatt.connect();this.log('✅ Reconectado!','ok');}
-      catch(e){this.log('❌ Falha ao reconectar: '+e.message,'err');this.log('→ Verifique se a impressora está ligada e próxima','warn');return;}
-    }
-    // 4. Característica?
-    const chr=BT.char;
-    if(!chr){this.log('❌ Característica de escrita não encontrada','err');this.log('→ Tente parear novamente com "Reconectar"','warn');return;}
-    this.log('✅ Característica: '+chr.uuid,'ok');
-    const p=chr.properties;
-    this.log('Propriedades: write='+p.write+' | writeNoResp='+p.writeWithoutResponse+' | notify='+p.notify,'info');
-    if(!p.write&&!p.writeWithoutResponse){
-      this.log('❌ PROBLEMA: Característica não suporta escrita!','err');
-      this.log('→ Precisamos encontrar outra característica','warn');
-      await this.scanAllChars();
-      return;
-    }
-    this.log('━━━ SISTEMA PRONTO PARA IMPRIMIR ━━━','ok');
-    this.updateStatus();
-  },
-
-  async scanAllChars(){
-    this.log('🔍 Escaneando todos os serviços e características...','info');
-    try{
-      const server=await BT.device.gatt.connect();
-      const services=await server.getPrimaryServices();
-      this.log('Serviços encontrados: '+services.length,'info');
-      for(const svc of services){
-        this.log('Serviço: '+svc.uuid,'data');
-        try{
-          const chars=await svc.getCharacteristics();
-          for(const ch of chars){
-            const p=ch.properties;
-            const props=[p.write?'W':'',p.writeWithoutResponse?'WNR':'',p.read?'R':'',p.notify?'N':''].filter(Boolean).join('/');
-            const canWrite=p.write||p.writeWithoutResponse;
-            this.log(`  └─ ${ch.uuid} [${props}]${canWrite?' ← PODE ESCREVER':''}`, canWrite?'ok':'byte');
-            if(canWrite&&!BT.char){
-              BT.char=ch;
-              this.log('  ★ Usando esta característica!','ok');
-            }
-          }
-        }catch(e){this.log('  Erro ao listar chars: '+e.message,'err');}
-      }
-      this.updateStatus();
-    }catch(e){this.log('Erro scan: '+e.message,'err');}
-  },
-
-  async send(bytes, label){
-    this.log('→ Enviando "'+label+'" ('+bytes.length+' bytes)...','info');
-    if(!BT.char){this.log('❌ Sem característica','err');return false;}
-    try{
-      const p=BT.char.properties;
-      if(p.writeWithoutResponse){
-        await BT.char.writeValueWithoutResponse(bytes);
-        this.log('✅ writeWithoutResponse OK','ok');
-      } else if(p.write){
-        await BT.char.writeValue(bytes);
-        this.log('✅ writeValue OK','ok');
-      } else {
-        this.log('❌ Nenhum método de escrita disponível','err');
-        return false;
-      }
-      return true;
-    }catch(e){
-      this.log('❌ ERRO: '+e.name+': '+e.message,'err');
-      if(e.name==='NetworkError')this.log('→ Impressora desconectou. Tente reconectar.','warn');
-      if(e.name==='NotSupportedError')this.log('→ Operação não suportada. Tentando método alternativo...','warn');
-      return false;
-    }
-  },
-
-  async testEscInit(){
-    this.log('━━━ TESTE: ESC @ (inicializar) ━━━','info');
-    const bytes=new Uint8Array([0x1B,0x40]);
-    this.log('Bytes: ESC(0x1B) @(0x40)','byte');
-    await this.send(bytes,'ESC @');
-  },
-
-  async testFeed(){
-    this.log('━━━ TESTE: Feed + Cut ━━━','info');
-    const bytes=new Uint8Array([0x0A,0x0A,0x0A,0x0A,0x1D,0x56,0x01]);
-    this.log('Bytes: LF×4 + GS V 1 (corte)','byte');
-    await this.send(bytes,'Feed+Cut');
-  },
-
-  async testMinimal(){
-    this.log('━━━ TESTE MÍNIMO ━━━','info');
-    if(!BT.char){this.log('❌ Não conectado','err');return;}
-    const enc=new TextEncoder();
-    // Apenas: ESC @ + 'TESTE\n\n\n' + cut
-    const header=new Uint8Array([0x1B,0x40]); // ESC @
-    const text=enc.encode('FOODOS TESTE\n\n\n');
-    const cut=new Uint8Array([0x1D,0x56,0x01]);
-    const all=new Uint8Array(header.length+text.length+cut.length);
-    all.set(header,0);all.set(text,header.length);all.set(cut,header.length+text.length);
-    this.log('Total: '+all.length+' bytes','byte');
-    this.log('Payload: ESC@ + "FOODOS TESTE\n\n\n" + GS V 1','byte');
-    const ok=await this.send(all,'Texto mínimo');
-    if(ok)this.log('✅ Se a impressora não imprimiu, o problema é de configuração ESC/POS','ok');
-  },
-
-  async testText(){
-    this.log('━━━ TESTE COMPLETO ━━━','info');
-    if(!BT.char){this.log('❌ Não conectado','err');return;}
-    const enc=new TextEncoder();
-    const lines=[
-      '================================',
-      '       FOODOS PDV - TESTE       ',
-      '================================',
-      'Impressora: OK',
-      'Papel: '+BT.paper+'mm',
-      'Data: '+new Date().toLocaleString('pt-BR'),
-      '--------------------------------',
-      '1x Produto Teste         R$10,00',
-      '  * Sem cebola',
-      '--------------------------------',
-      'TOTAL:                   R$10,00',
-      '================================',
-      '   Obrigado pela preferencia!   ',
-      '',''
-    ];
-    const txt=lines.join('\n')+'\n';
-    this.log('Linhas: '+lines.length+', chars: '+txt.length,'byte');
-    // Enviar em chunks de 128 bytes para máxima compatibilidade
-    const CHUNK=128;
-    const init=new Uint8Array([0x1B,0x40,0x1B,0x74,0x02]);
-    const textBytes=enc.encode(txt);
-    const cut=new Uint8Array([0x1B,0x64,0x04,0x1D,0x56,0x01]);
-    this.log('Enviando init ('+init.length+' bytes)...','info');
-    let ok=await this.send(init,'init');
-    if(!ok)return;
-    await new Promise(r=>setTimeout(r,100));
-    // Enviar texto em chunks
-    let sent=0;
-    while(sent<textBytes.length){
-      const chunk=textBytes.slice(sent,sent+CHUNK);
-      this.log('Chunk '+Math.floor(sent/CHUNK+1)+': bytes '+sent+'-'+(sent+chunk.length),'byte');
-      ok=await this.send(chunk,'texto chunk');
-      if(!ok){this.log('❌ Falhou no chunk '+Math.floor(sent/CHUNK+1),'err');return;}
-      sent+=chunk.length;
-      await new Promise(r=>setTimeout(r,50));
-    }
-    this.log('Enviando cut...','info');
-    await this.send(cut,'cut');
-    this.log('━━━ ENVIO COMPLETO ━━━','ok');
-  },
-
-  async tryWriteMethod(){
-    this.log('━━━ TESTE MÉTODO ALTERNATIVO ━━━','info');
-    if(!BT.device?.gatt?.connected){this.log('❌ Não conectado','err');return;}
-    // Tentar encontrar característica alternativa
-    await this.scanAllChars();
-    if(BT.char){
-      this.log('Tentando escrever com nova característica...','info');
-      await this.testMinimal();
-    }
-  },
-
-  async reconnect(){
-    this.log('━━━ RECONECTANDO ━━━','info');
-    if(!BT.device){
-      this.log('Nenhum dispositivo. Iniciando pareamento...','warn');
-      await BT.pair();
-      this.updateStatus();
-      return;
-    }
-    this.log('Dispositivo: '+BT.device.name,'info');
-    try{
-      if(BT.device.gatt.connected){
-        this.log('Desconectando...','info');
-        BT.device.gatt.disconnect();
-        await new Promise(r=>setTimeout(r,500));
-      }
-      this.log('Reconectando GATT...','info');
-      const server=await BT.device.gatt.connect();
-      this.log('✅ GATT conectado','ok');
-      // Reescanear características
-      BT.char=null;
-      await this.scanAllChars();
-      if(BT.char)this.log('✅ Pronto para imprimir!','ok');
-      else this.log('❌ Não encontrou característica de escrita','err');
-    }catch(e){
-      this.log('❌ Erro ao reconectar: '+e.message,'err');
-    }
-    this.updateStatus();
-  }
-};
-</script>
-
 </body>
 </html>
