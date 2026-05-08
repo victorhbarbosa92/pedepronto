@@ -284,7 +284,7 @@ select.inp{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns=
   <div id="top-title" style="font-size:13px;font-weight:700;flex:1;padding:0 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Dashboard</div>
   <div style="display:flex;gap:6px;align-items:center;flex-shrink:0">
     <button class="tbtn-ico" id="btn-bt" onclick="openMc('mc-bt')" title="Impressora">🖨️</button>
-    <button class="tbtn-ico" id="btn-drive" onclick="fbLogin()" title="Conectar Google">☁️</button>
+    <button class="tbtn-ico" id="btn-drive" onclick="showCloudStatus()" title="Status da sincronização">☁️</button>
     <button class="tbtn" onclick="showCaixaQuick()" title="Caixa" id="btn-caixa-st" style="font-size:11px;padding:0 10px">💰</button>
   </div>
 </div>
@@ -2239,14 +2239,36 @@ function renderConfig(){
       <button class="btn bs bsm" onclick="changePIN()">Alterar</button>
     </div>
   </div>
-  <div class="sec-title">Dados e Sincronização</div>
+  <div class="sec-title">Firebase & Sincronização</div>
   <div class="card mb10">
-    <div class="rb" style="padding:8px 0;border-bottom:1px solid var(--br)">
-      <div><div class="fs13 bold">Google Drive Sync</div><div class="fs12 t2">${cfg.drive_ativo?'Ativo':'Inativo'} · OAuth2 em produção</div></div>
-      <button class="sw ${cfg.drive_ativo?'on':''}" id="sw-drive" onclick="fbAuth.currentUser?fbLogout():fbLogin()"></button>
+    <div class="rb" style="padding:10px 0;border-bottom:1px solid var(--br)">
+      <div>
+        <div class="fs13 bold">Conta Google</div>
+        <div class="fs12 t2">${window.FIREBASE_READY?(fbAuth?.currentUser?fbAuth.currentUser.email:'Não conectado'):'Modo local (sem sync)'}</div>
+      </div>
+      ${window.FIREBASE_READY
+        ? (fbAuth?.currentUser
+            ? `<div style="display:flex;gap:6px">
+                <button class="btn bg bsm" onclick="fsPush().then(()=>toast('☁️ Sincronizado!','g'))">🔄 Sync</button>
+                <button class="btn br_ bsm" onclick="fbLogout();renderConfig()">Sair</button>
+               </div>`
+            : `<button class="btn bp bsm" onclick="fbLogin()">☁️ Conectar Google</button>`)
+        : `<span class="bdg bg-s">📵 Offline</span>`}
+    </div>
+    <div style="padding:8px 0;border-bottom:1px solid var(--br)">
+      <div class="fs13 bold mb4">Status da sincronização</div>
+      <div class="fs12 t2" style="line-height:1.7">
+        ${window.FIREBASE_READY&&fbAuth?.currentUser
+          ? '☁️✅ Firebase ativo — dados sincronizam automaticamente em todos os dispositivos a cada operação.'
+          : window.FIREBASE_READY
+            ? '⚠️ Faça login com Google para ativar a sincronização.'
+            : '📵 Modo local — dados salvos apenas neste dispositivo. Acesse pelo link do GitHub para sincronizar.'}
+      </div>
+      ${window.FIREBASE_READY&&fbAuth?.currentUser
+        ? `<div class="fs11 t3 mt4">Projeto: pedepronto-40790 · Firestore</div>` : ''}
     </div>
     <div class="rb" style="padding:8px 0;border-bottom:1px solid var(--br)">
-      <div><div class="fs13 bold">Exportar backup</div></div>
+      <div><div class="fs13 bold">Exportar backup local</div><div class="fs12 t2">Salva JSON no dispositivo</div></div>
       <button class="btn bs bsm" onclick="Drive.exportJSON()">💾 Exportar</button>
     </div>
     <div class="rb" style="padding:8px 0">
@@ -2644,6 +2666,83 @@ function updateDriveBtn(){
   const b=document.getElementById('btn-drive');if(!b)return;
   if(u){b.textContent='☁️✅';b.title=u.email;b.onclick=()=>{fsPush();toast('🔄 Sincronizando...','b');};}
   else{b.textContent='☁️';b.title='Entrar com Google';b.onclick=fbLogin;}
+}
+
+
+// ═══════════════════════════════════════════
+//  CLOUD STATUS SHEET
+// ═══════════════════════════════════════════
+function showCloudStatus(){
+  const sh = document.getElementById('sh-obs');
+  const fbUser = window.FIREBASE_READY && fbAuth ? fbAuth.currentUser : null;
+  const isHosted = window.FIREBASE_READY;
+
+  sh.innerHTML = `
+    <div class="sh-handle"></div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px">
+      <div style="font-size:32px">${fbUser ? '☁️' : isHosted ? '☁️' : '📵'}</div>
+      <div>
+        <div style="font-size:16px;font-weight:800">Sincronização Firebase</div>
+        <div class="fs12 t2">${isHosted ? 'Firestore · pedepronto-40790' : 'Modo local — sem sync'}</div>
+      </div>
+    </div>
+
+    ${fbUser ? `
+    <!-- LOGADO -->
+    <div style="background:var(--gnbg);border:1px solid var(--gnbr);border-radius:12px;padding:14px;margin-bottom:14px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="font-size:28px">✅</div>
+        <div>
+          <div class="bold">Sincronização ativa</div>
+          <div class="fs12 gn mt4">${fbUser.email}</div>
+          <div class="fs11 t2 mt2">Dados sincronizados em todos os dispositivos</div>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <button class="btn bg bw" onclick="fsPush().then(()=>{toast('☁️ Sincronizado!','g');closeOv('ov-obs')}).catch(()=>toast('Erro ao sincronizar','r'))">
+        🔄 Sincronizar agora
+      </button>
+      <button class="btn br_ bw" onclick="fbLogout();closeOv('ov-obs');updateDriveBtn()">
+        🚪 Sair da conta Google
+      </button>
+    </div>
+    ` : isHosted ? `
+    <!-- HOSPEDADO MAS SEM LOGIN -->
+    <div style="background:var(--ambg);border:1px solid var(--ambr);border-radius:12px;padding:14px;margin-bottom:14px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="font-size:28px">⚠️</div>
+        <div>
+          <div class="bold am">Nenhuma conta conectada</div>
+          <div class="fs12 t2 mt4">Faça login com Google para sincronizar seus dados entre dispositivos.</div>
+        </div>
+      </div>
+    </div>
+    <button class="btn bp bw" style="padding:14px;font-size:14px" onclick="closeOv('ov-obs');fbLogin()">
+      <svg width="18" height="18" viewBox="0 0 24 24" style="flex-shrink:0"><path fill="#fff" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#fff" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#fff" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#fff" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+      Entrar com Google
+    </button>
+    ` : `
+    <!-- MODO LOCAL -->
+    <div style="background:var(--s2);border:1px solid var(--br2);border-radius:12px;padding:14px;margin-bottom:14px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="font-size:28px">📵</div>
+        <div>
+          <div class="bold">Modo local</div>
+          <div class="fs12 t2 mt4">Dados salvos apenas neste dispositivo.</div>
+          <div class="fs12 t2 mt2">Para sincronizar, acesse pelo link:</div>
+          <div class="fs12 ac bold mt4">victorhbarbosa92.github.io/pedepronto</div>
+        </div>
+      </div>
+    </div>
+    <button class="btn bs bw" onclick="navigator.clipboard?.writeText('https://victorhbarbosa92.github.io/pedepronto').then(()=>toast('Link copiado!','g'))">
+      📋 Copiar link do sistema
+    </button>
+    `}
+    <div class="divider mt12 mb12"></div>
+    <button class="btn bs bw bsm" onclick="closeOv('ov-obs');Drive.exportJSON()">💾 Exportar backup local</button>
+  `;
+  openOv('ov-obs');
 }
 
 
