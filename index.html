@@ -348,6 +348,13 @@ select.inp{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns=
   </div>
 </div>
 
+<!-- ══════════ SYNC BANNER ══════════ -->
+<div id="sync-banner" style="display:none;background:var(--rdbg);border-bottom:1px solid var(--rdbr);padding:8px 14px;font-size:12px;color:var(--rd);display:none;align-items:center;gap:8px;cursor:pointer" onclick="showFirestoreHelp()">
+  <span>⚠️</span>
+  <span style="flex:1">Sincronização com a nuvem com erro — toque para configurar</span>
+  <span style="font-weight:700;text-decoration:underline">Corrigir →</span>
+</div>
+
 <!-- ══════════ LAYOUT ══════════ -->
 <div id="layout">
   <!-- SIDEBAR desktop -->
@@ -864,6 +871,22 @@ let ST={
 
 let _fsTimer=null;
 let _syncEnabled=false; // só liga após onAuthStateChanged confirmar o login
+const _DEV_ID=(()=>{let id=sessionStorage.getItem('pp_dev');if(!id){id=Math.random().toString(36).slice(2);sessionStorage.setItem('pp_dev',id);}return id;})();
+let _syncStatus='idle'; // 'idle'|'ok'|'error'|'syncing'
+let _lastSyncAt=null;
+let _fsFirstSnap=true; // flag: primeiro snapshot após login
+function _setSyncStatus(s){
+  _syncStatus=s;
+  const b=document.getElementById('btn-drive');
+  const banner=document.getElementById('sync-banner');
+  if(b){
+    if(s==='ok'){b.innerHTML='<span style="color:var(--gn)">☁️</span>';b.title='Sincronizado'+((_lastSyncAt)?' às '+fmtH(_lastSyncAt):'');}
+    else if(s==='syncing'){b.innerHTML='<span style="color:var(--bl)">☁️</span>';b.title='Sincronizando...';}
+    else if(s==='error'){b.innerHTML='<span style="color:var(--rd)">☁️</span>';b.title='Erro — toque para detalhes';}
+    else{b.innerHTML='☁️';b.title='Sincronização';}
+  }
+  if(banner)banner.style.display=(s==='error')?'flex':'none';
+}
 function save(k){
   ST.cfg._savedAt=new Date().toISOString();
   DB.set(k,ST[k]);
@@ -881,22 +904,21 @@ function saveAll(){
 async function fsPush(){
   if(!_syncEnabled||!fbAuth||!fbAuth.currentUser) return;
   if(window._noPermission) return;
+  _setSyncStatus('syncing');
   const uid=fbAuth.currentUser.uid;
   try{
-    const d={_savedAt:new Date().toISOString()};
+    const d={_savedAt:new Date().toISOString(),_dev_id:_DEV_ID};
     ['cfg','caixa','produtos','categorias','clientes','obs_grupos_globais','pedidos','funcionarios','vouchers'].forEach(k=>d[k]=ST[k]);
-    await fbDB.collection('estabelecimentos').doc(uid).collection('dados').doc('principal').set(d,{merge:true});
-    // Sucesso — remover badge de erro
-    var b=document.getElementById('btn-drive');
-    if(b) b.textContent='☁️✅';
-    var bd=document.getElementById('drive-warn-badge');
-    if(bd) bd.remove();
+    await fbDB.collection('estabelecimentos').doc(uid).collection('dados').doc('principal').set(d);
+    _lastSyncAt=Date.now();
+    _setSyncStatus('ok');
+    console.log('[PedePronto] ☁️ Sync enviado (dev:'+_DEV_ID+')');
   }catch(e){
-    console.warn('Firestore push:',e.code||'unknown');
+    console.warn('[PedePronto] Firestore push erro:',e.code||e.message);
+    _setSyncStatus('error');
     if(e.code==='permission-denied'){
       window._noPermission=true;
       if(!window._permWarnShown){window._permWarnShown=true;showFirestoreHelp();}
-      // Retry automático a cada 30s sem precisar de F5
       clearTimeout(window._permRetryTimer);
       window._permRetryTimer=setTimeout(()=>{
         window._noPermission=false;
@@ -906,28 +928,65 @@ async function fsPush(){
     }
   }
 }
+// Força pull: aplica dado do Firestore sobrescrevendo local
+async function fsPull(){
+  if(!fbAuth?.currentUser||!fbDB)return;
+  const uid=fbAuth.currentUser.uid;
+  try{
+    const snap=await fbDB.collection('estabelecimentos').doc(uid).collection('dados').doc('principal').get();
+    if(!snap.exists){toast('Nenhum dado na nuvem ainda — envie primeiro','a',4000);return;}
+    const r=snap.data();
+    ['cfg','caixa','produtos','categorias','clientes','obs_grupos_globais','pedidos','funcionarios','vouchers'].forEach(k=>{if(r[k]!=null)ST[k]=r[k];});
+    saveAll();
+    _lastSyncAt=Date.now();_setSyncStatus('ok');
+    nav(ST.curNav);
+    toast('✅ Dados da nuvem aplicados!','g',4000);
+    playSound('pronto');
+  }catch(e){
+    toast('Erro ao puxar dados: '+e.message,'r',5000);
+    _setSyncStatus('error');
+  }
+}
 
 // Mostrar ajuda sobre regras do Firestore
+const _FIRESTORE_RULES=`rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /estabelecimentos/{userId}/{document=**} {
+      allow read, write: if request.auth != null
+        && request.auth.uid == userId;
+    }
+  }
+}`;
 function showFirestoreHelp(){
   var sh=document.getElementById('sh-obs');
-  sh.innerHTML='<div class="sh-handle"></div>'+
-    '<div style="font-size:28px;text-align:center;margin-bottom:8px">🔐</div>'+
-    '<div style="font-size:16px;font-weight:800;text-align:center;margin-bottom:6px">Regras do Firestore</div>'+
-    '<div class="fs12 t2 mb12" style="line-height:1.7;text-align:center">O Firebase está negando acesso.<br>Atualize as regras no console para sincronizar.</div>'+
-    '<div style="background:var(--s3);border:1px solid var(--br2);border-radius:10px;padding:12px;margin-bottom:14px;font-family:monospace;font-size:10px;line-height:1.8;white-space:pre;overflow-x:auto;color:var(--ac)">'+
-    'rules_version = \'2\';\n'+
-    'service cloud.firestore {\n'+
-    '  match /databases/{database}/documents {\n'+
-    '    match /estabelecimentos/{userId}/{document=**} {\n'+
-    '      allow read, write: if request.auth != null\n'+
-    '        \&\& request.auth.uid == userId;\n'+
-    '    }\n'+
-    '  }\n'+
-    '}</div>'+
-    '<div class="g2">'+
-    '<button class="btn bp bw" onclick="window.open(\'https://console.firebase.google.com/project/pedepronto-40790/firestore/rules\',\'_blank\')">🔗 Abrir Firebase Console</button>'+
-    '<button class="btn bs bw" onclick="closeOv(\'ov-obs\')">Fechar</button>'+
-    '</div>';
+  sh.innerHTML=`
+    <div class="sh-handle"></div>
+    <div style="font-size:28px;text-align:center;margin-bottom:8px">🔐</div>
+    <div style="font-size:16px;font-weight:800;text-align:center;margin-bottom:6px">Configurar regras do Firestore</div>
+    <div class="fs12 t2 mb12" style="line-height:1.7;text-align:center">
+      O Firebase está bloqueando o acesso.<br>Siga os 3 passos abaixo para ativar o sync.
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px">
+      <div style="background:var(--s2);border-radius:10px;padding:12px;display:flex;align-items:flex-start;gap:10px">
+        <div style="width:26px;height:26px;border-radius:50%;background:var(--ac);color:#fff;font-weight:900;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0">1</div>
+        <div class="fs12 t2"><strong style="color:var(--tx)">Abra o Firebase Console</strong><br>Clique no botão abaixo → Firestore Database → Regras</div>
+      </div>
+      <div style="background:var(--s2);border-radius:10px;padding:12px;display:flex;align-items:flex-start;gap:10px">
+        <div style="width:26px;height:26px;border-radius:50%;background:var(--ac);color:#fff;font-weight:900;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0">2</div>
+        <div class="fs12 t2"><strong style="color:var(--tx)">Substitua as regras pelo código abaixo</strong><br>Selecione tudo (Ctrl+A) e cole o texto copiado</div>
+      </div>
+      <div style="background:var(--s2);border-radius:10px;padding:12px;display:flex;align-items:flex-start;gap:10px">
+        <div style="width:26px;height:26px;border-radius:50%;background:var(--ac);color:#fff;font-weight:900;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0">3</div>
+        <div class="fs12 t2"><strong style="color:var(--tx)">Clique em "Publicar"</strong><br>O sync começa automaticamente em até 30 segundos</div>
+      </div>
+    </div>
+    <div style="background:var(--s3);border:1px solid var(--br2);border-radius:10px;padding:12px;margin-bottom:12px;font-family:monospace;font-size:10px;line-height:1.8;white-space:pre;overflow-x:auto;color:var(--ac)">${_FIRESTORE_RULES}</div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <button class="btn ba bw" onclick="navigator.clipboard?.writeText(_FIRESTORE_RULES).then(()=>toast('Regras copiadas!','g'))">📋 Copiar regras</button>
+      <button class="btn bp bw" onclick="window.open('https://console.firebase.google.com/project/pedepronto-40790/firestore/rules','_blank')">🔗 Abrir Firebase Console</button>
+      <button class="btn bs bw" onclick="closeOv('ov-obs')">Fechar</button>
+    </div>`;
   openOv('ov-obs');
 }
 function loadAll(){
@@ -3491,39 +3550,60 @@ function fbLogout(){
 
 function fsListen(uid){
   if(!fbDB) return;
+  _fsFirstSnap=true;
   const ref=fbDB.collection('estabelecimentos').doc(uid).collection('dados').doc('principal');
   ref.onSnapshot(snap=>{
-    if(!snap.exists)return;
-    const r=snap.data();if(!r._savedAt)return;
-    const lt=new Date(ST.cfg._savedAt||0).getTime();
-    const rt=new Date(r._savedAt).getTime();
-    if(rt>lt+5000){
-      ['cfg','caixa','produtos','categorias','clientes','obs_grupos_globais','pedidos','funcionarios','vouchers'].forEach(k=>{if(r[k]!=null)ST[k]=r[k];});
-      saveAll();nav(ST.curNav);
-      const b=document.getElementById('btn-drive');
-    if(b){ b.textContent='☁️✅';
-      const bd=document.getElementById('drive-warn-badge');
-      if(bd) bd.remove();
+    if(!snap.exists){
+      // Nuvem vazia → envia dados locais
+      if(_fsFirstSnap){_fsFirstSnap=false;fsPush();}
+      return;
     }
+    const r=snap.data();
+    // Ignorar nossa própria escrita (loop)
+    if(r._dev_id&&r._dev_id===_DEV_ID&&!_fsFirstSnap)return;
+    const lt=new Date(ST.cfg._savedAt||0).getTime();
+    const rt=new Date(r._savedAt||0).getTime();
+    // No primeiro snap: aplica se nuvem tiver dado (independente de timestamp)
+    // Nos seguintes: aplica só se vier de outro dispositivo
+    const deveAplicar=_fsFirstSnap||(r._dev_id&&r._dev_id!==_DEV_ID)||rt>lt+3000;
+    _fsFirstSnap=false;
+    if(deveAplicar){
+      ['cfg','caixa','produtos','categorias','clientes','obs_grupos_globais','pedidos','funcionarios','vouchers'].forEach(k=>{if(r[k]!=null)ST[k]=r[k];});
+      saveAll();
+      nav(ST.curNav);
+      _lastSyncAt=Date.now();
+      _setSyncStatus('ok');
+      console.log('[PedePronto] ☁️ Sync recebido (dev remoto:'+r._dev_id+')');
     }
   },e=>{
-    console.warn('Firestore listen:',e);
-    if(e.code==='permission-denied'&&!window._listenRetrying){
-      window._listenRetrying=true;
-      clearTimeout(window._listenRetryTimer);
-      window._listenRetryTimer=setTimeout(()=>{
-        window._listenRetrying=false;
-        if(_syncEnabled&&fbAuth?.currentUser) fsListen(fbAuth.currentUser.uid);
-      },30000);
+    console.warn('[PedePronto] Firestore listen erro:',e.code||e.message);
+    _setSyncStatus('error');
+    if(e.code==='permission-denied'){
+      if(!window._permWarnShown){window._permWarnShown=true;showFirestoreHelp();}
+      if(!window._listenRetrying){
+        window._listenRetrying=true;
+        clearTimeout(window._listenRetryTimer);
+        window._listenRetryTimer=setTimeout(()=>{
+          window._listenRetrying=false;
+          window._noPermission=false;
+          if(_syncEnabled&&fbAuth?.currentUser) fsListen(fbAuth.currentUser.uid);
+        },30000);
+      }
     }
   });
 }
 
 function updateDriveBtn(){
+  if(!fbAuth){
+    const b=document.getElementById('btn-drive');
+    if(b){b.innerHTML='☁️';b.title='Modo local — sem sync';b.onclick=showCloudStatus;}
+    return;
+  }
   const u=fbAuth.currentUser;
   const b=document.getElementById('btn-drive');if(!b)return;
-  if(u){b.textContent='☁️✅';b.title=u.email;b.onclick=()=>{fsPush();toast('🔄 Sincronizando...','b');};}
-  else{b.textContent='☁️';b.title='Entrar com Google';b.onclick=fbLogin;}
+  b.onclick=showCloudStatus;
+  if(u){_setSyncStatus('idle');b.title=u.email+' · Toque para detalhes';}
+  else{b.innerHTML='☁️';b.title='Não conectado — toque para entrar';}
 }
 
 
@@ -3531,74 +3611,60 @@ function updateDriveBtn(){
 //  CLOUD STATUS SHEET
 // ═══════════════════════════════════════════
 function showCloudStatus(){
-  const sh = document.getElementById('sh-obs');
-  const fbUser = fbAuth ? fbAuth.currentUser : null;
-  const isHosted = !!fbAuth;
-
-  sh.innerHTML = `
+  const sh=document.getElementById('sh-obs');
+  const fbUser=fbAuth?fbAuth.currentUser:null;
+  const isHosted=!!fbAuth;
+  const statIco={ok:'<span style="color:var(--gn)">●</span>',error:'<span style="color:var(--rd)">●</span>',syncing:'<span style="color:var(--bl)">●</span>',idle:'<span style="color:var(--t3)">●</span>'}[_syncStatus]||'';
+  const statTxt={ok:'Sincronizado'+((_lastSyncAt)?' às '+fmtH(_lastSyncAt):''),error:'Erro de sincronização',syncing:'Sincronizando...',idle:'Aguardando...'}[_syncStatus]||'—';
+  sh.innerHTML=`
     <div class="sh-handle"></div>
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px">
-      <div style="font-size:32px">${fbUser ? '☁️' : isHosted ? '☁️' : '📵'}</div>
+    <div class="rb mb14">
       <div>
-        <div style="font-size:16px;font-weight:800">Sincronização Firebase</div>
-        <div class="fs12 t2">${isHosted ? 'Firestore · pedepronto-40790' : 'Modo local — sem sync'}</div>
+        <div style="font-size:16px;font-weight:800">☁️ Sincronização</div>
+        <div class="fs12 t2">${isHosted?'Firestore · pedepronto-40790':'Modo local'}</div>
       </div>
+      ${fbUser?`<div class="fs12" style="display:flex;align-items:center;gap:6px">${statIco} <span style="color:var(--t2)">${statTxt}</span></div>`:''}
     </div>
 
-    ${fbUser ? `
-    <!-- LOGADO -->
-    <div style="background:var(--gnbg);border:1px solid var(--gnbr);border-radius:12px;padding:14px;margin-bottom:14px">
-      <div style="display:flex;align-items:center;gap:10px">
-        <div style="font-size:28px">✅</div>
-        <div>
-          <div class="bold">Sincronização ativa</div>
-          <div class="fs12 gn mt4">${fbUser.email}</div>
-          <div class="fs11 t2 mt2">Dados sincronizados em todos os dispositivos</div>
-        </div>
-      </div>
+    ${fbUser?`
+    <div style="background:${_syncStatus==='error'?'var(--rdbg)':'var(--gnbg)'};border:1px solid ${_syncStatus==='error'?'var(--rdbr)':'var(--gnbr)'};border-radius:12px;padding:14px;margin-bottom:14px">
+      <div class="fs13 bold mb4">${_syncStatus==='error'?'⚠️ Verificar configuração':'✅ Conta conectada'}</div>
+      <div class="fs12 t2">${fbUser.email}</div>
+      ${_syncStatus==='error'?`<div class="fs12 rd mt6">Erro de permissão — as regras do Firestore podem não estar publicadas.</div>`:`<div class="fs12 t2 mt4">Dados sincronizados automaticamente entre PC, celular e tablet.</div>`}
     </div>
-    <div style="display:flex;flex-direction:column;gap:8px">
-      <button class="btn bg bw" onclick="fsPush().then(()=>{toast('☁️ Sincronizado!','g');closeOv('ov-obs')}).catch(()=>toast('Erro ao sincronizar','r'))">
-        🔄 Sincronizar agora
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px">
+      <button class="btn bg bw" onclick="closeOv('ov-obs');_setSyncStatus('syncing');fsPush()">
+        ↑ Enviar este dispositivo para a nuvem
       </button>
-      <button class="btn br_ bw" onclick="fbLogout();closeOv('ov-obs');updateDriveBtn()">
-        🚪 Sair da conta Google
+      <button class="btn bb bw" onclick="closeOv('ov-obs');fsPull()">
+        ↓ Puxar dados da nuvem para este dispositivo
       </button>
+      ${_syncStatus==='error'?`<button class="btn ba bw" onclick="showFirestoreHelp()">🔐 Ver regras do Firestore</button>`:''}
+      <button class="btn br_ bw" onclick="fbLogout();closeOv('ov-obs');updateDriveBtn()">🚪 Sair da conta Google</button>
     </div>
-    ` : isHosted ? `
-    <!-- HOSPEDADO MAS SEM LOGIN -->
+    <div style="background:var(--s2);border-radius:10px;padding:12px;font-size:11px;color:var(--t3);line-height:1.7">
+      <strong style="color:var(--t2)">Como funciona o sync:</strong><br>
+      • Qualquer mudança é enviada automaticamente em 2s<br>
+      • Outros dispositivos recebem em tempo real via Firestore<br>
+      • Use "↑ Enviar" se dados locais estiverem mais atualizados<br>
+      • Use "↓ Puxar" se a nuvem tiver dados mais recentes
+    </div>
+    `:(isHosted?`
     <div style="background:var(--ambg);border:1px solid var(--ambr);border-radius:12px;padding:14px;margin-bottom:14px">
-      <div style="display:flex;align-items:center;gap:10px">
-        <div style="font-size:28px">⚠️</div>
-        <div>
-          <div class="bold am">Nenhuma conta conectada</div>
-          <div class="fs12 t2 mt4">Faça login com Google para sincronizar seus dados entre dispositivos.</div>
-        </div>
-      </div>
+      <div class="fs13 bold am mb4">⚠️ Nenhuma conta conectada</div>
+      <div class="fs12 t2">Faça login com Google para sincronizar dados entre dispositivos com o mesmo e-mail.</div>
     </div>
-    <button class="btn bp bw" style="padding:14px;font-size:14px" onclick="closeOv('ov-obs');fbLogin()">
-      <svg width="18" height="18" viewBox="0 0 24 24" style="flex-shrink:0"><path fill="#fff" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#fff" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#fff" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#fff" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-      Entrar com Google
-    </button>
-    ` : `
-    <!-- MODO LOCAL -->
+    <button class="btn bp bw" style="padding:14px" onclick="closeOv('ov-obs');fbLogin()">☁️ Entrar com Google</button>
+    `:`
     <div style="background:var(--s2);border:1px solid var(--br2);border-radius:12px;padding:14px;margin-bottom:14px">
-      <div style="display:flex;align-items:center;gap:10px">
-        <div style="font-size:28px">📵</div>
-        <div>
-          <div class="bold">Modo local</div>
-          <div class="fs12 t2 mt4">Dados salvos apenas neste dispositivo.</div>
-          <div class="fs12 t2 mt2">Para sincronizar, acesse pelo link:</div>
-          <div class="fs12 ac bold mt4">victorhbarbosa92.github.io/pedepronto</div>
-        </div>
-      </div>
+      <div class="fs13 bold mb4">📵 Modo local</div>
+      <div class="fs12 t2">Acesse pelo link abaixo para ativar a sincronização:</div>
+      <div class="fs12 ac bold mt6">victorhbarbosa92.github.io/pedepronto</div>
     </div>
-    <button class="btn bs bw" onclick="navigator.clipboard?.writeText('https://victorhbarbosa92.github.io/pedepronto').then(()=>toast('Link copiado!','g'))">
-      📋 Copiar link do sistema
-    </button>
-    `}
+    <button class="btn bs bw" onclick="navigator.clipboard?.writeText('https://victorhbarbosa92.github.io/pedepronto').then(()=>toast('Link copiado!','g'))">📋 Copiar link</button>
+    `)}
     <div class="divider mt12 mb12"></div>
-    <button class="btn bs bw bsm" onclick="closeOv('ov-obs');Drive.exportJSON()">💾 Exportar backup local</button>
+    <button class="btn bs bw bsm" onclick="closeOv('ov-obs');Drive.exportJSON()">💾 Exportar backup local (.json)</button>
   `;
   openOv('ov-obs');
 }
