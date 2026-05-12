@@ -468,7 +468,7 @@ select.inp{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns=
 <!-- MODAL: PIN -->
 <div class="mc" id="mc-pin">
   <div class="mb" style="max-width:310px;text-align:center">
-    <input id="mc-pin-focus" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none" tabindex="0" readonly>
+    <input id="mc-pin-focus" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none" tabindex="0" readonly inputmode="none">
     <div style="font-size:26px;margin-bottom:6px">🔒</div>
     <div style="font-size:15px;font-weight:800;margin-bottom:3px" id="pin-ttl">PIN de Segurança</div>
     <div style="font-size:12px;color:var(--t2);margin-bottom:16px" id="pin-sub">Digite o PIN de 4 dígitos</div>
@@ -618,7 +618,7 @@ select.inp{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns=
     <!-- ETAPA 2: digitar PIN -->
     <div id="login-step-pin" style="display:none">
       <!-- foco invisível para capturar teclado físico no PC -->
-      <input id="login-pin-focus" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none" tabindex="0" readonly>
+      <input id="login-pin-focus" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none" tabindex="0" readonly inputmode="none">
       <div style="text-align:center;margin-bottom:14px">
         <div id="login-pin-avatar" class="login-avatar" style="width:64px;height:64px;font-size:28px;margin:0 auto 10px"></div>
         <div style="font-size:17px;font-weight:800" id="login-pin-nome">Nome</div>
@@ -642,7 +642,7 @@ select.inp{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns=
 <!-- MODAL: AUTORIZAÇÃO ADMIN -->
 <div class="mc" id="mc-admin-auth">
   <div class="mb" style="max-width:320px;text-align:center">
-    <input id="mc-admin-focus" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none" tabindex="0" readonly>
+    <input id="mc-admin-focus" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none" tabindex="0" readonly inputmode="none">
     <div style="font-size:28px;margin-bottom:6px">🔐</div>
     <div style="font-size:15px;font-weight:800;margin-bottom:3px" id="auth-ttl">Requer Administrador</div>
     <div style="font-size:12px;color:var(--t2);margin-bottom:16px" id="auth-sub">Digite o PIN do administrador</div>
@@ -3769,11 +3769,18 @@ function showCloudStatus(){
       }
     });
   });
-  // Impede que clique do mouse dê focus aos botões do pinpad (PC)
-  // O onclick ainda dispara normalmente — só o focus que é bloqueado
-  document.addEventListener('mousedown',e=>{
-    if(e.target.closest('.pkey,.pin-dot'))e.preventDefault();
+  // Impede que clique do MOUSE dê focus aos botões do pinpad (PC)
+  // Usa pointerdown + pointerType para não afetar toque no celular
+  document.addEventListener('pointerdown',e=>{
+    if(e.pointerType==='mouse'&&e.target.closest('.pkey,.pin-dot'))e.preventDefault();
   },true);
+  // Após clicar qualquer pkey, devolve o foco ao input invisível (PC)
+  document.addEventListener('click',e=>{
+    if(e.target.closest('.pkey')){
+      const mc=document.querySelector('.mc.on');
+      if(mc){const f=mc.querySelector('input[id$="-focus"]');if(f)setTimeout(()=>f.focus(),0);}
+    }
+  },false);
   _initVozes();
   // Acordar AudioContext no primeiro toque do usuário (política de autoplay)
   const _wakeAC=()=>{_getAC();document.removeEventListener('touchstart',_wakeAC);document.removeEventListener('click',_wakeAC);};
