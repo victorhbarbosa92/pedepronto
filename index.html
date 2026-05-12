@@ -674,11 +674,14 @@ let ST={
 };
 
 let _fsTimer=null;
+let _syncEnabled=false; // só liga após onAuthStateChanged confirmar o login
 function save(k){
   ST.cfg._savedAt=new Date().toISOString();
   DB.set(k,ST[k]);
-  clearTimeout(_fsTimer);
-  _fsTimer=setTimeout(fsPush,2000);
+  if(_syncEnabled){
+    clearTimeout(_fsTimer);
+    _fsTimer=setTimeout(fsPush,2000);
+  }
 }
 function saveAll(){
   ST.cfg._savedAt=new Date().toISOString();
@@ -687,36 +690,53 @@ function saveAll(){
   _fsTimer=setTimeout(fsPush,2000);
 }
 async function fsPush(){
-  if(!fbAuth||!fbAuth.currentUser) return;
-  if(window._noPermission) return; // para tentativas repetidas se sem permissão
+  if(!_syncEnabled||!fbAuth||!fbAuth.currentUser) return;
+  if(window._noPermission) return;
   const uid=fbAuth.currentUser.uid;
   try{
     const d={_savedAt:new Date().toISOString()};
     ['cfg','caixa','produtos','categorias','clientes','obs_grupos_globais','pedidos','funcionarios'].forEach(k=>d[k]=ST[k]);
     await fbDB.collection('estabelecimentos').doc(uid).collection('dados').doc('principal').set(d,{merge:true});
-    const b=document.getElementById('btn-drive');
-    if(b){ b.textContent='☁️✅';
-      const bd=document.getElementById('drive-warn-badge');
-      if(bd) bd.remove();
-    }
+    // Sucesso — remover badge de erro
+    var b=document.getElementById('btn-drive');
+    if(b) b.textContent='☁️✅';
+    var bd=document.getElementById('drive-warn-badge');
+    if(bd) bd.remove();
   }catch(e){
-    console.warn('Firestore push:',e.code, e.message);
-    const b=document.getElementById('btn-drive');
-    if(b){ b.textContent='☁️'; b.style.position='relative';
-      if(!document.getElementById('drive-warn-badge')){
-        const bd=document.createElement('span');
-        bd.id='drive-warn-badge';
-        bd.textContent='⚠';
-        bd.style.cssText='position:absolute;top:-4px;right:-4px;background:#E74C3C;color:#fff;border-radius:50%;width:14px;height:14px;font-size:9px;display:flex;align-items:center;justify-content:center;pointer-events:none;';
-        b.appendChild(bd);
+    console.warn('Firestore push:',e.code||'unknown');
+    if(e.code==='permission-denied'){
+      window._noPermission=true;
+      _syncEnabled=false;
+      if(!window._permWarnShown){
+        window._permWarnShown=true;
+        showFirestoreHelp();
       }
     }
-    if(e.code==='permission-denied'){ window._noPermission=true;
-    if(!window._permWarnShown){
-      window._permWarnShown=true;
-      setTimeout(()=>{ if(document.visibilityState!=='hidden') toast('⚠️ Firestore: configure as Regras no Firebase Console → Firestore → Regras','r',7000); },500);
-    }}
   }
+}
+
+// Mostrar ajuda sobre regras do Firestore
+function showFirestoreHelp(){
+  var sh=document.getElementById('sh-obs');
+  sh.innerHTML='<div class="sh-handle"></div>'+
+    '<div style="font-size:28px;text-align:center;margin-bottom:8px">🔐</div>'+
+    '<div style="font-size:16px;font-weight:800;text-align:center;margin-bottom:6px">Regras do Firestore</div>'+
+    '<div class="fs12 t2 mb12" style="line-height:1.7;text-align:center">O Firebase está negando acesso.<br>Atualize as regras no console para sincronizar.</div>'+
+    '<div style="background:var(--s3);border:1px solid var(--br2);border-radius:10px;padding:12px;margin-bottom:14px;font-family:monospace;font-size:10px;line-height:1.8;white-space:pre;overflow-x:auto;color:var(--ac)">'+
+    'rules_version = \'2\';\n'+
+    'service cloud.firestore {\n'+
+    '  match /databases/{database}/documents {\n'+
+    '    match /estabelecimentos/{userId}/{document=**} {\n'+
+    '      allow read, write: if request.auth != null\n'+
+    '        \&\& request.auth.uid == userId;\n'+
+    '    }\n'+
+    '  }\n'+
+    '}</div>'+
+    '<div class="g2">'+
+    '<button class="btn bp bw" onclick="window.open(\'https://console.firebase.google.com/project/pedepronto-40790/firestore/rules\',\'_blank\')">🔗 Abrir Firebase Console</button>'+
+    '<button class="btn bs bw" onclick="closeOv(\'ov-obs\')">Fechar</button>'+
+    '</div>';
+  openOv('ov-obs');
 }
 function loadAll(){
   ['cfg','caixa','produtos','categorias','clientes','obs_grupos_globais','pedidos','funcionarios'].forEach(k=>{
@@ -2839,11 +2859,12 @@ function showCloudStatus(){
       updateDriveBtn();
       if(user){
         // Usuário Google logado
-        window._noPermission = false; // reset para nova sessão autenticada
+        window._noPermission = false;
         window._permWarnShown = false;
+        _syncEnabled = true; // agora save() pode sincronizar
         hideLoginScreen();
         fsListen(user.uid);
-        setTimeout(function(){ fsPush(); }, 2000);
+        setTimeout(function(){ fsPush(); }, 3000);
         // Pedir PIN do funcionário (não desloga Google)
         if(!ST.currentUser){
           setTimeout(showLogin, 500);
@@ -2852,7 +2873,8 @@ function showCloudStatus(){
           if(!ST.caixa.aberto) setTimeout(pedirAberturaCaixa, 600);
         }
       } else {
-        // Usuário não logado — mostrar tela Google
+        // Usuário não logado
+        _syncEnabled = false;
         showLoginScreen();
       }
     });
