@@ -7,8 +7,8 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="FoodOS">
-<title>FoodOS PDV</title>
+<meta name="apple-mobile-web-app-title" content="PedePronto">
+<title>PedePronto PDV</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{
@@ -328,7 +328,7 @@ select.inp{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns=
   <!-- SIDEBAR desktop -->
   <div id="sidebar">
     <div style="padding:14px 10px 6px">
-      <div style="font-size:14px;font-weight:900;color:var(--ac);font-family:monospace">🍔 FoodOS</div>
+      <div style="font-size:14px;font-weight:900;color:var(--ac);font-family:monospace">🍔 PedePronto</div>
       <div id="sb-est" style="font-size:11px;color:var(--t2);margin-top:2px">Carregando...</div>
       <div id="sb-op" style="font-size:11px;color:var(--t3)"></div>
     </div>
@@ -541,7 +541,7 @@ select.inp{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns=
 <div class="mc" id="mc-login">
   <div class="mb" style="max-width:360px">
     <div style="font-size:36px;text-align:center;margin-bottom:8px">👤</div>
-    <div style="font-size:17px;font-weight:800;text-align:center;margin-bottom:4px">FoodOS PDV</div>
+    <div style="font-size:17px;font-weight:800;text-align:center;margin-bottom:4px">PedePronto PDV</div>
     <div style="font-size:13px;color:var(--t2);text-align:center;margin-bottom:18px">Selecione seu usuário para continuar</div>
     <div id="login-user-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px"></div>
     <div id="login-pin-area" style="display:none">
@@ -688,19 +688,34 @@ function saveAll(){
 }
 async function fsPush(){
   if(!fbAuth||!fbAuth.currentUser) return;
+  if(window._noPermission) return; // para tentativas repetidas se sem permissão
   const uid=fbAuth.currentUser.uid;
   try{
     const d={_savedAt:new Date().toISOString()};
     ['cfg','caixa','produtos','categorias','clientes','obs_grupos_globais','pedidos','funcionarios'].forEach(k=>d[k]=ST[k]);
-    await fbDB.collection('estabelecimentos').doc(uid).set(d,{merge:true});
-    const b=document.getElementById('btn-drive');if(b)b.textContent='☁️✅';
+    await fbDB.collection('estabelecimentos').doc(uid).collection('dados').doc('principal').set(d,{merge:true});
+    const b=document.getElementById('btn-drive');
+    if(b){ b.textContent='☁️✅';
+      const bd=document.getElementById('drive-warn-badge');
+      if(bd) bd.remove();
+    }
   }catch(e){
     console.warn('Firestore push:',e.code, e.message);
-    const b=document.getElementById('btn-drive');if(b)b.textContent='☁️⚠️';
-    if(e.code==='permission-denied'&&!window._permWarnShown){
-      window._permWarnShown=true;
-      setTimeout(()=>toast('⚠️ Configure as Regras do Firestore no Firebase Console','r',8000),500);
+    const b=document.getElementById('btn-drive');
+    if(b){ b.textContent='☁️'; b.style.position='relative';
+      if(!document.getElementById('drive-warn-badge')){
+        const bd=document.createElement('span');
+        bd.id='drive-warn-badge';
+        bd.textContent='⚠';
+        bd.style.cssText='position:absolute;top:-4px;right:-4px;background:#E74C3C;color:#fff;border-radius:50%;width:14px;height:14px;font-size:9px;display:flex;align-items:center;justify-content:center;pointer-events:none;';
+        b.appendChild(bd);
+      }
     }
+    if(e.code==='permission-denied'){ window._noPermission=true;
+    if(!window._permWarnShown){
+      window._permWarnShown=true;
+      setTimeout(()=>{ if(document.visibilityState!=='hidden') toast('⚠️ Firestore: configure as Regras no Firebase Console → Firestore → Regras','r',7000); },500);
+    }}
   }
 }
 function loadAll(){
@@ -1130,7 +1145,7 @@ const BT={
     async testPrint(){
     if(!this.char){toast('❌ Nenhuma impressora conectada','r');return}
     const W=this.paper===58?32:46;
-    const txt=['FoodOS PDV v2.0 - TESTE','='.repeat(W),'Impressora OK!','Papel: '+this.paper+'mm','Data: '+fmtDH(now()),'='.repeat(W),'1234567890abcdefghijklmnopqrstuvwxyz',cfg&&cfg.nome||'FoodOS','','',''].join('\n');
+    const txt=['PedePronto PDV v2.0 - TESTE','='.repeat(W),'Impressora OK!','Papel: '+this.paper+'mm','Data: '+fmtDH(now()),'='.repeat(W),'1234567890abcdefghijklmnopqrstuvwxyz',cfg&&cfg.nome||'PedePronto','','',''].join('\n');
     await this.printRaw(txt,true);
     toast('✅ Teste enviado!','g');
   }
@@ -1167,7 +1182,7 @@ const Drive={
     delete data.editProd;delete data.editCli;
     const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
     const url=URL.createObjectURL(blob);
-    const a=document.createElement('a');a.href=url;a.download='FoodOS_backup_'+new Date().toISOString().slice(0,10)+'.json';a.click();
+    const a=document.createElement('a');a.href=url;a.download='PedePronto_backup_'+new Date().toISOString().slice(0,10)+'.json';a.click();
     URL.revokeObjectURL(url);
     toast('💾 Backup exportado!','g');
   },
@@ -2318,7 +2333,7 @@ function renderConfig(){
   </div>
   <button class="btn bp bw mb10" onclick="requireAdmin('Salvar Configurações',()=>{save('cfg');toast('✅ Configurações salvas!','g');renderConfig()})">💾 Salvar configurações</button>
   <button class="btn br_ bw" onclick="confirm2('⚠️','Resetar sistema?','TODOS os dados serão apagados permanentemente!','Resetar','br_',()=>{DB.keys().forEach(k=>DB.del(k));location.reload()})">⚠️ Resetar sistema</button>`;
-  document.getElementById('sb-est').textContent=cfg.nome||'FoodOS';
+  document.getElementById('sb-est').textContent=cfg.nome||'PedePronto PDV';
 }
 function changePIN(){askPin('Alterar PIN','Digite o PIN atual',()=>{const n=prompt('Novo PIN de 4 dígitos:');if(!n||n.length!==4||isNaN(n)){toast('PIN deve ter 4 dígitos','r');return}ST.cfg.pin=n;save('cfg');toast('✅ PIN alterado!','g')})}
 
@@ -2687,7 +2702,7 @@ function fbLogout(){
 
 function fsListen(uid){
   if(!fbDB) return;
-  const ref=fbDB.collection('estabelecimentos').doc(uid);
+  const ref=fbDB.collection('estabelecimentos').doc(uid).collection('dados').doc('principal');
   ref.onSnapshot(snap=>{
     if(!snap.exists)return;
     const r=snap.data();if(!r._savedAt)return;
@@ -2696,7 +2711,11 @@ function fsListen(uid){
     if(rt>lt+5000){
       ['cfg','caixa','produtos','categorias','clientes','obs_grupos_globais','pedidos','funcionarios'].forEach(k=>{if(r[k]!=null)ST[k]=r[k];});
       saveAll();nav(ST.curNav);
-      const b=document.getElementById('btn-drive');if(b)b.textContent='☁️✅';
+      const b=document.getElementById('btn-drive');
+    if(b){ b.textContent='☁️✅';
+      const bd=document.getElementById('drive-warn-badge');
+      if(bd) bd.remove();
+    }
     }
   },e=>console.warn('Firestore listen:',e));
 }
@@ -2806,13 +2825,22 @@ function showCloudStatus(){
 
   // Fluxo de autenticação — detecta Firebase pelo window.auth (síncrono)
   if(fbAuth){
-    // ── MODO HOSPEDADO (GitHub Pages): Firebase disponível ──
-    // onAuthStateChanged dispara UM evento imediato com o estado atual
-    // Não precisamos de nenhum setTimeout ou FIREBASE_READY
+    // Capturar resultado do redirect de login (signInWithRedirect)
+    fbAuth.getRedirectResult()
+      .then(function(result){
+        if(result && result.user) console.log('✅ Redirect login:', result.user.email);
+      })
+      .catch(function(e){
+        if(e.code !== 'auth/no-auth-event') console.warn('Redirect:', e.code);
+      });
+
+    // onAuthStateChanged dispara imediatamente com o estado atual
     fbAuth.onAuthStateChanged(function(user){
       updateDriveBtn();
       if(user){
         // Usuário Google logado
+        window._noPermission = false; // reset para nova sessão autenticada
+        window._permWarnShown = false;
         hideLoginScreen();
         fsListen(user.uid);
         setTimeout(function(){ fsPush(); }, 2000);
