@@ -219,11 +219,13 @@ select.inp{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns=
 .og-op-preco-inp{width:80px;text-align:right;font-family:monospace}
 
 /* ── KDS ── */
-.kds-c{background:var(--sf);border:2px solid var(--br2);border-radius:12px;padding:12px;margin-bottom:10px}
-.kds-c.novo{border-color:var(--bl);animation:pbl 2.5s infinite}
+.kds-c{background:var(--sf);border:2px solid var(--br2);border-radius:14px;padding:14px;margin-bottom:12px;transition:border-color .3s}
+.kds-c.novo{border-color:var(--bl);box-shadow:0 0 0 3px rgba(52,152,219,.15);animation:pbl 2.5s infinite}
 .kds-c.preparo{border-color:var(--am)}
-.kds-c.atrasado{border-color:var(--rd);animation:prd 1.5s infinite}
-@keyframes pbl{0%,100%{box-shadow:0 0 0 0 rgba(52,152,219,.3)}50%{box-shadow:0 0 0 7px rgba(52,152,219,0)}}
+.kds-c.atrasado{border-color:var(--rd);box-shadow:0 0 0 3px rgba(231,76,60,.15);animation:prd 1.5s infinite}
+@keyframes pbl{0%,100%{box-shadow:0 0 0 0 rgba(52,152,219,.2)}50%{box-shadow:0 0 0 9px rgba(52,152,219,0)}}
+@keyframes prd{0%,100%{box-shadow:0 0 0 0 rgba(231,76,60,.3)}50%{box-shadow:0 0 0 10px rgba(231,76,60,0)}}
+.kds-live-timer{font-variant-numeric:tabular-nums;letter-spacing:-0.5px}
 @keyframes prd{0%,100%{box-shadow:0 0 0 0 rgba(231,76,60,.4)}50%{box-shadow:0 0 0 8px rgba(231,76,60,0)}}
 
 /* ── PAY ── */
@@ -1034,6 +1036,8 @@ function nav(pg,extra){
   const bni=document.getElementById('bnm-'+pg);if(bni)bni.classList.add('on');
   const renders={dash:renderDash,mesas:renderMesas,balcao:renderBalcao,delivery:renderDelivery,producao:renderProducao,cardapio:renderCardapio,clientes:renderClientes,caixa:renderCaixa,relatorio:renderRelatorio,funcionarios:renderFuncionarios,config:renderConfig,pedido:()=>renderPedido(extra),fechar:()=>renderFechar(extra),pagamento:()=>renderPagamento(extra)};
   if(renders[pg])renders[pg]();
+  // KDS tick: ligar ao entrar, desligar ao sair
+  if(pg==='producao')_kdsStartTick();else _kdsStopTick();
   // init consumo buttons after render
   if(pg==='pedido') setConsumo(ST.novoPedido.consumo||'local');
   document.getElementById('page').scrollTo(0,0);
@@ -1567,12 +1571,15 @@ function renderDash(){
     <button class="btn bs bxs" onclick="nav('caixa')">Ver caixa</button></div>
   </div>`}
   <div class="g2 mb12">
-    <div class="kpi"><div class="kpi-v gn">${fmtR(receita)}</div><div class="kpi-l">Receita hoje</div></div>
-    <div class="kpi"><div class="kpi-v ac">${pedHoje.length}</div><div class="kpi-l">Pedidos hoje</div></div>
+    <div class="kpi"><div class="kpi-v ac">${fmtR(pedHoje.length?receita/pedHoje.length:0)}</div><div class="kpi-l">Ticket médio hoje</div></div>
+    <div class="kpi"><div class="kpi-v">${pedHoje.length}</div><div class="kpi-l">Pedidos hoje</div></div>
   </div>
-  <div class="g2 mb14">
+  <div class="g2 mb14" style="cursor:pointer" onclick="nav('producao')">
     <div class="kpi"><div class="kpi-v">${mesasCnt}</div><div class="kpi-l">Mesas abertas</div></div>
-    <div class="kpi"><div class="kpi-v am">${abertos.length}</div><div class="kpi-l">Em produção</div></div>
+    <div class="kpi" style="${abertos.length?'border-color:var(--ambr);background:var(--ambg)':''}">
+      <div class="kpi-v am">${abertos.length}</div>
+      <div class="kpi-l">Em produção 📟</div>
+    </div>
   </div>
   <div class="sec-title">Ações rápidas</div>
   <div class="g2 mb14">
@@ -2143,46 +2150,92 @@ function renderProducao(){
   const tab=ST._kdsTab||'cozinha';ST._kdsTab=tab;
   const dest=tab==='cozinha'?'coz':'bar';
   const peds=ST.pedidos.filter(p=>(p.status==='aberto'||p.status==='preparo')&&p.itens.some(i=>i.dest===dest));
+  // detecta novos pedidos e toca som
+  const primLoad=_kdsSeenIds.size===0;
+  peds.forEach(p=>{if(!_kdsSeenIds.has(p.id)){_kdsSeenIds.add(p.id);if(!primLoad)playSound('novo');}});
   document.getElementById('pg-producao').innerHTML=`
-  <div class="tabbar mb10">
-    <button class="tabitem ${tab==='cozinha'?'on':''}" onclick="ST._kdsTab='cozinha';renderProducao()">🍳 Cozinha</button>
-    <button class="tabitem ${tab==='bar'?'on':''}" onclick="ST._kdsTab='bar';renderProducao()">🍺 Bar</button>
+  <div class="rb mb10">
+    <div class="tabbar" style="flex:1">
+      <button class="tabitem ${tab==='cozinha'?'on':''}" onclick="ST._kdsTab='cozinha';renderProducao()">🍳 Cozinha</button>
+      <button class="tabitem ${tab==='bar'?'on':''}" onclick="ST._kdsTab='bar';renderProducao()">🍺 Bar</button>
+    </div>
+    <span class="fs12 t3" style="padding-left:10px;white-space:nowrap">${peds.length} pedido${peds.length!==1?'s':''}</span>
   </div>
-  ${peds.length===0?`<div class="card" style="text-align:center;color:var(--t2);padding:32px">Nenhum pedido em produção ✅</div>`:''}
+  ${peds.length===0?`<div class="card" style="text-align:center;color:var(--t2);padding:40px">
+    <div style="font-size:36px;margin-bottom:8px">✅</div>
+    <div class="bold fs14">Tudo em dia!</div>
+    <div class="fs12 t3 mt4">Nenhum pedido em produção no momento.</div>
+  </div>`:''}
   ${peds.map(p=>{
-    const mins=Math.floor((Date.now()-new Date(p.created).getTime())/60000);
+    const created=new Date(p.created).getTime();
     const prev=dest==='coz'?p.prev_coz:p.prev_bar;
-    const minsRest=prev?Math.ceil((new Date(prev)-Date.now())/60000):10;
-    const late=minsRest<0;
+    const prevMs=prev?new Date(prev).getTime():0;
+    const elSec=Math.floor((Date.now()-created)/1000);
+    const mins=Math.floor(elSec/60);const secs=elSec%60;
+    const late=prevMs&&Date.now()>prevMs;
+    const minsRest=prevMs?Math.ceil((prevMs-Date.now())/60000):null;
+    const cls=late?'atrasado':mins<2?'novo':'preparo';
+    const statusCor=late?'var(--rd)':minsRest!==null&&minsRest<4?'var(--am)':'var(--gn)';
     const itensDest=p.itens.filter(i=>i.dest===dest);
-    return`<div class="kds-c ${late?'atrasado':mins<5?'novo':'preparo'}">
-      <div class="rb mb8">
-        <div><div class="row gap-6 mb4"><div class="bold fs14">${p.num} · ${p.mesa_label||p.tipo}</div><span class="bdg ${p.consumo==='viagem'?'bg-p':'bg-g'}" style="font-size:10px">${p.consumo==='viagem'?'Viagem':'Local'}</span></div>
-        <div class="fs12 t2">${p.cliente_nome||'—'} · há ${mins}min</div></div>
-        <div style="font-size:22px;font-weight:900;font-family:monospace;color:${late?'var(--rd)':minsRest<5?'var(--am)':'var(--gn)'}">
-          ${late?'+'+Math.abs(minsRest)+'min':minsRest+'min'}
+    const todoConcluido=itensDest.every(i=>i.concluido);
+    return`<div class="kds-c ${cls}" data-id="${p.id}" data-created="${created}" data-prev="${prevMs}">
+      <div class="rb mb10">
+        <div style="min-width:0;flex:1">
+          <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:4px">
+            <div class="bold fs15">${p.num}</div>
+            <div class="bold fs14 t2">·</div>
+            <div class="bold fs14">${p.mesa_label||p.tipo}</div>
+            <span class="bdg ${p.consumo==='viagem'?'bpu':'bg'}" style="font-size:10px">${p.consumo==='viagem'?'🛍 Viagem':'🍽 Local'}</span>
+            ${late?`<span class="kds-late-badge" style="display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:800;color:var(--rd);background:var(--rdbg);padding:2px 8px;border-radius:99px;border:1px solid var(--rdbr)">🔴 +${Math.ceil((Date.now()-prevMs)/60000)}min</span>`:'<span class="kds-late-badge" style="display:none"></span>'}
+          </div>
+          <div class="fs12 t2">${p.cliente_nome?'👤 '+p.cliente_nome:''}</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div class="kds-live-timer" style="font-size:26px;font-weight:900;font-family:monospace;color:${statusCor};line-height:1">${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}</div>
+          <div class="fs11 t3 mt2">${late?'atrasado':minsRest!==null?'~'+minsRest+'min restante':'em preparo'}</div>
         </div>
       </div>
-      ${itensDest.map(it=>`<div style="display:flex;align-items:flex-start;gap:8px;padding:7px 0;border-bottom:1px solid var(--br)">
-        <div style="flex:1">
-          <div class="bold fs13">${it.qty}x ${it.nome}</div>
-          ${it.obs?`<div class="fs12 t3 mt4">> ${it.obs}</div>`:''}
-        </div>
-        ${it.concluido?`<span class="bdg bg-g">✅</span>`:''}
-      </div>`).join('')}
-      <div style="display:flex;gap:8px;margin-top:10px">
-        <button class="btn bg bw bsm" onclick="concluirKDS('${p.id}','${dest}')">✅ Tudo pronto</button>
+      <div style="margin-bottom:10px">
+        ${itensDest.map((it,ii)=>{
+          const itIdx=p.itens.indexOf(it);
+          return`<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--br);${it.concluido?'opacity:.45':''}">
+            <div style="flex:1;min-width:0">
+              <div class="bold fs13">${it.qty}× ${it.nome}</div>
+              ${it.obs?`<div class="fs12 t3 mt2">› ${it.obs}</div>`:''}
+              ${it.obs_livre?`<div class="fs12 t3 mt1 italic">📝 ${it.obs_livre}</div>`:''}
+            </div>
+            ${it.concluido
+              ?`<span class="bdg bg" style="font-size:11px">✅ Pronto</span>`
+              :`<button class="btn bg bxs" onclick="concluirItem('${p.id}',${itIdx})" style="flex-shrink:0">✓</button>`}
+          </div>`;
+        }).join('')}
+      </div>
+      <div style="display:flex;gap:8px">
+        ${todoConcluido
+          ?`<div class="btn bg bw bsm" style="flex:1;opacity:.5;pointer-events:none">✅ Tudo pronto</div>`
+          :`<button class="btn bg bw bsm" style="flex:1" onclick="concluirKDS('${p.id}','${dest}')">✅ Tudo pronto</button>`}
         <button class="btn bs bxs" onclick="showCupomPrevia('${p.id}','comanda')">🖨️</button>
       </div>
     </div>`;
   }).join('')}`;
+  _kdsStartTick();
+}
+function concluirItem(pedId,itIdx){
+  const p=ST.pedidos.find(x=>x.id===pedId);if(!p)return;
+  p.itens[itIdx].concluido=true;
+  save('pedidos');renderProducao();playSound('sucesso');
 }
 function concluirKDS(id,dest){
   const p=ST.pedidos.find(x=>x.id===id);if(!p)return;
   p.itens.filter(i=>i.dest===dest).forEach(i=>i.concluido=true);
   const allDone=p.itens.every(i=>i.concluido);
-  if(allDone)p.status='preparo';
-  save('pedidos');renderProducao();toast('✅ Marcado como pronto!','g');
+  if(allDone){p.status='preparo';}
+  save('pedidos');
+  playSound('pronto');
+  falarPedidoPronto(p);
+  renderProducao();
+  toast('✅ Pedido '+p.num+' marcado como pronto!','g',3500);
+  updateBadges();
 }
 
 // ═══════════════════════════════════════════
@@ -2735,6 +2788,31 @@ function renderConfig(){
       Ao cobrar, o app InfinitePay abre automaticamente com o valor preenchido.
     </div>`:''}
   </div>
+  <div class="sec-title">🔊 Sons & Voz</div>
+  <div class="card mb10">
+    <div class="rb" style="padding:9px 0;border-bottom:1px solid var(--br)">
+      <div>
+        <div class="fs13 bold">Sons de interface</div>
+        <div class="fs12 t2">Cliques, alertas e notificações sonoras</div>
+      </div>
+      <button class="sw ${cfg.sons!==false?'on':''}" id="sw-sons" onclick="toggleSw(this);ST.cfg.sons=swVal('sw-sons');save('cfg')"></button>
+    </div>
+    <div class="rb" style="padding:9px 0;border-bottom:1px solid var(--br)">
+      <div>
+        <div class="fs13 bold">Voz de chamada</div>
+        <div class="fs12 t2">Anuncia pelo alto-falante quando pedido fica pronto</div>
+      </div>
+      <button class="sw ${cfg.voz!==false?'on':''}" id="sw-voz" onclick="toggleSw(this);ST.cfg.voz=swVal('sw-voz');save('cfg')"></button>
+    </div>
+    <div class="fg" style="padding-top:10px">
+      <label class="fl">Testar voz — nome do cliente</label>
+      <div style="display:flex;gap:8px">
+        <input class="inp" id="cfg-voz-nome" placeholder="Ex: João" style="flex:1">
+        <button class="btn bp bsm" onclick="testarVoz()">▶ Testar</button>
+      </div>
+      <div class="fs11 t3 mt6">Fala: "[Nome]! Seu pedido no ${esc(cfg.nome||'PedePronto')} está pronto. Pode retirar no balcão."</div>
+    </div>
+  </div>
   <button class="btn bp bw mb10" onclick="requireAdmin('Salvar Configurações',()=>{save('cfg');toast('✅ Configurações salvas!','g');renderConfig()})">💾 Salvar configurações</button>
   <button class="btn br_ bw" onclick="confirm2('⚠️','Resetar sistema?','TODOS os dados serão apagados permanentemente!','Resetar','br_',()=>{DB.keys().forEach(k=>DB.del(k));location.reload()})">⚠️ Resetar sistema</button>`;
   document.getElementById('sb-est').textContent=cfg.nome||'PedePronto PDV';
@@ -2788,6 +2866,99 @@ function checkAdminPin(){
     if(el){el.style.animation='shake .4s';setTimeout(()=>{if(el)el.style.animation=''},400);}
   }
 }
+
+// ═══════════════════════════════════════════
+//  ÁUDIO — Web Audio API
+// ═══════════════════════════════════════════
+let _AC=null;
+function _getAC(){
+  if(!_AC){try{_AC=new(window.AudioContext||window.webkitAudioContext)();}catch(e){return null;}}
+  if(_AC.state==='suspended')_AC.resume();
+  return _AC;
+}
+function playSound(type){
+  if(ST.cfg.sons===false)return;
+  try{
+    const ac=_getAC();if(!ac)return;
+    const now=ac.currentTime;
+    const mk=(freq,start,dur,wave='sine',vol=0.15)=>{
+      const o=ac.createOscillator(),g=ac.createGain();
+      o.connect(g);g.connect(ac.destination);
+      o.type=wave;o.frequency.setValueAtTime(freq,now+start);
+      g.gain.setValueAtTime(vol,now+start);
+      g.gain.exponentialRampToValueAtTime(0.001,now+start+dur);
+      o.start(now+start);o.stop(now+start+dur+0.01);
+    };
+    if(type==='click')  {mk(900,0,.065,'sine',.055);}
+    else if(type==='novo')   {mk(698,0,.28,'sine',.22);mk(880,.17,.32,'sine',.22);}
+    else if(type==='pronto') {mk(523,0,.38,'sine',.13);mk(659,.13,.38,'sine',.13);mk(784,.26,.45,'sine',.13);}
+    else if(type==='atrasado'){[0,.22,.44].forEach(t=>mk(380,t,.14,'square',.13));}
+    else if(type==='erro')   {mk(200,0,.32,'sawtooth',.09);}
+    else if(type==='sucesso'){mk(880,0,.14,'sine',.10);mk(1108,.14,.18,'sine',.10);}
+  }catch(e){}
+}
+// Sons automáticos em cliques de botão (event delegation)
+document.addEventListener('click',e=>{
+  if(ST.cfg.sons!==false&&e.target.closest('button,.login-card,.mesa-c,.obs-chip,.tabitem,.sb-item,.bn-item,.pkey'))
+    playSound('click');
+},true);
+
+// ═══════════════════════════════════════════
+//  VOZ — SpeechSynthesis
+// ═══════════════════════════════════════════
+let _vozes=[];
+function _initVozes(){
+  if(!window.speechSynthesis)return;
+  const load=()=>{_vozes=speechSynthesis.getVoices();};
+  load();speechSynthesis.onvoiceschanged=load;
+}
+function falarPedidoPronto(ped){
+  if(ST.cfg.voz===false||!window.speechSynthesis)return;
+  const estab=(ST.cfg.nome||'PedePronto').replace(/[^\w\s]/g,'');
+  const cliente=ped.cliente_nome?ped.cliente_nome.split(' ')[0]:'';
+  const num=ped.num||'';
+  const texto=cliente
+    ?`${cliente}! Seu pedido no ${estab} está pronto. Pode retirar no balcão.`
+    :`Pedido ${num} pronto, no ${estab}. Pode retirar no balcão.`;
+  const u=new SpeechSynthesisUtterance(texto);
+  u.lang='pt-BR';u.rate=0.87;u.pitch=1.05;u.volume=1;
+  const voz=_vozes.find(v=>v.lang==='pt-BR')||_vozes.find(v=>v.lang.startsWith('pt'));
+  if(voz)u.voice=voz;
+  speechSynthesis.cancel();
+  speechSynthesis.speak(u);
+}
+function testarVoz(){
+  const ped={num:'001',cliente_nome:document.getElementById('cfg-voz-nome')?.value||''};
+  falarPedidoPronto(ped);
+}
+
+// ═══════════════════════════════════════════
+//  KDS — TICK AO VIVO
+// ═══════════════════════════════════════════
+let _kdsTick=null,_kdsAutoRef=null,_kdsSeenIds=new Set(),_kdsLateAlerted=new Set();
+function _kdsStartTick(){
+  if(_kdsTick)return;
+  _kdsTick=setInterval(()=>{
+    document.querySelectorAll('.kds-c[data-created]').forEach(card=>{
+      const created=parseInt(card.dataset.created);
+      const prev=parseInt(card.dataset.prev)||0;
+      const elSec=Math.floor((Date.now()-created)/1000);
+      const mins=Math.floor(elSec/60);const secs=elSec%60;
+      const t=card.querySelector('.kds-live-timer');
+      if(t)t.textContent=`${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
+      if(prev&&Date.now()>prev){
+        const lateMin=Math.ceil((Date.now()-prev)/60000);
+        const lb=card.querySelector('.kds-late-badge');
+        if(lb){lb.textContent=`🔴 +${lateMin}min`;lb.style.display='inline-flex';}
+        if(!card.classList.contains('atrasado')){card.classList.add('atrasado');card.classList.remove('novo','preparo');}
+        const oid=card.dataset.id;
+        if(oid&&!_kdsLateAlerted.has(oid)){_kdsLateAlerted.add(oid);playSound('atrasado');}
+      }
+    });
+  },1000);
+  _kdsAutoRef=setInterval(()=>{if(ST.curNav==='producao')renderProducao();},20000);
+}
+function _kdsStopTick(){clearInterval(_kdsTick);_kdsTick=null;clearInterval(_kdsAutoRef);_kdsAutoRef=null;}
 
 // ── LOGIN ──────────────────────────────────────────────────────────────
 let _loginTarget=null, _loginBuf='';
@@ -3511,6 +3682,11 @@ function showCloudStatus(){
       }
     });
   });
+  _initVozes();
+  // Acordar AudioContext no primeiro toque do usuário (política de autoplay)
+  const _wakeAC=()=>{_getAC();document.removeEventListener('touchstart',_wakeAC);document.removeEventListener('click',_wakeAC);};
+  document.addEventListener('touchstart',_wakeAC,{once:true});
+  document.addEventListener('click',_wakeAC,{once:true});
   console.log('%cPedePronto v2.0','font-size:16px;font-weight:bold;color:#FF5C1A');
 })();
 
