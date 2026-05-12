@@ -211,6 +211,9 @@ select.inp{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns=
 .pay-m{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:10px 6px;border-radius:11px;border:2px solid var(--br2);background:var(--s2);cursor:pointer;transition:all .18s;font-size:11px;font-weight:700;color:var(--t2);font-family:inherit}
 .pay-m.on{border-color:var(--ac);background:var(--acbg);color:var(--ac)}
 .pay-m:active{transform:scale(.95)}
+.maq-spinner{width:44px;height:44px;border:4px solid var(--br2);border-top-color:var(--ac);border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 14px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.pix-qr-wrap{background:#fff;border-radius:14px;padding:14px;display:inline-flex;align-items:center;justify-content:center;margin-bottom:12px}
 
 /* ── PIN ── */
 .pin-display{display:flex;gap:14px;justify-content:center;margin-bottom:20px}
@@ -265,6 +268,7 @@ select.inp{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns=
 .pfill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--ac),#FF7A40);transition:width .5s}
 </style>
 <!-- 1. Firebase SDK Compat v10.11.1 -->
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 <script>window.IS_HOSTED=window.location.protocol==='https:';window.FIREBASE_READY=false;</script>
 <script src="https://www.gstatic.com/firebasejs/10.11.1/firebase-app-compat.js" onerror="window.IS_HOSTED=false"></script>
 <script src="https://www.gstatic.com/firebasejs/10.11.1/firebase-auth-compat.js" onerror="window.IS_HOSTED=false"></script>
@@ -401,6 +405,36 @@ select.inp{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns=
 <!-- SHEET: PAGAMENTO -->
 <div class="ov" id="ov-pag" onclick="if(event.target===this)closeOv('ov-pag')">
   <div class="sheet" id="sh-pag" style="max-height:95vh"></div>
+</div>
+
+<!-- MODAL: PIX QR CODE -->
+<div class="mc" id="mc-pix-qr">
+  <div class="mb" style="max-width:340px;text-align:center">
+    <div style="font-size:28px;margin-bottom:4px">🔑</div>
+    <div style="font-size:16px;font-weight:800;margin-bottom:2px">PIX</div>
+    <div class="fs13 bold am mb2" id="pix-qr-valor"></div>
+    <div class="fs12 t2 mb14">Aponte a câmera do app do banco para pagar</div>
+    <div class="pix-qr-wrap"><canvas id="pix-qr-canvas" width="200" height="200"></canvas></div>
+    <div class="fs11 t2 mb2">Chave PIX</div>
+    <div class="fs12 bold mb14" id="pix-qr-chave" style="word-break:break-all;padding:0 8px"></div>
+    <button class="btn bp bw mb8" onclick="pixConfirmarPag()">✅ Confirmar recebimento do PIX</button>
+    <button class="btn bs bw" onclick="closeMc('mc-pix-qr')">Cancelar</button>
+  </div>
+</div>
+
+<!-- MODAL: MAQUININHA STATUS -->
+<div class="mc" id="mc-maq-status">
+  <div class="mb" style="max-width:360px;text-align:center">
+    <div id="maq-status-ico" style="font-size:44px;margin-bottom:8px">💳</div>
+    <div style="font-size:16px;font-weight:800;margin-bottom:6px" id="maq-status-ttl">Aguardando pagamento...</div>
+    <div class="fs12 t2 mb16" id="maq-status-sub">O valor foi enviado para a maquininha</div>
+    <div id="maq-spinner" class="maq-spinner"></div>
+    <div id="maq-status-btns" style="display:none">
+      <button class="btn bp bw mb8" onclick="maqConfirmarManual()">✅ Confirmar manualmente</button>
+      <button class="btn br_ bw" onclick="maqCancelar()">❌ Cancelar cobrança</button>
+    </div>
+    <button id="maq-btn-fechar" class="btn bs bw mt8" style="display:none" onclick="closeMc('mc-maq-status')">Fechar</button>
+  </div>
 </div>
 
 <!-- MODAL: PIN -->
@@ -1014,7 +1048,7 @@ const BT={
       t+=dst()+LF;
       t+=row2('** TOTAL PAGO **','R$'+ped.total.toFixed(2))+LF;
       t+=dst()+LF;
-      const fm={dinheiro:'Dinheiro',credito:'Cartao Credito',debito:'Cartao Debito',pix:'PIX',voucher:'Voucher'};
+      const fm={dinheiro:'Dinheiro',credito:'Cartao Credito',debito:'Cartao Debito',pix:'PIX',voucher:'Voucher',maquininha:'Maquininha'};
       t+=row2('Pagamento:',fm[ped.forma_pag]||ped.forma_pag||'---')+LF;
       if(ped.troco>0)t+=row2('Troco:','R$'+ped.troco.toFixed(2))+LF;
       if(ped.voucher_motivo)t+=row2('Motivo voucher:',N(ped.voucher_motivo).substring(0,W-16))+LF;
@@ -1715,7 +1749,7 @@ function showCupomPrevia(ped_id, tipo='cupom'){
       <hr class="td">
       ${ped.desconto>0?`<div class="tr"><span>Desconto:</span><span class="td_" style="color:#e74c3c">-R$${ped.desconto.toFixed(2)}</span></div>`:''}
       ${mostraTotal?`<div class="tr ttotline tb"><span>TOTAL PAGO</span><span>R$${ped.total.toFixed(2)}</span></div>`:''}
-      ${tipo==='cupom'&&ped.forma_pag?`<div class="tr"><span>Forma:</span><span>${({'dinheiro':'Dinheiro','credito':'Crédito','debito':'Débito','pix':'PIX','voucher':'Voucher'})[ped.forma_pag]||ped.forma_pag}</span></div>`:''}
+      ${tipo==='cupom'&&ped.forma_pag?`<div class="tr"><span>Forma:</span><span>${({'dinheiro':'Dinheiro','credito':'Crédito','debito':'Débito','pix':'PIX','voucher':'Voucher','maquininha':'Maquininha'})[ped.forma_pag]||ped.forma_pag}</span></div>`:''}
       ${tipo==='cupom'&&ped.troco>0?`<div class="tr"><span>Troco:</span><span>R$${ped.troco.toFixed(2)}</span></div>`:''}
       ${prev?`<div class="tprev"><span style="font-size:9px;color:#777">⏱ Previsão:</span> <span class="tb">${fmtH(prev)}</span></div>`:''}
       <div class="tc" style="font-size:10px;color:#777;margin-top:6px">${cfg.footer||'Obrigado!'}</div>
@@ -1761,6 +1795,9 @@ function renderPagamento(ped_id){
   const ped=ST.pedidos.find(p=>p.id===ped_id);if(!ped){nav('dash');return}
   ST.pagCtx={pedido_id:ped_id,forma:'dinheiro',troco:0};
   const formas=[{id:'dinheiro',ico:'💵',lbl:'Dinheiro'},{id:'credito',ico:'💳',lbl:'Crédito'},{id:'debito',ico:'💳',lbl:'Débito'},{id:'pix',ico:'🔑',lbl:'PIX'},{id:'voucher',ico:'🎟️',lbl:'Voucher'}];
+  const maqCfg=ST.cfg.maquininha||{};
+  const maqLbls={'mp':'Mercado Pago','pagseguro':'PagSeguro','infinitepay':'InfinitePay','manual':'Maquininha'};
+  const maqLabel=maqLbls[maqCfg.provider||'manual']||'Maquininha';
   document.getElementById('pg-pagamento').innerHTML=`
   <div class="rb mb12">
     <div><div class="bold fs14">Pagamento</div><div class="fs12 t2">${ped.num} · ${ped.cliente_nome||'—'}</div></div>
@@ -1772,19 +1809,28 @@ function renderPagamento(ped_id){
     ${ped.desconto?`<div class="fs12 rd mt4">Desconto: -${fmtR(ped.desconto)}</div>`:''}
   </div>
   <div class="sec-title">Forma de pagamento</div>
-  <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin-bottom:14px">
+  <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin-bottom:10px">
     ${formas.map(f=>`<button class="pay-m ${f.id==='dinheiro'?'on':''}" id="pay-${f.id}" onclick="selForma('${f.id}','${ped.id}')">
       <span style="font-size:20px">${f.ico}</span><span>${f.lbl}</span>
     </button>`).join('')}
+  </div>
+  <div id="pix-qr-btn-row" style="display:none;margin-bottom:10px">
+    <button class="btn bb bw" onclick="mostrarPixQR('${ped.id}')">🔑 Exibir QR Code PIX · ${fmtR(ped.total)}</button>
   </div>
   <div id="pay-troco-row" class="card mb12">
     <label class="fl">Valor recebido (para calcular troco)</label>
     <input class="inp" id="inp-recebido" type="number" step="0.01" value="${ped.total.toFixed(2)}" oninput="calcTroco(${ped.total})">
     <div class="rb mt8"><span class="fs12 t2">Troco a devolver:</span><span class="bold am mono fs14" id="troco-val">${fmtR(0)}</span></div>
   </div>
-  <button class="btn bp bw" style="padding:15px;font-size:15px" onclick="confirmarPagamento('${ped.id}')">
+  <button class="btn bp bw mb10" style="padding:15px;font-size:15px" onclick="confirmarPagamento('${ped.id}')">
     ✅ Confirmar Pagamento · ${fmtR(ped.total)}
-  </button>`;
+  </button>
+  <div class="divider mb10"></div>
+  <div class="sec-title">Maquininha integrada</div>
+  <button class="btn bcy bw" style="padding:13px;font-size:14px" onclick="maqCobrar('${ped.id}')">
+    💳 Cobrar na ${maqLabel} · ${fmtR(ped.total)}
+  </button>
+  ${!maqCfg.provider||maqCfg.provider==='manual'?`<div class="fs11 t2 mt6 mb4" style="text-align:center">Configure a maquininha em ⚙️ Configurações</div>`:''}`;
 }
 function selForma(f,ped_id){
   ST.pagCtx.forma=f;
@@ -1792,6 +1838,8 @@ function selForma(f,ped_id){
   const btn=document.getElementById('pay-'+f);if(btn)btn.classList.add('on');
   const troco=document.getElementById('pay-troco-row');
   if(troco)troco.style.display=f==='dinheiro'?'block':'none';
+  const pixRow=document.getElementById('pix-qr-btn-row');
+  if(pixRow)pixRow.style.display=f==='pix'?'block':'none';
 }
 function calcTroco(total){
   const rec=parseFloat(document.getElementById('inp-recebido')?.value)||0;
@@ -1800,22 +1848,22 @@ function calcTroco(total){
   const el=document.getElementById('troco-val');if(el)el.textContent=fmtR(t);
 }
 function confirmarPagamento(ped_id){
-  // Voucher requer autorização e motivo
   if(ST.pagCtx.forma==='voucher'){abrirVoucher(ped_id);return}
+  if(ST.pagCtx.forma==='pix'&&ST.cfg.pix_chave){mostrarPixQR(ped_id);return}
+  requireAdmin('Confirmar Pagamento',()=>_finalizarPagamento(ped_id,ST.pagCtx.forma));
+}
+function _finalizarPagamento(ped_id,forma){
   const ped=ST.pedidos.find(p=>p.id===ped_id);if(!ped)return;
-  requireAdmin('Confirmar Pagamento',()=>{
-  ped.status='pago';ped.pago_em=now();ped.forma_pag=ST.pagCtx.forma;ped.troco=ST.pagCtx.troco||0;
-  ST.caixa.movs.push({id:uid(),tipo:'entrada',valor:ped.total,desc:'Pedido '+ped.num+' · '+ped.forma_pag,created:now()});
+  ped.status='pago';ped.pago_em=now();ped.forma_pag=forma;ped.troco=ST.pagCtx?.troco||0;
+  ST.caixa.movs.push({id:uid(),tipo:'entrada',valor:ped.total,desc:'Pedido '+ped.num+' · '+forma,created:now()});
   save('pedidos');save('caixa');
   toast('✅ Pagamento '+fmtR(ped.total)+' confirmado!','g',4000);
-  // IMPRIME CUPOM AUTOMATICAMENTE
   if(BT.char&&ST.cfg.autocupom!==false){
     setTimeout(()=>BT.printCupom(ped),400);
   } else {
     setTimeout(()=>showCupomPrevia(ped_id,'cupom'),300);
   }
   nav(ped.tipo==='mesa'?'mesas':ped.tipo==='balcao'?'balcao':'delivery');
-  }); // fim requireAdmin
 }
 
 // ═══════════════════════════════════════════
@@ -2215,7 +2263,7 @@ function renderRelatorio(){
   const dayData=days.map(d=>({lbl:['D','S','T','Q','Q','S','S'][d.getDay()],val:ST.pedidos.filter(p=>p.status==='pago'&&new Date(p.pago_em||p.created).toDateString()===d.toDateString()).reduce((s,p)=>s+(p.total||0),0)}));
   const maxV=Math.max(...dayData.map(d=>d.val),1);
   // por forma de pagamento
-  const formaData={dinheiro:0,credito:0,debito:0,pix:0,voucher:0};
+  const formaData={dinheiro:0,credito:0,debito:0,pix:0,voucher:0,maquininha:0};
   peds.forEach(p=>{if(p.forma_pag&&formaData[p.forma_pag]!==undefined)formaData[p.forma_pag]+=p.total||0});
   document.getElementById('pg-relatorio').innerHTML=`
   <div class="tabbar mb12">
@@ -2235,7 +2283,7 @@ function renderRelatorio(){
   <div class="sec-title">Por forma de pagamento</div>
   <div class="card mb10">
     ${Object.entries(formaData).filter(([,v])=>v>0).map(([f,v])=>`<div class="rb" style="padding:7px 0;border-bottom:1px solid var(--br)">
-      <div class="fs13">${ ({'dinheiro':'💵 Dinheiro','credito':'💳 Crédito','debito':'💳 Débito','pix':'🔑 PIX','voucher':'🎟️ Voucher'})[f]||f }</div>
+      <div class="fs13">${ ({'dinheiro':'💵 Dinheiro','credito':'💳 Crédito','debito':'💳 Débito','pix':'🔑 PIX','voucher':'🎟️ Voucher','maquininha':'💳 Maquininha'})[f]||f }</div>
       <div class="bold mono am">${fmtR(v)}</div>
     </div>`).join('')||'<div class="fs12 t2 ta-center">Sem dados</div>'}
   </div>
@@ -2350,6 +2398,52 @@ function renderConfig(){
       <div><div class="fs13 bold">Importar backup</div></div>
       <button class="btn bb bsm" onclick="importBackup()">📥 Importar</button>
     </div>
+  </div>
+  <div class="sec-title">PIX</div>
+  <div class="card mb10">
+    <div class="fg"><label class="fl">Chave PIX (CPF, CNPJ, e-mail, telefone ou aleatória)</label>
+    <input class="inp" id="cfg-pix-chave" value="${esc(cfg.pix_chave||'')}" oninput="ST.cfg.pix_chave=this.value" placeholder="Ex: 11999999999 ou email@exemplo.com"></div>
+    <div class="fg"><label class="fl">Nome do recebedor (aparece no QR)</label>
+    <input class="inp" id="cfg-pix-nome" value="${esc(cfg.pix_nome||cfg.nome||'')}" oninput="ST.cfg.pix_nome=this.value"></div>
+    <div class="fg"><label class="fl">Cidade (aparece no QR)</label>
+    <input class="inp" id="cfg-pix-cidade" value="${esc(cfg.pix_cidade||'')}" oninput="ST.cfg.pix_cidade=this.value" placeholder="Ex: SAO PAULO"></div>
+    ${cfg.pix_chave?`<button class="btn bb bw mt4" onclick="mostrarPixQRTeste()">🔍 Testar QR Code PIX</button>`:''}
+  </div>
+  <div class="sec-title">💳 Maquininha integrada</div>
+  <div class="card mb10">
+    <div class="fg">
+      <label class="fl">Provedor</label>
+      <select class="inp" id="cfg-maq-prov" onchange="ST.cfg.maquininha=ST.cfg.maquininha||{};ST.cfg.maquininha.provider=this.value;save('cfg');renderConfig()">
+        <option value="manual" ${(!cfg.maquininha?.provider||cfg.maquininha?.provider==='manual')?'selected':''}>🧾 Maquininha manual (Stone, Cielo, Rede...)</option>
+        <option value="mp" ${cfg.maquininha?.provider==='mp'?'selected':''}>🟡 Mercado Pago Point</option>
+        <option value="pagseguro" ${cfg.maquininha?.provider==='pagseguro'?'selected':''}>🔵 PagSeguro Moderninha (Android)</option>
+        <option value="infinitepay" ${cfg.maquininha?.provider==='infinitepay'?'selected':''}>🟢 InfinitePay (Android)</option>
+      </select>
+    </div>
+    ${(!cfg.maquininha?.provider||cfg.maquininha?.provider==='manual')?`
+    <div class="fs12 t2" style="line-height:1.7;padding:8px;background:var(--s2);border-radius:8px">
+      <strong>Como funciona:</strong> O valor aparece na tela de pagamento. O operador cobra na maquininha externa e confirma manualmente no sistema.<br>
+      Compatível com <strong>qualquer maquininha</strong>: Stone, Cielo, Rede, SumUp, GetNet etc.
+    </div>`:''}
+    ${cfg.maquininha?.provider==='mp'?`
+    <div class="fg"><label class="fl">Access Token do Mercado Pago</label>
+    <input class="inp" type="password" id="cfg-mp-token" value="${esc(cfg.maquininha?.mp_token||'')}" oninput="ST.cfg.maquininha=ST.cfg.maquininha||{};ST.cfg.maquininha.mp_token=this.value" placeholder="APP_USR-..."></div>
+    <div class="fg"><label class="fl">Device ID (ID da maquininha Point)</label>
+    <input class="inp" id="cfg-mp-device" value="${esc(cfg.maquininha?.mp_device_id||'')}" oninput="ST.cfg.maquininha=ST.cfg.maquininha||{};ST.cfg.maquininha.mp_device_id=this.value" placeholder="PAX_A910__SMARTPOS..."></div>
+    <div class="fs11 t2" style="line-height:1.7;padding:8px;background:var(--s2);border-radius:8px;margin-top:4px">
+      📌 Obtenha o Access Token em <strong>mercadopago.com.br/developers</strong> → Suas integrações → Credenciais de produção.<br>
+      📌 Device ID: na app <strong>Mercado Pago Point</strong> → ⚙️ → Integração → ID do dispositivo.
+    </div>`:''}
+    ${cfg.maquininha?.provider==='pagseguro'?`
+    <div class="fs12 t2" style="line-height:1.7;padding:8px;background:var(--s2);border-radius:8px">
+      📱 <strong>Só funciona em Android</strong> com o app PagSeguro instalado.<br>
+      Ao cobrar, o app PagSeguro abre automaticamente com o valor preenchido.
+    </div>`:''}
+    ${cfg.maquininha?.provider==='infinitepay'?`
+    <div class="fs12 t2" style="line-height:1.7;padding:8px;background:var(--s2);border-radius:8px">
+      📱 <strong>Só funciona em Android</strong> com o app InfinitePay instalado.<br>
+      Ao cobrar, o app InfinitePay abre automaticamente com o valor preenchido.
+    </div>`:''}
   </div>
   <button class="btn bp bw mb10" onclick="requireAdmin('Salvar Configurações',()=>{save('cfg');toast('✅ Configurações salvas!','g');renderConfig()})">💾 Salvar configurações</button>
   <button class="btn br_ bw" onclick="confirm2('⚠️','Resetar sistema?','TODOS os dados serão apagados permanentemente!','Resetar','br_',()=>{DB.keys().forEach(k=>DB.del(k));location.reload()})">⚠️ Resetar sistema</button>`;
@@ -2902,6 +2996,206 @@ function showCloudStatus(){
   });
   console.log('%cPedePronto v2.0','font-size:16px;font-weight:bold;color:#FF5C1A');
 })();
+
+// ══════════════════════════════════════════════════════
+//  PIX QR CODE — Formato EMV BR Code (Banco Central)
+// ══════════════════════════════════════════════════════
+function _crc16pix(str){
+  let crc=0xFFFF;
+  for(let i=0;i<str.length;i++){
+    crc^=str.charCodeAt(i)<<8;
+    for(let j=0;j<8;j++) crc=(crc&0x8000)?(crc<<1)^0x1021:crc<<1;
+  }
+  return(crc&0xFFFF).toString(16).toUpperCase().padStart(4,'0');
+}
+function _pixEmv(chave, nome, cidade, valor){
+  const f=(id,v)=>id+String(v.length).padStart(2,'0')+v;
+  const nomeClean=nome.replace(/[^A-Za-z0-9 ]/g,' ').trim().substring(0,25)||'Estabelecimento';
+  const cidadeClean=cidade.replace(/[^A-Za-z0-9 ]/g,' ').trim().substring(0,15)||'Brasil';
+  const txid=('PEDEPRONTO'+Date.now().toString(36)).toUpperCase().substring(0,25);
+  const mai=f('00','br.gov.bcb.pix')+f('01',chave.trim());
+  const adl=f('05',txid);
+  const body=
+    f('00','01')+
+    f('26',mai)+
+    f('52','0000')+
+    f('53','986')+
+    (valor>0?f('54',valor.toFixed(2)):'')+
+    f('58','BR')+
+    f('59',nomeClean)+
+    f('60',cidadeClean)+
+    f('62',adl)+
+    '6304';
+  return body+_crc16pix(body);
+}
+let _pixPedId=null;
+function mostrarPixQR(ped_id){
+  const ped=ST.pedidos.find(p=>p.id===ped_id);if(!ped)return;
+  const cfg=ST.cfg;
+  const chave=cfg.pix_chave||'';
+  if(!chave){toast('Configure a chave PIX em ⚙️ Configurações','r',4000);return;}
+  _pixPedId=ped_id;
+  const payload=_pixEmv(chave, cfg.pix_nome||cfg.nome||'Estabelecimento', cfg.pix_cidade||'Brasil', ped.total);
+  const elValor=document.getElementById('pix-qr-valor');if(elValor)elValor.textContent=fmtR(ped.total);
+  const elChave=document.getElementById('pix-qr-chave');if(elChave)elChave.textContent=chave;
+  const canvas=document.getElementById('pix-qr-canvas');
+  if(canvas){
+    if(typeof QRCode!=='undefined'){
+      QRCode.toCanvas(canvas,payload,{width:200,margin:1,color:{dark:'#000000',light:'#ffffff'}},err=>{if(err)console.error('QR:',err)});
+    } else {
+      const ctx=canvas.getContext('2d');ctx.fillStyle='#888';ctx.font='13px sans-serif';
+      ctx.fillText('QR indisponível',10,100);ctx.fillText('(sem internet)',10,120);
+    }
+  }
+  openMc('mc-pix-qr');
+}
+function mostrarPixQRTeste(){
+  // Cria pedido fictício para teste
+  const pedFake={id:'teste',total:1.00,num:'#TESTE'};
+  const orig=ST.pedidos;
+  ST.pedidos=[pedFake];
+  mostrarPixQR('teste');
+  ST.pedidos=orig;
+  _pixPedId=null; // cancelar confirmação automática
+}
+function pixConfirmarPag(){
+  const ped_id=_pixPedId;
+  closeMc('mc-pix-qr');
+  if(!ped_id)return;
+  requireAdmin('Confirmar PIX Recebido',()=>_finalizarPagamento(ped_id,'pix'));
+}
+
+// ══════════════════════════════════════════════════════
+//  MAQUININHA — Mercado Pago Point, PagSeguro, InfinitePay, Manual
+// ══════════════════════════════════════════════════════
+let _maqPedId=null,_maqIntentId=null,_maqPollTimer=null,_maqPollCount=0;
+
+const MAQ={
+  // ── Mercado Pago Point API ──────────────────────────
+  async mpCobrar(ped){
+    const cfg=ST.cfg.maquininha||{};
+    if(!cfg.mp_token||!cfg.mp_device_id){
+      toast('Configure o Access Token e Device ID do Mercado Pago em ⚙️ Configurações','r',5000);
+      return null;
+    }
+    const amount=Math.round(ped.total*100);
+    try{
+      const r=await fetch(
+        `https://api.mercadopago.com/point/integration-api/devices/${cfg.mp_device_id}/payment-intents`,
+        {method:'POST',
+         headers:{'Authorization':'Bearer '+cfg.mp_token,'Content-Type':'application/json',
+                  'X-Idempotency-Key':ped.id+'-'+Date.now()},
+         body:JSON.stringify({amount,description:'PedePronto '+ped.num,
+                              payment_method:{installments:1,type:'credit_card'}})}
+      );
+      const d=await r.json();
+      if(!r.ok) throw new Error(d.message||d.error||('HTTP '+r.status));
+      return d.id;
+    }catch(e){
+      toast('Mercado Pago: '+e.message,'r',5000);
+      return null;
+    }
+  },
+  async mpPoll(intentId){
+    const cfg=ST.cfg.maquininha||{};
+    try{
+      const r=await fetch(
+        `https://api.mercadopago.com/point/integration-api/payment-intents/${intentId}`,
+        {headers:{'Authorization':'Bearer '+cfg.mp_token}}
+      );
+      const d=await r.json();
+      return d.state||null;
+    }catch(e){return null;}
+  },
+  // ── PagSeguro Deep Link (Android) ──────────────────
+  pagseguro(ped){
+    const v=ped.total.toFixed(2);
+    // Tenta abrir pelo scheme direto; fallback pelo Intent Android
+    const link=`pagseguro://pagamentos/cobrar?valor=${v}&tipo=2&referencia=${encodeURIComponent(ped.num)}`;
+    window.location.href=link;
+    setTimeout(()=>{
+      window.location.href=`intent://pagamentos/cobrar?valor=${v}&tipo=2&referencia=${encodeURIComponent(ped.num)}#Intent;scheme=pagseguro;package=br.com.uol.ps.myaccount;end;`;
+    },800);
+  },
+  // ── InfinitePay Deep Link (Android) ────────────────
+  infinitepay(ped){
+    const v=ped.total.toFixed(2);
+    window.location.href=`infinitepay://payment?amount=${v}&reference=${encodeURIComponent(ped.num)}`;
+  },
+  // ── Manual (Stone, Cielo, Rede, SumUp etc.) ────────
+  manual(ped){
+    maqSetStatus('🧾','Cobrar na maquininha',
+      `Valor: ${fmtR(ped.total)} — Cobre externamente e confirme abaixo`,true,false);
+  }
+};
+
+function maqCobrar(ped_id){
+  const ped=ST.pedidos.find(p=>p.id===ped_id);if(!ped)return;
+  _maqPedId=ped_id;_maqIntentId=null;_maqPollCount=0;
+  if(_maqPollTimer){clearTimeout(_maqPollTimer);_maqPollTimer=null;}
+  const provider=(ST.cfg.maquininha||{}).provider||'manual';
+  maqSetStatus('💳','Iniciando cobrança...','Aguarde...',false,false);
+  openMc('mc-maq-status');
+  if(provider==='mp'){
+    MAQ.mpCobrar(ped).then(intentId=>{
+      if(!intentId){closeMc('mc-maq-status');return;}
+      _maqIntentId=intentId;
+      maqSetStatus('💳','Aguardando pagamento',
+        'Aproxime, insira ou passe o cartão na maquininha',false,false);
+      _maqDoPoll();
+    });
+  } else if(provider==='pagseguro'){
+    MAQ.pagseguro(ped);
+    maqSetStatus('📱','App PagSeguro aberto',
+      `Confirme após receber ${fmtR(ped.total)} no app`,true,false);
+  } else if(provider==='infinitepay'){
+    MAQ.infinitepay(ped);
+    maqSetStatus('📱','App InfinitePay aberto',
+      `Confirme após receber ${fmtR(ped.total)} no app`,true,false);
+  } else {
+    MAQ.manual(ped);
+  }
+}
+function _maqDoPoll(){
+  if(!_maqIntentId)return;
+  _maqPollCount++;
+  if(_maqPollCount>40){ // ~2 minutos
+    maqSetStatus('⏱️','Tempo esgotado',
+      'Confirme manualmente se o pagamento foi aprovado.',true,false);
+    return;
+  }
+  MAQ.mpPoll(_maqIntentId).then(state=>{
+    if(state==='FINISHED'||state==='PROCESSED'){
+      maqSetStatus('✅','Pagamento aprovado!','Transação concluída com sucesso.',false,true);
+      setTimeout(()=>{closeMc('mc-maq-status');_finalizarPagamento(_maqPedId,'maquininha');},1500);
+    } else if(state==='ERROR'||state==='CANCELED'){
+      maqSetStatus('❌','Pagamento '+(state==='CANCELED'?'cancelado':'recusado'),
+        'Tente novamente ou use outra forma de pagamento.',false,true);
+    } else {
+      _maqPollTimer=setTimeout(_maqDoPoll,3000);
+    }
+  });
+}
+function maqSetStatus(ico,ttl,sub,showBtns,showFechar){
+  const s=id=>document.getElementById(id);
+  if(s('maq-status-ico'))s('maq-status-ico').textContent=ico;
+  if(s('maq-status-ttl'))s('maq-status-ttl').textContent=ttl;
+  if(s('maq-status-sub'))s('maq-status-sub').textContent=sub;
+  const showSpin=!showBtns&&!showFechar;
+  if(s('maq-spinner'))s('maq-spinner').style.display=showSpin?'block':'none';
+  if(s('maq-status-btns'))s('maq-status-btns').style.display=showBtns?'block':'none';
+  if(s('maq-btn-fechar'))s('maq-btn-fechar').style.display=showFechar?'block':'none';
+}
+function maqConfirmarManual(){
+  if(_maqPollTimer){clearTimeout(_maqPollTimer);_maqPollTimer=null;}
+  closeMc('mc-maq-status');
+  requireAdmin('Confirmar Pagamento Maquininha',()=>_finalizarPagamento(_maqPedId,'maquininha'));
+}
+function maqCancelar(){
+  if(_maqPollTimer){clearTimeout(_maqPollTimer);_maqPollTimer=null;}
+  closeMc('mc-maq-status');
+  toast('Cobrança na maquininha cancelada','a');
+}
 </script>
 </body>
 </html>
