@@ -193,11 +193,30 @@ select.inp{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns=
 .cat-chip.on{background:var(--acbg);border-color:var(--acg);color:var(--ac)}
 
 /* ── OBS CHIPS ── */
-.obs-group{margin-bottom:14px}
-.obs-group-title{font-size:11px;font-weight:800;color:var(--t2);text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px}
+.obs-group{margin-bottom:16px}
+.obs-group-title{font-size:11px;font-weight:800;color:var(--t2);text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.obs-group-badge{font-size:9px;padding:2px 7px;border-radius:99px;font-weight:700;background:var(--s3);color:var(--t3);letter-spacing:.5px}
 .obs-chips{display:flex;flex-wrap:wrap;gap:7px}
-.obs-chip{padding:7px 13px;border-radius:99px;font-size:12px;font-weight:700;cursor:pointer;border:1px solid var(--br2);background:var(--s2);color:var(--t2);transition:all .15s;font-family:inherit}
+.obs-chip{padding:7px 13px;border-radius:99px;font-size:12px;font-weight:700;cursor:pointer;border:1px solid var(--br2);background:var(--s2);color:var(--t2);transition:all .15s;font-family:inherit;display:flex;align-items:center;gap:5px}
 .obs-chip.on{background:var(--acbg);border-color:var(--acg);color:var(--ac)}
+.obs-chip-preco{font-size:10px;font-weight:800;font-family:monospace;opacity:.8}
+/* ── LOGIN CARDS ── */
+.login-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-bottom:16px}
+.login-card{background:var(--s2);border:2px solid var(--br2);border-radius:14px;padding:16px 10px;cursor:pointer;transition:all .18s;text-align:center;display:flex;flex-direction:column;align-items:center;gap:8px}
+.login-card:hover{border-color:var(--ac);background:var(--acbg)}
+.login-card:active{transform:scale(.95)}
+.login-avatar{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:900;margin:0 auto;flex-shrink:0}
+.login-avatar.admin{background:var(--acbg);border:2px solid var(--acg);color:var(--ac)}
+.login-avatar.func{background:var(--blbg);border:2px solid var(--blbr);color:var(--bl)}
+.login-card-nome{font-size:13px;font-weight:800;line-height:1.3;word-break:break-word}
+.login-card-cargo{font-size:10px;font-weight:700;padding:2px 8px;border-radius:99px;margin-top:2px}
+.login-card-cargo.admin{background:var(--acbg);color:var(--ac)}
+.login-card-cargo.func{background:var(--blbg);color:var(--bl)}
+/* ── OBS GRUPO EDITOR ── */
+.og-op-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--br)}
+.og-op-row:last-child{border-bottom:none}
+.og-op-drag{color:var(--t3);cursor:grab;font-size:16px;flex-shrink:0}
+.og-op-preco-inp{width:80px;text-align:right;font-family:monospace}
 
 /* ── KDS ── */
 .kds-c{background:var(--sf);border:2px solid var(--br2);border-radius:12px;padding:12px;margin-bottom:10px}
@@ -573,13 +592,26 @@ select.inp{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns=
 
 <!-- MODAL: LOGIN FUNCIONÁRIO -->
 <div class="mc" id="mc-login">
-  <div class="mb" style="max-width:360px">
-    <div style="font-size:36px;text-align:center;margin-bottom:8px">👤</div>
-    <div style="font-size:17px;font-weight:800;text-align:center;margin-bottom:4px">PedePronto PDV</div>
-    <div style="font-size:13px;color:var(--t2);text-align:center;margin-bottom:18px">Selecione seu usuário para continuar</div>
-    <div id="login-user-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px"></div>
-    <div id="login-pin-area" style="display:none">
-      <div style="font-size:13px;font-weight:700;text-align:center;margin-bottom:12px" id="login-pin-nome">Digite seu PIN</div>
+  <div class="mb" style="max-width:440px;width:100%">
+    <!-- ETAPA 1: cards de seleção -->
+    <div id="login-step-sel">
+      <div style="text-align:center;margin-bottom:20px">
+        <div style="font-size:30px;margin-bottom:6px">🍔</div>
+        <div style="font-size:19px;font-weight:900;color:var(--ac);letter-spacing:-.4px">PedePronto PDV</div>
+        <div style="font-size:13px;color:var(--t2);margin-top:4px">Quem está operando agora?</div>
+      </div>
+      <div id="login-user-list" class="login-grid"></div>
+      <div id="login-empty" class="fs12 t2" style="display:none;text-align:center;padding:20px 0">
+        Nenhum funcionário cadastrado.<br>Configure em <strong>Funcionários</strong>.
+      </div>
+    </div>
+    <!-- ETAPA 2: digitar PIN -->
+    <div id="login-step-pin" style="display:none">
+      <div style="text-align:center;margin-bottom:14px">
+        <div id="login-pin-avatar" class="login-avatar" style="width:64px;height:64px;font-size:28px;margin:0 auto 10px"></div>
+        <div style="font-size:17px;font-weight:800" id="login-pin-nome">Nome</div>
+        <span id="login-pin-cargo-badge" style="display:inline-block;margin-top:6px;font-size:11px;font-weight:700;padding:3px 14px;border-radius:99px"></span>
+      </div>
       <div class="pin-display">
         <div class="pin-dot" id="lpd0"></div><div class="pin-dot" id="lpd1"></div>
         <div class="pin-dot" id="lpd2"></div><div class="pin-dot" id="lpd3"></div>
@@ -590,7 +622,7 @@ select.inp{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns=
         <button class="pkey" onclick="loginPinKey('7')">7</button><button class="pkey" onclick="loginPinKey('8')">8</button><button class="pkey" onclick="loginPinKey('9')">9</button>
         <button class="pkey del" onclick="loginPinKey('del')">⌫</button><button class="pkey" onclick="loginPinKey('0')">0</button><button class="pkey ok" onclick="loginPinKey('ok')">✓</button>
       </div>
-      <button class="btn bs bw mt12" onclick="document.getElementById('login-pin-area').style.display='none';document.getElementById('login-user-list').style.display='flex'">← Voltar</button>
+      <button class="btn bs bw mt12" onclick="loginVoltarSel()">← Outro usuário</button>
     </div>
   </div>
 </div>
@@ -723,6 +755,44 @@ select.inp{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns=
     <div class="g2 mt4">
       <button class="btn bs bw" onclick="closeMc('mc-voucher-edit')">Cancelar</button>
       <button class="btn bp bw" onclick="salvarVoucherEdit()">💾 Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: GRUPO DE OBSERVAÇÕES / ADICIONAIS -->
+<div class="mc" id="mc-obs-grupo">
+  <div class="mb" style="max-width:480px;width:100%">
+    <div class="rb mb16">
+      <div style="font-size:15px;font-weight:800" id="mc-og-title">Novo Grupo</div>
+      <button class="btn bs bsm" onclick="closeMc('mc-obs-grupo')">✕</button>
+    </div>
+    <div class="fg">
+      <label class="fl">Nome do grupo</label>
+      <input class="inp" id="og-nome" placeholder="Ex: Ponto da Carne, Molhos, Adicionais...">
+    </div>
+    <div class="card mb14" style="padding:12px">
+      <div class="rb">
+        <div>
+          <div class="fs13 bold">Tipo de seleção</div>
+          <div class="fs11 t2" id="og-tipo-desc">O cliente escolhe apenas uma opção</div>
+        </div>
+        <div style="display:flex;gap:6px">
+          <button class="btn bsm bw" id="og-tipo-unica" onclick="ogSetTipo('unica')">⚪ Única</button>
+          <button class="btn bsm bw" id="og-tipo-multi" onclick="ogSetTipo('multi')">☑️ Múltipla</button>
+        </div>
+      </div>
+    </div>
+    <div class="rb mb10">
+      <div>
+        <div class="fs13 bold">Opções</div>
+        <div class="fs11 t2">Nome + valor adicional (0 = incluso)</div>
+      </div>
+      <button class="btn bp bsm" onclick="ogAddOpcao()">+ Adicionar</button>
+    </div>
+    <div id="og-opcoes-list" style="max-height:260px;overflow-y:auto"></div>
+    <div class="g2 mt14">
+      <button class="btn bs bw" onclick="closeMc('mc-obs-grupo')">Cancelar</button>
+      <button class="btn bp bw" onclick="salvarObsGrupo()">💾 Salvar grupo</button>
     </div>
   </div>
 </div>
@@ -1364,11 +1434,17 @@ function initDefaults(){
       {id:'cat4',nome:'Sobremesas',emoji:'🍨'},
     ];
   }
+  // Migrar opcoes de string[] para {nome,preco}[]
+  ST.obs_grupos_globais.forEach(g=>{
+    if(Array.isArray(g.opcoes)&&g.opcoes.length&&typeof g.opcoes[0]==='string'){
+      g.opcoes=g.opcoes.map(op=>({nome:op,preco:0}));
+    }
+  });
   if(!ST.obs_grupos_globais.length){
     ST.obs_grupos_globais=[
-      {id:'og1',nome:'Ponto da Carne',opcoes:['Mal passado','Ao ponto','Bem passado'],multi:false},
-      {id:'og2',nome:'Molhos',opcoes:['Sem molho','Ketchup','Mostarda','Maionese','BBQ','Todos'],multi:true},
-      {id:'og3',nome:'Adicionais',opcoes:['Sem cebola','Sem tomate','Sem alface','Extra queijo','Extra bacon'],multi:true},
+      {id:'og1',nome:'Ponto da Carne',opcoes:[{nome:'Mal passado',preco:0},{nome:'Ao ponto',preco:0},{nome:'Bem passado',preco:0}],multi:false},
+      {id:'og2',nome:'Molhos',opcoes:[{nome:'Sem molho',preco:0},{nome:'Ketchup',preco:0},{nome:'Mostarda',preco:0},{nome:'Maionese',preco:0},{nome:'BBQ',preco:0},{nome:'Todos',preco:0}],multi:true},
+      {id:'og3',nome:'Adicionais',opcoes:[{nome:'Sem cebola',preco:0},{nome:'Sem tomate',preco:0},{nome:'Sem alface',preco:0},{nome:'Extra queijo',preco:3.00},{nome:'Extra bacon',preco:5.00},{nome:'Extra ovo',preco:2.00}],multi:true},
     ];
   }
   if(!ST.produtos.length){
@@ -1567,7 +1643,7 @@ function renderPedido(){
   const np=ST.novoPedido;
   const cats=[{id:'todos',nome:'Todos',emoji:'⭐'},...ST.categorias];
   const prods=ST.produtos.filter(p=>(ST._prodFilter==='todos'||p.cat_id===ST._prodFilter)&&p.ativo);
-  const total=np.cart.reduce((s,i)=>s+i.preco*i.qty,0);
+  const total=np.cart.reduce((s,i)=>s+(i.preco+(i.obs_extras||0))*i.qty,0);
   document.getElementById('pg-pedido').innerHTML=`
   <div class="rb mb12">
     <div><div class="bold fs14">${np.mesa_label||'Novo Pedido'}</div>
@@ -1585,19 +1661,22 @@ function renderPedido(){
     <div class="rb mb8"><div class="bold fs13">🛒 Carrinho <span class="fs12 t2">${np.cart.length} item(s)</span></div>
     ${np.cart.length?`<div class="bold am mono">${fmtR(total)}</div>`:''}</div>
     ${np.cart.length===0?`<div class="empty" style="padding:16px 0"><div class="empty-ico" style="font-size:32px">🛒</div><div class="fs13 t3">Adicione produtos abaixo</div></div>`:''}
-    ${np.cart.map((item,idx)=>`<div class="cart-item">
+    ${np.cart.map((item,idx)=>{
+      const unitTotal=item.preco+(item.obs_extras||0);
+      return`<div class="cart-item">
       <div style="flex:1;min-width:0">
-        <div class="cart-nome">${item.ico||''} ${item.nome}</div>
-        ${item.obs?`<div class="cart-obs-txt">> ${item.obs}</div>`:''}
-        <button class="btn bs bxs mt4" onclick="openObsSheet(${idx})" style="font-size:10px;padding:3px 8px">✏️ Obs</button>
+        <div class="cart-nome">${item.ico||''} ${esc(item.nome)}</div>
+        ${item.obs_extras>0?`<div class="fs11 am mono mt2">+${fmtR(item.obs_extras)} em adicionais</div>`:''}
+        ${item.obs?`<div class="cart-obs-txt">> ${esc(item.obs)}</div>`:''}
+        <button class="btn bs bxs mt4" onclick="openObsSheet(${idx})" style="font-size:10px;padding:3px 8px">✏️ Obs / Adicionais</button>
       </div>
       <div class="cart-qty">
         <button class="qbtn" onclick="cartQty(${idx},-1)">−</button>
         <div class="qn">${item.qty}</div>
         <button class="qbtn" onclick="cartQty(${idx},1)">+</button>
       </div>
-      <div class="cart-p">${fmtR(item.preco*item.qty)}</div>
-    </div>`).join('')}
+      <div class="cart-p">${fmtR(unitTotal*item.qty)}</div>
+    </div>`;}).join('')}
     ${np.cart.length?`<div class="rb mt8" style="border-top:1px solid var(--br);padding-top:8px"><div class="bold">TOTAL</div><div class="bold ac mono fs14">${fmtR(total)}</div></div>`:''}
   </div>
   <div class="cat-tabs mb8">
@@ -1624,40 +1703,65 @@ function openObsSheet(cartIdx){
   const item=ST.novoPedido.cart[cartIdx];
   const prod=ST.produtos.find(p=>p.id===item.prod_id)||{};
   const grupos=(prod.obs_grupos||[]).map(gid=>ST.obs_grupos_globais.find(g=>g.id===gid)).filter(Boolean);
-  let curObs=item.obs||'';
+  let curObs=item.obs_livre||'';
+  // sel[gid] = array de índices selecionados
   let sel={};
-  // parse existing obs into selection
   const sh=document.getElementById('sh-obs');
+
+  // helper: normaliza opcao para {nome,preco}
+  const norm=op=>typeof op==='string'?{nome:op,preco:0}:op;
+
+  function calcExtras(){
+    return grupos.reduce((tot,g)=>{
+      return tot+(sel[g.id]||[]).reduce((s,i)=>{
+        const op=norm(g.opcoes[i]);return s+(op.preco||0);
+      },0);
+    },0);
+  }
   function buildSheet(){
+    const extras=calcExtras();
     sh.innerHTML=`<div class="sh-handle"></div>
-    <div class="sh-title">✏️ Observações — ${item.nome}</div>
-    ${grupos.length===0?'':grupos.map(g=>`<div class="obs-group">
-      <div class="obs-group-title">${g.nome}${g.multi?' (múltipla escolha)':' (escolha uma)'}</div>
+    <div class="sh-title">✏️ ${esc(item.nome)}</div>
+    ${grupos.map(g=>`<div class="obs-group">
+      <div class="obs-group-title">
+        ${esc(g.nome)}
+        <span class="obs-group-badge">${g.multi?'MÚLTIPLA':'ÚNICA'}</span>
+      </div>
       <div class="obs-chips">
-        ${g.opcoes.map(op=>`<button class="obs-chip ${(sel[g.id]||[]).includes(op)?'on':''}" onclick="toggleObsSel('${g.id}','${op}',${g.multi},this,buildSheet)">${op}</button>`).join('')}
+        ${g.opcoes.map((rawOp,i)=>{
+          const op=norm(rawOp);
+          const on=(sel[g.id]||[]).includes(i);
+          return`<button class="obs-chip ${on?'on':''}" onclick="toggleObsSel('${g.id}',${i},${g.multi})">
+            ${esc(op.nome)}${op.preco>0?`<span class="obs-chip-preco">+${fmtR(op.preco)}</span>`:''}
+          </button>`;
+        }).join('')}
       </div>
     </div>`).join('')}
-    <div class="fg mt8"><label class="fl">Observação livre</label>
-    <textarea class="inp" id="obs-livre" rows="2" placeholder="Ex: sem sal, bem gelado, capricha...">${curObs}</textarea></div>
+    <div class="fg mt8"><label class="fl">Observação livre (opcional)</label>
+    <textarea class="inp" id="obs-livre" rows="2" placeholder="Ex: sem sal, bem gelado, capricha...">${esc(curObs)}</textarea></div>
+    ${extras>0?`<div class="rb mt8 mb4"><span class="fs13 t2">Adicionais selecionados:</span><span class="bold am mono">+${fmtR(extras)}</span></div>`:''}
     <div class="g2 mt12">
       <button class="btn bs bw" onclick="closeOv('ov-obs')">Cancelar</button>
       <button class="btn bp bw" onclick="salvarObs(${cartIdx})">✅ Confirmar</button>
     </div>`;
   }
-  window.buildSheet=buildSheet;
-  window.toggleObsSel=function(gid,op,multi,btn,rebuild){
+  window.toggleObsSel=function(gid,idx,multi){
     if(!sel[gid])sel[gid]=[];
-    const idx=sel[gid].indexOf(op);
-    if(idx>=0)sel[gid].splice(idx,1);
-    else{if(!multi)sel[gid]=[];sel[gid].push(op);}
-    rebuild();
+    const pos=sel[gid].indexOf(idx);
+    if(pos>=0)sel[gid].splice(pos,1);
+    else{if(!multi)sel[gid]=[];sel[gid].push(idx);}
     curObs=document.getElementById('obs-livre')?.value||curObs;
+    buildSheet();
   };
-  window.salvarObs=function(idx){
-    const livre=document.getElementById('obs-livre')?.value||'';
-    const partes=Object.values(sel).flat();
-    if(livre.trim())partes.push(livre.trim());
-    ST.novoPedido.cart[idx].obs=partes.join(' · ');
+  window.salvarObs=function(cartIdx){
+    const livre=(document.getElementById('obs-livre')?.value||'').trim();
+    const extras=calcExtras();
+    // Monta texto de obs: nomes das opcoes selecionadas
+    const partes=grupos.flatMap(g=>(sel[g.id]||[]).map(i=>norm(g.opcoes[i]).nome));
+    if(livre)partes.push(livre);
+    ST.novoPedido.cart[cartIdx].obs=partes.join(' · ');
+    ST.novoPedido.cart[cartIdx].obs_livre=livre;
+    ST.novoPedido.cart[cartIdx].obs_extras=extras;
     closeOv('ov-obs');renderPedido();
     toast('✅ Observação salva','g');
   };
@@ -1701,7 +1805,7 @@ function confirmarPedido(){
   const num='#'+String(ST.pedido_seq).padStart(3,'0');
   ST.pedido_seq++;
   DB.set('pedido_seq',ST.pedido_seq);
-  const total=np.cart.reduce((s,i)=>s+i.preco*i.qty,0);
+  const total=np.cart.reduce((s,i)=>s+(i.preco+(i.obs_extras||0))*i.qty,0);
   // calcula previsão por maior tempo entre itens de cada destino
   const temposCoz=np.cart.filter(i=>i.dest==='coz').map(i=>i.tempo||15);
   const temposBar=np.cart.filter(i=>i.dest==='bar').map(i=>i.tempo||5);
@@ -2136,21 +2240,22 @@ function renderCardCats(){
 }
 function renderCardObs(){
   const el=document.getElementById('card-content');if(!el)return;
+  const normOp=op=>typeof op==='string'?{nome:op,preco:0}:op;
   el.innerHTML=`<div class="rb mb10"><div><div class="bold">Grupos de Observações</div><div class="fs12 t2 mt4">Opções que aparecem ao adicionar itens ao pedido</div></div>
   <button class="btn bp bsm" onclick="editObsGrupoGlobal(null)">+ Grupo</button></div>
   ${ST.obs_grupos_globais.map(g=>`<div class="card mb8">
-    <div class="rb mb6">
-      <div class="bold">${esc(g.nome)}</div>
+    <div class="rb mb8">
+      <div><div class="bold">${esc(g.nome)}</div><div class="fs11 t2 mt2">${(g.opcoes||[]).length} opções · ${g.multi?'múltipla escolha':'escolha única'}</div></div>
       <div style="display:flex;gap:5px">
-        <span class="bdg ${g.multi?'bg-b':'bg-s'}">${g.multi?'Múltipla':'Única'}</span>
+        <span class="bdg ${g.multi?'bb':'bs'}" style="font-size:10px">${g.multi?'Multi':'Única'}</span>
         <button class="btn bs bxs" onclick="editObsGrupoGlobal('${g.id}')">✏️</button>
         <button class="btn br_ bxs" onclick="delObsGrupo('${g.id}')">🗑</button>
       </div>
     </div>
     <div style="display:flex;flex-wrap:wrap;gap:5px">
-      ${(g.opcoes||[]).map(op=>`<span class="bdg bg-s">${op}</span>`).join('')}
+      ${(g.opcoes||[]).map(op=>{const o=normOp(op);return`<span class="obs-chip" style="cursor:default">${esc(o.nome)}${o.preco>0?`<span class="obs-chip-preco">+${fmtR(o.preco)}</span>`:''}</span>`;}).join('')}
     </div>
-  </div>`).join('')}`;
+  </div>`).join('')||'<div class="card" style="text-align:center;padding:24px;color:var(--t2)"><div style="font-size:30px;margin-bottom:8px">📋</div><div class="fs13">Nenhum grupo criado ainda.</div><div class="fs12 t3 mt4">Crie grupos como "Ponto da Carne", "Molhos" ou "Adicionais" para aparecerem nas observações do pedido.</div></div>'}`;
 }
 
 // PRODUTO EDIT
@@ -2180,16 +2285,21 @@ function toggleDest(d){
 }
 function renderProdObsGrupos(){
   const el=document.getElementById('ep-obs-grupos');if(!el)return;
-  el.innerHTML=ST.obs_grupos_globais.map(g=>`<div class="rb" style="padding:7px 0;border-bottom:1px solid var(--br)">
-    <div style="display:flex;align-items:center;gap:8px;flex:1">
-      <input type="checkbox" id="og-${g.id}" ${_editObsGrupos.includes(g.id)?'checked':''} onchange="toggleProdObsGrupo('${g.id}')" style="width:18px;height:18px;cursor:pointer;accent-color:var(--ac)">
-      <label for="og-${g.id}" style="cursor:pointer;font-size:13px">
-        <div class="bold">${esc(g.nome)}</div>
-        <div class="fs11 t3">${(g.opcoes||[]).slice(0,4).join(' / ')}${g.opcoes.length>4?'...':''}</div>
-      </label>
-    </div>
-    <span class="bdg ${g.multi?'bg-b':'bg-s'}">${g.multi?'Multi':'Única'}</span>
-  </div>`).join('')||'<div class="fs12 t3">Crie grupos na aba "Grupos de Obs." primeiro.</div>';
+  const normOp=op=>typeof op==='string'?{nome:op,preco:0}:op;
+  el.innerHTML=ST.obs_grupos_globais.map(g=>{
+    const ops=(g.opcoes||[]).map(normOp);
+    const preview=ops.slice(0,3).map(o=>o.nome+(o.preco>0?` +${fmtR(o.preco)}`:'')).join(' · ')+(ops.length>3?'…':'');
+    return`<div class="rb" style="padding:8px 0;border-bottom:1px solid var(--br)">
+      <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0">
+        <input type="checkbox" id="og-${g.id}" ${_editObsGrupos.includes(g.id)?'checked':''} onchange="toggleProdObsGrupo('${g.id}')" style="width:18px;height:18px;cursor:pointer;accent-color:var(--ac);flex-shrink:0">
+        <label for="og-${g.id}" style="cursor:pointer;font-size:13px;min-width:0">
+          <div class="bold">${esc(g.nome)}</div>
+          <div class="fs11 t3 mt2" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${preview}</div>
+        </label>
+      </div>
+      <span class="bdg ${g.multi?'bb':'bs'}" style="font-size:10px;flex-shrink:0">${g.multi?'Multi':'Única'}</span>
+    </div>`;
+  }).join('')||'<div class="fs12 t3 mt8">Crie grupos na aba "Grupos de Obs." primeiro.</div>';
 }
 function toggleProdObsGrupo(gid){
   const i=_editObsGrupos.indexOf(gid);
@@ -2217,16 +2327,74 @@ function delCat(id){
   confirm2('🗑️','Excluir categoria?','','Excluir','br_',()=>{ST.categorias=ST.categorias.filter(c=>c.id!==id);save('categorias');renderCardapio();});
 }
 
-// GRUPOS DE OBS GLOBAIS
+// GRUPOS DE OBS GLOBAIS — modal
+let _editObsGrupoId=null, _ogOpcoes=[], _ogMulti=false;
 function editObsGrupoGlobal(id){
   const g=id?ST.obs_grupos_globais.find(x=>x.id===id):null;
-  const nome=prompt('Nome do grupo:\n(Ex: Ponto da Carne)',g?.nome||'');if(!nome)return;
-  const opcoesStr=prompt('Opções separadas por vírgula:\n(Ex: Mal passado, Ao ponto, Bem passado)',(g?.opcoes||[]).join(', '));if(!opcoesStr)return;
-  const opcoes=opcoesStr.split(',').map(s=>s.trim()).filter(Boolean);
-  const multi=confirm('Permitir múltiplas escolhas?\n(OK = Sim, Cancelar = Escolha única)');
-  if(g){g.nome=nome;g.opcoes=opcoes;g.multi=multi;}
-  else ST.obs_grupos_globais.push({id:uid(),nome,opcoes,multi});
-  save('obs_grupos_globais');renderCardapio();toast('✅ Grupo salvo!','g');
+  _editObsGrupoId=id||null;
+  _ogMulti=g?.multi||false;
+  const normOp=op=>typeof op==='string'?{nome:op,preco:0}:op;
+  _ogOpcoes=g?(g.opcoes||[]).map(normOp).map(o=>({...o})):[];
+  document.getElementById('mc-og-title').textContent=g?'Editar Grupo':'Novo Grupo';
+  document.getElementById('og-nome').value=g?.nome||'';
+  ogSetTipo(_ogMulti?'multi':'unica');
+  ogRenderOpcoes();
+  openMc('mc-obs-grupo');
+}
+function ogSetTipo(tipo){
+  _ogMulti=tipo==='multi';
+  const desc=document.getElementById('og-tipo-desc');
+  const bU=document.getElementById('og-tipo-unica');
+  const bM=document.getElementById('og-tipo-multi');
+  if(desc)desc.textContent=_ogMulti?'Cliente pode marcar várias opções':'Cliente escolhe apenas uma opção';
+  if(bU)bU.className='btn bsm bw '+(!_ogMulti?'bp':'bs');
+  if(bM)bM.className='btn bsm bw '+(_ogMulti?'bp':'bs');
+}
+function ogAddOpcao(){
+  _ogOpcoes.push({nome:'',preco:0});
+  ogRenderOpcoes();
+  // foco no último input de nome
+  setTimeout(()=>{
+    const inputs=document.querySelectorAll('.og-op-nome');
+    if(inputs.length)inputs[inputs.length-1].focus();
+  },80);
+}
+function ogRemoveOpcao(i){
+  _ogOpcoes.splice(i,1);ogRenderOpcoes();
+}
+function ogRenderOpcoes(){
+  const el=document.getElementById('og-opcoes-list');if(!el)return;
+  if(!_ogOpcoes.length){
+    el.innerHTML=`<div class="fs12 t3" style="padding:12px 0;text-align:center">Nenhuma opção ainda. Clique em + Adicionar.</div>`;
+    return;
+  }
+  el.innerHTML=_ogOpcoes.map((op,i)=>`<div class="og-op-row">
+    <span class="og-op-drag">⠿</span>
+    <input class="inp og-op-nome" style="flex:1;min-width:0" placeholder="Nome da opção" value="${esc(op.nome)}"
+      oninput="_ogOpcoes[${i}].nome=this.value">
+    <div style="display:flex;align-items:center;gap:4px;flex-shrink:0">
+      <span class="fs12 t2">R$</span>
+      <input class="inp" style="width:68px;text-align:right;font-family:monospace" type="number" min="0" step="0.50"
+        placeholder="0,00" value="${op.preco||''}"
+        oninput="_ogOpcoes[${i}].preco=parseFloat(this.value)||0">
+    </div>
+    <button class="btn br_ bxs" onclick="ogRemoveOpcao(${i})">✕</button>
+  </div>`).join('');
+}
+function salvarObsGrupo(){
+  const nome=document.getElementById('og-nome').value.trim();
+  if(!nome){toast('Nome obrigatório','r');return}
+  // Sincroniza valores dos inputs (oninput já sincroniza, mas por segurança)
+  document.querySelectorAll('.og-op-nome').forEach((inp,i)=>{_ogOpcoes[i].nome=inp.value.trim();});
+  const opcoes=_ogOpcoes.filter(o=>o.nome).map(o=>({nome:o.nome.trim(),preco:o.preco||0}));
+  if(!opcoes.length){toast('Adicione ao menos uma opção','r');return}
+  const g=_editObsGrupoId?ST.obs_grupos_globais.find(x=>x.id===_editObsGrupoId):null;
+  if(g){g.nome=nome;g.opcoes=opcoes;g.multi=_ogMulti;}
+  else ST.obs_grupos_globais.push({id:uid(),nome,opcoes,multi:_ogMulti});
+  save('obs_grupos_globais');
+  closeMc('mc-obs-grupo');
+  renderCardapio();
+  toast('✅ Grupo salvo!','g');
 }
 function delObsGrupo(id){
   confirm2('🗑️','Excluir grupo?','Produtos que usam este grupo perderão a associação.','Excluir','br_',()=>{
@@ -2625,24 +2793,59 @@ function checkAdminPin(){
 let _loginTarget=null, _loginBuf='';
 function showLogin(){
   const ativos=ST.funcionarios.filter(f=>f.ativo);
+  const stepSel=document.getElementById('login-step-sel');
+  const stepPin=document.getElementById('login-step-pin');
+  if(stepSel)stepSel.style.display='';
+  if(stepPin)stepPin.style.display='none';
+  _loginBuf=''; _loginTarget=null;
   const ul=document.getElementById('login-user-list');
-  const pa=document.getElementById('login-pin-area');
-  if(ul) ul.style.display='flex';
-  if(pa) pa.style.display='none';
-  if(ul) ul.innerHTML=ativos.map(f=>`
-    <button class="btn bs bw" style="padding:14px;justify-content:flex-start;gap:12px;font-size:14px" onclick="selectLoginUser('${f.id}')">
-      <div style="width:36px;height:36px;border-radius:50%;background:${f.cargo==='admin'?'var(--acbg)':'var(--blbg)'};display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">${f.cargo==='admin'?'👑':'👤'}</div>
-      <div style="text-align:left"><div class="bold">${esc(f.nome)}</div><div class="fs12 t2">${f.cargo==='admin'?'Administrador':'Funcionário'}</div></div>
-    </button>`).join('');
+  const empty=document.getElementById('login-empty');
+  if(ul){
+    if(!ativos.length){
+      ul.innerHTML='';
+      if(empty)empty.style.display='';
+    } else {
+      if(empty)empty.style.display='none';
+      ul.innerHTML=ativos.map(f=>{
+        const isAdmin=f.cargo==='admin';
+        const initials=f.nome.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+        return`<div class="login-card" onclick="selectLoginUser('${f.id}')">
+          <div class="login-avatar ${isAdmin?'admin':'func'}">${initials}</div>
+          <div class="login-card-nome">${esc(f.nome.split(' ')[0])}</div>
+          <span class="login-card-cargo ${isAdmin?'admin':'func'}">${isAdmin?'👑 Admin':'👤 Func'}</span>
+        </div>`;
+      }).join('');
+    }
+  }
   openMc('mc-login');
 }
 function selectLoginUser(id){
   const f=ST.funcionarios.find(x=>x.id===id);if(!f)return;
   _loginTarget=f; _loginBuf='';
-  document.getElementById('login-user-list').style.display='none';
-  document.getElementById('login-pin-area').style.display='block';
-  document.getElementById('login-pin-nome').textContent='PIN de '+f.nome;
+  const isAdmin=f.cargo==='admin';
+  const initials=f.nome.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+  // Preenche etapa 2
+  const av=document.getElementById('login-pin-avatar');
+  if(av){av.className='login-avatar '+(isAdmin?'admin':'func');av.textContent=initials;}
+  const nm=document.getElementById('login-pin-nome');
+  if(nm)nm.textContent=f.nome;
+  const badge=document.getElementById('login-pin-cargo-badge');
+  if(badge){
+    badge.textContent=isAdmin?'👑 Administrador':'👤 Funcionário';
+    badge.style.background=isAdmin?'var(--acbg)':'var(--blbg)';
+    badge.style.color=isAdmin?'var(--ac)':'var(--bl)';
+    badge.style.border=`1px solid ${isAdmin?'var(--acg)':'var(--blbr)'}`;
+    badge.style.borderRadius='99px';badge.style.padding='3px 14px';
+  }
+  // Troca etapas
+  document.getElementById('login-step-sel').style.display='none';
+  document.getElementById('login-step-pin').style.display='';
   updateLoginDots();
+}
+function loginVoltarSel(){
+  _loginBuf='';_loginTarget=null;
+  document.getElementById('login-step-sel').style.display='';
+  document.getElementById('login-step-pin').style.display='none';
 }
 function loginPinKey(k){
   if(k==='del')_loginBuf=_loginBuf.slice(0,-1);
@@ -2688,12 +2891,35 @@ function renderFuncionarios(){
     <button class="btn bp bsm" onclick="requireAdmin('Adicionar Funcionário',()=>editFunc(null))">+ Funcionário</button>
   </div>
 
-  <div class="card mb12" style="border-color:var(--acg);background:var(--acbg)">
-    <div style="display:flex;align-items:center;gap:10px">
-      <div style="font-size:28px">🔐</div>
-      <div><div class="bold">Privilégios do sistema</div>
-      <div class="fs12 t2 mt4 mb4">👑 <strong>Admin:</strong> acesso total</div>
-      <div class="fs12 t2">👤 <strong>Funcionário:</strong> requer PIN admin para: cancelar pedido, editar pedido, dar desconto, voucher, fechar caixa, alterar configurações</div></div>
+  <div class="card mb14" style="padding:0;overflow:hidden;border-color:var(--br2)">
+    <div style="padding:12px 14px;background:var(--s2);border-bottom:1px solid var(--br);font-size:13px;font-weight:800;color:var(--t2);letter-spacing:.5px;text-transform:uppercase">🔐 Níveis de acesso</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr">
+      <div style="padding:14px;border-right:1px solid var(--br)">
+        <div style="font-size:13px;font-weight:800;color:var(--ac);margin-bottom:8px">👑 Administrador</div>
+        <div class="fs12 t2" style="line-height:1.85">
+          ✅ Abrir/fechar caixa<br>
+          ✅ Cancelar pedidos<br>
+          ✅ Descontos e cortesias<br>
+          ✅ Vouchers e permutas<br>
+          ✅ Sangria e suprimento<br>
+          ✅ Gerenciar equipe<br>
+          ✅ Configurações gerais<br>
+          ✅ Relatórios completos
+        </div>
+      </div>
+      <div style="padding:14px">
+        <div style="font-size:13px;font-weight:800;color:var(--bl);margin-bottom:8px">👤 Funcionário</div>
+        <div class="fs12 t2" style="line-height:1.85">
+          ✅ Criar pedidos<br>
+          ✅ Receber pagamentos<br>
+          ✅ Imprimir comandas<br>
+          ✅ Consultar cardápio<br>
+          🔒 Cancelar pedido<br>
+          🔒 Descontos/vouchers<br>
+          🔒 Caixa e sangria<br>
+          🔒 Configurações
+        </div>
+      </div>
     </div>
   </div>
 
@@ -2726,8 +2952,29 @@ function selCargo(cargo){
   });
   const info=document.getElementById('ef-cargo-info');
   if(info)info.innerHTML=cargo==='admin'?
-    '<strong style="color:var(--ac)">Administrador:</strong> acesso total ao sistema, pode autorizar todas as ações restritas.' :
-    '<strong style="color:var(--bl)">Funcionário:</strong> acesso operacional. Ações sensíveis requerem PIN de administrador.';
+    `<div style="color:var(--ac);font-weight:700;margin-bottom:5px">👑 Administrador — acesso total</div>
+     <div class="fs12" style="color:var(--t2);line-height:1.7">
+       ✅ Abrir e fechar caixa<br>
+       ✅ Cancelar e editar qualquer pedido<br>
+       ✅ Aplicar descontos e cortesias<br>
+       ✅ Usar vouchers e permutas<br>
+       ✅ Adicionar e remover funcionários<br>
+       ✅ Sangria e suprimento<br>
+       ✅ Alterar configurações do sistema<br>
+       ✅ Ver relatórios e histórico completo
+     </div>` :
+    `<div style="color:var(--bl);font-weight:700;margin-bottom:5px">👤 Funcionário — acesso operacional</div>
+     <div class="fs12" style="color:var(--t2);line-height:1.7">
+       ✅ Criar e gerenciar pedidos<br>
+       ✅ Receber pagamentos (dinheiro, cartão, PIX)<br>
+       ✅ Imprimir comandas<br>
+       ✅ Consultar cardápio e clientes<br>
+       🔒 Cancelar pedido → requer Admin<br>
+       🔒 Descontos e cortesias → requer Admin<br>
+       🔒 Vouchers e permutas → requer Admin<br>
+       🔒 Fechar caixa / sangria → requer Admin<br>
+       🔒 Configurações → requer Admin
+     </div>`;
 }
 function editFunc(id){
   _editFunc=id?ST.funcionarios.find(f=>f.id===id):null;
