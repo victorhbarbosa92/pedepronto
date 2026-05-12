@@ -695,8 +695,12 @@ async function fsPush(){
     await fbDB.collection('estabelecimentos').doc(uid).set(d,{merge:true});
     const b=document.getElementById('btn-drive');if(b)b.textContent='☁️✅';
   }catch(e){
-    console.warn('Firestore push:',e);
+    console.warn('Firestore push:',e.code, e.message);
     const b=document.getElementById('btn-drive');if(b)b.textContent='☁️⚠️';
+    if(e.code==='permission-denied'&&!window._permWarnShown){
+      window._permWarnShown=true;
+      setTimeout(()=>toast('⚠️ Configure as Regras do Firestore no Firebase Console','r',8000),500);
+    }
   }
 }
 function loadAll(){
