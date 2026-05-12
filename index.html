@@ -468,6 +468,7 @@ select.inp{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns=
 <!-- MODAL: PIN -->
 <div class="mc" id="mc-pin">
   <div class="mb" style="max-width:310px;text-align:center">
+    <input id="mc-pin-focus" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none" tabindex="0" readonly>
     <div style="font-size:26px;margin-bottom:6px">🔒</div>
     <div style="font-size:15px;font-weight:800;margin-bottom:3px" id="pin-ttl">PIN de Segurança</div>
     <div style="font-size:12px;color:var(--t2);margin-bottom:16px" id="pin-sub">Digite o PIN de 4 dígitos</div>
@@ -616,6 +617,8 @@ select.inp{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns=
     </div>
     <!-- ETAPA 2: digitar PIN -->
     <div id="login-step-pin" style="display:none">
+      <!-- foco invisível para capturar teclado físico no PC -->
+      <input id="login-pin-focus" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none" tabindex="0" readonly>
       <div style="text-align:center;margin-bottom:14px">
         <div id="login-pin-avatar" class="login-avatar" style="width:64px;height:64px;font-size:28px;margin:0 auto 10px"></div>
         <div style="font-size:17px;font-weight:800" id="login-pin-nome">Nome</div>
@@ -639,6 +642,7 @@ select.inp{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns=
 <!-- MODAL: AUTORIZAÇÃO ADMIN -->
 <div class="mc" id="mc-admin-auth">
   <div class="mb" style="max-width:320px;text-align:center">
+    <input id="mc-admin-focus" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none" tabindex="0" readonly>
     <div style="font-size:28px;margin-bottom:6px">🔐</div>
     <div style="font-size:15px;font-weight:800;margin-bottom:3px" id="auth-ttl">Requer Administrador</div>
     <div style="font-size:12px;color:var(--t2);margin-bottom:16px" id="auth-sub">Digite o PIN do administrador</div>
@@ -1040,6 +1044,7 @@ function askPin(title,sub,cb){
   document.getElementById('pin-ttl').textContent=title||'PIN';
   document.getElementById('pin-sub').textContent=sub||'Digite o PIN de 4 dígitos';
   updatePinDots();openMc('mc-pin');
+  setTimeout(()=>{const f=document.getElementById('mc-pin-focus');if(f)f.focus();},80);
 }
 function pinKey(k){
   if(k==='del')_pinBuf=_pinBuf.slice(0,-1);
@@ -2900,6 +2905,7 @@ function requireAdmin(title, cb){
   document.getElementById('auth-sub').textContent='Digite o PIN do administrador';
   updateAdminDots();
   openMc('mc-admin-auth');
+  setTimeout(()=>{const f=document.getElementById('mc-admin-focus');if(f)f.focus();},80);
 }
 
 let _adminBuf='';
@@ -3071,6 +3077,8 @@ function selectLoginUser(id){
   document.getElementById('login-step-sel').style.display='none';
   document.getElementById('login-step-pin').style.display='';
   updateLoginDots();
+  // Foca o elemento invisível para capturar teclado físico (PC)
+  setTimeout(()=>{const f=document.getElementById('login-pin-focus');if(f)f.focus();},80);
 }
 function loginVoltarSel(){
   _loginBuf='';_loginTarget=null;
@@ -3737,17 +3745,35 @@ function showCloudStatus(){
     }
   }
 
-  // Keyboard para PINs
+  // Teclado físico para todos os PINs
   document.addEventListener('keydown',e=>{
+    // Login de funcionário
+    const mcl=document.getElementById('mc-login');
+    if(mcl?.style.display==='flex'){
+      const pinStep=document.getElementById('login-step-pin');
+      if(pinStep&&pinStep.style.display!=='none'){
+        if(e.key>='0'&&e.key<='9'){e.preventDefault();loginPinKey(e.key);return;}
+        if(e.key==='Backspace'){e.preventDefault();loginPinKey('del');return;}
+        if(e.key==='Enter'){e.preventDefault();loginPinKey('ok');return;}
+      }
+      return; // mc-login aberto — engole outras teclas
+    }
+    // PIN genérico e admin
     ['mc-pin','mc-admin-auth'].forEach(id=>{
       const mc=document.getElementById(id);
       if(mc?.style.display==='flex'){
-        if(e.key>='0'&&e.key<='9') id==='mc-pin'?pinKey(e.key):adminPinKey(e.key);
-        else if(e.key==='Backspace') id==='mc-pin'?pinKey('del'):adminPinKey('del');
-        else if(e.key==='Enter') id==='mc-pin'?pinKey('ok'):adminPinKey('ok');
+        if(e.key>='0'&&e.key<='9'){e.preventDefault();id==='mc-pin'?pinKey(e.key):adminPinKey(e.key);}
+        else if(e.key==='Backspace'){e.preventDefault();id==='mc-pin'?pinKey('del'):adminPinKey('del');}
+        else if(e.key==='Enter'){e.preventDefault();id==='mc-pin'?pinKey('ok'):adminPinKey('ok');}
+        else if(['Tab','Space',' '].includes(e.key))e.preventDefault(); // bloqueia Tab e Espaço
       }
     });
   });
+  // Impede que clique do mouse dê focus aos botões do pinpad (PC)
+  // O onclick ainda dispara normalmente — só o focus que é bloqueado
+  document.addEventListener('mousedown',e=>{
+    if(e.target.closest('.pkey,.pin-dot'))e.preventDefault();
+  },true);
   _initVozes();
   // Acordar AudioContext no primeiro toque do usuário (política de autoplay)
   const _wakeAC=()=>{_getAC();document.removeEventListener('touchstart',_wakeAC);document.removeEventListener('click',_wakeAC);};
