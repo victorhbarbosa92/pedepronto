@@ -646,17 +646,83 @@ select.inp{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns=
 <!-- MODAL: VOUCHER / MOTIVO -->
 <div class="mc" id="mc-voucher">
   <div class="mb" style="max-width:400px">
-    <div style="font-size:24px;text-align:center;margin-bottom:8px">🎟️</div>
-    <div style="font-size:15px;font-weight:800;margin-bottom:14px;text-align:center">Pagamento com Voucher</div>
-    <div class="fg"><label class="fl">Motivo do voucher (obrigatório)</label>
-      <textarea class="inp" id="voucher-motivo" rows="3" placeholder="Ex: Cortesia da casa, Brinde promocional, Erro no pedido, Cliente fidelidade..."></textarea>
+    <!-- ETAPA 1: digitar código -->
+    <div id="vc-step-code">
+      <div style="font-size:28px;text-align:center;margin-bottom:6px">🎟️</div>
+      <div style="font-size:15px;font-weight:800;text-align:center;margin-bottom:14px">Código do Voucher</div>
+      <div class="fg">
+        <label class="fl">Código</label>
+        <input class="inp" id="vc-code-inp" placeholder="Ex: PROMO20 ou PERMUTA"
+          style="text-transform:uppercase;font-size:18px;text-align:center;letter-spacing:3px;font-family:monospace"
+          oninput="this.value=this.value.toUpperCase()" onkeydown="if(event.key==='Enter')validarVoucher()">
+      </div>
+      <div id="vc-code-error" class="fs12 rd mb8" style="display:none;text-align:center"></div>
+      <div class="g2 mt4">
+        <button class="btn bs bw" onclick="closeMc('mc-voucher')">Cancelar</button>
+        <button class="btn bp bw" onclick="validarVoucher()">Validar →</button>
+      </div>
     </div>
-    <div class="fg"><label class="fl">Autorizado por (administrador)</label>
-      <input class="inp" id="voucher-autorizado" readonly style="background:var(--s3)" placeholder="Aguardando PIN...">
+    <!-- ETAPA 2a: PERMUTA (descrição da troca) -->
+    <div id="vc-step-permuta" style="display:none">
+      <div style="font-size:28px;text-align:center;margin-bottom:6px">🤝</div>
+      <div style="font-size:15px;font-weight:800;text-align:center;margin-bottom:4px">Permuta</div>
+      <div class="fs12 t2 mb12" style="text-align:center">Descreva o que está sendo trocado nesta permuta</div>
+      <div class="fg">
+        <label class="fl">Descrição da permuta (obrigatório)</label>
+        <textarea class="inp" id="vc-permuta-desc" rows="4"
+          placeholder="Ex: 10 porções servidas em troca de design do cardápio digital..."></textarea>
+      </div>
+      <div class="g2 mt4">
+        <button class="btn bs bw" onclick="vcVoltarCodigo()">← Voltar</button>
+        <button class="btn bpu bw" onclick="confirmarVoucherPermuta()">🤝 Confirmar Permuta</button>
+      </div>
+    </div>
+    <!-- ETAPA 2b: voucher de campanha -->
+    <div id="vc-step-campanha" style="display:none">
+      <div style="font-size:28px;text-align:center;margin-bottom:6px">🎉</div>
+      <div class="fs15 bold mb12" style="text-align:center" id="vc-camp-nome"></div>
+      <div id="vc-camp-info" class="card mb12" style="font-size:13px;line-height:1.8"></div>
+      <div class="g2">
+        <button class="btn bs bw" onclick="vcVoltarCodigo()">← Voltar</button>
+        <button class="btn bp bw" onclick="confirmarVoucherCampanha()">✅ Aplicar Voucher</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: CRIAR / EDITAR VOUCHER -->
+<div class="mc" id="mc-voucher-edit">
+  <div class="mb" style="max-width:420px">
+    <div style="font-size:22px;text-align:center;margin-bottom:8px">🎟️</div>
+    <div style="font-size:15px;font-weight:800;text-align:center;margin-bottom:16px" id="vce-titulo">Novo Voucher</div>
+    <div class="fg"><label class="fl">Código (sem espaços)</label>
+      <input class="inp" id="vce-code" placeholder="Ex: PROMO20"
+        style="text-transform:uppercase;font-family:monospace;letter-spacing:2px"
+        oninput="this.value=this.value.toUpperCase().replace(/\s/g,'')"></div>
+    <div class="fg"><label class="fl">Nome da campanha</label>
+      <input class="inp" id="vce-nome" placeholder="Ex: Promoção de Aniversário"></div>
+    <div class="fg"><label class="fl">Descrição (opcional)</label>
+      <input class="inp" id="vce-desc" placeholder="Descrição interna do voucher"></div>
+    <div class="fg"><label class="fl">Tipo de desconto</label>
+      <select class="inp" id="vce-dtype" onchange="vceAtualizarDesc()">
+        <option value="total">🆓 Pedido grátis (100%)</option>
+        <option value="pct">% Percentual</option>
+        <option value="valor">💵 Valor fixo (R$)</option>
+      </select></div>
+    <div class="fg" id="vce-valor-row" style="display:none">
+      <label class="fl" id="vce-valor-lbl">Valor</label>
+      <input class="inp" id="vce-valor" type="number" step="0.01" min="0" placeholder="0"></div>
+    <div class="g2 mb8">
+      <div class="fg" style="margin:0">
+        <label class="fl">Limite de usos (0 = ilimitado)</label>
+        <input class="inp" id="vce-limite" type="number" min="0" value="0"></div>
+      <div class="fg" style="margin:0">
+        <label class="fl">Validade (opcional)</label>
+        <input class="inp" id="vce-validade" type="date"></div>
     </div>
     <div class="g2 mt4">
-      <button class="btn bs bw" onclick="closeMc('mc-voucher')">Cancelar</button>
-      <button class="btn bpu bw" onclick="confirmarVoucher()">✅ Confirmar</button>
+      <button class="btn bs bw" onclick="closeMc('mc-voucher-edit')">Cancelar</button>
+      <button class="btn bp bw" onclick="salvarVoucherEdit()">💾 Salvar</button>
     </div>
   </div>
 </div>
@@ -682,12 +748,29 @@ select.inp{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns=
 var fbAuth=null, fbDB=null;
 
 const DB={
-  PFX:'foodos2_',
+  PFX:'pedepronto_',
   get(k,d=null){try{const v=localStorage.getItem(this.PFX+k);return v!=null?JSON.parse(v):d}catch{return d}},
   set(k,v){try{localStorage.setItem(this.PFX+k,JSON.stringify(v));return true}catch(e){toast('⚠️ Armazenamento cheio!','a');return false}},
   del(k){localStorage.removeItem(this.PFX+k)},
-  keys(){return Object.keys(localStorage).filter(k=>k.startsWith(this.PFX)).map(k=>k.slice(this.PFX.length))}
+  keys(){return Object.keys(localStorage).filter(k=>k.startsWith(this.PFX)).map(k=>k.slice(this.PFX.length))},
+  migrate(){
+    // Migra dados de prefixos antigos se ainda não existem dados com o prefixo atual
+    if(this.keys().length>0)return; // já tem dados novos, não migra
+    const oldPfxs=['foodos2_','gastrohub_'];
+    for(const pfx of oldPfxs){
+      const oldKeys=Object.keys(localStorage).filter(k=>k.startsWith(pfx));
+      if(oldKeys.length>0){
+        oldKeys.forEach(k=>{
+          const newKey=this.PFX+k.slice(pfx.length);
+          if(!localStorage.getItem(newKey)) localStorage.setItem(newKey,localStorage.getItem(k));
+        });
+        console.log('[PedePronto] Dados migrados de',pfx,'→',this.PFX);
+        break;
+      }
+    }
+  }
 };
+DB.migrate();
 
 // ═══════════════════════════════════════════
 //  STATE
@@ -698,7 +781,7 @@ let ST={
     pin:'1234',papel:80,autoprint:false,autocupom:true,drive_ativo:false,mesas_total:10,taxa_servico:0,
   },
   caixa:{aberto:false,abertura:null,operador:'',turno:'',obs_turno:'',saldo_inicial:0,movs:[],historico:[]},
-  produtos:[],categorias:[],clientes:[],obs_grupos_globais:[],pedidos:[],
+  produtos:[],categorias:[],clientes:[],obs_grupos_globais:[],pedidos:[],vouchers:[],
   curNav:'dash',backNav:'dash',
   funcionarios:[], // {id, nome, cpf, cargo:'admin'|'funcionario', pin, ativo}
   currentUser:null, // {id, nome, cargo, pin} — usuário logado
@@ -729,7 +812,7 @@ async function fsPush(){
   const uid=fbAuth.currentUser.uid;
   try{
     const d={_savedAt:new Date().toISOString()};
-    ['cfg','caixa','produtos','categorias','clientes','obs_grupos_globais','pedidos','funcionarios'].forEach(k=>d[k]=ST[k]);
+    ['cfg','caixa','produtos','categorias','clientes','obs_grupos_globais','pedidos','funcionarios','vouchers'].forEach(k=>d[k]=ST[k]);
     await fbDB.collection('estabelecimentos').doc(uid).collection('dados').doc('principal').set(d,{merge:true});
     // Sucesso — remover badge de erro
     var b=document.getElementById('btn-drive');
@@ -740,11 +823,14 @@ async function fsPush(){
     console.warn('Firestore push:',e.code||'unknown');
     if(e.code==='permission-denied'){
       window._noPermission=true;
-      _syncEnabled=false;
-      if(!window._permWarnShown){
-        window._permWarnShown=true;
-        showFirestoreHelp();
-      }
+      if(!window._permWarnShown){window._permWarnShown=true;showFirestoreHelp();}
+      // Retry automático a cada 30s sem precisar de F5
+      clearTimeout(window._permRetryTimer);
+      window._permRetryTimer=setTimeout(()=>{
+        window._noPermission=false;
+        console.log('[PedePronto] Tentando Firestore novamente...');
+        fsPush();
+      },30000);
     }
   }
 }
@@ -773,7 +859,7 @@ function showFirestoreHelp(){
   openOv('ov-obs');
 }
 function loadAll(){
-  ['cfg','caixa','produtos','categorias','clientes','obs_grupos_globais','pedidos','funcionarios'].forEach(k=>{
+  ['cfg','caixa','produtos','categorias','clientes','obs_grupos_globais','pedidos','funcionarios','vouchers'].forEach(k=>{
     const v=DB.get(k);if(v!=null)ST[k]=v;
   });
   ST.pedido_seq=DB.get('pedido_seq',1);
@@ -1051,7 +1137,9 @@ const BT={
       const fm={dinheiro:'Dinheiro',credito:'Cartao Credito',debito:'Cartao Debito',pix:'PIX',voucher:'Voucher',maquininha:'Maquininha'};
       t+=row2('Pagamento:',fm[ped.forma_pag]||ped.forma_pag||'---')+LF;
       if(ped.troco>0)t+=row2('Troco:','R$'+ped.troco.toFixed(2))+LF;
-      if(ped.voucher_motivo)t+=row2('Motivo voucher:',N(ped.voucher_motivo).substring(0,W-16))+LF;
+      if(ped.voucher_code)t+=row2('Voucher:',N(ped.voucher_code))+LF;
+      if(ped.voucher_desc)t+=row2('Desc.:',N(ped.voucher_desc).substring(0,W-8))+LF;
+      if(ped.permuta_desc)t+=row2('Permuta:',N(ped.permuta_desc).substring(0,W-10))+LF;
       t+=dsh()+LF+ctr('NAO E DOCUMENTO FISCAL')+LF+ctr('Simples controle interno')+LF+dsh()+LF;
     } else if(tipo==='fechamento'){
       t+=ctr('** FECHAMENTO DE CAIXA **')+LF+dst()+LF;
@@ -1244,7 +1332,7 @@ const Drive={
     const r=new FileReader();
     r.onload=e=>{try{
       const d=JSON.parse(e.target.result);
-      ['cfg','caixa','produtos','categorias','clientes','obs_grupos_globais','pedidos'].forEach(k=>{if(d[k])ST[k]=d[k]});
+      ['cfg','caixa','produtos','categorias','clientes','obs_grupos_globais','pedidos','funcionarios','vouchers'].forEach(k=>{if(d[k])ST[k]=d[k]});
       saveAll();nav(ST.curNav);toast('✅ Backup importado!','g');
     }catch{toast('❌ Arquivo inválido','r')}};
     r.readAsText(file);
@@ -1257,6 +1345,17 @@ const Drive={
 function initDefaults(){
   // Migração: corrigir nome antigo FoodOS → PedePronto
   if(ST.cfg.nome==='FoodOS'||ST.cfg.nome==='GastroHub') ST.cfg.nome='PedePronto PDV';
+  // Garantir que vouchers é array e PERMUTA sempre existe
+  if(!Array.isArray(ST.vouchers)) ST.vouchers=[];
+  if(!ST.vouchers.find(v=>v.code==='PERMUTA')){
+    ST.vouchers.unshift({
+      id:'voucher_permuta_fixo',code:'PERMUTA',nome:'Permuta',
+      descricao:'Troca de serviços ou produtos — sem cobrança monetária.',
+      tipo:'fixo',desconto_tipo:'total',desconto_valor:0,
+      ativo:true,limite_usos:0,usos:0,validade:null,criado:now()
+    });
+    save('vouchers');
+  }
   if(!ST.categorias.length){
     ST.categorias=[
       {id:'cat1',nome:'Lanches',emoji:'🍔'},
@@ -1850,7 +1949,8 @@ function calcTroco(total){
 function confirmarPagamento(ped_id){
   if(ST.pagCtx.forma==='voucher'){abrirVoucher(ped_id);return}
   if(ST.pagCtx.forma==='pix'&&ST.cfg.pix_chave){mostrarPixQR(ped_id);return}
-  requireAdmin('Confirmar Pagamento',()=>_finalizarPagamento(ped_id,ST.pagCtx.forma));
+  // PIN não exigido para pagamentos normais (dinheiro, crédito, débito, PIX sem QR, maquininha)
+  _finalizarPagamento(ped_id,ST.pagCtx.forma);
 }
 function _finalizarPagamento(ped_id,forma){
   const ped=ST.pedidos.find(p=>p.id===ped_id);if(!ped)return;
@@ -2399,6 +2499,28 @@ function renderConfig(){
       <button class="btn bb bsm" onclick="importBackup()">📥 Importar</button>
     </div>
   </div>
+  <div class="sec-title">🎟️ Vouchers e Permuta</div>
+  <div class="card mb10">
+    ${ST.vouchers.map(v=>`
+    <div class="rb" style="padding:9px 0;border-bottom:1px solid var(--br)">
+      <div style="flex:1;min-width:0">
+        <div class="row gap-6">
+          <span class="bold" style="font-family:monospace">${esc(v.code)}</span>
+          ${v.tipo==='fixo'?'<span class="bdg bg-pu" style="font-size:9px">FIXO</span>':''}
+          ${!v.ativo?'<span class="bdg bg-r" style="font-size:9px">INATIVO</span>':''}
+        </div>
+        <div class="fs12 t2">${esc(v.nome)}${v.desconto_tipo==='total'?' · 🆓 Grátis':v.desconto_tipo==='pct'?` · ${v.desconto_valor}% off`:` · -${fmtR(v.desconto_valor)}`}</div>
+        <div class="fs11 t3">${v.limite_usos>0?`Usos: ${v.usos}/${v.limite_usos}`:'Ilimitado'}${v.validade?' · Válido até '+fmtD(v.validade):''}</div>
+      </div>
+      <div style="display:flex;gap:5px;flex-shrink:0">
+        ${v.tipo!=='fixo'?`<button class="btn bxs ${v.ativo?'ba':'bg'}" onclick="toggleVoucher('${v.id}')">${v.ativo?'Pausar':'Ativar'}</button>
+        <button class="btn bxs bs" onclick="abrirEditarVoucher('${v.id}')">✏️</button>
+        <button class="btn bxs br_" onclick="excluirVoucher('${v.id}')">🗑️</button>`
+        :`<span class="fs11 t3">Não editável</span>`}
+      </div>
+    </div>`).join('')}
+    <button class="btn bp bw mt10" onclick="abrirCriarVoucher()">+ Novo voucher de campanha</button>
+  </div>
   <div class="sec-title">PIX</div>
   <div class="card mb10">
     <div class="fg"><label class="fl">Chave PIX (CPF, CNPJ, e-mail, telefone ou aleatória)</label>
@@ -2644,36 +2766,171 @@ function delFunc(id){
 }
 
 // ── VOUCHER COM MOTIVO ─────────────────────────────────────────────────
-let _voucherPedId=null, _voucherAdmin='';
+// ══════════════════════════════════════════════════════
+//  SISTEMA DE VOUCHERS
+// ══════════════════════════════════════════════════════
+let _voucherPedId=null, _voucherAtual=null;
+
 function abrirVoucher(ped_id){
-  _voucherPedId=ped_id; _voucherAdmin='';
-  document.getElementById('voucher-motivo').value='';
-  document.getElementById('voucher-autorizado').value='';
-  requireAdmin('Autorizar Voucher',()=>{
-    const admins=ST.funcionarios.filter(f=>f.cargo==='admin'&&f.ativo);
-    // Encontra admin pelo PIN que acabou de ser digitado
-    _voucherAdmin=admins[0]?.nome||'Administrador';
-    document.getElementById('voucher-autorizado').value=_voucherAdmin;
-    openMc('mc-voucher');
+  _voucherPedId=ped_id; _voucherAtual=null;
+  vcVoltarCodigo();
+  openMc('mc-voucher');
+}
+function vcVoltarCodigo(){
+  ['vc-step-code','vc-step-permuta','vc-step-campanha'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.style.display='none';
+  });
+  const code=document.getElementById('vc-step-code');if(code)code.style.display='block';
+  const inp=document.getElementById('vc-code-inp');if(inp){inp.value='';inp.focus();}
+  const err=document.getElementById('vc-code-error');if(err)err.style.display='none';
+}
+function validarVoucher(){
+  const code=(document.getElementById('vc-code-inp')?.value||'').trim().toUpperCase();
+  const errEl=document.getElementById('vc-code-error');
+  const showErr=msg=>{if(errEl){errEl.textContent=msg;errEl.style.display='block';}};
+  if(!code){showErr('Digite o código do voucher.');return;}
+
+  const v=ST.vouchers.find(x=>x.code===code&&x.ativo);
+  if(!v){showErr('❌ Código não encontrado ou inativo.');return;}
+  // Validade
+  if(v.validade&&new Date(v.validade+'T23:59:59')<new Date()){showErr('❌ Voucher expirado ('+fmtD(v.validade)+').');return;}
+  // Limite de usos
+  if(v.limite_usos>0&&v.usos>=v.limite_usos){showErr('❌ Limite de usos esgotado para este voucher.');return;}
+  _voucherAtual=v;
+  if(errEl)errEl.style.display='none';
+
+  if(v.code==='PERMUTA'){
+    // Redireciona para etapa de descrição da permuta
+    document.getElementById('vc-step-code').style.display='none';
+    document.getElementById('vc-step-permuta').style.display='block';
+    const d=document.getElementById('vc-permuta-desc');if(d){d.value='';d.focus();}
+  } else {
+    // Campanha: mostra detalhes e pede confirmação
+    const ped=ST.pedidos.find(p=>p.id===_voucherPedId);
+    const descontoTxt=v.desconto_tipo==='total'?'🆓 Pedido inteiro grátis'
+      :v.desconto_tipo==='pct'?`💸 ${v.desconto_valor}% de desconto`
+      :`💵 ${fmtR(v.desconto_valor)} de desconto`;
+    const totalFinal=ped?_calcTotalComVoucher(ped.total,v):0;
+    const el=document.getElementById('vc-camp-nome');if(el)el.textContent=v.nome;
+    const info=document.getElementById('vc-camp-info');
+    if(info) info.innerHTML=`
+      <div><strong>Código:</strong> <span style="font-family:monospace">${v.code}</span></div>
+      ${v.descricao?`<div><strong>Descrição:</strong> ${esc(v.descricao)}</div>`:''}
+      <div><strong>Desconto:</strong> ${descontoTxt}</div>
+      ${ped?`<div><strong>Total após desconto:</strong> <span class="bold gn">${fmtR(totalFinal)}</span></div>`:''}
+      ${v.limite_usos>0?`<div class="fs11 t2">Usos: ${v.usos}/${v.limite_usos}</div>`:''}
+    `;
+    document.getElementById('vc-step-code').style.display='none';
+    document.getElementById('vc-step-campanha').style.display='block';
+  }
+}
+function _calcTotalComVoucher(total,v){
+  if(v.desconto_tipo==='total') return 0;
+  if(v.desconto_tipo==='pct') return Math.max(0,+(total*(1-v.desconto_valor/100)).toFixed(2));
+  if(v.desconto_tipo==='valor') return Math.max(0,+(total-v.desconto_valor).toFixed(2));
+  return total;
+}
+function confirmarVoucherPermuta(){
+  const desc=(document.getElementById('vc-permuta-desc')?.value||'').trim();
+  if(!desc){toast('Descreva o que está sendo trocado na permuta.','r');return;}
+  requireAdmin('Autorizar Permuta',()=>{
+    closeMc('mc-voucher');
+    _aplicarVoucher(_voucherPedId,_voucherAtual,{permuta_desc:desc});
   });
 }
-function confirmarVoucher(){
-  const motivo=document.getElementById('voucher-motivo').value.trim();
-  if(!motivo){toast('Informe o motivo do voucher','r');return}
-  const ped=ST.pedidos.find(p=>p.id===_voucherPedId);if(!ped)return;
-  ped.forma_pag='voucher';ped.voucher_motivo=motivo;ped.voucher_autorizado=_voucherAdmin;
-  closeMc('mc-voucher');
-  // Executa pagamento direto
-  finalizarPagamentoVoucher(_voucherPedId);
+function confirmarVoucherCampanha(){
+  requireAdmin('Autorizar Voucher',()=>{
+    closeMc('mc-voucher');
+    _aplicarVoucher(_voucherPedId,_voucherAtual,{});
+  });
 }
-function finalizarPagamentoVoucher(ped_id){
+function _aplicarVoucher(ped_id,v,extra){
   const ped=ST.pedidos.find(p=>p.id===ped_id);if(!ped)return;
-  ped.status='pago';ped.pago_em=now();ped.troco=0;
-  ST.caixa.movs.push({id:uid(),tipo:'entrada',valor:ped.total,desc:'Pedido '+ped.num+' · Voucher: '+ped.voucher_motivo,created:now()});
-  save('pedidos');save('caixa');
-  toast('✅ Pago com voucher: '+ped.voucher_motivo,'b',4000);
-  if(BT.char&&ST.cfg.autocupom!==false)setTimeout(()=>BT.printCupom(ped),400);
-  nav(ped.tipo==='mesa'?'mesas':ped.tipo==='balcao'?'balcao':'delivery');
+  const novoTotal=_calcTotalComVoucher(ped.total,v);
+  const descValor=+(ped.total-novoTotal).toFixed(2);
+  ped.desconto=(ped.desconto||0)+descValor;
+  ped.total=novoTotal;
+  ped.voucher_code=v.code;
+  ped.voucher_nome=v.nome;
+  ped.voucher_desc=extra.permuta_desc||v.descricao||'';
+  if(extra.permuta_desc) ped.permuta_desc=extra.permuta_desc;
+  // Incrementa contador de usos
+  v.usos=(v.usos||0)+1;
+  save('vouchers');
+  _finalizarPagamento(ped_id,'voucher');
+}
+
+// ── Gestão de Vouchers (Config) ────────────────────
+let _vceEditId=null;
+function abrirCriarVoucher(){
+  _vceEditId=null;
+  document.getElementById('vce-titulo').textContent='Novo Voucher de Campanha';
+  document.getElementById('vce-code').value='';
+  document.getElementById('vce-nome').value='';
+  document.getElementById('vce-desc').value='';
+  document.getElementById('vce-dtype').value='total';
+  document.getElementById('vce-valor').value='';
+  document.getElementById('vce-limite').value='0';
+  document.getElementById('vce-validade').value='';
+  vceAtualizarDesc();
+  openMc('mc-voucher-edit');
+}
+function abrirEditarVoucher(id){
+  const v=ST.vouchers.find(x=>x.id===id);if(!v)return;
+  _vceEditId=id;
+  document.getElementById('vce-titulo').textContent='Editar Voucher';
+  document.getElementById('vce-code').value=v.code;
+  document.getElementById('vce-nome').value=v.nome;
+  document.getElementById('vce-desc').value=v.descricao||'';
+  document.getElementById('vce-dtype').value=v.desconto_tipo;
+  document.getElementById('vce-valor').value=v.desconto_valor||'';
+  document.getElementById('vce-limite').value=v.limite_usos||0;
+  document.getElementById('vce-validade').value=v.validade||'';
+  vceAtualizarDesc();
+  openMc('mc-voucher-edit');
+}
+function vceAtualizarDesc(){
+  const t=document.getElementById('vce-dtype')?.value;
+  const row=document.getElementById('vce-valor-row');
+  const lbl=document.getElementById('vce-valor-lbl');
+  if(row) row.style.display=(t==='total')?'none':'block';
+  if(lbl) lbl.textContent=t==='pct'?'Percentual (%)':'Valor em R$';
+}
+function salvarVoucherEdit(){
+  const code=(document.getElementById('vce-code')?.value||'').trim().toUpperCase();
+  const nome=(document.getElementById('vce-nome')?.value||'').trim();
+  if(!code){toast('Informe o código do voucher','r');return;}
+  if(!nome){toast('Informe o nome da campanha','r');return;}
+  if(code==='PERMUTA'){toast('Código reservado. Use outro código.','r');return;}
+  const dtype=document.getElementById('vce-dtype').value;
+  const dval=dtype==='total'?0:parseFloat(document.getElementById('vce-valor').value)||0;
+  // Verificar duplicidade
+  const dup=ST.vouchers.find(x=>x.code===code&&x.id!==_vceEditId);
+  if(dup){toast('Já existe um voucher com este código','r');return;}
+  if(_vceEditId){
+    const v=ST.vouchers.find(x=>x.id===_vceEditId);if(!v)return;
+    Object.assign(v,{code,nome,descricao:document.getElementById('vce-desc').value.trim(),
+      desconto_tipo:dtype,desconto_valor:dval,
+      limite_usos:parseInt(document.getElementById('vce-limite').value)||0,
+      validade:document.getElementById('vce-validade').value||null});
+  } else {
+    ST.vouchers.push({id:uid(),code,nome,descricao:document.getElementById('vce-desc').value.trim(),
+      tipo:'campanha',desconto_tipo:dtype,desconto_valor:dval,ativo:true,
+      limite_usos:parseInt(document.getElementById('vce-limite').value)||0,
+      usos:0,validade:document.getElementById('vce-validade').value||null,criado:now()});
+  }
+  save('vouchers');closeMc('mc-voucher-edit');renderConfig();toast('✅ Voucher salvo!','g');
+}
+function toggleVoucher(id){
+  const v=ST.vouchers.find(x=>x.id===id);if(!v||v.tipo==='fixo')return;
+  v.ativo=!v.ativo;save('vouchers');renderConfig();
+}
+function excluirVoucher(id){
+  const v=ST.vouchers.find(x=>x.id===id);if(!v||v.tipo==='fixo'){toast('Voucher fixo não pode ser excluído','r');return;}
+  confirm2('🗑️','Excluir voucher?',`Código: ${v.code} — ${v.nome}`,'Excluir','br_',()=>{
+    ST.vouchers=ST.vouchers.filter(x=>x.id!==id);save('vouchers');renderConfig();
+    toast('Voucher excluído','a');
+  });
 }
 
 
@@ -2823,7 +3080,7 @@ function fsListen(uid){
     const lt=new Date(ST.cfg._savedAt||0).getTime();
     const rt=new Date(r._savedAt).getTime();
     if(rt>lt+5000){
-      ['cfg','caixa','produtos','categorias','clientes','obs_grupos_globais','pedidos','funcionarios'].forEach(k=>{if(r[k]!=null)ST[k]=r[k];});
+      ['cfg','caixa','produtos','categorias','clientes','obs_grupos_globais','pedidos','funcionarios','vouchers'].forEach(k=>{if(r[k]!=null)ST[k]=r[k];});
       saveAll();nav(ST.curNav);
       const b=document.getElementById('btn-drive');
     if(b){ b.textContent='☁️✅';
@@ -2831,7 +3088,17 @@ function fsListen(uid){
       if(bd) bd.remove();
     }
     }
-  },e=>console.warn('Firestore listen:',e));
+  },e=>{
+    console.warn('Firestore listen:',e);
+    if(e.code==='permission-denied'&&!window._listenRetrying){
+      window._listenRetrying=true;
+      clearTimeout(window._listenRetryTimer);
+      window._listenRetryTimer=setTimeout(()=>{
+        window._listenRetrying=false;
+        if(_syncEnabled&&fbAuth?.currentUser) fsListen(fbAuth.currentUser.uid);
+      },30000);
+    }
+  });
 }
 
 function updateDriveBtn(){
@@ -2955,6 +3222,9 @@ function showCloudStatus(){
         // Usuário Google logado
         window._noPermission = false;
         window._permWarnShown = false;
+        window._listenRetrying = false;
+        clearTimeout(window._permRetryTimer);
+        clearTimeout(window._listenRetryTimer);
         _syncEnabled = true; // agora save() pode sincronizar
         hideLoginScreen();
         fsListen(user.uid);
