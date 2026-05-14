@@ -77,6 +77,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);font-
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
 .g4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px}
+.gap-6{gap:6px}
 @media(max-width:420px){.g3{grid-template-columns:1fr 1fr}.g4{grid-template-columns:1fr 1fr}}
 
 /* ── CARDS ── */
@@ -224,9 +225,8 @@ select.inp{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns=
 .kds-c.preparo{border-color:var(--am)}
 .kds-c.atrasado{border-color:var(--rd);box-shadow:0 0 0 3px rgba(231,76,60,.15);animation:prd 1.5s infinite}
 @keyframes pbl{0%,100%{box-shadow:0 0 0 0 rgba(52,152,219,.2)}50%{box-shadow:0 0 0 9px rgba(52,152,219,0)}}
-@keyframes prd{0%,100%{box-shadow:0 0 0 0 rgba(231,76,60,.3)}50%{box-shadow:0 0 0 10px rgba(231,76,60,0)}}
+@keyframes prd{0%,100%{box-shadow:0 0 0 0 rgba(231,76,60,.35)}50%{box-shadow:0 0 0 10px rgba(231,76,60,0)}}
 .kds-live-timer{font-variant-numeric:tabular-nums;letter-spacing:-0.5px}
-@keyframes prd{0%,100%{box-shadow:0 0 0 0 rgba(231,76,60,.4)}50%{box-shadow:0 0 0 8px rgba(231,76,60,0)}}
 
 /* ── PAY ── */
 .pay-m{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:10px 6px;border-radius:11px;border:2px solid var(--br2);background:var(--s2);cursor:pointer;transition:all .18s;font-size:11px;font-weight:700;color:var(--t2);font-family:inherit}
@@ -395,7 +395,7 @@ select.inp{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns=
 </div>
 
 <!-- ══════════ SYNC BANNER ══════════ -->
-<div id="sync-banner" style="display:none;background:var(--rdbg);border-bottom:1px solid var(--rdbr);padding:8px 14px;font-size:12px;color:var(--rd);display:none;align-items:center;gap:8px;cursor:pointer" onclick="showFirestoreHelp()">
+<div id="sync-banner" style="display:none;background:var(--rdbg);border-bottom:1px solid var(--rdbr);padding:8px 14px;font-size:12px;color:var(--rd);align-items:center;gap:8px;cursor:pointer" onclick="showFirestoreHelp()">
   <span>⚠️</span>
   <span style="flex:1">Sincronização com a nuvem com erro — toque para configurar</span>
   <span style="font-weight:700;text-decoration:underline">Corrigir →</span>
@@ -557,7 +557,7 @@ select.inp{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns=
     <div style="display:flex;flex-direction:column;gap:8px">
       <button class="btn bp bw" onclick="BT.pair()">📡 Parear impressora</button>
       <button class="btn ba bw" onclick="BT.testPrint()">🖨️ Teste de impressão</button>
-      <button class="btn bb bw" onclick="closeMc('mc-bt');openDebugPanel()">🔬 Debug / Diagnóstico</button>
+      <button class="btn bb bw" onclick="closeMc('mc-bt');openDiagnostico()">🔬 Diagnóstico</button>
       <button class="btn bs bw" onclick="closeMc('mc-bt')">Fechar</button>
     </div>
   </div>
@@ -1035,7 +1035,7 @@ async function fsPull(){
     _lastSyncAt=Date.now();_setSyncStatus('ok');
     nav(ST.curNav);
     toast('✅ Dados da nuvem aplicados!','g',4000);
-    playSound('pronto');
+    playSound('sucesso');
   }catch(e){
     toast('Erro ao puxar dados: '+e.message,'r',5000);
     _setSyncStatus('error');
@@ -1088,6 +1088,10 @@ function loadAll(){
     const v=DB.get(k);if(v!=null)ST[k]=v;
   });
   ST.pedido_seq=DB.get('pedido_seq',1);
+  // M5: carrega alertas do localStorage (máx 50, apenas os últimos 24h)
+  const alts=DB.get('alertas',[]);
+  const cutoff=Date.now()-24*60*60*1000;
+  ST.alertas=alts.filter(a=>new Date(a.created).getTime()>cutoff).slice(0,50);
 }
 
 // ═══════════════════════════════════════════
@@ -1095,7 +1099,7 @@ function loadAll(){
 // ═══════════════════════════════════════════
 const uid=()=>Math.random().toString(36).slice(2,9)+Date.now().toString(36).slice(-4);
 const fmtR=v=>'R$ '+(+v||0).toFixed(2).replace('.',',');
-const fmtD=d=>new Date(d).toLocaleDateString('pt-BR');
+const fmtD=d=>{if(!d)return'—';const dt=new Date(d);return isNaN(dt)?'—':dt.toLocaleDateString('pt-BR');};
 const fmtH=d=>new Date(d).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
 const fmtDH=d=>fmtD(d)+' '+fmtH(d);
 const now=()=>new Date().toISOString();
@@ -1209,7 +1213,7 @@ function openMenuSheet(){
   <div class="divider mt12 mb12"></div>
   <div style="display:flex;gap:8px">
     <button class="btn ba bw" onclick="closeOv('ov-menu');openMc('mc-bt')">🖨️ Impressora</button>
-    <button class="btn bb bw" onclick="closeOv('ov-menu');fbAuth.currentUser?fbLogout():fbLogin()">☁️ Drive</button>
+    <button class="btn bb bw" onclick="closeOv('ov-menu');fbAuth?.currentUser?fbLogout():fbLogin()">☁️ Drive</button>
   </div>`;
   openOv('ov-menu');
 }
@@ -1516,7 +1520,7 @@ const BT={
     async testPrint(){
     if(!this.char){toast('❌ Nenhuma impressora conectada','r');return}
     const W=this.paper===58?32:46;
-    const txt=['PedePronto PDV v2.0 - TESTE','='.repeat(W),'Impressora OK!','Papel: '+this.paper+'mm','Data: '+fmtDH(now()),'='.repeat(W),'1234567890abcdefghijklmnopqrstuvwxyz',cfg&&cfg.nome||'PedePronto','','',''].join('\n');
+    const txt=['PedePronto PDV v2.0 - TESTE','='.repeat(W),'Impressora OK!','Papel: '+this.paper+'mm','Data: '+fmtDH(now()),'='.repeat(W),'1234567890abcdefghijklmnopqrstuvwxyz',ST.cfg.nome||'PedePronto','','',''].join('\n');
     await this.printRaw(txt,true);
     toast('✅ Teste enviado!','g');
   }
@@ -2035,6 +2039,27 @@ function confirmarPedido(){
     toast('⚠️ Informe o telefone para delivery','r',3000);
     document.getElementById('inp-tel')?.focus();return;
   }
+  // C3: _addingTo — adiciona itens a pedido já existente
+  if(np._addingTo){
+    const pedExist=ST.pedidos.find(p=>p.id===np._addingTo);
+    if(!pedExist){toast('❌ Pedido não encontrado','r');return;}
+    const novosItens=deepClone(np.cart);
+    novosItens.forEach(it=>pedExist.itens.push(it));
+    const novoTotal=pedExist.itens.reduce((s,i)=>s+(i.preco+(i.obs_extras||0))*i.qty,0);
+    pedExist.total_bruto=novoTotal;
+    pedExist.total=+(novoTotal-pedExist.desconto).toFixed(2);
+    // recalcula previsão
+    const tCoz=pedExist.itens.filter(i=>i.dest==='coz'&&!i.concluido).map(i=>i.tempo||15);
+    const tBar=pedExist.itens.filter(i=>i.dest==='bar'&&!i.concluido).map(i=>i.tempo||5);
+    if(tCoz.length)pedExist.prev_coz=addMin(now(),Math.max(...tCoz));
+    if(tBar.length)pedExist.prev_bar=addMin(now(),Math.max(...tBar));
+    save('pedidos');
+    toast('✅ '+novosItens.length+' item(ns) adicionado(s) ao '+pedExist.num,'g');
+    anunciar('novo_pedido',pedExist);
+    if(BT.char&&ST.cfg.autoprint)setTimeout(()=>BT.printPedido(pedExist),500);
+    nav(pedExist.tipo==='mesa'?'mesas':pedExist.tipo==='balcao'?'balcao':'delivery');
+    return;
+  }
   if(!ST.pedido_seq)ST.pedido_seq=1;
   const num='#'+String(ST.pedido_seq).padStart(3,'0');
   ST.pedido_seq++;
@@ -2045,14 +2070,14 @@ function confirmarPedido(){
   const temposBar=np.cart.filter(i=>i.dest==='bar').map(i=>i.tempo||5);
   const maxCoz=temposCoz.length?Math.max(...temposCoz):0;
   const maxBar=temposBar.length?Math.max(...temposBar):0;
+  // C4: removida a propriedade consumo duplicada
   const ped={
     id:uid(),num,tipo:np.tipo,mesa_id:np.mesa_id,mesa_label:np.mesa_label,
     cliente_nome:np.cliente_nome||'',status:'aberto',created:now(),
-    itens:deepClone(np.cart),total_bruto:total,desconto:0,taxa_servico:0,total,consumo:np.consumo||'local',
+    itens:deepClone(np.cart),total_bruto:total,desconto:0,total,consumo:np.consumo||'local',
     prev_coz:maxCoz?addMin(now(),maxCoz):null,
     prev_bar:maxBar?addMin(now(),maxBar):null,
     operador:ST.caixa.operador||'',
-    consumo:np.consumo||'local',
   };
   if(np.tipo==='delivery'){
     // Monta endereço a partir dos campos estruturados (ou campo livre legado)
@@ -2156,7 +2181,7 @@ function aplicarDescVal(ped_id){
     _addAlerta('💸','Desconto '+fmtR(v)+' aplicado em '+ped.num,'info');
   });
 }
-function askDesconto(ped_id){ aplicarDescPct(ped_id) }
+// askDesconto era alias de aplicarDescPct — removido (dead code B18)
 function askCortesia(ped_id){
   // 1.4 cortesia com PIN
   askPin('🎁 Cortesia Total','Digite o PIN para autorizar a cortesia',()=>{
@@ -2384,8 +2409,10 @@ function finalizarPagMisto(ped_id){
   const trocoTotal=+(_pagParcelas.reduce((s,p)=>s+(p.troco||0),0).toFixed(2));
   ped.status='pago';ped.pago_em=now();ped.forma_pag=formaStr;ped.troco=trocoTotal;
   ped.parcelas=deepClone(_pagParcelas);
+  // M7: não registrar movimentos com valor zero (ex: cortesia total via voucher)
   _pagParcelas.forEach(p=>{
-    ST.caixa.movs.push({id:uid(),tipo:'entrada',valor:p.valor,desc:'Pedido '+ped.num+' · '+p.lbl,created:now()});
+    if((p.valor||0)>0)
+      ST.caixa.movs.push({id:uid(),tipo:'entrada',valor:p.valor,desc:'Pedido '+ped.num+' · '+p.lbl,created:now()});
   });
   save('pedidos');save('caixa');
   toast('✅ Pagamento '+fmtR(ped.total)+' confirmado!','g',4000);
@@ -2415,7 +2442,7 @@ function novoDelivery(){
   ST.novoPedido={tipo:'delivery',mesa_id:null,mesa_label:'Delivery',
     cliente_nome:'',telefone:'',rua:'',numero:'',bairro:'',complemento:'',endereco:'',
     del_pagamento:'dinheiro',del_troco_para:'',
-    cart:[],obs:{},consumo:'viagem'};
+    cart:[],obs:{},consumo:'viagem',_addingTo:null};
   ST._prodFilter='todos';nav('pedido');
 }
 function setDelPag(v){ST.novoPedido.del_pagamento=v;renderPedido();}
@@ -2598,8 +2625,8 @@ function concluirKDS(id,dest){
   const allDone=p.itens.every(i=>i.concluido);
   if(allDone){p.status='preparo';}
   save('pedidos');
-  // Chime de hospital → pausa → voz de chamada
-  playChamada('pronto',()=>falarPedidoPronto(p));
+  // usa o dispatcher central — já cuida de chime + voz
+  anunciar('pronto', p);
   renderProducao();
   toast('✅ Pedido '+p.num+' marcado como pronto!','g',3500);
   updateBadges();
@@ -2885,14 +2912,19 @@ function renderCaixa(){
   // 7.1 breakdown por forma de pagamento no turno atual
   const fmIco={dinheiro:'💵',credito:'💳',debito:'💳',pix:'📱',voucher:'🎟️',maquininha:'🏧'};
   const fmLbl={dinheiro:'Dinheiro',credito:'Crédito',debito:'Débito',pix:'PIX',voucher:'Voucher',maquininha:'Maquininha'};
+  // M1: helper robusto — remove acentos para comparação
+  const deAcent=s=>s.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
+  // mapa direto de lbl normalizado → chave
+  const fmLblNorm={};
+  Object.entries(fmLbl).forEach(([k,v])=>{fmLblNorm[deAcent(v)]=k;});
   const breakdown={};
   // usa as parcelas registradas nos movimentos do caixa (tipo=entrada) da sessão atual
   movs.filter(m=>m.tipo==='entrada').forEach(m=>{
-    // desc pattern: "Pedido #001 · Dinheiro" → extrai forma
+    // desc pattern: "Pedido #001 · Crédito" → extrai forma
     const match=m.desc&&m.desc.match(/·\s*(.+)$/);
-    const forma=match?match[1].trim().toLowerCase().replace(/é/g,'e').replace(/í/g,'i'):'outro';
-    // normaliza
-    const fk=Object.keys(fmLbl).find(k=>fmLbl[k].toLowerCase()===forma)||forma;
+    if(!match)return;
+    const forma=deAcent(match[1].trim());
+    const fk=fmLblNorm[forma]||match[1].trim().toLowerCase();
     breakdown[fk]=(breakdown[fk]||0)+(m.valor||0);
   });
   const bdEntries=Object.entries(breakdown).filter(([,v])=>v>0);
@@ -2983,9 +3015,23 @@ function renderRelatorio(){
   const days=Array.from({length:7},(_,i)=>{const d=new Date();d.setDate(d.getDate()-6+i);return d});
   const dayData=days.map(d=>({lbl:['D','S','T','Q','Q','S','S'][d.getDay()],val:ST.pedidos.filter(p=>p.status==='pago'&&new Date(p.pago_em||p.created).toDateString()===d.toDateString()).reduce((s,p)=>s+(p.total||0),0)}));
   const maxV=Math.max(...dayData.map(d=>d.val),1);
-  // por forma de pagamento
-  const formaData={dinheiro:0,credito:0,debito:0,pix:0,voucher:0,maquininha:0};
-  peds.forEach(p=>{if(p.forma_pag&&formaData[p.forma_pag]!==undefined)formaData[p.forma_pag]+=p.total||0});
+  // M2: por forma de pagamento — itera parcelas (pagamentos mistos) + fallback forma_pag
+  const formaData={dinheiro:0,credito:0,debito:0,pix:0,voucher:0,maquininha:0,outro:0};
+  peds.forEach(p=>{
+    if(p.parcelas&&p.parcelas.length){
+      // pagamento misto: soma cada parcela na forma correspondente
+      p.parcelas.forEach(parc=>{
+        const fk=parc.forma||parc.id||'outro';
+        if(formaData[fk]!==undefined)formaData[fk]+=parc.valor||0;
+        else formaData.outro=(formaData.outro||0)+(parc.valor||0);
+      });
+    } else if(p.forma_pag){
+      // pagamento único legado
+      const fk=p.forma_pag;
+      if(formaData[fk]!==undefined)formaData[fk]+=p.total||0;
+      else formaData.outro=(formaData.outro||0)+(p.total||0);
+    }
+  });
   document.getElementById('pg-relatorio').innerHTML=`
   <div class="tabbar mb12">
     ${[['hoje','Hoje'],['semana','7 dias'],['mes','Mês']].map(([id,lbl])=>`<button class="tabitem ${per===id?'on':''}" onclick="ST._relPer='${id}';renderRelatorio()">${lbl}</button>`).join('')}
@@ -3019,13 +3065,6 @@ function renderRelatorio(){
     <button class="btn bs bw" onclick="Drive.exportJSON()">💾 Exportar backup</button>
     <button class="btn bb bw" onclick="importBackup()">📥 Importar</button>
   </div>`;
-  // fix template literal escaping
-  document.querySelectorAll('#pg-relatorio .rb .fs13').forEach(el=>{
-    if(el.textContent.includes('{{${{{')){
-      const raw=el.getAttribute('data-forma')||'';
-      el.textContent=raw;
-    }
-  });
 }
 
 function importBackup(){const inp=document.createElement('input');inp.type='file';inp.accept='.json';inp.onchange=e=>{if(e.target.files[0])Drive.import(e.target.files[0])};inp.click()}
@@ -3551,6 +3590,55 @@ function _kdsStartTick(){
 function _kdsStopTick(){clearInterval(_kdsTick);_kdsTick=null;clearInterval(_kdsAutoRef);_kdsAutoRef=null;}
 
 // ═══════════════════════════════════════════
+//  DIAGNÓSTICO DO SISTEMA (C2)
+// ═══════════════════════════════════════════
+function openDiagnostico(){
+  const lsUsado=(JSON.stringify(localStorage).length/1024).toFixed(1);
+  const pedTotal=ST.pedidos.length;
+  const pedAbertos=ST.pedidos.filter(p=>p.status==='aberto'||p.status==='preparo').length;
+  const prodTotal=ST.produtos.length;
+  const fsOk=_syncStatus==='ok';
+  const audioCtx=typeof AudioContext!=='undefined'||typeof webkitAudioContext!=='undefined';
+  const speechOk='speechSynthesis' in window;
+  const btOk=!!BT.char;
+  const btApi='bluetooth' in navigator;
+  const swOk=!!navigator.serviceWorker?.controller;
+  const lines=[
+    ['📦 Pedidos total', pedTotal],
+    ['📋 Pedidos abertos', pedAbertos],
+    ['🍽️ Produtos', prodTotal],
+    ['📂 Categorias', ST.categorias.length],
+    ['👥 Clientes', ST.clientes.length],
+    ['👤 Funcionários', ST.funcionarios.length],
+    ['💾 LocalStorage usado', lsUsado+'KB'],
+    ['☁️ Firestore sync', fsOk?'✅ OK':'⚠️ '+(_syncStatus||'desligado')],
+    ['🖨️ Impressora BT', btOk?'✅ Conectada':'❌ Desconectada'],
+    ['📡 Web Bluetooth API', btApi?'✅ Disponível':'❌ Indisponível'],
+    ['🔊 Web Audio API', audioCtx?'✅ Disponível':'❌ Indisponível'],
+    ['🗣️ Speech Synthesis', speechOk?'✅ Disponível':'❌ Indisponível'],
+    ['⚙️ Service Worker', swOk?'✅ Ativo':'⚠️ Inativo'],
+    ['📱 Modo mobile', isMobile()?'Sim':'Não'],
+    ['🌐 User Agent', navigator.userAgent.slice(0,60)+'...'],
+  ];
+  const html=`<div style="font-family:monospace;font-size:12px;line-height:1.8">
+    ${lines.map(([k,v])=>`<div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--br);padding:4px 0;gap:12px">
+      <span style="color:var(--t2)">${k}</span><span style="font-weight:700;text-align:right">${v}</span>
+    </div>`).join('')}
+  </div>
+  <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+    <button class="btn ba bsm" onclick="Drive.exportJSON()">📥 Backup JSON</button>
+    <button class="btn bs bsm" onclick="if(confirm('Limpar TODOS os dados locais? (irrecuperável)')){'pedepronto_'.split('').forEach(()=>{});Object.keys(localStorage).filter(k=>k.startsWith('pedepronto_')).forEach(k=>localStorage.removeItem(k));location.reload();}">🗑️ Reset dados</button>
+    <button class="btn bg bsm" onclick="location.reload()">🔄 Recarregar</button>
+  </div>`;
+  confirm2('🔬','Diagnóstico do Sistema',html,'Fechar','bs',()=>{});
+  // hack para mostrar html no corpo do confirm
+  setTimeout(()=>{
+    const msg=document.getElementById('mc-conf-msg');
+    if(msg){msg.innerHTML=html;msg.style.textAlign='left';}
+  },10);
+}
+
+// ═══════════════════════════════════════════
 //  CENTRAL DE ALERTAS (5.1)
 // ═══════════════════════════════════════════
 function _addAlerta(ico,msg,tipo='info'){
@@ -3560,6 +3648,8 @@ function _addAlerta(ico,msg,tipo='info'){
   if(recent)return;
   ST.alertas.unshift({id:uid(),ico,msg,tipo,created:now(),lido:false});
   if(ST.alertas.length>50)ST.alertas.length=50;
+  // M5: persiste alertas no localStorage
+  DB.set('alertas',ST.alertas);
   const naoLidos=ST.alertas.filter(a=>!a.lido).length;
   const dot=document.getElementById('alerta-dot');
   if(dot){dot.className='alerta-dot'+(naoLidos?' on':'');}
