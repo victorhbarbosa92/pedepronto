@@ -244,6 +244,43 @@ select.inp{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns=
 @keyframes spin{to{transform:rotate(360deg)}}
 .pix-qr-wrap{background:#fff;border-radius:14px;padding:14px;display:inline-flex;align-items:center;justify-content:center;margin-bottom:12px}
 
+/* ── KDS RING (2.1) ── */
+.kds-ring-wrap{position:relative;flex-shrink:0;width:64px;height:64px;display:flex;align-items:center;justify-content:center}
+.kds-ring-svg{position:absolute;inset:0;transform:rotate(-90deg)}
+.kds-ring-bg{fill:none;stroke:var(--s3);stroke-width:5}
+.kds-ring-fill{fill:none;stroke-width:5;stroke-linecap:round;transition:stroke-dashoffset .9s ease,stroke .4s}
+.kds-ring-timer{text-align:center;z-index:1;line-height:1;pointer-events:none}
+.kds-ring-time{font-size:14px;font-weight:900;font-family:monospace}
+.kds-ring-sub{font-size:9px;color:var(--t2);margin-top:1px;font-weight:700;text-transform:uppercase;letter-spacing:.4px}
+
+/* ── KDS TABS COLORIDAS (2.3) ── */
+.tabitem.kds-coz.on{background:rgba(255,92,26,.15);color:var(--ac)}
+.tabitem.kds-bar.on{background:var(--blbg);color:var(--bl)}
+
+/* ── SENHA BALCÃO (4.1) ── */
+.senha-badge{display:inline-flex;align-items:center;justify-content:center;min-width:56px;height:56px;border-radius:13px;background:linear-gradient(135deg,var(--ac),var(--acd));color:#fff;font-size:20px;font-weight:900;font-family:monospace;flex-shrink:0;box-shadow:0 4px 14px rgba(255,92,26,.35);letter-spacing:-1px}
+
+/* ── MINI STATS BALCÃO (4.2) ── */
+.mstat{flex:1;background:var(--s2);border:1px solid var(--br2);border-radius:11px;padding:9px 8px;text-align:center}
+.mstat-v{font-size:19px;font-weight:900;font-family:monospace;line-height:1}
+.mstat-l{font-size:10px;color:var(--t2);margin-top:3px;font-weight:700}
+
+/* ── CENTRAL DE ALERTAS (5.1) ── */
+#alerta-bell{position:relative}
+.alerta-dot{position:absolute;top:5px;right:5px;width:9px;height:9px;border-radius:50%;background:var(--rd);border:2px solid var(--sf);display:none;animation:prd 1.5s infinite}
+.alerta-dot.on{display:block}
+.alerta-item{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--br)}
+.alerta-item:last-child{border-bottom:none}
+.alerta-ico{font-size:20px;flex-shrink:0;margin-top:1px}
+.alerta-new-dot{width:7px;height:7px;border-radius:50%;background:var(--ac);flex-shrink:0;margin-top:6px}
+
+/* ── PROD GRADIENT (6.3) ── */
+.prod-c{cursor:pointer;border-radius:var(--r);overflow:hidden;position:relative;background:var(--s2);border:1px solid var(--br2);padding:12px 10px;text-align:center;transition:all .15s;display:flex;flex-direction:column;align-items:center;gap:3px}
+.prod-c::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.04) 0%,transparent 55%);pointer-events:none}
+.prod-c:active{transform:scale(.95);border-color:var(--ac)}
+.prod-c-bar{position:absolute;bottom:0;left:0;right:0;height:3px;border-radius:0 0 var(--r) var(--r);background:linear-gradient(90deg,var(--ac),var(--acd))}
+.prod-c .prod-tempo{color:var(--t3);font-size:10px;font-weight:700}
+
 /* ── PIN ── */
 .pin-display{display:flex;gap:14px;justify-content:center;margin-bottom:20px}
 .pin-dot{width:14px;height:14px;border-radius:50%;border:2px solid var(--br3)}
@@ -350,6 +387,7 @@ select.inp{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns=
   <button class="tbtn-ico" id="btn-home" onclick="nav('dash')" style="display:none" title="Início">🏠</button>
   <div id="top-title" style="font-size:13px;font-weight:700;flex:1;padding:0 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Dashboard</div>
   <div style="display:flex;gap:6px;align-items:center;flex-shrink:0">
+    <button class="tbtn-ico" id="alerta-bell" onclick="openAlertas()" title="Alertas">🔔<span class="alerta-dot" id="alerta-dot"></span></button>
     <button class="tbtn-ico" id="btn-bt" onclick="openMc('mc-bt')" title="Impressora">🖨️</button>
     <button class="tbtn-ico" id="btn-drive" onclick="showCloudStatus()" title="Status da sincronização">☁️</button>
     <button class="tbtn" onclick="showCaixaQuick()" title="Caixa" id="btn-caixa-st" style="font-size:11px;padding:0 10px">💰</button>
@@ -825,6 +863,20 @@ select.inp{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns=
   </div>
 </div>
 
+<!-- MODAL: CENTRAL DE ALERTAS (5.1) -->
+<div class="mc" id="mc-alertas">
+  <div class="mb" style="max-width:400px;width:100%">
+    <div class="rb mb14">
+      <div style="font-size:15px;font-weight:800">🔔 Alertas</div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="btn bs bxs" onclick="limparAlertas()">Limpar</button>
+        <button class="btn bs bsm" onclick="closeMc('mc-alertas')">✕</button>
+      </div>
+    </div>
+    <div id="alertas-list" style="max-height:60vh;overflow-y:auto"></div>
+  </div>
+</div>
+
 <!-- MODAL: PAGAMENTO — VALOR DA PARCELA -->
 <div class="mc" id="mc-pag-valor">
   <div class="mb" style="max-width:360px;width:100%">
@@ -903,6 +955,7 @@ let ST={
   caixa:{aberto:false,abertura:null,operador:'',turno:'',obs_turno:'',saldo_inicial:0,movs:[],historico:[]},
   produtos:[],categorias:[],clientes:[],obs_grupos_globais:[],pedidos:[],vouchers:[],
   curNav:'dash',backNav:'dash',
+  alertas:[], // {id, ico, msg, tipo, created, lido}
   funcionarios:[], // {id, nome, cpf, cargo:'admin'|'funcionario', pin, ativo}
   currentUser:null, // {id, nome, cargo, pin} — usuário logado
   novoPedido:{tipo:'mesa',mesa_id:null,mesa_label:'',cliente_nome:'',endereco:'',cart:[],obs:{}},
@@ -1761,14 +1814,14 @@ function renderPedido(){
     <div class="fs12 t2">${np.tipo==='mesa'?'Mesa':np.tipo==='balcao'?'Balcão':'Delivery'}</div></div>
     <button class="btn bs bsm" onclick="nav(ST.backNav||'mesas')">✕ Cancelar</button>
   </div>
-  ${np.tipo==='balcao'?`<div class="fg mb12"><label class="fl">Nome do cliente</label>
-  <input class="inp" id="inp-cli-nome" value="${esc(np.cliente_nome)}" placeholder="Nome do cliente" oninput="ST.novoPedido.cliente_nome=this.value" autocomplete="off"></div>`:''}
+  ${np.tipo==='balcao'?`<div class="fg mb12"><label class="fl">Nome do cliente *</label>
+  <input class="inp" id="inp-cli-nome" value="${esc(np.cliente_nome)}" placeholder="Nome do cliente (obrigatório)" oninput="ST.novoPedido.cliente_nome=this.value" autocomplete="off"></div>`:''}
   ${np.tipo==='delivery'?`<div class="card mb12" style="border-color:var(--blbr)">
     <div class="fs11 bold mb10" style="color:var(--bl);text-transform:uppercase;letter-spacing:.7px">📍 Dados da entrega</div>
     <div class="fg mb8"><label class="fl">Nome do cliente *</label>
     <input class="inp" id="inp-cli-nome" value="${esc(np.cliente_nome)}" placeholder="Nome completo" oninput="ST.novoPedido.cliente_nome=this.value" autocomplete="off"></div>
     <div class="g2 mb8">
-      <div class="fg" style="margin:0"><label class="fl">Telefone / WhatsApp</label>
+      <div class="fg" style="margin:0"><label class="fl">Telefone / WhatsApp *</label>
       <input class="inp" id="inp-tel" value="${esc(np.telefone||'')}" placeholder="(00) 00000-0000" oninput="ST.novoPedido.telefone=this.value"></div>
       <div class="fg" style="margin:0"><label class="fl">Bairro *</label>
       <input class="inp" id="inp-bairro" value="${esc(np.bairro||'')}" placeholder="Bairro" oninput="ST.novoPedido.bairro=this.value"></div>
@@ -1818,12 +1871,17 @@ function renderPedido(){
   </div>
   <div class="prod-grid mb14">
     ${prods.length===0?`<div style="color:var(--t2);font-size:13px;grid-column:1/-1;text-align:center;padding:20px">Nenhum produto</div>`:''}
-    ${prods.map(p=>`<div class="prod-c" onclick="addCart('${p.id}')">
-      <div class="prod-ico">${p.ico||'🍽️'}</div>
-      <div class="prod-nm">${esc(p.nome)}</div>
-      <div class="prod-pr">${fmtR(p.preco)}</div>
-      ${p.tempo?`<div class="prod-tempo">⏱ ${p.tempo}min</div>`:''}
-    </div>`).join('')}
+    ${prods.map(p=>{
+      // 6.3 gradiente por destino
+      const destCor=(p.dest||[]).includes('bar')?'var(--bl)':'var(--ac)';
+      return`<div class="prod-c" onclick="addCart('${p.id}')">
+        <div class="prod-ico" style="font-size:30px;line-height:1.1">${p.ico||'🍽️'}</div>
+        <div class="prod-nm">${esc(p.nome)}</div>
+        <div class="prod-pr">${fmtR(p.preco)}</div>
+        ${p.tempo?`<div class="prod-tempo">⏱ ${p.tempo}min</div>`:''}
+        <div class="prod-c-bar" style="background:linear-gradient(90deg,${destCor},${destCor}99)"></div>
+      </div>`;
+    }).join('')}
   </div>
   <div style="position:sticky;bottom:0;background:var(--bg);padding:10px 0">
     <button class="btn bp bw" style="padding:14px;font-size:15px" ${np.cart.length===0?'disabled':''} onclick="confirmarPedido()">
@@ -1858,8 +1916,17 @@ function openObsSheet(cartIdx){
   function buildSheet(){
     const extras=calcExtras();
     const ok=checkObrig();
+    const curQty=ST.novoPedido.cart[cartIdx]?.qty||1;
     sh.innerHTML=`<div class="sh-handle"></div>
-    <div class="sh-title">✏️ ${esc(item.nome)}</div>
+    <div class="rb mb12">
+      <div class="sh-title" style="margin:0">✏️ ${esc(item.nome)}</div>
+      <!-- 6.2 qty no modal -->
+      <div style="display:flex;align-items:center;gap:0;border:1px solid var(--br2);border-radius:10px;overflow:hidden;flex-shrink:0">
+        <button style="width:38px;height:38px;background:var(--s2);border:none;color:var(--tx);font-size:18px;cursor:pointer;font-family:inherit" onclick="obsQty(${cartIdx},-1)">−</button>
+        <div style="min-width:36px;text-align:center;font-size:15px;font-weight:900;font-family:monospace;padding:0 4px">${curQty}</div>
+        <button style="width:38px;height:38px;background:var(--s2);border:none;color:var(--tx);font-size:18px;cursor:pointer;font-family:inherit" onclick="obsQty(${cartIdx},1)">+</button>
+      </div>
+    </div>
     ${grupos.map(g=>{
       const faltaObrig=g.obrigatorio&&!(sel[g.id]||[]).length;
       return`<div class="obs-group" style="${faltaObrig?'border-left:3px solid var(--rd);padding-left:8px':''}">
@@ -1917,6 +1984,20 @@ function cartQty(idx,delta){
   if(ST.novoPedido.cart[idx].qty===0)ST.novoPedido.cart.splice(idx,1);
   renderPedido();
 }
+// 6.2 qty direto no modal de obs (sem fechar)
+function obsQty(cartIdx,delta){
+  const cart=ST.novoPedido.cart;
+  if(!cart[cartIdx])return;
+  const nq=Math.max(1,cart[cartIdx].qty+delta);
+  cart[cartIdx].qty=nq;
+  // atualiza display sem re-renderizar o sheet todo
+  const el=document.querySelector('#sh-obs .sh-title+div [style*="font-weight:900"]')||
+            document.querySelector('#sh-obs [style*="font-weight:900"][style*="monospace"]');
+  if(el)el.textContent=nq;
+  // re-renderiza o cabeçalho do qty
+  const qEls=document.querySelectorAll('#sh-obs [style*="font-weight:900"][style*="font-family:monospace"]');
+  qEls.forEach(q=>{if(q.parentElement?.querySelector('button'))q.textContent=nq;});
+}
 function setConsumo(val){
   ST.novoPedido.consumo=val;
   const local=document.getElementById('btn-consumo-local');
@@ -1944,6 +2025,16 @@ function confirmarPedido(){
   if(!ST.caixa.aberto){toast('❌ Abra o caixa antes de criar pedidos','r',4000);return}
   const np=ST.novoPedido;
   if(!np.cart.length){toast('Carrinho vazio!','a');return}
+  // nome obrigatório para balcão e delivery
+  if((np.tipo==='balcao'||np.tipo==='delivery')&&!(np.cliente_nome||'').trim()){
+    toast('⚠️ Informe o nome do cliente','r',3000);
+    document.getElementById('inp-cli-nome')?.focus();return;
+  }
+  // 3.3 telefone obrigatório para delivery
+  if(np.tipo==='delivery'&&!(np.telefone||'').trim()){
+    toast('⚠️ Informe o telefone para delivery','r',3000);
+    document.getElementById('inp-tel')?.focus();return;
+  }
   if(!ST.pedido_seq)ST.pedido_seq=1;
   const num='#'+String(ST.pedido_seq).padStart(3,'0');
   ST.pedido_seq++;
@@ -2041,32 +2132,38 @@ function aplicarDescPct(ped_id){
   const inp=document.getElementById('desc-pct-'+ped_id);
   const pct=parseFloat(inp?.value||'0');
   if(!pct||pct<=0||pct>100){toast('Informe % valido (1-100)','r');return}
-  requireAdmin('Autorizar Desconto '+pct+'%',()=>{
+  // 1.4 desconto com PIN — usa askPin para autorização rápida
+  askPin('💸 Desconto '+pct+'%','Digite o PIN para autorizar o desconto',()=>{
     const ped=ST.pedidos.find(p=>p.id===ped_id);if(!ped)return;
     const v=+(ped.total_bruto*(pct/100)).toFixed(2);
     ped.desconto=v;ped.total=+(ped.total_bruto-v).toFixed(2);
     save('pedidos');renderFechar(ped_id);
     toast('Desconto de '+pct+'% aplicado — -'+fmtR(v),'g',4000);
+    _addAlerta('💸','Desconto '+pct+'% aplicado em '+ped.num,'info');
   });
 }
 function aplicarDescVal(ped_id){
   const inp=document.getElementById('desc-val-'+ped_id);
   const val=parseFloat(inp?.value||'0');
   if(!val||val<=0){toast('Informe valor valido','r');return}
-  requireAdmin('Autorizar Desconto R$ '+val.toFixed(2),()=>{
+  // 1.4 desconto com PIN
+  askPin('💸 Desconto R$ '+val.toFixed(2),'Digite o PIN para autorizar o desconto',()=>{
     const ped=ST.pedidos.find(p=>p.id===ped_id);if(!ped)return;
     const v=Math.min(val,ped.total_bruto);
     ped.desconto=+v.toFixed(2);ped.total=+(ped.total_bruto-v).toFixed(2);
     save('pedidos');renderFechar(ped_id);
     toast('Desconto de '+fmtR(v)+' aplicado','g',4000);
+    _addAlerta('💸','Desconto '+fmtR(v)+' aplicado em '+ped.num,'info');
   });
 }
 function askDesconto(ped_id){ aplicarDescPct(ped_id) }
 function askCortesia(ped_id){
-  requireAdmin('Autorizar Cortesia Total',()=>{
+  // 1.4 cortesia com PIN
+  askPin('🎁 Cortesia Total','Digite o PIN para autorizar a cortesia',()=>{
     const ped=ST.pedidos.find(p=>p.id===ped_id);if(!ped)return;
     ped.cortesia=true;ped.desconto=ped.total_bruto;ped.total=0;
     save('pedidos');renderFechar(ped_id);toast('🎁 Cortesia total aplicada','g');
+    _addAlerta('🎁','Cortesia total em '+ped.num,'info');
   });
 }
 function addItemExistente(ped_id){
@@ -2325,16 +2422,33 @@ function setDelPag(v){ST.novoPedido.del_pagamento=v;renderPedido();}
 function renderBalcao(){
   const peds=ST.pedidos.filter(p=>p.tipo==='balcao'&&(p.status==='aberto'||p.status==='preparo'));
   const hist=ST.pedidos.filter(p=>p.tipo==='balcao'&&p.status==='pago').slice(-6).reverse();
+  // 4.2 mini-stats
+  const totalVal=peds.reduce((s,p)=>s+(p.total||0),0);
+  const agora=Date.now();
+  const tempoMed=peds.length?Math.round(peds.reduce((s,p)=>s+(agora-new Date(p.created).getTime()),0)/peds.length/60000):0;
   document.getElementById('pg-balcao').innerHTML=`
-  <div class="rb mb12"><div class="bold fs14">Balcão</div>
+  <div class="rb mb10"><div class="bold fs14">Balcão</div>
   <button class="btn bp bsm" onclick="novoBalcao()">+ Novo pedido</button></div>
+  <!-- 4.2 Mini-stats -->
+  <div style="display:flex;gap:8px;margin-bottom:12px">
+    <div class="mstat"><div class="mstat-v ac">${peds.length}</div><div class="mstat-l">Em aberto</div></div>
+    <div class="mstat"><div class="mstat-v am">${fmtR(totalVal)}</div><div class="mstat-l">Total fila</div></div>
+    <div class="mstat"><div class="mstat-v" style="color:var(--bl)">${tempoMed}min</div><div class="mstat-l">Tempo médio</div></div>
+  </div>
   ${peds.length===0?`<div class="card mb10" style="text-align:center;color:var(--t2);padding:22px">Nenhum pedido no balcão 🎉</div>`:''}
   ${peds.map(p=>`<div class="card mb8">
-    <div class="rb mb6"><div><div class="row gap-6"><div class="bold">${p.num}</div><span class="bdg ${p.consumo==='viagem'?'bg-p':'bg-g'}" style="font-size:10px">${p.consumo==='viagem'?'🥡 Viagem':'🏠 Local'}</span></div>
-    <div class="fs12 t2">${p.cliente_nome||'Sem nome'} · ${elapsed(Date.now()-new Date(p.created).getTime())}</div></div>
-    <span class="bdg bg-b">Balcão</span></div>
-    <div class="fs12 t2 mb4">${p.consumo==='viagem'?'🛍️ Para viagem':'🍽️ Consumo local'}</div>
-    <div class="fs12 t2 mb8">${p.itens.map(i=>i.qty+'x '+i.nome).join(' · ')}</div>
+    <!-- 4.1 Senha balcão -->
+    <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:8px">
+      <div class="senha-badge">${p.num.replace('#','')}</div>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px">
+          <span class="bold fs13">${esc(p.cliente_nome||'Sem nome')}</span>
+          <span class="bdg ${p.consumo==='viagem'?'bpu':'bg'}" style="font-size:10px">${p.consumo==='viagem'?'🥡 Viagem':'🍽 Local'}</span>
+        </div>
+        <div class="fs12 t2">${elapsed(Date.now()-new Date(p.created).getTime())} · ${p.itens.length} item(ns)</div>
+        <div class="fs12 t3 mt2">${p.itens.map(i=>i.qty+'x '+i.nome).join(' · ')}</div>
+      </div>
+    </div>
     <div class="rb"><div class="bold am mono">${fmtR(p.total)}</div>
     <div style="display:flex;gap:6px">
       <button class="btn bb bxs" onclick="showCupomPrevia('${p.id}','comanda')">🖨️</button>
@@ -2392,8 +2506,8 @@ function renderProducao(){
   document.getElementById('pg-producao').innerHTML=`
   <div class="rb mb10">
     <div class="tabbar" style="flex:1">
-      <button class="tabitem ${tab==='cozinha'?'on':''}" onclick="ST._kdsTab='cozinha';renderProducao()">🍳 Cozinha</button>
-      <button class="tabitem ${tab==='bar'?'on':''}" onclick="ST._kdsTab='bar';renderProducao()">🍺 Bar</button>
+      <button class="tabitem kds-coz ${tab==='cozinha'?'on':''}" onclick="ST._kdsTab='cozinha';renderProducao()">🍳 Cozinha ${ST.pedidos.filter(p=>(p.status==='aberto'||p.status==='preparo')&&p.itens.some(i=>i.dest==='coz')).length>0?`<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--ac);margin-left:4px;vertical-align:middle"></span>`:''}</button>
+      <button class="tabitem kds-bar ${tab==='bar'?'on':''}" onclick="ST._kdsTab='bar';renderProducao()">🍺 Bar ${ST.pedidos.filter(p=>(p.status==='aberto'||p.status==='preparo')&&p.itens.some(i=>i.dest==='bar')).length>0?`<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--bl);margin-left:4px;vertical-align:middle"></span>`:''}</button>
     </div>
     <span class="fs12 t3" style="padding-left:10px;white-space:nowrap">${peds.length} pedido${peds.length!==1?'s':''}</span>
   </div>
@@ -2402,10 +2516,12 @@ function renderProducao(){
     <div class="bold fs14">Tudo em dia!</div>
     <div class="fs12 t3 mt4">Nenhum pedido em produção no momento.</div>
   </div>`:''}
-  ${peds.map(p=>{
+  ${peds.map((p,qi)=>{
     const created=new Date(p.created).getTime();
     const prev=dest==='coz'?p.prev_coz:p.prev_bar;
-    const prevMs=prev?new Date(prev).getTime():0;
+    // 2.2: ajusta tempo pela fila — cada pedido na fila adiciona 1 min
+    const filaExtra=qi*60*1000;
+    const prevMs=prev?(new Date(prev).getTime()+filaExtra):0;
     const elSec=Math.floor((Date.now()-created)/1000);
     const mins=Math.floor(elSec/60);const secs=elSec%60;
     const late=prevMs&&Date.now()>prevMs;
@@ -2414,7 +2530,13 @@ function renderProducao(){
     const statusCor=late?'var(--rd)':minsRest!==null&&minsRest<4?'var(--am)':'var(--gn)';
     const itensDest=p.itens.filter(i=>i.dest===dest);
     const todoConcluido=itensDest.every(i=>i.concluido);
-    return`<div class="kds-c ${cls}" data-id="${p.id}" data-created="${created}" data-prev="${prevMs}">
+    // 2.1: anel SVG — r=26, circunference≈163.4
+    const R=26,C=2*Math.PI*R;
+    const totalSec=prevMs?Math.floor((prevMs-created)/1000):0;
+    const prog=totalSec?Math.min(elSec/totalSec,1):0;
+    const offset=C*(1-prog);
+    const ringSt=late?'var(--rd)':prog>.75?'var(--am)':'var(--gn)';
+    return`<div class="kds-c ${cls}" data-id="${p.id}" data-created="${created}" data-prev="${prevMs}" data-totalsec="${totalSec}">
       <div class="rb mb10">
         <div style="min-width:0;flex:1">
           <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:4px">
@@ -2422,13 +2544,22 @@ function renderProducao(){
             <div class="bold fs14 t2">·</div>
             <div class="bold fs14">${p.mesa_label||p.tipo}</div>
             <span class="bdg ${p.consumo==='viagem'?'bpu':'bg'}" style="font-size:10px">${p.consumo==='viagem'?'🛍 Viagem':'🍽 Local'}</span>
+            ${qi>0?`<span style="font-size:10px;font-weight:800;color:var(--am);background:var(--ambg);padding:2px 7px;border-radius:99px;border:1px solid var(--ambr)">🕑 +${qi}min na fila</span>`:''}
             ${late?`<span class="kds-late-badge" style="display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:800;color:var(--rd);background:var(--rdbg);padding:2px 8px;border-radius:99px;border:1px solid var(--rdbr)">🔴 +${Math.ceil((Date.now()-prevMs)/60000)}min</span>`:'<span class="kds-late-badge" style="display:none"></span>'}
           </div>
           <div class="fs12 t2">${p.cliente_nome?'👤 '+p.cliente_nome:''}</div>
         </div>
-        <div style="text-align:right;flex-shrink:0">
-          <div class="kds-live-timer" style="font-size:26px;font-weight:900;font-family:monospace;color:${statusCor};line-height:1">${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}</div>
-          <div class="fs11 t3 mt2">${late?'atrasado':minsRest!==null?'~'+minsRest+'min restante':'em preparo'}</div>
+        <!-- 2.1 ANEL DE PROGRESSO -->
+        <div class="kds-ring-wrap">
+          <svg class="kds-ring-svg" width="64" height="64" viewBox="0 0 64 64">
+            <circle class="kds-ring-bg" cx="32" cy="32" r="${R}"/>
+            <circle class="kds-ring-fill" cx="32" cy="32" r="${R}"
+              stroke="${ringSt}" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${totalSec?offset.toFixed(1):C.toFixed(1)}"/>
+          </svg>
+          <div class="kds-ring-timer">
+            <div class="kds-ring-time kds-live-timer" style="color:${statusCor}">${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}</div>
+            <div class="kds-ring-sub">${late?'atrasado':minsRest!==null?minsRest+'min':'preparo'}</div>
+          </div>
         </div>
       </div>
       <div style="margin-bottom:10px">
@@ -2751,6 +2882,20 @@ function renderCaixa(){
   const hoje=new Date().toDateString();
   const pedHoje=ST.pedidos.filter(p=>p.status==='pago'&&p.pago_em&&new Date(p.pago_em).toDateString()===hoje);
   const recHoje=pedHoje.reduce((s,p)=>s+(p.total||0),0);
+  // 7.1 breakdown por forma de pagamento no turno atual
+  const fmIco={dinheiro:'💵',credito:'💳',debito:'💳',pix:'📱',voucher:'🎟️',maquininha:'🏧'};
+  const fmLbl={dinheiro:'Dinheiro',credito:'Crédito',debito:'Débito',pix:'PIX',voucher:'Voucher',maquininha:'Maquininha'};
+  const breakdown={};
+  // usa as parcelas registradas nos movimentos do caixa (tipo=entrada) da sessão atual
+  movs.filter(m=>m.tipo==='entrada').forEach(m=>{
+    // desc pattern: "Pedido #001 · Dinheiro" → extrai forma
+    const match=m.desc&&m.desc.match(/·\s*(.+)$/);
+    const forma=match?match[1].trim().toLowerCase().replace(/é/g,'e').replace(/í/g,'i'):'outro';
+    // normaliza
+    const fk=Object.keys(fmLbl).find(k=>fmLbl[k].toLowerCase()===forma)||forma;
+    breakdown[fk]=(breakdown[fk]||0)+(m.valor||0);
+  });
+  const bdEntries=Object.entries(breakdown).filter(([,v])=>v>0);
   document.getElementById('pg-caixa').innerHTML=`
   <div class="card mb10" style="text-align:center">
     <div class="fs11 t2 mb4">Saldo em caixa</div>
@@ -2761,6 +2906,20 @@ function renderCaixa(){
     <div class="kpi"><div class="kpi-v ac">${fmtR(recHoje)}</div><div class="kpi-l">Receita hoje</div></div>
     <div class="kpi"><div class="kpi-v">${pedHoje.length}</div><div class="kpi-l">Pedidos</div></div>
   </div>
+  ${bdEntries.length?`<div class="sec-title mb8">💳 Breakdown do turno</div>
+  <div class="card mb10">
+    ${bdEntries.map(([f,v])=>{
+      const pct=recHoje?Math.round((v/recHoje)*100):0;
+      return`<div style="margin-bottom:10px">
+        <div class="rb mb4"><span class="fs13">${fmIco[f]||'💰'} ${fmLbl[f]||f}</span><span class="bold mono am">${fmtR(v)}</span></div>
+        <div style="height:6px;border-radius:99px;background:var(--s3);overflow:hidden">
+          <div style="height:100%;border-radius:99px;width:${pct}%;background:linear-gradient(90deg,var(--ac),var(--acd));transition:width .5s ease"></div>
+        </div>
+        <div class="fs10 t3 mt2">${pct}% do total</div>
+      </div>`;
+    }).join('')}
+  </div>`:''}
+
   ${ST.caixa.aberto?`
   <div class="g2 mb10">
     <button class="btn ba bw" onclick="askSangria()">📤 Sangria</button>
@@ -3260,6 +3419,10 @@ function anunciar(tipo,dados){
               ped.tipo==='balcao'?'Retire no balcão.':
               ped.tipo==='mesa'?`Leve para a ${ped.mesa_label||'mesa'}.`:'Retire no balcão.';
 
+  // alimenta central de alertas para eventos relevantes
+  if(tipo==='novo_pedido')_addAlerta('🆕',`Novo pedido ${ped.num||''}${ped.mesa_label?' · '+ped.mesa_label:''}${ped.cliente_nome?' · '+ped.cliente_nome:''}`.trim(),'novo');
+  if(tipo==='atrasado')_addAlerta('⏰',`Pedido ${ped.num||ped.id||''} atrasado`,'atrasado');
+
   switch(tipo){
     case 'novo_pedido':
       if(_AUDIO.guiadoAtivo()){
@@ -3338,15 +3501,37 @@ function testarAudio(){
 let _kdsTick=null,_kdsAutoRef=null,_kdsSeenIds=new Set(),_kdsLateAlerted=new Set();
 function _kdsStartTick(){
   if(_kdsTick)return;
+  const R=26,C=2*Math.PI*R;
   _kdsTick=setInterval(()=>{
     document.querySelectorAll('.kds-c[data-created]').forEach(card=>{
       const created=parseInt(card.dataset.created);
       const prev=parseInt(card.dataset.prev)||0;
+      const totalSec=parseInt(card.dataset.totalsec)||0;
       const elSec=Math.floor((Date.now()-created)/1000);
       const mins=Math.floor(elSec/60);const secs=elSec%60;
+      const late=prev&&Date.now()>prev;
+      const minsRest=prev?Math.ceil((prev-Date.now())/60000):null;
+      // timer text
       const t=card.querySelector('.kds-live-timer');
-      if(t)t.textContent=`${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
-      if(prev&&Date.now()>prev){
+      if(t){
+        t.textContent=`${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
+        const statusCor=late?'var(--rd)':minsRest!==null&&minsRest<4?'var(--am)':'var(--gn)';
+        t.style.color=statusCor;
+      }
+      // anel
+      const ringFill=card.querySelector('.kds-ring-fill');
+      if(ringFill&&totalSec){
+        const prog=Math.min(elSec/totalSec,1);
+        const offset=(C*(1-prog)).toFixed(1);
+        ringFill.setAttribute('stroke-dashoffset',offset);
+        const ringSt=late?'var(--rd)':prog>.75?'var(--am)':'var(--gn)';
+        ringFill.setAttribute('stroke',ringSt);
+      }
+      // sub label
+      const sub=card.querySelector('.kds-ring-sub');
+      if(sub)sub.textContent=late?'atrasado':minsRest!==null?minsRest+'min':'preparo';
+      // late badge
+      if(late){
         const lateMin=Math.ceil((Date.now()-prev)/60000);
         const lb=card.querySelector('.kds-late-badge');
         if(lb){lb.textContent=`🔴 +${lateMin}min`;lb.style.display='inline-flex';}
@@ -3356,6 +3541,7 @@ function _kdsStartTick(){
           _kdsLateAlerted.add(oid);
           const ped=ST.pedidos.find(p=>p.id===oid);
           anunciar('atrasado',ped||{id:oid,num:card.querySelector('.bold.fs15')?.textContent||''});
+          _addAlerta('⏰','Pedido atrasado: '+(ped?.num||oid),'atrasado');
         }
       }
     });
@@ -3363,6 +3549,48 @@ function _kdsStartTick(){
   _kdsAutoRef=setInterval(()=>{if(ST.curNav==='producao')renderProducao();},20000);
 }
 function _kdsStopTick(){clearInterval(_kdsTick);_kdsTick=null;clearInterval(_kdsAutoRef);_kdsAutoRef=null;}
+
+// ═══════════════════════════════════════════
+//  CENTRAL DE ALERTAS (5.1)
+// ═══════════════════════════════════════════
+function _addAlerta(ico,msg,tipo='info'){
+  if(!ST.alertas)ST.alertas=[];
+  // evita duplicação de alerta idêntico nos últimos 60s
+  const recent=ST.alertas.find(a=>a.msg===msg&&(Date.now()-new Date(a.created).getTime())<60000);
+  if(recent)return;
+  ST.alertas.unshift({id:uid(),ico,msg,tipo,created:now(),lido:false});
+  if(ST.alertas.length>50)ST.alertas.length=50;
+  const naoLidos=ST.alertas.filter(a=>!a.lido).length;
+  const dot=document.getElementById('alerta-dot');
+  if(dot){dot.className='alerta-dot'+(naoLidos?' on':'');}
+}
+function openAlertas(){
+  // marca todos como lidos
+  (ST.alertas||[]).forEach(a=>a.lido=true);
+  const dot=document.getElementById('alerta-dot');
+  if(dot)dot.className='alerta-dot';
+  const list=document.getElementById('alertas-list');
+  if(list){
+    const items=(ST.alertas||[]);
+    list.innerHTML=items.length===0
+      ?`<div style="text-align:center;color:var(--t2);padding:30px"><div style="font-size:32px;margin-bottom:8px">🔔</div><div class="fs13">Nenhum alerta no momento</div></div>`
+      :items.map(a=>`<div class="alerta-item">
+          <div class="alerta-ico">${a.ico}</div>
+          <div style="flex:1;min-width:0">
+            <div class="fs13 bold" style="${a.tipo==='atrasado'?'color:var(--rd)':a.tipo==='novo'?'color:var(--gn)':''}">${esc(a.msg)}</div>
+            <div class="fs11 t2 mt2">${fmtDH(a.created)}</div>
+          </div>
+        </div>`).join('');
+  }
+  openMc('mc-alertas');
+}
+function limparAlertas(){
+  ST.alertas=[];
+  const dot=document.getElementById('alerta-dot');
+  if(dot)dot.className='alerta-dot';
+  const list=document.getElementById('alertas-list');
+  if(list)list.innerHTML=`<div style="text-align:center;color:var(--t2);padding:30px"><div style="font-size:32px;margin-bottom:8px">🔔</div><div class="fs13">Nenhum alerta no momento</div></div>`;
+}
 
 // ── LOGIN ──────────────────────────────────────────────────────────────
 let _loginTarget=null, _loginBuf='';
