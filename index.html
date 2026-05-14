@@ -1033,7 +1033,7 @@ async function fsPull(){
     ['cfg','caixa','produtos','categorias','clientes','obs_grupos_globais','pedidos','funcionarios','vouchers'].forEach(k=>{if(r[k]!=null)ST[k]=r[k];});
     saveAll();
     _lastSyncAt=Date.now();_setSyncStatus('ok');
-    nav(ST.curNav);
+    _silentRefresh(); // não reseta scroll — pull manual de dados
     toast('✅ Dados da nuvem aplicados!','g',4000);
     playSound('sucesso');
   }catch(e){
@@ -1183,7 +1183,9 @@ function applyResponsiveNav(){
 }
 
 function nav(pg,extra){
-  if(!['pedido','fechar','pagamento'].includes(pg))ST.backNav=ST.curNav;
+  const prevPg=ST.curNav;
+  const isPageChange=pg!==prevPg;
+  if(!['pedido','fechar','pagamento'].includes(pg))ST.backNav=prevPg;
   ST.curNav=pg;
   document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
   const el=document.getElementById('pg-'+pg);if(el)el.classList.add('on');
@@ -1198,9 +1200,25 @@ function nav(pg,extra){
   if(pg==='producao')_kdsStartTick();else _kdsStopTick();
   // init consumo buttons after render
   if(pg==='pedido') setConsumo(ST.novoPedido.consumo||'local');
-  document.getElementById('page').scrollTo(0,0);
+  // ── SCROLL: só volta ao topo quando o usuário navega para uma página diferente
+  if(isPageChange) document.getElementById('page').scrollTo(0,0);
   updateBadges();
-  anunciar('nav',{titulo:PAGE_TTL[pg]||pg});
+  if(isPageChange) anunciar('nav',{titulo:PAGE_TTL[pg]||pg});
+}
+
+// Atualiza a página atual SEM resetar o scroll (para sync automático e tickers)
+function _silentRefresh(){
+  const pg=document.getElementById('page');
+  const scrollY=pg?pg.scrollTop:0;
+  const renders={
+    dash:renderDash,mesas:renderMesas,balcao:renderBalcao,delivery:renderDelivery,
+    producao:renderProducao,cardapio:renderCardapio,clientes:renderClientes,
+    caixa:renderCaixa,relatorio:renderRelatorio,funcionarios:renderFuncionarios,config:renderConfig
+  };
+  if(renders[ST.curNav])renders[ST.curNav]();
+  updateBadges();
+  // restaura scroll após a re-renderização do DOM
+  requestAnimationFrame(()=>{if(pg)pg.scrollTop=scrollY;});
 }
 
 function openMenuSheet(){
@@ -1566,7 +1584,7 @@ const Drive={
     r.onload=e=>{try{
       const d=JSON.parse(e.target.result);
       ['cfg','caixa','produtos','categorias','clientes','obs_grupos_globais','pedidos','funcionarios','vouchers'].forEach(k=>{if(d[k])ST[k]=d[k]});
-      saveAll();nav(ST.curNav);toast('✅ Backup importado!','g');
+      saveAll();_silentRefresh();toast('✅ Backup importado!','g');
     }catch{toast('❌ Arquivo inválido','r')}};
     r.readAsText(file);
   }
@@ -3585,7 +3603,7 @@ function _kdsStartTick(){
       }
     });
   },1000);
-  _kdsAutoRef=setInterval(()=>{if(ST.curNav==='producao')renderProducao();},20000);
+  _kdsAutoRef=setInterval(()=>{if(ST.curNav==='producao')_silentRefresh();},20000);
 }
 function _kdsStopTick(){clearInterval(_kdsTick);_kdsTick=null;clearInterval(_kdsAutoRef);_kdsAutoRef=null;}
 
@@ -4166,10 +4184,8 @@ function registerSW(){
 //  TICKER
 // ═══════════════════════════════════════════
 setInterval(()=>{
-  if(ST.curNav==='mesas')renderMesas();
-  if(ST.curNav==='producao')renderProducao();
-  if(ST.curNav==='dash')renderDash();
-  updateBadges();
+  // usa _silentRefresh para NÃO resetar scroll no celular
+  _silentRefresh();
 },30000);
 
 // ═══════════════════════════════════════════
@@ -4235,7 +4251,7 @@ function fsListen(uid){
     if(deveAplicar){
       ['cfg','caixa','produtos','categorias','clientes','obs_grupos_globais','pedidos','funcionarios','vouchers'].forEach(k=>{if(r[k]!=null)ST[k]=r[k];});
       saveAll();
-      nav(ST.curNav);
+      _silentRefresh(); // não reseta scroll — dados de outro device chegaram
       _lastSyncAt=Date.now();
       _setSyncStatus('ok');
       console.log('[PedePronto] ☁️ Sync recebido (dev remoto:'+r._dev_id+')');
