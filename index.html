@@ -232,6 +232,14 @@ select.inp{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns=
 .pay-m{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:10px 6px;border-radius:11px;border:2px solid var(--br2);background:var(--s2);cursor:pointer;transition:all .18s;font-size:11px;font-weight:700;color:var(--t2);font-family:inherit}
 .pay-m.on{border-color:var(--ac);background:var(--acbg);color:var(--ac)}
 .pay-m:active{transform:scale(.95)}
+/* ── PAG MISTO ── */
+.pag-track{height:10px;border-radius:99px;background:var(--s3);overflow:hidden;margin:8px 0 4px}
+.pag-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--ac),var(--acd));transition:width .45s cubic-bezier(.4,0,.2,1)}
+.pag-fill.done{background:linear-gradient(90deg,var(--gn),#27ae60)}
+.pag-parcela{display:flex;align-items:center;gap:8px;padding:9px 10px;background:var(--s2);border-radius:9px;border:1px solid var(--br2);margin-bottom:5px;animation:fi .15s ease}
+.bill-btn{padding:8px 11px;border-radius:8px;background:var(--s2);border:1px solid var(--br2);color:var(--t2);font-size:13px;font-weight:800;cursor:pointer;font-family:monospace;transition:all .15s}
+.bill-btn:active{transform:scale(.95)}
+.bill-btn.sel{border-color:var(--gn);color:var(--gn);background:var(--gnbg)}
 .maq-spinner{width:44px;height:44px;border:4px solid var(--br2);border-top-color:var(--ac);border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 14px}
 @keyframes spin{to{transform:rotate(360deg)}}
 .pix-qr-wrap{background:#fff;border-radius:14px;padding:14px;display:inline-flex;align-items:center;justify-content:center;margin-bottom:12px}
@@ -783,7 +791,7 @@ select.inp{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns=
       <label class="fl">Nome do grupo</label>
       <input class="inp" id="og-nome" placeholder="Ex: Ponto da Carne, Molhos, Adicionais...">
     </div>
-    <div class="card mb14" style="padding:12px">
+    <div class="card mb10" style="padding:12px">
       <div class="rb">
         <div>
           <div class="fs13 bold">Tipo de seleção</div>
@@ -794,6 +802,13 @@ select.inp{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns=
           <button class="btn bsm bw" id="og-tipo-multi" onclick="ogSetTipo('multi')">☑️ Múltipla</button>
         </div>
       </div>
+    </div>
+    <div class="rb mb14" style="padding:10px 12px;background:var(--s2);border-radius:10px;border:1px solid var(--br2)">
+      <div>
+        <div class="fs13 bold">Seleção obrigatória</div>
+        <div class="fs11 t2">Bloqueia o pedido até o cliente escolher</div>
+      </div>
+      <button class="sw" id="og-obrigatorio" onclick="toggleSw(this)"></button>
     </div>
     <div class="rb mb10">
       <div>
@@ -806,6 +821,28 @@ select.inp{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns=
     <div class="g2 mt14">
       <button class="btn bs bw" onclick="closeMc('mc-obs-grupo')">Cancelar</button>
       <button class="btn bp bw" onclick="salvarObsGrupo()">💾 Salvar grupo</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: PAGAMENTO — VALOR DA PARCELA -->
+<div class="mc" id="mc-pag-valor">
+  <div class="mb" style="max-width:360px;width:100%">
+    <div class="rb mb14">
+      <div style="font-size:15px;font-weight:800" id="mc-pv-title">Valor</div>
+      <button class="btn bs bsm" onclick="closeMc('mc-pag-valor')">✕</button>
+    </div>
+    <div class="fg mb8">
+      <label class="fl" id="mc-pv-label">Valor a cobrar (R$)</label>
+      <input class="inp" id="mc-pv-inp" type="number" step="0.01" min="0.01" style="font-size:26px;font-weight:900;text-align:center;font-family:monospace">
+    </div>
+    <div id="mc-pv-bills" style="display:none;flex-wrap:wrap;gap:6px;margin-bottom:10px"></div>
+    <div id="mc-pv-troco-row" style="display:none" class="card mb10">
+      <div class="rb"><span class="fs12 t2">Troco a devolver:</span><span class="bold am mono fs15" id="mc-pv-troco-val">R$ 0,00</span></div>
+    </div>
+    <div class="g2">
+      <button class="btn bs bw" onclick="closeMc('mc-pag-valor')">Cancelar</button>
+      <button class="btn bp bw" onclick="confirmarParcela()">✅ Confirmar</button>
     </div>
   </div>
 </div>
@@ -1724,10 +1761,33 @@ function renderPedido(){
     <div class="fs12 t2">${np.tipo==='mesa'?'Mesa':np.tipo==='balcao'?'Balcão':'Delivery'}</div></div>
     <button class="btn bs bsm" onclick="nav(ST.backNav||'mesas')">✕ Cancelar</button>
   </div>
-  ${np.tipo!=='mesa'?`<div class="fg mb12"><label class="fl">Nome do cliente</label>
+  ${np.tipo==='balcao'?`<div class="fg mb12"><label class="fl">Nome do cliente</label>
   <input class="inp" id="inp-cli-nome" value="${esc(np.cliente_nome)}" placeholder="Nome do cliente" oninput="ST.novoPedido.cliente_nome=this.value" autocomplete="off"></div>`:''}
-  ${np.tipo==='delivery'?`<div class="fg mb12"><label class="fl">Endereço de entrega</label>
-  <input class="inp" id="inp-endereco" value="${esc(np.endereco||'')}" placeholder="Rua, número, bairro" oninput="ST.novoPedido.endereco=this.value"></div>`:''}
+  ${np.tipo==='delivery'?`<div class="card mb12" style="border-color:var(--blbr)">
+    <div class="fs11 bold mb10" style="color:var(--bl);text-transform:uppercase;letter-spacing:.7px">📍 Dados da entrega</div>
+    <div class="fg mb8"><label class="fl">Nome do cliente *</label>
+    <input class="inp" id="inp-cli-nome" value="${esc(np.cliente_nome)}" placeholder="Nome completo" oninput="ST.novoPedido.cliente_nome=this.value" autocomplete="off"></div>
+    <div class="g2 mb8">
+      <div class="fg" style="margin:0"><label class="fl">Telefone / WhatsApp</label>
+      <input class="inp" id="inp-tel" value="${esc(np.telefone||'')}" placeholder="(00) 00000-0000" oninput="ST.novoPedido.telefone=this.value"></div>
+      <div class="fg" style="margin:0"><label class="fl">Bairro *</label>
+      <input class="inp" id="inp-bairro" value="${esc(np.bairro||'')}" placeholder="Bairro" oninput="ST.novoPedido.bairro=this.value"></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:8px">
+      <div class="fg" style="margin:0;flex:1"><label class="fl">Rua / Av. *</label>
+      <input class="inp" id="inp-rua" value="${esc(np.rua||'')}" placeholder="Nome da rua" oninput="ST.novoPedido.rua=this.value"></div>
+      <div class="fg" style="margin:0;width:80px"><label class="fl">Nº *</label>
+      <input class="inp" id="inp-numero" value="${esc(np.numero||'')}" placeholder="123" oninput="ST.novoPedido.numero=this.value"></div>
+    </div>
+    <div class="fg mb10"><label class="fl">Complemento / Referência</label>
+    <input class="inp" id="inp-comp" value="${esc(np.complemento||'')}" placeholder="Apto, ponto de referência..." oninput="ST.novoPedido.complemento=this.value"></div>
+    <div class="fs11 bold mb6" style="color:var(--t2);text-transform:uppercase;letter-spacing:.7px">💰 Pagamento na entrega</div>
+    <div style="display:flex;gap:6px;margin-bottom:8px">
+      ${[['dinheiro','💵','Dinheiro'],['cartao','💳','Cartão'],['pix','📱','PIX']].map(([m,ico,lbl])=>`<button class="btn bsm bw ${(np.del_pagamento||'dinheiro')===m?'bp':'bs'}" style="flex:1" onclick="setDelPag('${m}')">${ico} ${lbl}</button>`).join('')}
+    </div>
+    ${(np.del_pagamento||'dinheiro')==='dinheiro'?`<div class="fg" style="margin:0"><label class="fl">Troco para quanto? (opcional)</label>
+    <input class="inp" id="inp-troco-para" type="number" step="0.01" value="${esc(np.del_troco_para||'')}" placeholder="Ex: 50,00" oninput="ST.novoPedido.del_troco_para=this.value"></div>`:''}
+  </div>`:''}
   <div class="g2 mb12">
     <button id="btn-consumo-local" class="btn bw ${np.consumo==='viagem'?'bs':'bp'}" onclick="setConsumo('local')" style="padding:12px;font-size:14px">🏠 Consumo local</button>
     <button id="btn-consumo-viagem" class="btn bw ${np.consumo==='viagem'?'bp':'bs'}" onclick="setConsumo('viagem')" style="padding:12px;font-size:14px">🥡 Para viagem</button>
@@ -1792,13 +1852,20 @@ function openObsSheet(cartIdx){
       },0);
     },0);
   }
+  function checkObrig(){
+    return grupos.filter(g=>g.obrigatorio).every(g=>(sel[g.id]||[]).length>0);
+  }
   function buildSheet(){
     const extras=calcExtras();
+    const ok=checkObrig();
     sh.innerHTML=`<div class="sh-handle"></div>
     <div class="sh-title">✏️ ${esc(item.nome)}</div>
-    ${grupos.map(g=>`<div class="obs-group">
+    ${grupos.map(g=>{
+      const faltaObrig=g.obrigatorio&&!(sel[g.id]||[]).length;
+      return`<div class="obs-group" style="${faltaObrig?'border-left:3px solid var(--rd);padding-left:8px':''}">
       <div class="obs-group-title">
         ${esc(g.nome)}
+        ${g.obrigatorio?`<span class="obs-group-badge" style="background:var(--rdbg);color:var(--rd);border-color:var(--rdbr)">OBRIGATÓRIO</span>`:''}
         <span class="obs-group-badge">${g.multi?'MÚLTIPLA':'ÚNICA'}</span>
       </div>
       <div class="obs-chips">
@@ -1810,13 +1877,15 @@ function openObsSheet(cartIdx){
           </button>`;
         }).join('')}
       </div>
-    </div>`).join('')}
+    </div>`;
+    }).join('')}
     <div class="fg mt8"><label class="fl">Observação livre (opcional)</label>
     <textarea class="inp" id="obs-livre" rows="2" placeholder="Ex: sem sal, bem gelado, capricha...">${esc(curObs)}</textarea></div>
     ${extras>0?`<div class="rb mt8 mb4"><span class="fs13 t2">Adicionais selecionados:</span><span class="bold am mono">+${fmtR(extras)}</span></div>`:''}
+    ${!ok?`<div class="fs12 mt8 mb4" style="color:var(--rd);font-weight:700;text-align:center">⚠️ Preencha os campos obrigatórios para continuar</div>`:''}
     <div class="g2 mt12">
       <button class="btn bs bw" onclick="closeOv('ov-obs')">Cancelar</button>
-      <button class="btn bp bw" onclick="salvarObs(${cartIdx})">✅ Confirmar</button>
+      <button class="btn bp bw" ${ok?'':'disabled style="opacity:.4;pointer-events:none"'} onclick="salvarObs(${cartIdx})">✅ Confirmar</button>
     </div>`;
   }
   window.toggleObsSel=function(gid,idx,multi){
@@ -1894,7 +1963,16 @@ function confirmarPedido(){
     operador:ST.caixa.operador||'',
     consumo:np.consumo||'local',
   };
-  if(np.tipo==='delivery')ped.endereco=np.endereco||'';
+  if(np.tipo==='delivery'){
+    // Monta endereço a partir dos campos estruturados (ou campo livre legado)
+    if(np.rua){
+      const parts=[np.rua,np.numero?'nº '+np.numero:'',np.bairro,np.complemento].filter(Boolean);
+      ped.endereco=parts.join(', ');
+    }else{ped.endereco=np.endereco||'';}
+    ped.telefone=np.telefone||'';
+    ped.del_pagamento=np.del_pagamento||'dinheiro';
+    ped.del_troco_para=np.del_troco_para||'';
+  }
   ST.pedidos.push(ped);save('pedidos');
   toast('✅ Pedido '+num+' enviado!','g');
   anunciar('novo_pedido',ped);
@@ -2067,83 +2145,166 @@ function showCupomPrevia(ped_id, tipo='cupom'){
 }
 
 // ═══════════════════════════════════════════
-//  PAGAMENTO
+//  PAGAMENTO MISTO
 // ═══════════════════════════════════════════
+let _pagParcelas=[];
+let _pagCtxPed=null;
+let _pagValorCtx=null;
+const _PAG_FORMAS=[
+  {id:'dinheiro',  ico:'💵',lbl:'Dinheiro'},
+  {id:'credito',   ico:'💳',lbl:'Crédito'},
+  {id:'debito',    ico:'💳',lbl:'Débito'},
+  {id:'pix',       ico:'📱',lbl:'PIX'},
+  {id:'voucher',   ico:'🎟️',lbl:'Voucher'},
+  {id:'maquininha',ico:'🏧',lbl:'Maquininha'},
+];
+
 function renderPagamento(ped_id){
   const ped=ST.pedidos.find(p=>p.id===ped_id);if(!ped){nav('dash');return}
-  ST.pagCtx={pedido_id:ped_id,forma:'dinheiro',troco:0};
-  const formas=[{id:'dinheiro',ico:'💵',lbl:'Dinheiro'},{id:'credito',ico:'💳',lbl:'Crédito'},{id:'debito',ico:'💳',lbl:'Débito'},{id:'pix',ico:'🔑',lbl:'PIX'},{id:'voucher',ico:'🎟️',lbl:'Voucher'}];
+  _pagCtxPed=ped_id;_pagParcelas=[];
+  _renderPagScreen();
+}
+function _renderPagScreen(){
+  const ped=ST.pedidos.find(p=>p.id===_pagCtxPed);if(!ped)return;
   const maqCfg=ST.cfg.maquininha||{};
   const maqLbls={'mp':'Mercado Pago','pagseguro':'PagSeguro','infinitepay':'InfinitePay','manual':'Maquininha'};
-  const maqLabel=maqLbls[maqCfg.provider||'manual']||'Maquininha';
+  const formas=_PAG_FORMAS.map(f=>f.id==='maquininha'?{...f,lbl:maqLbls[maqCfg.provider||'manual']||'Maquininha'}:f);
+  const total=ped.total;
+  const pago=+(_pagParcelas.reduce((s,p)=>s+p.valor,0).toFixed(2));
+  const restante=+(Math.max(0,total-pago).toFixed(2));
+  const quitado=restante<0.01;
+  const pct=total>0?Math.min(100,pago/total*100):0;
   document.getElementById('pg-pagamento').innerHTML=`
-  <div class="rb mb12">
-    <div><div class="bold fs14">Pagamento</div><div class="fs12 t2">${ped.num} · ${ped.cliente_nome||'—'}</div></div>
+  <div class="rb mb10">
+    <div><div class="bold fs14">Pagamento</div>
+    <div class="fs12 t2">${esc(ped.num)} · ${esc(ped.cliente_nome||ped.mesa_label||'—')}</div></div>
     <button class="btn bs bsm" onclick="nav('fechar','${ped.id}')">← Voltar</button>
   </div>
-  <div class="card mb12" style="text-align:center">
-    <div class="fs12 t2 mb4">Valor a pagar</div>
-    <div style="font-size:32px;font-weight:900;color:var(--ac);font-family:monospace">${fmtR(ped.total)}</div>
-    ${ped.desconto?`<div class="fs12 rd mt4">Desconto: -${fmtR(ped.desconto)}</div>`:''}
+  <div class="card mb10">
+    <div class="rb mb6">
+      <span class="fs12 t2">Total do pedido</span>
+      <span class="bold ac mono fs16">${fmtR(total)}</span>
+    </div>
+    ${ped.desconto?`<div class="rb mb6"><span class="fs12 rd">Desconto</span><span class="fs12 rd mono">-${fmtR(ped.desconto)}</span></div>`:''}
+    <div class="pag-track"><div class="pag-fill${quitado?' done':''}" style="width:${pct.toFixed(1)}%"></div></div>
+    <div class="rb mt4">
+      <span class="fs11 t2">Pago: <span class="bold mono" style="color:var(--gn)">${fmtR(pago)}</span></span>
+      <span class="fs11" style="color:${quitado?'var(--gn)':'var(--t2)'};font-weight:${quitado?700:400}">
+        ${quitado?'✅ Quitado':'Restante: '+fmtR(restante)}
+      </span>
+    </div>
   </div>
-  <div class="sec-title">Forma de pagamento</div>
-  <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin-bottom:10px">
-    ${formas.map(f=>`<button class="pay-m ${f.id==='dinheiro'?'on':''}" id="pay-${f.id}" onclick="selForma('${f.id}','${ped.id}')">
+  ${!quitado?`
+  <div class="sec-title mb8">Adicionar pagamento <span class="fs11 t3">(restante: ${fmtR(restante)})</span></div>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:12px">
+    ${formas.map(f=>`<button class="pay-m" onclick="openPagModal('${f.id}')">
       <span style="font-size:20px">${f.ico}</span><span>${f.lbl}</span>
     </button>`).join('')}
-  </div>
-  <div id="pix-qr-btn-row" style="display:none;margin-bottom:10px">
-    <button class="btn bb bw" onclick="mostrarPixQR('${ped.id}')">🔑 Exibir QR Code PIX · ${fmtR(ped.total)}</button>
-  </div>
-  <div id="pay-troco-row" class="card mb12">
-    <label class="fl">Valor recebido (para calcular troco)</label>
-    <input class="inp" id="inp-recebido" type="number" step="0.01" value="${ped.total.toFixed(2)}" oninput="calcTroco(${ped.total})">
-    <div class="rb mt8"><span class="fs12 t2">Troco a devolver:</span><span class="bold am mono fs14" id="troco-val">${fmtR(0)}</span></div>
-  </div>
-  <button class="btn bp bw mb10" style="padding:15px;font-size:15px" onclick="confirmarPagamento('${ped.id}')">
-    ✅ Confirmar Pagamento · ${fmtR(ped.total)}
+  </div>`:''}
+  ${_pagParcelas.length?`
+  <div class="sec-title mb6">Pagamentos registrados</div>
+  ${_pagParcelas.map((p,i)=>`<div class="pag-parcela">
+    <span style="font-size:18px">${p.ico}</span>
+    <div style="flex:1;min-width:0">
+      <div class="fs13 bold">${p.lbl}</div>
+      ${p.troco>0?`<div class="fs11" style="color:var(--am)">Troco: ${fmtR(p.troco)}</div>`:''}
+    </div>
+    <span class="bold mono" style="color:var(--gn)">${fmtR(p.valor)}</span>
+    <button class="btn br_ bxs" style="flex-shrink:0" onclick="removerParcela(${i})">✕</button>
+  </div>`).join('')}`:''}
+  ${quitado?`
+  <div class="mt12">
+    <button class="btn bp bw" style="padding:16px;font-size:15px" onclick="finalizarPagMisto('${ped.id}')">
+      🏁 Finalizar Conta · ${fmtR(total)}
+    </button>
+  </div>`:_pagParcelas.length===0?`
+  <div class="card mt10" style="text-align:center;padding:22px;color:var(--t2)">
+    <div style="font-size:30px;margin-bottom:6px">💳</div>
+    <div class="fs13">Selecione uma forma acima</div>
+    <div class="fs11 t3 mt4">Você pode combinar múltiplas formas de pagamento</div>
+  </div>`:''}
+  <div class="divider mt14 mb10"></div>
+  <div class="sec-title mb6">Cobrança na maquininha</div>
+  <button class="btn bcy bw" style="padding:12px;font-size:13px" onclick="maqCobrar('${_pagCtxPed}')">
+    🏧 Cobrar ${fmtR(restante>0?restante:total)} na ${formas[5].lbl}
   </button>
-  <div class="divider mb10"></div>
-  <div class="sec-title">Maquininha integrada</div>
-  <button class="btn bcy bw" style="padding:13px;font-size:14px" onclick="maqCobrar('${ped.id}')">
-    💳 Cobrar na ${maqLabel} · ${fmtR(ped.total)}
-  </button>
-  ${!maqCfg.provider||maqCfg.provider==='manual'?`<div class="fs11 t2 mt6 mb4" style="text-align:center">Configure a maquininha em ⚙️ Configurações</div>`:''}`;
+  ${!maqCfg.provider||maqCfg.provider==='manual'?`<div class="fs11 t3 mt4 mb4" style="text-align:center">Configure a maquininha em ⚙️ Configurações</div>`:''}`;
 }
-function selForma(f,ped_id){
-  ST.pagCtx.forma=f;
-  document.querySelectorAll('.pay-m').forEach(b=>b.classList.remove('on'));
-  const btn=document.getElementById('pay-'+f);if(btn)btn.classList.add('on');
-  const troco=document.getElementById('pay-troco-row');
-  if(troco)troco.style.display=f==='dinheiro'?'block':'none';
-  const pixRow=document.getElementById('pix-qr-btn-row');
-  if(pixRow)pixRow.style.display=f==='pix'?'block':'none';
+function openPagModal(forma){
+  const ped=ST.pedidos.find(p=>p.id===_pagCtxPed);if(!ped)return;
+  if(forma==='voucher'){abrirVoucher(_pagCtxPed);return}
+  if(forma==='pix'&&ST.cfg.pix_chave){mostrarPixQR(_pagCtxPed);return}
+  if(forma==='maquininha'){maqCobrar(_pagCtxPed);return}
+  const pago=+(_pagParcelas.reduce((s,p)=>s+p.valor,0).toFixed(2));
+  const restante=+(Math.max(0,ped.total-pago).toFixed(2));
+  if(restante<0.01){toast('Conta já está quitada','a');return}
+  const fm=_PAG_FORMAS.find(f=>f.id===forma)||{ico:'💳',lbl:forma};
+  _pagValorCtx={forma,ico:fm.ico,lbl:fm.lbl,restante};
+  document.getElementById('mc-pv-title').innerHTML=`${fm.ico} ${fm.lbl}`;
+  document.getElementById('mc-pv-label').textContent=forma==='dinheiro'?'Valor recebido (R$)':'Valor a cobrar (R$)';
+  const inp=document.getElementById('mc-pv-inp');
+  inp.value=restante.toFixed(2);inp.oninput=_atualizarTrocoModal;
+  const billsDiv=document.getElementById('mc-pv-bills');
+  const trocoRow=document.getElementById('mc-pv-troco-row');
+  if(forma==='dinheiro'){
+    const notas=[5,10,20,50,100,200].filter(v=>v>=restante-0.01).slice(0,5);
+    billsDiv.style.display='flex';
+    billsDiv.innerHTML=notas.map(v=>`<button class="bill-btn" onclick="selBill(${v})">${fmtR(v)}</button>`).join('');
+    trocoRow.style.display='block';_atualizarTrocoModal();
+  }else{billsDiv.style.display='none';trocoRow.style.display='none';}
+  openMc('mc-pag-valor');
+  setTimeout(()=>{const f=document.getElementById('mc-pv-inp');if(f){f.focus();f.select();}},80);
 }
-function calcTroco(total){
-  const rec=parseFloat(document.getElementById('inp-recebido')?.value)||0;
-  const t=Math.max(0,+(rec-total).toFixed(2));
-  ST.pagCtx.troco=t;
-  const el=document.getElementById('troco-val');if(el)el.textContent=fmtR(t);
+function selBill(v){
+  const inp=document.getElementById('mc-pv-inp');if(inp)inp.value=v.toFixed(2);
+  document.querySelectorAll('.bill-btn').forEach(b=>b.classList.remove('sel'));
+  // marcar o botão clicado
+  document.querySelectorAll('.bill-btn').forEach(b=>{if(Math.abs(parseFloat(b.textContent.replace('R$','').replace(',','.').trim())-v)<0.01)b.classList.add('sel');});
+  _atualizarTrocoModal();
 }
-function confirmarPagamento(ped_id){
-  if(ST.pagCtx.forma==='voucher'){abrirVoucher(ped_id);return}
-  if(ST.pagCtx.forma==='pix'&&ST.cfg.pix_chave){mostrarPixQR(ped_id);return}
-  // PIN não exigido para pagamentos normais (dinheiro, crédito, débito, PIX sem QR, maquininha)
-  _finalizarPagamento(ped_id,ST.pagCtx.forma);
+function _atualizarTrocoModal(){
+  if(!_pagValorCtx||_pagValorCtx.forma!=='dinheiro')return;
+  const inp=document.getElementById('mc-pv-inp');
+  const tv=document.getElementById('mc-pv-troco-val');if(!inp||!tv)return;
+  const troco=Math.max(0,+((parseFloat(inp.value)||0)-_pagValorCtx.restante).toFixed(2));
+  tv.textContent=fmtR(troco);
 }
-function _finalizarPagamento(ped_id,forma){
+function confirmarParcela(){
+  if(!_pagValorCtx)return;
+  const val=parseFloat(document.getElementById('mc-pv-inp')?.value)||0;
+  if(val<=0){toast('Informe um valor válido','r');return}
+  const efetivo=+Math.min(val,_pagValorCtx.restante).toFixed(2);
+  const troco=_pagValorCtx.forma==='dinheiro'?+Math.max(0,val-_pagValorCtx.restante).toFixed(2):0;
+  _pagParcelas.push({forma:_pagValorCtx.forma,ico:_pagValorCtx.ico,lbl:_pagValorCtx.lbl,valor:efetivo,troco});
+  closeMc('mc-pag-valor');_pagValorCtx=null;
+  _renderPagScreen();playSound('sucesso');
+}
+function removerParcela(idx){_pagParcelas.splice(idx,1);_renderPagScreen();}
+function finalizarPagMisto(ped_id){
   const ped=ST.pedidos.find(p=>p.id===ped_id);if(!ped)return;
-  ped.status='pago';ped.pago_em=now();ped.forma_pag=forma;ped.troco=ST.pagCtx?.troco||0;
-  ST.caixa.movs.push({id:uid(),tipo:'entrada',valor:ped.total,desc:'Pedido '+ped.num+' · '+forma,created:now()});
+  if(!_pagParcelas.length){toast('Adicione pelo menos uma forma de pagamento','r');return}
+  const formaStr=_pagParcelas.map(p=>p.lbl).join(' + ');
+  const trocoTotal=+(_pagParcelas.reduce((s,p)=>s+(p.troco||0),0).toFixed(2));
+  ped.status='pago';ped.pago_em=now();ped.forma_pag=formaStr;ped.troco=trocoTotal;
+  ped.parcelas=deepClone(_pagParcelas);
+  _pagParcelas.forEach(p=>{
+    ST.caixa.movs.push({id:uid(),tipo:'entrada',valor:p.valor,desc:'Pedido '+ped.num+' · '+p.lbl,created:now()});
+  });
   save('pedidos');save('caixa');
   toast('✅ Pagamento '+fmtR(ped.total)+' confirmado!','g',4000);
-  anunciar('pagamento',{total:ped.total,forma,cliente_nome:ped.cliente_nome,num:ped.num});
-  if(BT.char&&ST.cfg.autocupom!==false){
-    setTimeout(()=>BT.printCupom(ped),400);
-  } else {
-    setTimeout(()=>showCupomPrevia(ped_id,'cupom'),300);
-  }
+  anunciar('pagamento',{total:ped.total,forma:formaStr,cliente_nome:ped.cliente_nome,num:ped.num});
+  const _pId=ped_id;_pagParcelas=[];_pagCtxPed=null;
+  if(BT.char&&ST.cfg.autocupom!==false){setTimeout(()=>BT.printCupom(ped),400);}
+  else{setTimeout(()=>showCupomPrevia(_pId,'cupom'),300);}
   nav(ped.tipo==='mesa'?'mesas':ped.tipo==='balcao'?'balcao':'delivery');
+}
+// Compatibilidade: voucher e maquininha chamam _finalizarPagamento diretamente
+function _finalizarPagamento(ped_id,forma,valorOverride){
+  const ped=ST.pedidos.find(p=>p.id===ped_id);if(!ped)return;
+  const fm=_PAG_FORMAS.find(f=>f.id===forma)||{ico:'💳',lbl:forma};
+  _pagCtxPed=ped_id;
+  _pagParcelas=[{forma,ico:fm.ico,lbl:fm.lbl,valor:valorOverride||ped.total,troco:0}];
+  finalizarPagMisto(ped_id);
 }
 
 // ═══════════════════════════════════════════
@@ -2154,9 +2315,13 @@ function novoBalcao(){
   ST._prodFilter='todos';nav('pedido');
 }
 function novoDelivery(){
-  ST.novoPedido={tipo:'delivery',mesa_id:null,mesa_label:'Delivery',cliente_nome:'',cart:[],obs:{},endereco:'',consumo:'viagem'};
+  ST.novoPedido={tipo:'delivery',mesa_id:null,mesa_label:'Delivery',
+    cliente_nome:'',telefone:'',rua:'',numero:'',bairro:'',complemento:'',endereco:'',
+    del_pagamento:'dinheiro',del_troco_para:'',
+    cart:[],obs:{},consumo:'viagem'};
   ST._prodFilter='todos';nav('pedido');
 }
+function setDelPag(v){ST.novoPedido.del_pagamento=v;renderPedido();}
 function renderBalcao(){
   const peds=ST.pedidos.filter(p=>p.tipo==='balcao'&&(p.status==='aberto'||p.status==='preparo'));
   const hist=ST.pedidos.filter(p=>p.tipo==='balcao'&&p.status==='pago').slice(-6).reverse();
@@ -2200,7 +2365,9 @@ function renderDelivery(){
     <div class="rb mb6"><div><div class="bold">${p.num}</div>
     <div class="fs12 t2">${p.cliente_nome||'—'}</div></div>
     <span class="bdg ${tab==='preparo'?'bg-a':tab==='rota'?'bg-b':'bg-g'}">${tab==='preparo'?'Preparando':tab==='rota'?'Na rota':'Entregue'}</span></div>
-    ${p.endereco?`<div class="fs12 t2 mb6">📍 ${p.endereco}</div>`:''}
+    ${p.telefone?`<div class="fs12 t2 mb3">📞 ${esc(p.telefone)}</div>`:''}
+    ${p.endereco?`<div class="fs12 t2 mb3">📍 ${esc(p.endereco)}</div>`:''}
+    ${p.del_pagamento?`<div class="fs12 t2 mb6">💰 ${p.del_pagamento==='dinheiro'?'Dinheiro'+(p.del_troco_para?' (troco p/ R$ '+p.del_troco_para+')':''):p.del_pagamento==='cartao'?'Cartão':'PIX'}</div>`:''}
     <div class="fs12 t2 mb8">${p.itens.map(i=>i.qty+'x '+i.nome).join(' · ')}</div>
     <div class="rb"><div class="bold am mono">${fmtR(p.total)}</div>
     <div style="display:flex;gap:5px">
@@ -2450,17 +2617,21 @@ function delCat(id){
 }
 
 // GRUPOS DE OBS GLOBAIS — modal
-let _editObsGrupoId=null, _ogOpcoes=[], _ogMulti=false;
+let _editObsGrupoId=null, _ogOpcoes=[], _ogMulti=false, _ogObrigatorio=false;
 function editObsGrupoGlobal(id){
   const g=id?ST.obs_grupos_globais.find(x=>x.id===id):null;
   _editObsGrupoId=id||null;
   _ogMulti=g?.multi||false;
+  _ogObrigatorio=g?.obrigatorio||false;
   const normOp=op=>typeof op==='string'?{nome:op,preco:0}:op;
   _ogOpcoes=g?(g.opcoes||[]).map(normOp).map(o=>({...o})):[];
   document.getElementById('mc-og-title').textContent=g?'Editar Grupo':'Novo Grupo';
   document.getElementById('og-nome').value=g?.nome||'';
   ogSetTipo(_ogMulti?'multi':'unica');
   ogRenderOpcoes();
+  // toggle obrigatório
+  const swOb=document.getElementById('og-obrigatorio');
+  if(swOb){swOb.className='sw'+(_ogObrigatorio?' on':'');}
   openMc('mc-obs-grupo');
 }
 function ogSetTipo(tipo){
@@ -2511,8 +2682,9 @@ function salvarObsGrupo(){
   const opcoes=_ogOpcoes.filter(o=>o.nome).map(o=>({nome:o.nome.trim(),preco:o.preco||0}));
   if(!opcoes.length){toast('Adicione ao menos uma opção','r');return}
   const g=_editObsGrupoId?ST.obs_grupos_globais.find(x=>x.id===_editObsGrupoId):null;
-  if(g){g.nome=nome;g.opcoes=opcoes;g.multi=_ogMulti;}
-  else ST.obs_grupos_globais.push({id:uid(),nome,opcoes,multi:_ogMulti});
+  const obrig=swVal('og-obrigatorio');
+  if(g){g.nome=nome;g.opcoes=opcoes;g.multi=_ogMulti;g.obrigatorio=obrig;}
+  else ST.obs_grupos_globais.push({id:uid(),nome,opcoes,multi:_ogMulti,obrigatorio:obrig});
   save('obs_grupos_globais');
   closeMc('mc-obs-grupo');
   renderCardapio();
