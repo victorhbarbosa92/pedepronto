@@ -1106,6 +1106,7 @@ function nav(pg,extra){
   if(pg==='pedido') setConsumo(ST.novoPedido.consumo||'local');
   document.getElementById('page').scrollTo(0,0);
   updateBadges();
+  anunciar('nav',{titulo:PAGE_TTL[pg]||pg});
 }
 
 function openMenuSheet(){
@@ -1571,6 +1572,7 @@ function confirmarAberturaCaixa(){
   renderDash();
   updateSbOperador();
   toast('💰 Caixa aberto! Operador: '+nome,'g',4000);
+  anunciar('caixa_aberto',{operador:opNome});
 }
 function fecharCaixa(){
   const movs=ST.caixa.movs||[];
@@ -1583,6 +1585,7 @@ function fecharCaixa(){
   ST.caixa.movs.push({id:uid(),tipo:'fechamento',valor:saldo,desc:'Fechamento: '+ST.caixa.operador,created:now()});
   ST.pedido_seq=1; DB.set('pedido_seq',1); // reinicia contagem a cada fechamento
   save('caixa');
+  anunciar('caixa_fechado',{pedidos:pedsPagos.length,total:saldo});
   if(BT.char)setTimeout(()=>BT.printFechamento(),500);
   renderCaixa();updateSbOperador();
   toast('🔒 Caixa fechado. Saldo: '+fmtR(saldo),'a',5000);
@@ -1894,6 +1897,7 @@ function confirmarPedido(){
   if(np.tipo==='delivery')ped.endereco=np.endereco||'';
   ST.pedidos.push(ped);save('pedidos');
   toast('✅ Pedido '+num+' enviado!','g');
+  anunciar('novo_pedido',ped);
   if(BT.char&&ST.cfg.autoprint)setTimeout(()=>BT.printPedido(ped),500);
   nav(np.tipo==='mesa'?'mesas':np.tipo==='balcao'?'balcao':'delivery');
 }
@@ -2133,6 +2137,7 @@ function _finalizarPagamento(ped_id,forma){
   ST.caixa.movs.push({id:uid(),tipo:'entrada',valor:ped.total,desc:'Pedido '+ped.num+' · '+forma,created:now()});
   save('pedidos');save('caixa');
   toast('✅ Pagamento '+fmtR(ped.total)+' confirmado!','g',4000);
+  anunciar('pagamento',{total:ped.total,forma,cliente_nome:ped.cliente_nome,num:ped.num});
   if(BT.char&&ST.cfg.autocupom!==false){
     setTimeout(()=>BT.printCupom(ped),400);
   } else {
@@ -2205,7 +2210,7 @@ function renderDelivery(){
     </div></div>
   </div>`).join('')}`;
 }
-function pedidoRota(id){const p=ST.pedidos.find(x=>x.id===id);if(p){p.status='rota';save('pedidos');renderDelivery();toast('🛵 Pedido em rota!','b')}}
+function pedidoRota(id){const p=ST.pedidos.find(x=>x.id===id);if(p){p.status='rota';save('pedidos');renderDelivery();toast('🛵 Pedido em rota!','b');anunciar('saiu_rota',p);}}
 
 // ═══════════════════════════════════════════
 //  PRODUÇÃO (KDS)
@@ -2216,7 +2221,7 @@ function renderProducao(){
   const peds=ST.pedidos.filter(p=>(p.status==='aberto'||p.status==='preparo')&&p.itens.some(i=>i.dest===dest));
   // detecta novos pedidos e toca som
   const primLoad=_kdsSeenIds.size===0;
-  peds.forEach(p=>{if(!_kdsSeenIds.has(p.id)){_kdsSeenIds.add(p.id);if(!primLoad)playSound('novo');}});
+  peds.forEach(p=>{if(!_kdsSeenIds.has(p.id)){_kdsSeenIds.add(p.id);if(!primLoad)anunciar('novo_pedido',p);}});
   document.getElementById('pg-producao').innerHTML=`
   <div class="rb mb10">
     <div class="tabbar" style="flex:1">
@@ -2854,27 +2859,48 @@ function renderConfig(){
   </div>
   <div class="sec-title">🔊 Sons & Voz</div>
   <div class="card mb10">
-    <div class="rb" style="padding:9px 0;border-bottom:1px solid var(--br)">
-      <div>
-        <div class="fs13 bold">Sons de interface</div>
-        <div class="fs12 t2">Cliques, alertas e notificações sonoras</div>
-      </div>
-      <button class="sw ${cfg.sons!==false?'on':''}" id="sw-sons" onclick="toggleSw(this);ST.cfg.sons=swVal('sw-sons');save('cfg')"></button>
+    <div class="fs12 t2 mb10">Escolha como o sistema se comunica durante o atendimento.</div>
+    <div class="fs12 bold mb6" style="color:var(--t2);text-transform:uppercase;letter-spacing:.7px">Modo de áudio</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:14px">
+      ${[
+        ['mudo','🔇','Mudo','Sem sons e sem voz'],
+        ['sons','🔔','Só sons','Alertas sonoros, sem voz'],
+        ['voz','🗣️','Voz','Anúncios por voz nos eventos'],
+        ['guiado','🎙️','Guiado','Voz em tudo + navegação'],
+      ].map(([m,ico,label,desc])=>`
+      <button class="btn bsm" style="flex-direction:column;align-items:flex-start;gap:2px;height:auto;padding:10px 12px;text-align:left;border:2px solid ${(_AUDIO.modo===m)?'var(--ac)':'var(--br2)'};background:${(_AUDIO.modo===m)?'var(--acbg)':'var(--s2)'};color:${(_AUDIO.modo===m)?'var(--ac)':'var(--t2)'}" onclick="ST.cfg.audio=ST.cfg.audio||{};ST.cfg.audio.modo='${m}';save('cfg');renderConfig()">
+        <span style="font-size:18px">${ico}</span>
+        <span class="bold fs13" style="color:${(_AUDIO.modo===m)?'var(--ac)':'var(--tx)'}">${label}</span>
+        <span class="fs11" style="font-weight:400;line-height:1.3">${desc}</span>
+      </button>`).join('')}
     </div>
-    <div class="rb" style="padding:9px 0;border-bottom:1px solid var(--br)">
-      <div>
-        <div class="fs13 bold">Voz de chamada</div>
-        <div class="fs12 t2">Anuncia pelo alto-falante quando pedido fica pronto</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+      <div class="fg" style="margin:0">
+        <label class="fl">Gênero da voz</label>
+        <select class="inp" onchange="ST.cfg.audio=ST.cfg.audio||{};ST.cfg.audio.genero=this.value;save('cfg')">
+          <option value="feminino" ${(_AUDIO.genero==='feminino')?'selected':''}>Feminino</option>
+          <option value="masculino" ${(_AUDIO.genero==='masculino')?'selected':''}>Masculino</option>
+        </select>
       </div>
-      <button class="sw ${cfg.voz!==false?'on':''}" id="sw-voz" onclick="toggleSw(this);ST.cfg.voz=swVal('sw-voz');save('cfg')"></button>
+      <div class="fg" style="margin:0">
+        <label class="fl">Idioma</label>
+        <select class="inp" onchange="ST.cfg.audio=ST.cfg.audio||{};ST.cfg.audio.idioma=this.value;save('cfg')">
+          ${[['pt-BR','🇧🇷 Português (BR)'],['pt-PT','🇵🇹 Português (PT)'],['en-US','🇺🇸 English (US)'],['es-ES','🇪🇸 Español'],['fr-FR','🇫🇷 Français'],['de-DE','🇩🇪 Deutsch']].map(([v,l])=>`<option value="${v}" ${(_AUDIO.idioma===v)?'selected':''}>${l}</option>`).join('')}
+        </select>
+      </div>
     </div>
-    <div class="fg" style="padding-top:10px">
-      <label class="fl">Testar voz — nome do cliente</label>
+    <div class="fg mb10" style="margin:0">
+      <label class="fl">Velocidade da voz — <span class="mono am">${_AUDIO.velocidade.toFixed(2)}×</span></label>
+      <input type="range" min="0.5" max="2" step="0.05" value="${_AUDIO.velocidade}" style="width:100%;accent-color:var(--ac)" oninput="ST.cfg.audio=ST.cfg.audio||{};ST.cfg.audio.velocidade=parseFloat(this.value);save('cfg');this.previousElementSibling.querySelector('.mono').textContent=parseFloat(this.value).toFixed(2)+'×'">
+      <div class="rb mt4"><span class="fs11 t3">Lenta (0.5×)</span><span class="fs11 t3">Normal (1×)</span><span class="fs11 t3">Rápida (2×)</span></div>
+    </div>
+    <div style="border-top:1px solid var(--br);padding-top:12px">
+      <label class="fl mb6">Testar áudio — nome do cliente</label>
       <div style="display:flex;gap:8px">
-        <input class="inp" id="cfg-voz-nome" placeholder="Ex: João" style="flex:1">
-        <button class="btn bp bsm" onclick="testarVoz()">▶ Testar</button>
+        <input class="inp" id="cfg-voz-nome" placeholder="Ex: Maria Silva" style="flex:1">
+        <button class="btn bp bsm" onclick="testarAudio()">▶ Testar</button>
       </div>
-      <div class="fs11 t3 mt6">Fala: "[Nome]! Seu pedido no ${esc(cfg.nome||'PedePronto')} está pronto. Pode retirar no balcão."</div>
+      <div class="fs11 t3 mt6">Dispara anúncio "pedido pronto" com as configurações acima.</div>
     </div>
   </div>
   <button class="btn bp bw mb10" onclick="requireAdmin('Salvar Configurações',()=>{save('cfg');toast('✅ Configurações salvas!','g');renderConfig()})">💾 Salvar configurações</button>
@@ -2933,8 +2959,28 @@ function checkAdminPin(){
 }
 
 // ═══════════════════════════════════════════
-//  ÁUDIO — Web Audio API
+//  ENGINE DE ÁUDIO E VOZ UNIFICADA
 // ═══════════════════════════════════════════
+// Modos: 'mudo' | 'sons' | 'voz' | 'guiado'
+const _AUDIO={
+  get cfg(){return ST.cfg.audio||{}},
+  get modo(){
+    const m=this.cfg.modo;
+    if(m)return m;
+    // migração de flags legadas
+    if(ST.cfg.sons===false&&ST.cfg.voz===false)return 'mudo';
+    if(ST.cfg.voz===false)return 'sons';
+    return 'voz';
+  },
+  get idioma(){return this.cfg.idioma||'pt-BR'},
+  get velocidade(){return this.cfg.velocidade??0.87},
+  get genero(){return this.cfg.genero||'feminino'},
+  somAtivo(){return this.modo!=='mudo'},
+  vozAtiva(){return this.modo==='voz'||this.modo==='guiado'},
+  guiadoAtivo(){return this.modo==='guiado'},
+};
+
+// ── Web Audio API ──
 let _AC=null;
 function _getAC(){
   if(!_AC){try{_AC=new(window.AudioContext||window.webkitAudioContext)();}catch(e){return null;}}
@@ -2942,98 +2988,176 @@ function _getAC(){
   return _AC;
 }
 function playSound(type){
-  if(ST.cfg.sons===false)return;
+  if(!_AUDIO.somAtivo())return;
   try{
     const ac=_getAC();if(!ac)return;
-    const now=ac.currentTime;
-    const mk=(freq,start,dur,wave='sine',vol=0.15)=>{
+    const t=ac.currentTime;
+    const mk=(freq,s,dur,wave='sine',vol=0.15)=>{
       const o=ac.createOscillator(),g=ac.createGain();
       o.connect(g);g.connect(ac.destination);
-      o.type=wave;o.frequency.setValueAtTime(freq,now+start);
-      g.gain.setValueAtTime(vol,now+start);
-      g.gain.exponentialRampToValueAtTime(0.001,now+start+dur);
-      o.start(now+start);o.stop(now+start+dur+0.01);
+      o.type=wave;o.frequency.setValueAtTime(freq,t+s);
+      g.gain.setValueAtTime(vol,t+s);g.gain.exponentialRampToValueAtTime(0.001,t+s+dur);
+      o.start(t+s);o.stop(t+s+dur+0.01);
     };
-    if(type==='click')  {mk(900,0,.065,'sine',.055);}
+    if(type==='click')    mk(900,0,.065,'sine',.055);
     else if(type==='novo')   {mk(698,0,.28,'sine',.22);mk(880,.17,.32,'sine',.22);}
-    else if(type==='pronto') {mk(523,0,.38,'sine',.13);mk(659,.13,.38,'sine',.13);mk(784,.26,.45,'sine',.13);}
-    else if(type==='atrasado'){[0,.22,.44].forEach(t=>mk(380,t,.14,'square',.13));}
-    else if(type==='erro')   {mk(200,0,.32,'sawtooth',.09);}
     else if(type==='sucesso'){mk(880,0,.14,'sine',.10);mk(1108,.14,.18,'sine',.10);}
+    else if(type==='erro')   mk(200,0,.32,'sawtooth',.09);
   }catch(e){}
 }
-// Sons automáticos em cliques de botão (event delegation)
+// Sino realista — parciais não-harmônicos de carrilhão metálico
+function _playBell(ac,freq,t,vol=0.32,decay=2.2){
+  [[1,1],[2.756,.5],[5.404,.25],[8.933,.12]].forEach(([r,rv])=>{
+    const o=ac.createOscillator(),g=ac.createGain();
+    o.connect(g);g.connect(ac.destination);
+    o.type='sine';o.frequency.setValueAtTime(freq*r,t);
+    g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol*rv,t+.004);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+decay*rv);
+    o.start(t);o.stop(t+decay+.05);
+  });
+}
+// Chime estilo hospital/aeroporto → executa afterCb após término
+function playChamada(tipo,afterCb){
+  if(!_AUDIO.somAtivo()){if(afterCb)afterCb();return;}
+  try{
+    const ac=_getAC();if(!ac){if(afterCb)afterCb();return;}
+    const now=ac.currentTime;
+    let dur=0;
+    if(tipo==='pronto'){
+      _playBell(ac,880,now,     .30,2.0); // Lá5
+      _playBell(ac,659,now+.55, .30,2.0); // Mi5
+      _playBell(ac,784,now+1.10,.32,2.4); // Sol5
+      dur=2000;
+    }else if(tipo==='atrasado'){
+      _playBell(ac,880,now,     .28,1.2);
+      _playBell(ac,784,now+.40, .28,1.0);
+      _playBell(ac,659,now+.75, .28,1.0);
+      _playBell(ac,880,now+1.10,.35,1.8); // acento final
+      dur=2400;
+    }else if(tipo==='novo'){
+      _playBell(ac,659,now,    .22,1.2);
+      _playBell(ac,880,now+.40,.25,1.4);
+      dur=1400;
+    }
+    if(afterCb)setTimeout(afterCb,dur);
+  }catch(e){if(afterCb)afterCb();}
+}
+// Sons automáticos de clique (event delegation)
 document.addEventListener('click',e=>{
-  if(ST.cfg.sons!==false&&e.target.closest('button,.login-card,.mesa-c,.obs-chip,.tabitem,.sb-item,.bn-item,.pkey'))
+  if(_AUDIO.somAtivo()&&e.target.closest('button,.login-card,.mesa-c,.obs-chip,.tabitem,.sb-item,.bn-item,.pkey'))
     playSound('click');
 },true);
 
-// ═══════════════════════════════════════════
-//  VOZ — SpeechSynthesis
-// ═══════════════════════════════════════════
+// ── SpeechSynthesis ──
 let _vozes=[];
 function _initVozes(){
   if(!window.speechSynthesis)return;
   const load=()=>{_vozes=speechSynthesis.getVoices();};
   load();speechSynthesis.onvoiceschanged=load;
 }
-// Toca um sino realista (síntese de parciais como um sino metálico)
-function _playBell(ac, freq, t, vol=0.32, decay=2.2){
-  // Parciais de sino: fundamental + overtones não-harmônicos (estilo carrilhão)
-  [[1,1],[2.756,0.5],[5.404,0.25],[8.933,0.12]].forEach(([ratio,relVol])=>{
-    const o=ac.createOscillator(),g=ac.createGain();
-    o.connect(g);g.connect(ac.destination);
-    o.type='sine';o.frequency.setValueAtTime(freq*ratio,t);
-    g.gain.setValueAtTime(0,t);
-    g.gain.linearRampToValueAtTime(vol*relVol,t+0.004);
-    g.gain.exponentialRampToValueAtTime(0.0001,t+decay*relVol);
-    o.start(t);o.stop(t+decay+0.05);
-  });
+const _VOZ_FEM=['female','feminin','luciana','maria','alice','vitoria','victoria','francisca','camila'];
+const _VOZ_MAS=['male','masculin','daniel','felipe','diego','carlos','jorge','antonio','ricardo'];
+function _selecionarVoz(idioma,genero){
+  const lang=idioma||'pt-BR';
+  const candidatas=_vozes.filter(v=>v.lang===lang||v.lang.startsWith(lang.split('-')[0]));
+  if(!candidatas.length)return null;
+  const kws=genero==='masculino'?_VOZ_MAS:_VOZ_FEM;
+  return candidatas.find(v=>kws.some(k=>v.name.toLowerCase().includes(k)))||candidatas[0];
 }
-// Chime de chamada estilo hospital/aeroporto
-// tipo: 'pronto' (3 notas harmoniosas) | 'atrasado' (padrão urgente 4 notas)
-function playChamada(tipo, afterCb){
-  if(ST.cfg.sons===false){if(afterCb)afterCb();return;}
-  try{
-    const ac=_getAC();if(!ac){if(afterCb)afterCb();return;}
-    const now=ac.currentTime;
-    let duracao=0;
-    if(tipo==='pronto'){
-      // Ding — dong — ding  (Lá4 → Mi4 → Sol4) como chamadas de hospital BR
-      _playBell(ac,880,now,    0.30,2.0);  // Lá5
-      _playBell(ac,659,now+0.55,0.30,2.0); // Mi5
-      _playBell(ac,784,now+1.10,0.32,2.4); // Sol5 (mais longo no final)
-      duracao=2000;
-    } else if(tipo==='atrasado'){
-      // Padrão urgente: Lá5 → Sol5 → Mi5 → Lá5 (descendente + acento)
-      _playBell(ac,880,now,    0.28,1.2);
-      _playBell(ac,784,now+0.40,0.28,1.0);
-      _playBell(ac,659,now+0.75,0.28,1.0);
-      _playBell(ac,880,now+1.10,0.35,1.8); // acento final mais forte
-      duracao=2400;
-    }
-    if(afterCb)setTimeout(afterCb,duracao);
-  }catch(e){if(afterCb)afterCb();}
-}
-function falarPedidoPronto(ped){
-  if(ST.cfg.voz===false||!window.speechSynthesis)return;
-  const estab=(ST.cfg.nome||'PedePronto').replace(/[^\w\s]/g,'');
-  const cliente=ped.cliente_nome?ped.cliente_nome.split(' ')[0]:'';
-  const num=ped.num||'';
-  const texto=cliente
-    ?`${cliente}! Seu pedido no ${estab} está pronto. Pode retirar no balcão.`
-    :`Pedido ${num} pronto, no ${estab}. Pode retirar no balcão.`;
+// Fala um texto com as configurações atuais; chama cb ao terminar
+function falar(texto,cb){
+  if(!_AUDIO.vozAtiva()||!window.speechSynthesis){if(cb)cb();return;}
   const u=new SpeechSynthesisUtterance(texto);
-  u.lang='pt-BR';u.rate=0.87;u.pitch=1.05;u.volume=1;
-  const voz=_vozes.find(v=>v.lang==='pt-BR')||_vozes.find(v=>v.lang.startsWith('pt'));
+  u.lang=_AUDIO.idioma;u.rate=_AUDIO.velocidade;u.pitch=1.05;u.volume=1;
+  const voz=_selecionarVoz(_AUDIO.idioma,_AUDIO.genero);
   if(voz)u.voice=voz;
+  u.onend=()=>cb&&cb();
   speechSynthesis.cancel();
   speechSynthesis.speak(u);
 }
-function testarVoz(){
-  const ped={num:'001',cliente_nome:document.getElementById('cfg-voz-nome')?.value||''};
-  // Chime → pausa → voz (igual ao fluxo real)
-  playChamada('pronto',()=>falarPedidoPronto(ped));
+
+// ── Dispatcher central de anúncios ──
+function anunciar(tipo,dados){
+  if(!_AUDIO.somAtivo())return;
+  const ped=dados||{};
+  const estab=(ST.cfg.nome||'PedePronto').replace(/[^\w\sÀ-ÿ]/g,'');
+  const cliente=ped.cliente_nome||'';
+  const num=(ped.num||'').replace('#','número ');
+  const tipoLabel={mesa:'Mesa',balcao:'Balcão',delivery:'Delivery'}[ped.tipo]||'';
+  const local=ped.tipo==='delivery'?'O entregador está a caminho.':
+              ped.tipo==='balcao'?'Retire no balcão.':
+              ped.tipo==='mesa'?`Leve para a ${ped.mesa_label||'mesa'}.`:'Retire no balcão.';
+
+  switch(tipo){
+    case 'novo_pedido':
+      if(_AUDIO.guiadoAtivo()){
+        const txt=cliente
+          ?`Novo pedido! ${tipoLabel} ${num}. Cliente ${cliente}.`
+          :`Novo pedido! ${tipoLabel} ${num}.`;
+        playChamada('novo',()=>falar(txt));
+      }else{
+        playSound('novo');
+      }
+      break;
+
+    case 'pronto':{
+      const txt=cliente
+        ?`${cliente}! Seu pedido ${num}, no ${estab}, está pronto. ${local}`
+        :`Pedido ${num}, no ${estab}, está pronto. ${local}`;
+      playChamada('pronto',()=>falar(txt));
+      break;
+    }
+    case 'atrasado':{
+      const txt=`Atenção! Pedido ${num}${tipoLabel?' de '+tipoLabel:''} está atrasado.`;
+      if(_AUDIO.vozAtiva()) playChamada('atrasado',()=>falar(txt));
+      else playChamada('atrasado');
+      break;
+    }
+    case 'saiu_rota':{
+      const txt=cliente
+        ?`Pedido de ${cliente} saiu para entrega.`
+        :`Pedido ${num} saiu para entrega.`;
+      if(_AUDIO.vozAtiva()) playChamada('novo',()=>falar(txt));
+      else playSound('novo');
+      break;
+    }
+    case 'pedido_confirmado':
+      if(_AUDIO.guiadoAtivo()){
+        const nItens=ped.itens?.length||0;
+        falar(`Pedido ${num} confirmado! ${nItens} ${nItens===1?'item enviado':'itens enviados'} para produção.`);
+      }else playSound('sucesso');
+      break;
+
+    case 'pagamento':
+      if(_AUDIO.guiadoAtivo()){
+        const total=ped.total?fmtR(ped.total):'';
+        const forma={dinheiro:'Dinheiro',cartao:'Cartão',pix:'PIX',maquininha:'Maquininha',cortesia:'Cortesia',voucher:'Voucher'}[ped.forma]||'';
+        falar(`Pagamento confirmado! ${total}${forma?' em '+forma:''}.`);
+      }else playSound('sucesso');
+      break;
+
+    case 'caixa_aberto':
+      if(_AUDIO.guiadoAtivo())
+        falar(`Caixa aberto. Bom turno, ${ped.operador||'operador'}.`);
+      else playSound('sucesso');
+      break;
+
+    case 'caixa_fechado':
+      if(_AUDIO.guiadoAtivo()){
+        const txt=`Caixa fechado. ${ped.pedidos||0} pedidos. Total ${ped.total?fmtR(ped.total):'não informado'}.`;
+        falar(txt);
+      }
+      break;
+
+    case 'nav':
+      if(_AUDIO.guiadoAtivo()&&ped.titulo)falar(ped.titulo);
+      break;
+  }
+}
+function testarAudio(){
+  const nome=document.getElementById('cfg-voz-nome')?.value||'';
+  const ped={num:'#001',cliente_nome:nome||'Cliente Teste',tipo:'balcao',mesa_label:'Balcão'};
+  anunciar('pronto',ped);
 }
 
 // ═══════════════════════════════════════════
@@ -3056,7 +3180,11 @@ function _kdsStartTick(){
         if(lb){lb.textContent=`🔴 +${lateMin}min`;lb.style.display='inline-flex';}
         if(!card.classList.contains('atrasado')){card.classList.add('atrasado');card.classList.remove('novo','preparo');}
         const oid=card.dataset.id;
-        if(oid&&!_kdsLateAlerted.has(oid)){_kdsLateAlerted.add(oid);playChamada('atrasado');}
+        if(oid&&!_kdsLateAlerted.has(oid)){
+          _kdsLateAlerted.add(oid);
+          const ped=ST.pedidos.find(p=>p.id===oid);
+          anunciar('atrasado',ped||{id:oid,num:card.querySelector('.bold.fs15')?.textContent||''});
+        }
       }
     });
   },1000);
