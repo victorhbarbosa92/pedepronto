@@ -2295,8 +2295,8 @@ function concluirKDS(id,dest){
   const allDone=p.itens.every(i=>i.concluido);
   if(allDone){p.status='preparo';}
   save('pedidos');
-  playSound('pronto');
-  falarPedidoPronto(p);
+  // Chime de hospital → pausa → voz de chamada
+  playChamada('pronto',()=>falarPedidoPronto(p));
   renderProducao();
   toast('✅ Pedido '+p.num+' marcado como pronto!','g',3500);
   updateBadges();
@@ -2977,6 +2977,44 @@ function _initVozes(){
   const load=()=>{_vozes=speechSynthesis.getVoices();};
   load();speechSynthesis.onvoiceschanged=load;
 }
+// Toca um sino realista (síntese de parciais como um sino metálico)
+function _playBell(ac, freq, t, vol=0.32, decay=2.2){
+  // Parciais de sino: fundamental + overtones não-harmônicos (estilo carrilhão)
+  [[1,1],[2.756,0.5],[5.404,0.25],[8.933,0.12]].forEach(([ratio,relVol])=>{
+    const o=ac.createOscillator(),g=ac.createGain();
+    o.connect(g);g.connect(ac.destination);
+    o.type='sine';o.frequency.setValueAtTime(freq*ratio,t);
+    g.gain.setValueAtTime(0,t);
+    g.gain.linearRampToValueAtTime(vol*relVol,t+0.004);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+decay*relVol);
+    o.start(t);o.stop(t+decay+0.05);
+  });
+}
+// Chime de chamada estilo hospital/aeroporto
+// tipo: 'pronto' (3 notas harmoniosas) | 'atrasado' (padrão urgente 4 notas)
+function playChamada(tipo, afterCb){
+  if(ST.cfg.sons===false){if(afterCb)afterCb();return;}
+  try{
+    const ac=_getAC();if(!ac){if(afterCb)afterCb();return;}
+    const now=ac.currentTime;
+    let duracao=0;
+    if(tipo==='pronto'){
+      // Ding — dong — ding  (Lá4 → Mi4 → Sol4) como chamadas de hospital BR
+      _playBell(ac,880,now,    0.30,2.0);  // Lá5
+      _playBell(ac,659,now+0.55,0.30,2.0); // Mi5
+      _playBell(ac,784,now+1.10,0.32,2.4); // Sol5 (mais longo no final)
+      duracao=2000;
+    } else if(tipo==='atrasado'){
+      // Padrão urgente: Lá5 → Sol5 → Mi5 → Lá5 (descendente + acento)
+      _playBell(ac,880,now,    0.28,1.2);
+      _playBell(ac,784,now+0.40,0.28,1.0);
+      _playBell(ac,659,now+0.75,0.28,1.0);
+      _playBell(ac,880,now+1.10,0.35,1.8); // acento final mais forte
+      duracao=2400;
+    }
+    if(afterCb)setTimeout(afterCb,duracao);
+  }catch(e){if(afterCb)afterCb();}
+}
 function falarPedidoPronto(ped){
   if(ST.cfg.voz===false||!window.speechSynthesis)return;
   const estab=(ST.cfg.nome||'PedePronto').replace(/[^\w\s]/g,'');
@@ -2994,7 +3032,8 @@ function falarPedidoPronto(ped){
 }
 function testarVoz(){
   const ped={num:'001',cliente_nome:document.getElementById('cfg-voz-nome')?.value||''};
-  falarPedidoPronto(ped);
+  // Chime → pausa → voz (igual ao fluxo real)
+  playChamada('pronto',()=>falarPedidoPronto(ped));
 }
 
 // ═══════════════════════════════════════════
@@ -3017,7 +3056,7 @@ function _kdsStartTick(){
         if(lb){lb.textContent=`🔴 +${lateMin}min`;lb.style.display='inline-flex';}
         if(!card.classList.contains('atrasado')){card.classList.add('atrasado');card.classList.remove('novo','preparo');}
         const oid=card.dataset.id;
-        if(oid&&!_kdsLateAlerted.has(oid)){_kdsLateAlerted.add(oid);playSound('atrasado');}
+        if(oid&&!_kdsLateAlerted.has(oid)){_kdsLateAlerted.add(oid);playChamada('atrasado');}
       }
     });
   },1000);
