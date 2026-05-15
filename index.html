@@ -1513,11 +1513,12 @@ function openMenuSheet(){
   openOv('ov-menu');
 }
 
+const naFila=p=>p.status==='aberto'||p.status==='preparo'||(p.status==='pago'&&!p.entregue);
 function updateBadges(){
-  const abertos=ST.pedidos.filter(p=>p.status==='aberto'||p.status==='preparo');
-  const mesasCnt=[...new Set(abertos.filter(p=>p.tipo==='mesa').map(p=>p.mesa_id))].length;
-  const balCnt=abertos.filter(p=>p.tipo==='balcao').length;
-  const delCnt=ST.pedidos.filter(p=>p.tipo==='delivery'&&(p.status==='aberto'||p.status==='preparo'||p.status==='rota')).length;
+  const abertos=ST.pedidos.filter(naFila);
+  const mesasCnt=[...new Set(abertos.filter(p=>p.tipo==='mesa'&&(p.status==='aberto'||p.status==='preparo')).map(p=>p.mesa_id))].length;
+  const balCnt=ST.pedidos.filter(p=>p.tipo==='balcao'&&naFila(p)).length;
+  const delCnt=ST.pedidos.filter(p=>p.tipo==='delivery'&&(naFila(p)||p.status==='rota')).length;
   const setB=(id,n)=>{const el=document.getElementById(id);if(el){el.textContent=n;el.style.display=n?'flex':'none'}};
   const setBN=(id,n)=>{const el=document.getElementById(id);if(el){el.textContent=n;el.className='bn-bdg'+(n?' on':'')}};
   setB('sb-mesa-bdg',mesasCnt);setBN('bn-mesa-bdg',mesasCnt);
@@ -2072,8 +2073,8 @@ function renderDash(){
   const hoje=new Date().toDateString();
   const pedHoje=ST.pedidos.filter(p=>p.status==='pago'&&new Date(p.pago_em||p.created).toDateString()===hoje);
   const receita=pedHoje.reduce((s,p)=>s+(p.total||0),0);
-  const abertos=ST.pedidos.filter(p=>p.status==='aberto'||p.status==='preparo');
-  const mesasCnt=[...new Set(abertos.filter(p=>p.tipo==='mesa').map(p=>p.mesa_id))].length;
+  const abertos=ST.pedidos.filter(naFila);
+  const mesasCnt=[...new Set(abertos.filter(p=>p.tipo==='mesa'&&(p.status==='aberto'||p.status==='preparo')).map(p=>p.mesa_id))].length;
   const origemIco={mesa:'🪑',balcao:'🧾',delivery:'🛵'};
   const origemLbl={mesa:'Mesa',balcao:'Balcão',delivery:'Delivery'};
   const origemCls={mesa:'bg','balcao':'ba','delivery':'bpu'};
@@ -2794,6 +2795,7 @@ function finalizarPagMisto(ped_id){
   const trocoTotal=+(_pagParcelas.reduce((s,p)=>s+(p.troco||0),0).toFixed(2));
   ped.status='pago';ped.pago_em=now();ped.forma_pag=formaStr;ped.troco=trocoTotal;
   ped.parcelas=deepClone(_pagParcelas);
+  if(ped.tipo==='delivery'){ped.entregue=true;ped.entregue_em=now();}
   // M7: não registrar movimentos com valor zero (ex: cortesia total via voucher)
   _pagParcelas.forEach(p=>{
     if((p.valor||0)>0)
@@ -2833,23 +2835,22 @@ function novoDelivery(){
 function setDelPag(v){ST.novoPedido.del_pagamento=v;renderPedido();}
 function renderBalcao(){
   const peds=ST.pedidos.filter(p=>p.tipo==='balcao'&&(p.status==='aberto'||p.status==='preparo'));
-  const hist=ST.pedidos.filter(p=>p.tipo==='balcao'&&p.status==='pago').slice(-6).reverse();
-  // 4.2 mini-stats
+  const aguardando=ST.pedidos.filter(p=>p.tipo==='balcao'&&p.status==='pago'&&!p.entregue);
+  const hist=ST.pedidos.filter(p=>p.tipo==='balcao'&&p.status==='pago'&&p.entregue).slice(-6).reverse();
   const totalVal=peds.reduce((s,p)=>s+(p.total||0),0);
   const agora=Date.now();
   const tempoMed=peds.length?Math.round(peds.reduce((s,p)=>s+(agora-new Date(p.created).getTime()),0)/peds.length/60000):0;
   document.getElementById('pg-balcao').innerHTML=`
   <div class="rb mb10"><div class="bold fs14">Balcão</div>
   <button class="btn bp bsm" onclick="novoBalcao()">+ Novo pedido</button></div>
-  <!-- 4.2 Mini-stats -->
   <div style="display:flex;gap:8px;margin-bottom:12px">
-    <div class="mstat"><div class="mstat-v ac">${peds.length}</div><div class="mstat-l">Em aberto</div></div>
+    <div class="mstat"><div class="mstat-v ac">${peds.length}</div><div class="mstat-l">Em preparo</div></div>
+    <div class="mstat"><div class="mstat-v gn">${aguardando.length}</div><div class="mstat-l">Ag. retirada</div></div>
     <div class="mstat"><div class="mstat-v am">${fmtR(totalVal)}</div><div class="mstat-l">Total fila</div></div>
     <div class="mstat"><div class="mstat-v" style="color:var(--bl)">${tempoMed}min</div><div class="mstat-l">Tempo médio</div></div>
   </div>
-  ${peds.length===0?`<div class="card mb10" style="text-align:center;color:var(--t2);padding:22px">Nenhum pedido no balcão 🎉</div>`:''}
+  ${peds.length===0&&aguardando.length===0?`<div class="card mb10" style="text-align:center;color:var(--t2);padding:22px">Nenhum pedido no balcão 🎉</div>`:''}
   ${peds.map(p=>`<div class="card mb8">
-    <!-- 4.1 Senha balcão -->
     <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:8px">
       <div class="senha-badge">${p.num.replace('#','')}</div>
       <div style="flex:1;min-width:0">
@@ -2868,6 +2869,25 @@ function renderBalcao(){
       <button class="btn bp bxs" onclick="nav('pagamento','${p.id}')">💳 Pagar</button>
     </div></div>
   </div>`).join('')}
+  ${aguardando.length?`<div class="sec-title mt4">Aguardando retirada</div>
+  ${aguardando.map(p=>`<div class="card mb8" style="border-color:var(--gnbr);background:var(--gnbg)">
+    <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:8px">
+      <div class="senha-badge" style="background:linear-gradient(135deg,var(--gn),#27ae60)">${p.num.replace('#','')}</div>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px">
+          <span class="bold fs13">${esc(p.cliente_nome||'Sem nome')}</span>
+          <span class="bdg bg" style="font-size:10px">✅ Pago</span>
+          <span class="bdg ${p.consumo==='viagem'?'bpu':'bg'}" style="font-size:10px">${p.consumo==='viagem'?'🥡 Viagem':'🍽 Local'}</span>
+        </div>
+        <div class="fs12 t2">${elapsed(Date.now()-new Date(p.created).getTime())} · ${p.itens.length} item(ns)</div>
+        <div class="fs12 t3 mt2">${p.itens.map(i=>i.qty+'x '+i.nome).join(' · ')}</div>
+      </div>
+    </div>
+    <div class="rb">
+      <div class="bold gn mono">${fmtR(p.total)}</div>
+      <button class="btn bg bsm" onclick="confirmarEntrega('${p.id}')">✅ Confirmar entrega</button>
+    </div>
+  </div>`).join('')}`:''}
   ${hist.length?`<div class="sec-title mt12">Histórico recente</div>
   ${hist.map(p=>`<div class="card mb6"><div class="rb"><div><div class="fs13 bold">${p.num} · ${p.cliente_nome||'—'}</div>
   <div class="fs11 t2">${fmtDH(p.pago_em||p.created)} · ${p.forma_pag||'—'}</div></div>
@@ -2878,7 +2898,7 @@ function renderDelivery(){
   const peds={
     preparo:ST.pedidos.filter(p=>p.tipo==='delivery'&&(p.status==='aberto'||p.status==='preparo')),
     rota:ST.pedidos.filter(p=>p.tipo==='delivery'&&p.status==='rota'),
-    entregue:ST.pedidos.filter(p=>p.tipo==='delivery'&&p.status==='pago').slice(-8).reverse(),
+    entregue:ST.pedidos.filter(p=>p.tipo==='delivery'&&p.status==='pago'&&p.entregue).slice(-8).reverse(),
   };
   document.getElementById('pg-delivery').innerHTML=`
   <div class="rb mb12"><div class="bold fs14">Delivery</div>
@@ -2912,22 +2932,39 @@ function renderProducao(){
   const tab=ST._kdsTab||'cozinha';ST._kdsTab=tab;
   const dest=tab==='cozinha'?'coz':'bar';
   const peds=ST.pedidos.filter(p=>(p.status==='aberto'||p.status==='preparo')&&p.itens.some(i=>i.dest===dest));
+  const prontos=ST.pedidos.filter(p=>p.status==='pago'&&!p.entregue&&p.itens.some(i=>i.dest===dest));
   // detecta novos pedidos e toca som
   const primLoad=_kdsSeenIds.size===0;
   peds.forEach(p=>{if(!_kdsSeenIds.has(p.id)){_kdsSeenIds.add(p.id);if(!primLoad)anunciar('novo_pedido',p);}});
+  const cozAtivos=ST.pedidos.filter(p=>(p.status==='aberto'||p.status==='preparo')&&p.itens.some(i=>i.dest==='coz')).length;
+  const barAtivos=ST.pedidos.filter(p=>(p.status==='aberto'||p.status==='preparo')&&p.itens.some(i=>i.dest==='bar')).length;
+  const cozProntos=ST.pedidos.filter(p=>p.status==='pago'&&!p.entregue&&p.itens.some(i=>i.dest==='coz')).length;
+  const barProntos=ST.pedidos.filter(p=>p.status==='pago'&&!p.entregue&&p.itens.some(i=>i.dest==='bar')).length;
   document.getElementById('pg-producao').innerHTML=`
   <div class="rb mb10">
     <div class="tabbar" style="flex:1">
-      <button class="tabitem kds-coz ${tab==='cozinha'?'on':''}" onclick="ST._kdsTab='cozinha';renderProducao()">🍳 Cozinha ${ST.pedidos.filter(p=>(p.status==='aberto'||p.status==='preparo')&&p.itens.some(i=>i.dest==='coz')).length>0?`<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--ac);margin-left:4px;vertical-align:middle"></span>`:''}</button>
-      <button class="tabitem kds-bar ${tab==='bar'?'on':''}" onclick="ST._kdsTab='bar';renderProducao()">🍺 Bar ${ST.pedidos.filter(p=>(p.status==='aberto'||p.status==='preparo')&&p.itens.some(i=>i.dest==='bar')).length>0?`<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--bl);margin-left:4px;vertical-align:middle"></span>`:''}</button>
+      <button class="tabitem kds-coz ${tab==='cozinha'?'on':''}" onclick="ST._kdsTab='cozinha';renderProducao()">🍳 Cozinha ${cozAtivos>0?`<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--ac);margin-left:4px;vertical-align:middle"></span>`:''}${cozProntos>0?`<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--gn);margin-left:3px;vertical-align:middle"></span>`:''}</button>
+      <button class="tabitem kds-bar ${tab==='bar'?'on':''}" onclick="ST._kdsTab='bar';renderProducao()">🍺 Bar ${barAtivos>0?`<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--bl);margin-left:4px;vertical-align:middle"></span>`:''}${barProntos>0?`<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--gn);margin-left:3px;vertical-align:middle"></span>`:''}</button>
     </div>
-    <span class="fs12 t3" style="padding-left:10px;white-space:nowrap">${peds.length} pedido${peds.length!==1?'s':''}</span>
+    <span class="fs12 t3" style="padding-left:10px;white-space:nowrap">${peds.length} preparo · ${prontos.length} pronto${prontos.length!==1?'s':''}</span>
   </div>
-  ${peds.length===0?`<div class="card" style="text-align:center;color:var(--t2);padding:40px">
+  ${peds.length===0&&prontos.length===0?`<div class="card" style="text-align:center;color:var(--t2);padding:40px">
     <div style="font-size:36px;margin-bottom:8px">✅</div>
     <div class="bold fs14">Tudo em dia!</div>
     <div class="fs12 t3 mt4">Nenhum pedido em produção no momento.</div>
   </div>`:''}
+  ${prontos.length?`<div class="sec-title" style="color:var(--gn)">✅ Prontos — aguardando retirada</div>
+  ${prontos.map(p=>`<div class="card mb8" style="border-color:var(--gnbr);background:var(--gnbg)">
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+      <span class="bold fs15">${p.num}</span>
+      <span class="bold t2">·</span>
+      <span class="bold fs14">${p.mesa_label||p.tipo}</span>
+      ${p.cliente_nome?`<span class="fs12 t2">👤 ${p.cliente_nome}</span>`:''}
+      <span class="bdg ${p.consumo==='viagem'?'bpu':'bg'}" style="font-size:10px">${p.consumo==='viagem'?'🥡 Viagem':'🍽 Local'}</span>
+    </div>
+    <div class="fs12 t2 mb10">${p.itens.filter(i=>i.dest===dest).map(i=>i.qty+'× '+i.nome).join(' · ')}</div>
+    <button class="btn bg bw bsm" onclick="confirmarEntrega('${p.id}')">✅ Confirmar entrega</button>
+  </div>`).join('')}<div class="sec-title mt8">Em preparo</div>`:''}
   ${peds.map((p,qi)=>{
     const created=new Date(p.created).getTime();
     const prev=dest==='coz'?p.prev_coz:p.prev_bar;
@@ -3014,6 +3051,19 @@ function concluirKDS(id,dest){
   anunciar('pronto', p);
   renderProducao();
   toast('✅ Pedido '+p.num+' marcado como pronto!','g',3500);
+  updateBadges();
+}
+function confirmarEntrega(id){
+  const p=ST.pedidos.find(x=>x.id===id);if(!p)return;
+  p.entregue=true;
+  p.entregue_em=new Date().toISOString();
+  save('pedidos');
+  toast('✅ Pedido '+p.num+' entregue!','g',3000);
+  anunciar('entregue',p);
+  const pg=ST.curNav;
+  if(pg==='producao')renderProducao();
+  else if(pg==='balcao')renderBalcao();
+  else if(pg==='dash')renderDash();
   updateBadges();
 }
 
