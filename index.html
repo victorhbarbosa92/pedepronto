@@ -577,7 +577,7 @@ select.inp{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns=
   <!-- VOLTAR: aparece em todas as telas quando há destino de volta -->
   <button id="btn-back" onclick="_goBack()" title="Voltar">← Voltar</button>
   <!-- título da página -->
-  <div id="top-title" style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 4px">Dashboard</div>
+  <div id="top-title" style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 4px">Início</div>
   <!-- ações da direita -->
   <div style="display:flex;gap:6px;align-items:center;flex-shrink:0">
     <button id="btn-theme" onclick="toggleTheme()" title="Alternar tema">🌙</button>
@@ -605,7 +605,7 @@ select.inp{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns=
       <div id="sb-op" style="font-size:11px;color:var(--t3);margin-top:1px"></div>
     </div>
     <div class="sb-sec">Operações</div>
-    <button class="sb-item on" id="sbm-dash" title="Dashboard" onclick="nav('dash')"><span class="sb-ico">📊</span><span class="sb-lbl">Dashboard</span></button>
+    <button class="sb-item on" id="sbm-dash" title="Início" onclick="nav('dash')"><span class="sb-ico">🏠</span><span class="sb-lbl">Início</span></button>
     <button class="sb-item" id="sbm-mesas" title="Mesas" onclick="nav('mesas')"><span class="sb-ico">🪑</span><span class="sb-lbl">Mesas</span><span class="sb-bdg" id="sb-mesa-bdg" style="display:none">0</span></button>
     <button class="sb-item" id="sbm-balcao" title="Balcão" onclick="nav('balcao')"><span class="sb-ico">🧾</span><span class="sb-lbl">Balcão</span><span class="sb-bdg" id="sb-bal-bdg" style="display:none">0</span></button>
     <button class="sb-item" id="sbm-delivery" title="Delivery" onclick="nav('delivery')"><span class="sb-ico">🛵</span><span class="sb-lbl">Delivery</span><span class="sb-bdg" id="sb-del-bdg" style="display:none">0</span></button>
@@ -1373,7 +1373,7 @@ function confirm2(ico,title,msg,okLbl,okCls,cb){
 // ═══════════════════════════════════════════
 //  NAVIGATION
 // ═══════════════════════════════════════════
-const PAGE_TTL={dash:'Dashboard',funcionarios:'Funcionários',mesas:'Mesas',balcao:'Balcão',delivery:'Delivery',producao:'Produção',cardapio:'Cardápio',clientes:'Clientes',caixa:'Caixa',relatorio:'Relatórios',config:'Configurações',pedido:'Novo Pedido',fechar:'Fechar Conta',pagamento:'Pagamento'};
+const PAGE_TTL={dash:'Início',funcionarios:'Funcionários',mesas:'Mesas',balcao:'Balcão',delivery:'Delivery',producao:'Produção',cardapio:'Cardápio',clientes:'Clientes',caixa:'Caixa',relatorio:'Relatórios',config:'Configurações',pedido:'Novo Pedido',fechar:'Fechar Conta',pagamento:'Pagamento'};
 
 function applyResponsiveNav(){
   const mobile=isMobile();
@@ -2046,7 +2046,7 @@ function showCaixaQuick(){
 }
 
 // ═══════════════════════════════════════════
-//  DASHBOARD
+//  INÍCIO
 // ═══════════════════════════════════════════
 function renderDash(){
   const hoje=new Date().toDateString();
@@ -2054,6 +2054,9 @@ function renderDash(){
   const receita=pedHoje.reduce((s,p)=>s+(p.total||0),0);
   const abertos=ST.pedidos.filter(p=>p.status==='aberto'||p.status==='preparo');
   const mesasCnt=[...new Set(abertos.filter(p=>p.tipo==='mesa').map(p=>p.mesa_id))].length;
+  const origemIco={mesa:'🪑',balcao:'🧾',delivery:'🛵'};
+  const origemLbl={mesa:'Mesa',balcao:'Balcão',delivery:'Delivery'};
+  const origemCls={mesa:'bg','balcao':'ba','delivery':'bpu'};
   document.getElementById('pg-dash').innerHTML=`
   ${!ST.caixa.aberto?`<div style="background:var(--rdbg);border:1px solid var(--rdbr);border-radius:12px;padding:14px;margin-bottom:14px;text-align:center">
     <div class="bold rd fs14">⚠️ Caixa Fechado</div>
@@ -2063,34 +2066,44 @@ function renderDash(){
     <div class="rb"><div><div class="bold gn fs13">✅ Caixa Aberto</div><div class="fs12 t2">👤 ${ST.caixa.operador} · ${ST.caixa.turno||''} · desde ${fmtH(ST.caixa.abertura)}</div></div>
     <button class="btn bs bxs" onclick="nav('caixa')">Ver caixa</button></div>
   </div>`}
-  <div class="g2 mb12">
-    <div class="kpi"><div class="kpi-v ac">${fmtR(pedHoje.length?receita/pedHoje.length:0)}</div><div class="kpi-l">Ticket médio hoje</div></div>
-    <div class="kpi"><div class="kpi-v">${pedHoje.length}</div><div class="kpi-l">Pedidos hoje</div></div>
-  </div>
-  <div class="g2 mb14" style="cursor:pointer" onclick="nav('producao')">
+  <div class="g4 mb14">
+    <div class="kpi"><div class="kpi-v ac">${fmtR(pedHoje.length?receita/pedHoje.length:0)}</div><div class="kpi-l">Ticket médio</div></div>
+    <div class="kpi"><div class="kpi-v">${pedHoje.length}</div><div class="kpi-l">Pagos hoje</div></div>
     <div class="kpi"><div class="kpi-v">${mesasCnt}</div><div class="kpi-l">Mesas abertas</div></div>
-    <div class="kpi" style="${abertos.length?'border-color:var(--ambr);background:var(--ambg)':''}">
-      <div class="kpi-v am">${abertos.length}</div>
-      <div class="kpi-l">Em produção 📟</div>
-    </div>
+    <div class="kpi" style="${abertos.length?'border-color:var(--ambr);background:var(--ambg)':''}"><div class="kpi-v am">${abertos.length}</div><div class="kpi-l">Em produção</div></div>
   </div>
   <div class="sec-title">Ações rápidas</div>
-  <div class="g2 mb14">
-    <button class="btn bp bw" style="padding:14px" onclick="nav('mesas')">🪑 Mesas</button>
-    <button class="btn bb bw" style="padding:14px" onclick="novoBalcao()">🧾 Balcão</button>
-    <button class="btn bpu bw" style="padding:14px" onclick="novoDelivery()">🛵 Delivery</button>
-    <button class="btn bcy bw" style="padding:14px" onclick="nav('producao')">📟 Produção</button>
+  <div class="g4 mb14">
+    <button class="btn bp bw" style="padding:12px 6px;flex-direction:column;gap:4px;font-size:13px" onclick="nav('mesas')">🪑<span>Mesas</span></button>
+    <button class="btn bb bw" style="padding:12px 6px;flex-direction:column;gap:4px;font-size:13px" onclick="novoBalcao()">🧾<span>Balcão</span></button>
+    <button class="btn bpu bw" style="padding:12px 6px;flex-direction:column;gap:4px;font-size:13px" onclick="novoDelivery()">🛵<span>Delivery</span></button>
+    <button class="btn bcy bw" style="padding:12px 6px;flex-direction:column;gap:4px;font-size:13px" onclick="nav('producao')">📟<span>Produção</span></button>
   </div>
-  <div class="sec-title">Pedidos em aberto</div>
-  ${abertos.length===0?`<div class="card" style="text-align:center;color:var(--t2);padding:22px">Nenhum pedido aberto 🎉</div>`:''}
-  ${abertos.slice(0,5).map(p=>`<div class="card mb8" style="cursor:pointer" onclick="nav('fechar','${p.id}')">
-    <div class="rb mb6">
-      <div><div class="bold">${p.num} · ${p.mesa_label||p.tipo}</div><div class="fs12 t2">${p.cliente_nome||'—'} · ${elapsed(Date.now()-new Date(p.created).getTime())}</div></div>
-      <span class="bdg bg-b">Aberto</span>
-    </div>
-    <div class="rb"><div class="bold am mono">${fmtR(p.total_bruto)}</div>
-    <button class="btn bp bxs" onclick="event.stopPropagation();nav('pagamento','${p.id}')">💳 Pagar</button></div>
-  </div>`).join('')}`;
+  <div class="sec-title">Em produção (${abertos.length})</div>
+  ${abertos.length===0?`<div class="card" style="text-align:center;color:var(--t2);padding:24px">Nenhum pedido em aberto 🎉</div>`:''}
+  ${abertos.map(p=>{
+    const tipo=p.tipo||'balcao';
+    const ico=origemIco[tipo]||'📋';
+    const lbl=tipo==='mesa'?(p.mesa_label||'Mesa'):origemLbl[tipo]||tipo;
+    const cls=origemCls[tipo]||'ba';
+    const itensResumo=p.itens.map(i=>`${i.qty}x ${i.nome}`).join(' · ');
+    return`<div class="card mb8" style="cursor:pointer" onclick="nav('fechar','${p.id}')">
+      <div class="rb mb6">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span class="bold fs14">${p.num}</span>
+          <span class="bdg ${cls}">${ico} ${lbl}</span>
+          ${p.consumo==='viagem'?`<span class="bdg bpu">🥡 Viagem</span>`:''}
+        </div>
+        <span class="fs12 t2">${elapsed(Date.now()-new Date(p.created).getTime())}</span>
+      </div>
+      ${p.cliente_nome?`<div class="fs12 t2 mb6">👤 ${p.cliente_nome}</div>`:''}
+      <div class="fs12 t2 mb8" style="line-height:1.6">${itensResumo}</div>
+      <div class="rb">
+        <div class="bold am mono fs15">${fmtR(p.total_bruto)}</div>
+        <button class="btn bp bxs" onclick="event.stopPropagation();nav('pagamento','${p.id}')">💳 Pagar</button>
+      </div>
+    </div>`;
+  }).join('')}`;
 }
 
 // ═══════════════════════════════════════════
