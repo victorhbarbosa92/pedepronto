@@ -88,6 +88,11 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 /* scrollbar auto-scroll indicator */
 #scroll-bar{position:absolute;right:8px;top:50%;transform:translateY(-50%);height:60px;width:3px;background:rgba(255,255,255,.1);border-radius:99px;z-index:3}
 #scroll-thumb{width:100%;height:30%;background:var(--ac);border-radius:99px;transition:top .3s}
+
+/* botão ativar som */
+#btn-ativar-som{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);z-index:300;background:var(--ac);color:#fff;border:none;border-radius:99px;padding:16px 32px;font-size:16px;font-weight:800;cursor:pointer;box-shadow:0 4px 30px rgba(108,99,255,.6);animation:btnPulse 2s ease-in-out infinite;letter-spacing:.5px;font-family:inherit}
+#btn-ativar-som.oculto{display:none}
+@keyframes btnPulse{0%,100%{box-shadow:0 4px 30px rgba(108,99,255,.6);transform:translateX(-50%) scale(1)}50%{box-shadow:0 4px 50px rgba(108,99,255,.9);transform:translateX(-50%) scale(1.04)}}
 </style>
 </head>
 <body>
@@ -143,6 +148,11 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 
 <!-- FILA DE PRÓXIMOS -->
 <div id="call-queue"></div>
+
+<!-- BOTÃO ATIVAR SOM -->
+<button id="btn-ativar-som" onclick="_ativarAudio()" title="Clique para ativar som e voz">
+  🔊 Toque para ativar o som
+</button>
 
 <script>
 // ── DADOS ──
@@ -276,21 +286,55 @@ function renderQueue(){
   el.innerHTML=espera.map(c=>`<div class="call-q-item">🔔 #${c.num}${c.nome?' — '+c.nome:''}</div>`).join('');
 }
 
-// voz carregada uma vez
+// ── VOZ ──
+let _audioUnlocked=false;
 let _vozes=[];
+
 function _carregarVozes(){
   if(!window.speechSynthesis)return;
   const fn=()=>{_vozes=speechSynthesis.getVoices();};
-  fn();speechSynthesis.onvoiceschanged=fn;
+  fn();
+  speechSynthesis.onvoiceschanged=fn;
+  // retry pois alguns browsers demoram
+  setTimeout(fn,500);setTimeout(fn,1500);setTimeout(fn,3000);
 }
+
+function _ativarAudio(){
+  _audioUnlocked=true;
+  // utterance silenciosa para desbloquear o engine
+  try{
+    const u=new SpeechSynthesisUtterance(' ');
+    u.volume=0;u.lang='pt-BR';
+    speechSynthesis.speak(u);
+  }catch(e){}
+  // AudioContext também precisa de gesto
+  try{new(window.AudioContext||window.webkitAudioContext)();}catch(e){}
+  const btn=document.getElementById('btn-ativar-som');
+  if(btn)btn.classList.add('oculto');
+}
+
 function _selecionarVoz(lang){
-  const pref=_vozes.filter(v=>v.lang===lang);
-  if(pref.length)return pref[0];
-  const base=_vozes.filter(v=>v.lang.startsWith(lang.split('-')[0]));
-  return base[0]||null;
+  if(!_vozes.length)_vozes=speechSynthesis.getVoices();
+  // pt-BR exato
+  const exato=_vozes.filter(v=>v.lang===lang);
+  if(exato.length)return exato[0];
+  // pt genérico
+  const base=_vozes.filter(v=>v.lang.startsWith('pt'));
+  if(base.length)return base[0];
+  // qualquer voz disponível
+  return _vozes[0]||null;
 }
+
+function _criarUtterance(txt){
+  const u=new SpeechSynthesisUtterance(txt);
+  u.lang='pt-BR';u.rate=0.92;u.pitch=1.05;u.volume=1;
+  const voz=_selecionarVoz('pt-BR');
+  if(voz)u.voice=voz;
+  return u;
+}
+
 function falarChamada(data){
-  if(!window.speechSynthesis)return;
+  if(!window.speechSynthesis||!_audioUnlocked)return;
   const estab=(_cfg.nome||'PedePronto').replace(/[^\w\sÀ-ÿ]/g,'').trim();
   const num='número '+String(data.num).replace('#','');
   const nome=data.nome||'';
@@ -298,21 +342,16 @@ function falarChamada(data){
   const txt=nome
     ?`Atenção! ${nome}, seu pedido ${num} está pronto no ${estab}. ${localTxt}`
     :`Atenção! Pedido ${num} está pronto no ${estab}. ${localTxt}`;
+  // cancel + pequeno delay antes de falar (evita race condition)
   speechSynthesis.cancel();
-  const u=new SpeechSynthesisUtterance(txt);
-  u.lang='pt-BR';u.rate=0.95;u.pitch=1.05;u.volume=1;
-  const voz=_selecionarVoz('pt-BR');
-  if(voz)u.voice=voz;
-  speechSynthesis.speak(u);
-  // repete uma vez após 5s para garantir que o cliente ouça
   setTimeout(()=>{
-    if(!window.speechSynthesis)return;
-    speechSynthesis.cancel();
-    const u2=new SpeechSynthesisUtterance(txt);
-    u2.lang='pt-BR';u2.rate=0.95;u2.pitch=1.05;u2.volume=1;
-    if(voz)u2.voice=voz;
-    speechSynthesis.speak(u2);
-  },5500);
+    speechSynthesis.speak(_criarUtterance(txt));
+    // repete após 6s
+    setTimeout(()=>{
+      speechSynthesis.cancel();
+      setTimeout(()=>speechSynthesis.speak(_criarUtterance(txt)),200);
+    },6000);
+  },250);
 }
 
 function showNextCall(){
