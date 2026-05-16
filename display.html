@@ -168,6 +168,7 @@ function init(){
   startClock();
   startAutoScroll();
   listenCalls();
+  _carregarVozes();
 }
 
 // ── HEADER ──
@@ -275,6 +276,45 @@ function renderQueue(){
   el.innerHTML=espera.map(c=>`<div class="call-q-item">🔔 #${c.num}${c.nome?' — '+c.nome:''}</div>`).join('');
 }
 
+// voz carregada uma vez
+let _vozes=[];
+function _carregarVozes(){
+  if(!window.speechSynthesis)return;
+  const fn=()=>{_vozes=speechSynthesis.getVoices();};
+  fn();speechSynthesis.onvoiceschanged=fn;
+}
+function _selecionarVoz(lang){
+  const pref=_vozes.filter(v=>v.lang===lang);
+  if(pref.length)return pref[0];
+  const base=_vozes.filter(v=>v.lang.startsWith(lang.split('-')[0]));
+  return base[0]||null;
+}
+function falarChamada(data){
+  if(!window.speechSynthesis)return;
+  const estab=(_cfg.nome||'PedePronto').replace(/[^\w\sÀ-ÿ]/g,'').trim();
+  const num='número '+String(data.num).replace('#','');
+  const nome=data.nome||'';
+  const localTxt={mesa:'Dirija-se à sua mesa.',balcao:'Retire no balcão.',delivery:'Seu pedido está pronto.'}[data.tipo]||'Retire no balcão.';
+  const txt=nome
+    ?`Atenção! ${nome}, seu pedido ${num} está pronto no ${estab}. ${localTxt}`
+    :`Atenção! Pedido ${num} está pronto no ${estab}. ${localTxt}`;
+  speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(txt);
+  u.lang='pt-BR';u.rate=0.95;u.pitch=1.05;u.volume=1;
+  const voz=_selecionarVoz('pt-BR');
+  if(voz)u.voice=voz;
+  speechSynthesis.speak(u);
+  // repete uma vez após 5s para garantir que o cliente ouça
+  setTimeout(()=>{
+    if(!window.speechSynthesis)return;
+    speechSynthesis.cancel();
+    const u2=new SpeechSynthesisUtterance(txt);
+    u2.lang='pt-BR';u2.rate=0.95;u2.pitch=1.05;u2.volume=1;
+    if(voz)u2.voice=voz;
+    speechSynthesis.speak(u2);
+  },5500);
+}
+
 function showNextCall(){
   if(!_callQueue.length){renderQueue();return;}
   const data=_callQueue[0];
@@ -291,7 +331,7 @@ function showNextCall(){
   bar.style.transition='none';bar.style.width='100%';
   overlay.classList.add('on');
 
-  // som via AudioContext
+  // som via AudioContext (3 bipes)
   try{
     const ctx=new(window.AudioContext||window.webkitAudioContext)();
     [0,300,600].forEach(d=>{
@@ -305,6 +345,9 @@ function showNextCall(){
       },d);
     });
   }catch(e){}
+
+  // voz após os bipes
+  setTimeout(()=>falarChamada(data),1100);
 
   const dur=15000;
   setTimeout(()=>{bar.style.transition=`width ${dur}ms linear`;bar.style.width='0%';},50);
