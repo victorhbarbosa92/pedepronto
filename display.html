@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>PedePronto — Vitrine</title>
+<style>
+:root{
+  --bg:#0a0a12;--sf:#12121e;--sf2:#1a1a2e;
+  --tx:#f0f0ff;--t2:#8888aa;--t3:#555577;
+  --ac:#6c63ff;--ac2:#4ecdc4;
+  --gn:#2ecc71;--am:#f39c12;--rd:#e74c3c;
+  --br:rgba(255,255,255,.07);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--tx);font-family:'Segoe UI',system-ui,sans-serif}
+
+/* ── VITRINE ── */
+#vitrine{width:100%;height:100%;display:flex;flex-direction:column;position:relative;overflow:hidden}
+
+/* header */
+#vt-header{display:flex;align-items:center;justify-content:space-between;padding:20px 32px 16px;background:linear-gradient(180deg,rgba(10,10,18,.98) 0%,transparent 100%);position:relative;z-index:2;flex-shrink:0}
+#vt-logo-wrap{display:flex;align-items:center;gap:14px}
+#vt-logo{width:52px;height:52px;border-radius:14px;object-fit:cover;display:none;border:2px solid var(--ac)}
+#vt-brand{font-size:22px;font-weight:900;color:var(--ac);font-family:monospace;letter-spacing:-.5px}
+#vt-nome{font-size:14px;color:var(--t2);margin-top:2px;font-weight:600}
+#vt-clock{text-align:right}
+#vt-time{font-size:36px;font-weight:900;font-family:monospace;color:var(--tx);letter-spacing:-1px}
+#vt-date{font-size:13px;color:var(--t2);margin-top:2px}
+
+/* background animado */
+#vt-bg{position:absolute;inset:0;z-index:0;background:radial-gradient(ellipse at 20% 50%,rgba(108,99,255,.08) 0%,transparent 60%),radial-gradient(ellipse at 80% 20%,rgba(78,205,196,.06) 0%,transparent 50%),var(--bg)}
+.vt-orb{position:absolute;border-radius:50%;filter:blur(80px);opacity:.25;animation:orbFloat 12s ease-in-out infinite}
+.vt-orb:nth-child(1){width:300px;height:300px;background:var(--ac);top:-100px;left:10%;animation-delay:0s}
+.vt-orb:nth-child(2){width:200px;height:200px;background:var(--ac2);bottom:10%;right:5%;animation-delay:-4s}
+.vt-orb:nth-child(3){width:250px;height:250px;background:#e91e63;top:40%;left:60%;animation-delay:-8s}
+@keyframes orbFloat{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(20px,-30px) scale(1.05)}66%{transform:translate(-15px,20px) scale(.95)}}
+
+/* conteúdo central */
+#vt-content{flex:1;position:relative;z-index:1;overflow:hidden;padding:0 24px 16px}
+
+/* carrossel de categorias */
+#vt-cats{display:flex;gap:10px;padding:0 0 14px;overflow-x:auto;scrollbar-width:none;flex-shrink:0;scroll-behavior:smooth}
+#vt-cats::-webkit-scrollbar{display:none}
+.vt-cat-chip{padding:8px 18px;border-radius:99px;border:1.5px solid var(--br);background:rgba(255,255,255,.04);color:var(--t2);font-size:13px;font-weight:700;cursor:pointer;transition:all .2s;white-space:nowrap;backdrop-filter:blur(10px)}
+.vt-cat-chip.on{background:var(--ac);border-color:var(--ac);color:#fff;box-shadow:0 4px 20px rgba(108,99,255,.4)}
+
+/* grid de produtos */
+#vt-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;overflow-y:auto;height:100%;scrollbar-width:none;padding-bottom:20px;align-content:start}
+#vt-grid::-webkit-scrollbar{display:none}
+.vt-prod{background:rgba(255,255,255,.04);border:1px solid var(--br);border-radius:18px;padding:0;overflow:hidden;backdrop-filter:blur(12px);transition:transform .2s;animation:fadeInUp .4s both}
+@keyframes fadeInUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.vt-prod-foto{width:100%;aspect-ratio:1;object-fit:cover;display:block;background:var(--sf2)}
+.vt-prod-foto-placeholder{width:100%;aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:48px;background:linear-gradient(135deg,var(--sf) 0%,var(--sf2) 100%)}
+.vt-prod-info{padding:12px 14px 14px}
+.vt-prod-nome{font-size:14px;font-weight:800;line-height:1.3;margin-bottom:4px;color:var(--tx)}
+.vt-prod-desc{font-size:11px;color:var(--t2);line-height:1.4;margin-bottom:8px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.vt-prod-preco{font-size:18px;font-weight:900;color:var(--ac);font-family:monospace}
+
+/* estado vazio */
+#vt-empty{display:none;flex:1;align-items:center;justify-content:center;flex-direction:column;gap:12px;color:var(--t2)}
+
+/* ── OVERLAY DE CHAMADA ── */
+#call-overlay{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.75);backdrop-filter:blur(8px);animation:overlayIn .3s ease}
+#call-overlay.on{display:flex}
+@keyframes overlayIn{from{opacity:0}to{opacity:1}}
+#call-card{background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%);border:2px solid var(--ac);border-radius:28px;padding:48px 56px;text-align:center;max-width:520px;width:90%;box-shadow:0 0 80px rgba(108,99,255,.5),0 30px 60px rgba(0,0,0,.6);animation:cardIn .4s cubic-bezier(.34,1.56,.64,1)}
+@keyframes cardIn{from{opacity:0;transform:scale(.7) translateY(40px)}to{opacity:1;transform:scale(1) translateY(0)}}
+#call-icon{font-size:72px;display:block;margin-bottom:16px;animation:bellShake 1s ease .4s 3}
+@keyframes bellShake{0%,100%{transform:rotate(0)}10%{transform:rotate(-15deg)}30%{transform:rotate(15deg)}50%{transform:rotate(-10deg)}70%{transform:rotate(10deg)}90%{transform:rotate(-5deg)}}
+#call-label{font-size:18px;color:var(--t2);font-weight:700;text-transform:uppercase;letter-spacing:2px;margin-bottom:12px}
+#call-num{font-size:88px;font-weight:900;font-family:monospace;background:linear-gradient(135deg,var(--ac),var(--ac2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1;margin-bottom:8px;animation:numPulse 1.5s ease-in-out infinite}
+@keyframes numPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.85;transform:scale(.97)}}
+#call-nome{font-size:22px;font-weight:700;color:var(--tx);margin-bottom:6px}
+#call-local{font-size:16px;color:var(--t2);margin-bottom:28px}
+#call-sub{font-size:15px;color:var(--ac2);font-weight:800;text-transform:uppercase;letter-spacing:1.5px;padding:10px 24px;border:1.5px solid var(--ac2);border-radius:99px;display:inline-block}
+#call-progress{height:4px;background:rgba(255,255,255,.1);border-radius:99px;margin-top:28px;overflow:hidden}
+#call-progress-bar{height:100%;background:linear-gradient(90deg,var(--ac),var(--ac2));border-radius:99px;width:100%;transition:width linear}
+
+/* fila de espera (próximos) */
+#call-queue{position:fixed;bottom:24px;right:24px;z-index:99;display:flex;flex-direction:column;gap:8px;align-items:flex-end}
+.call-q-item{background:rgba(108,99,255,.2);border:1px solid var(--ac);border-radius:12px;padding:8px 16px;font-size:14px;font-weight:800;color:var(--ac);backdrop-filter:blur(12px);animation:fadeInUp .3s both}
+
+/* rodapé */
+#vt-footer{position:absolute;bottom:0;left:0;right:0;height:40px;background:linear-gradient(0deg,rgba(10,10,18,.98) 0%,transparent 100%);z-index:2;display:flex;align-items:flex-end;justify-content:center;padding-bottom:6px}
+#vt-footer-txt{font-size:11px;color:var(--t3);letter-spacing:1px}
+
+/* scrollbar auto-scroll indicator */
+#scroll-bar{position:absolute;right:8px;top:50%;transform:translateY(-50%);height:60px;width:3px;background:rgba(255,255,255,.1);border-radius:99px;z-index:3}
+#scroll-thumb{width:100%;height:30%;background:var(--ac);border-radius:99px;transition:top .3s}
+</style>
+</head>
+<body>
+
+<div id="vitrine">
+  <div id="vt-bg">
+    <div class="vt-orb"></div>
+    <div class="vt-orb"></div>
+    <div class="vt-orb"></div>
+  </div>
+
+  <div id="vt-header">
+    <div id="vt-logo-wrap">
+      <img id="vt-logo" src="" alt="logo">
+      <div>
+        <div id="vt-brand">🍔 PedePronto</div>
+        <div id="vt-nome">Carregando...</div>
+      </div>
+    </div>
+    <div id="vt-clock">
+      <div id="vt-time">00:00</div>
+      <div id="vt-date"></div>
+    </div>
+  </div>
+
+  <div id="vt-content">
+    <div id="vt-cats"></div>
+    <div id="vt-grid"></div>
+    <div id="vt-empty">
+      <div style="font-size:48px">🍽️</div>
+      <div style="font-size:18px;font-weight:700">Cardápio em breve</div>
+      <div style="font-size:13px;margin-top:4px">Nenhum produto cadastrado ainda</div>
+    </div>
+  </div>
+
+  <div id="vt-footer">
+    <div id="vt-footer-txt">PedePronto PDV • Retire seu pedido no balcão</div>
+  </div>
+</div>
+
+<!-- OVERLAY DE CHAMADA -->
+<div id="call-overlay">
+  <div id="call-card">
+    <span id="call-icon">🔔</span>
+    <div id="call-label">Pedido Pronto!</div>
+    <div id="call-num">#001</div>
+    <div id="call-nome"></div>
+    <div id="call-local"></div>
+    <div id="call-sub">Retire no balcão</div>
+    <div id="call-progress"><div id="call-progress-bar"></div></div>
+  </div>
+</div>
+
+<!-- FILA DE PRÓXIMOS -->
+<div id="call-queue"></div>
+
+<script>
+// ── DADOS ──
+const PREFIX='pedepronto_';
+function load(k){try{return JSON.parse(localStorage.getItem(PREFIX+k))||null}catch(e){return null}}
+
+let _produtos=[];
+let _categorias=[];
+let _cfg={};
+let _catAtiva='todos';
+let _callQueue=[];
+let _callTimer=null;
+let _autoScrollInterval=null;
+
+// ── INIT ──
+function init(){
+  _cfg=load('cfg')||{};
+  _produtos=load('produtos')||[];
+  _categorias=load('categorias')||[];
+  renderHeader();
+  renderCats();
+  renderGrid();
+  startClock();
+  startAutoScroll();
+  listenCalls();
+}
+
+// ── HEADER ──
+function renderHeader(){
+  const logo=document.getElementById('vt-logo');
+  if(_cfg.logo){logo.src=_cfg.logo;logo.style.display='block';}
+  document.getElementById('vt-brand').textContent=(_cfg.nome||'PedePronto');
+  document.getElementById('vt-nome').textContent=_cfg.slogan||'Faça seu pedido no balcão';
+  document.getElementById('vt-footer-txt').textContent='PedePronto • '+(_cfg.nome||'')+((_cfg.end)?' — '+_cfg.end:'');
+}
+
+// ── RELÓGIO ──
+function startClock(){
+  function tick(){
+    const now=new Date();
+    const h=String(now.getHours()).padStart(2,'0');
+    const m=String(now.getMinutes()).padStart(2,'0');
+    document.getElementById('vt-time').textContent=h+':'+m;
+    const dias=['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+    const meses=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+    document.getElementById('vt-date').textContent=dias[now.getDay()]+', '+now.getDate()+' de '+meses[now.getMonth()];
+  }
+  tick();setInterval(tick,30000);
+}
+
+// ── CATEGORIAS ──
+function renderCats(){
+  const catsUsadas=[...new Set(_produtos.filter(p=>p.ativo!==false).map(p=>p.categoria||'Geral'))];
+  const el=document.getElementById('vt-cats');
+  if(catsUsadas.length<=1){el.style.display='none';return;}
+  el.style.display='flex';
+  const chips=[{id:'todos',nome:'Tudo'},..._categorias.filter(c=>catsUsadas.includes(c.nome)).map(c=>({id:c.nome,nome:c.nome})),...catsUsadas.filter(n=>!_categorias.find(c=>c.nome===n)).map(n=>({id:n,nome:n}))];
+  el.innerHTML=chips.map(c=>`<button class="vt-cat-chip${_catAtiva===c.id?' on':''}" onclick="setCategoria('${c.id.replace(/'/g,'\\\'')}')">${c.nome}</button>`).join('');
+}
+function setCategoria(id){
+  _catAtiva=id;
+  renderCats();
+  renderGrid();
+}
+
+// ── GRID ──
+function renderGrid(){
+  const prods=_produtos.filter(p=>p.ativo!==false&&(_catAtiva==='todos'||p.categoria===_catAtiva));
+  const grid=document.getElementById('vt-grid');
+  const empty=document.getElementById('vt-empty');
+  if(!prods.length){grid.style.display='none';empty.style.display='flex';return;}
+  grid.style.display='grid';empty.style.display='none';
+  function fmtR(v){return'R$ '+Number(v||0).toFixed(2).replace('.',',');}
+  grid.innerHTML=prods.map((p,i)=>`
+    <div class="vt-prod" style="animation-delay:${i*0.04}s">
+      ${p.foto
+        ?`<img class="vt-prod-foto" src="${p.foto}" alt="${p.nome}" loading="lazy">`
+        :`<div class="vt-prod-foto-placeholder">${p.icon||'🍽️'}</div>`}
+      <div class="vt-prod-info">
+        <div class="vt-prod-nome">${p.nome}</div>
+        ${p.desc?`<div class="vt-prod-desc">${p.desc}</div>`:''}
+        <div class="vt-prod-preco">${fmtR(p.preco)}</div>
+      </div>
+    </div>`).join('');
+}
+
+// ── AUTO-SCROLL ──
+function startAutoScroll(){
+  const grid=document.getElementById('vt-grid');
+  let dir=1;let paused=false;
+  _autoScrollInterval=setInterval(()=>{
+    if(paused)return;
+    grid.scrollTop+=dir*2;
+    if(grid.scrollTop+grid.clientHeight>=grid.scrollHeight-10){
+      paused=true;setTimeout(()=>{dir=-1;paused=false;},3000);
+    }
+    if(grid.scrollTop<=0&&dir===-1){
+      paused=true;setTimeout(()=>{dir=1;paused=false;},2000);
+    }
+  },60);
+}
+
+// ── SISTEMA DE CHAMADAS ──
+function listenCalls(){
+  // BroadcastChannel (mesmo navegador, outra aba)
+  try{
+    const bc=new BroadcastChannel('pp_display');
+    bc.onmessage=e=>{if(e.data&&e.data.type==='call')enqueueCall(e.data);};
+  }catch(err){}
+  // Storage event (outro contexto no mesmo domínio)
+  window.addEventListener('storage',e=>{
+    if(e.key==='pp_display_call'&&e.newValue){
+      try{const d=JSON.parse(e.newValue);enqueueCall(d);}catch(ex){}
+    }
+  });
+}
+
+function enqueueCall(data){
+  // evita duplicata pelo ts
+  if(_callQueue.find(c=>c.ts===data.ts))return;
+  _callQueue.push(data);
+  renderQueue();
+  if(!_callTimer)showNextCall();
+}
+
+function renderQueue(){
+  const el=document.getElementById('call-queue');
+  const espera=_callQueue.slice(1);
+  if(!espera.length){el.innerHTML='';return;}
+  el.innerHTML=espera.map(c=>`<div class="call-q-item">🔔 #${c.num}${c.nome?' — '+c.nome:''}</div>`).join('');
+}
+
+function showNextCall(){
+  if(!_callQueue.length){renderQueue();return;}
+  const data=_callQueue[0];
+  renderQueue();
+
+  const overlay=document.getElementById('call-overlay');
+  document.getElementById('call-num').textContent='#'+String(data.num).padStart(3,'0');
+  document.getElementById('call-nome').textContent=data.nome||'';
+  const localMap={mesa:'🪑 '+( data.mesa||'Mesa'),balcao:'🧾 Retire no Balcão',delivery:'🛵 Delivery'};
+  document.getElementById('call-local').textContent=localMap[data.tipo]||'🧾 Retire no Balcão';
+  document.getElementById('call-icon').textContent='🔔';
+
+  const bar=document.getElementById('call-progress-bar');
+  bar.style.transition='none';bar.style.width='100%';
+  overlay.classList.add('on');
+
+  // som via AudioContext
+  try{
+    const ctx=new(window.AudioContext||window.webkitAudioContext)();
+    [0,300,600].forEach(d=>{
+      setTimeout(()=>{
+        const o=ctx.createOscillator();const g=ctx.createGain();
+        o.connect(g);g.connect(ctx.destination);
+        o.frequency.value=880;g.gain.setValueAtTime(0,ctx.currentTime);
+        g.gain.linearRampToValueAtTime(.3,ctx.currentTime+.05);
+        g.gain.linearRampToValueAtTime(0,ctx.currentTime+.3);
+        o.start();o.stop(ctx.currentTime+.35);
+      },d);
+    });
+  }catch(e){}
+
+  const dur=15000;
+  setTimeout(()=>{bar.style.transition=`width ${dur}ms linear`;bar.style.width='0%';},50);
+
+  _callTimer=setTimeout(()=>{
+    overlay.classList.remove('on');
+    _callQueue.shift();
+    _callTimer=null;
+    setTimeout(()=>{if(_callQueue.length)showNextCall();else renderQueue();},400);
+  },dur);
+}
+
+// ── ATUALIZA DADOS PERIODICAMENTE ──
+setInterval(()=>{
+  _produtos=load('produtos')||[];
+  _categorias=load('categorias')||[];
+  _cfg=load('cfg')||{};
+  renderHeader();
+  renderCats();
+  renderGrid();
+},30000);
+
+init();
+</script>
+</body>
+</html>

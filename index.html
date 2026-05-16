@@ -634,6 +634,7 @@ html.tam-g .tbtn,html.tam-g .tbtn-ico{font-size:17px;min-height:44px}
     <button class="sb-item" id="sbm-delivery" title="Delivery" onclick="nav('delivery')"><span class="sb-ico">🛵</span><span class="sb-lbl">Delivery</span><span class="sb-bdg" id="sb-del-bdg" style="display:none">0</span></button>
     <button class="sb-item" id="sbm-producao" title="Produção" onclick="nav('producao')"><span class="sb-ico">📟</span><span class="sb-lbl">Produção</span></button>
     <div class="sb-sec">Gestão</div>
+    <button class="sb-item" id="sbm-dados" title="Dados" onclick="nav('dados')"><span class="sb-ico">📊</span><span class="sb-lbl">Dados</span></button>
     <button class="sb-item" id="sbm-cardapio" title="Cardápio" onclick="nav('cardapio')"><span class="sb-ico">📋</span><span class="sb-lbl">Cardápio</span></button>
     <button class="sb-item" id="sbm-clientes" title="Clientes" onclick="nav('clientes')"><span class="sb-ico">👥</span><span class="sb-lbl">Clientes</span></button>
     <button class="sb-item" id="sbm-caixa" title="Caixa" onclick="nav('caixa')"><span class="sb-ico">💰</span><span class="sb-lbl">Caixa</span></button>
@@ -657,6 +658,7 @@ html.tam-g .tbtn,html.tam-g .tbtn-ico{font-size:17px;min-height:44px}
       <div class="pg" id="pg-balcao"></div>
       <div class="pg" id="pg-delivery"></div>
       <div class="pg" id="pg-producao"></div>
+      <div class="pg" id="pg-dados"></div>
       <div class="pg" id="pg-cardapio"></div>
       <div class="pg" id="pg-clientes"></div>
       <div class="pg" id="pg-caixa"></div>
@@ -1407,7 +1409,7 @@ function confirm2(ico,title,msg,okLbl,okCls,cb){
 // ═══════════════════════════════════════════
 //  NAVIGATION
 // ═══════════════════════════════════════════
-const PAGE_TTL={dash:'Início',funcionarios:'Funcionários',mesas:'Mesas',balcao:'Balcão',delivery:'Delivery',producao:'Produção',cardapio:'Cardápio',clientes:'Clientes',caixa:'Caixa',relatorio:'Relatórios',config:'Configurações',pedido:'Novo Pedido',fechar:'Fechar Conta',pagamento:'Pagamento'};
+const PAGE_TTL={dash:'Início',dados:'Dados',funcionarios:'Funcionários',mesas:'Mesas',balcao:'Balcão',delivery:'Delivery',producao:'Produção',cardapio:'Cardápio',clientes:'Clientes',caixa:'Caixa',relatorio:'Relatórios',config:'Configurações',pedido:'Novo Pedido',fechar:'Fechar Conta',pagamento:'Pagamento'};
 
 function applyResponsiveNav(){
   const mobile=isMobile();
@@ -1481,7 +1483,7 @@ function nav(pg,extra){
   const sbi=document.getElementById('sbm-'+pg);if(sbi)sbi.classList.add('on');
   document.querySelectorAll('.bn-item').forEach(b=>b.classList.remove('on'));
   const bni=document.getElementById('bnm-'+pg);if(bni)bni.classList.add('on');
-  const renders={dash:renderDash,mesas:renderMesas,balcao:renderBalcao,delivery:renderDelivery,producao:renderProducao,cardapio:renderCardapio,clientes:renderClientes,caixa:renderCaixa,relatorio:renderRelatorio,funcionarios:renderFuncionarios,config:renderConfig,pedido:()=>renderPedido(extra),fechar:()=>renderFechar(extra),pagamento:()=>renderPagamento(extra)};
+  const renders={dash:renderDash,dados:renderDados,mesas:renderMesas,balcao:renderBalcao,delivery:renderDelivery,producao:renderProducao,cardapio:renderCardapio,clientes:renderClientes,caixa:renderCaixa,relatorio:renderRelatorio,funcionarios:renderFuncionarios,config:renderConfig,pedido:()=>renderPedido(extra),fechar:()=>renderFechar(extra),pagamento:()=>renderPagamento(extra)};
   if(renders[pg])renders[pg]();
   // KDS tick: ligar ao entrar, desligar ao sair
   if(pg==='producao')_kdsStartTick();else _kdsStopTick();
@@ -1509,7 +1511,7 @@ function _silentRefresh(){
   const pg=document.getElementById('page');
   const scrollY=pg?pg.scrollTop:0;
   const renders={
-    dash:renderDash,mesas:renderMesas,balcao:renderBalcao,delivery:renderDelivery,
+    dados:renderDados,dash:renderDash,mesas:renderMesas,balcao:renderBalcao,delivery:renderDelivery,
     producao:renderProducao,cardapio:renderCardapio,clientes:renderClientes,
     caixa:renderCaixa,relatorio:renderRelatorio,funcionarios:renderFuncionarios,config:renderConfig
   };
@@ -2093,15 +2095,36 @@ function showCaixaQuick(){
 // ═══════════════════════════════════════════
 //  INÍCIO
 // ═══════════════════════════════════════════
+function chamarPedido(p){
+  const call={num:p.num,nome:p.cliente_nome||'',tipo:p.tipo||'balcao',mesa:p.mesa_label||'',ts:Date.now()};
+  try{const bc=new BroadcastChannel('pp_display');bc.postMessage({type:'call',...call});bc.close();}catch(e){}
+  localStorage.setItem('pp_display_call',JSON.stringify(call));
+  toast('🔔 Pedido #'+p.num+' chamado na vitrine!','g',3000);
+  anunciar('chime',p);
+}
+
 function renderDash(){
-  const hoje=new Date().toDateString();
-  const pedHoje=ST.pedidos.filter(p=>p.status==='pago'&&new Date(p.pago_em||p.created).toDateString()===hoje);
-  const receita=pedHoje.reduce((s,p)=>s+(p.total||0),0);
-  const abertos=ST.pedidos.filter(naFila);
-  const mesasCnt=[...new Set(abertos.filter(p=>p.tipo==='mesa'&&(p.status==='aberto'||p.status==='preparo')).map(p=>p.mesa_id))].length;
   const origemIco={mesa:'🪑',balcao:'🧾',delivery:'🛵'};
-  const origemLbl={mesa:'Mesa',balcao:'Balcão',delivery:'Delivery'};
-  const origemCls={mesa:'bg','balcao':'ba','delivery':'bpu'};
+  const origemLbl={mesa:'Mesa',balcao:'Balcão',delivery:'🛵 Delivery'};
+  const origemCls={mesa:'bg',balcao:'ba',delivery:'bpu'};
+
+  // Pedidos em produção — ordenados por prioridade: atrasados > preparo > aberto, depois por tempo
+  const ativos=ST.pedidos.filter(p=>p.status==='aberto'||p.status==='preparo');
+  const aguardando=ST.pedidos.filter(p=>p.status==='pago'&&!p.entregue);
+
+  function prioridade(p){
+    const mins=Math.floor((Date.now()-new Date(p.created).getTime())/60000);
+    const late=mins>30;
+    if(late)return 0;
+    if(p.status==='preparo')return 1;
+    return 2;
+  }
+  const ordenados=[...ativos].sort((a,b)=>{
+    const pd=prioridade(a)-prioridade(b);
+    if(pd!==0)return pd;
+    return new Date(a.created)-new Date(b.created);
+  });
+
   document.getElementById('pg-dash').innerHTML=`
   ${!ST.caixa.aberto?`<div style="background:var(--rdbg);border:1px solid var(--rdbr);border-radius:12px;padding:14px;margin-bottom:14px;text-align:center">
     <div class="bold rd fs14">⚠️ Caixa Fechado</div>
@@ -2109,46 +2132,133 @@ function renderDash(){
     <button class="btn bp mt8" onclick="pedirAberturaCaixa()">💰 Abrir Caixa</button>
   </div>`:`<div style="background:var(--gnbg);border:1px solid var(--gnbr);border-radius:12px;padding:10px 14px;margin-bottom:14px">
     <div class="rb"><div><div class="bold gn fs13">✅ Caixa Aberto</div><div class="fs12 t2">👤 ${ST.caixa.operador} · ${ST.caixa.turno||''} · desde ${fmtH(ST.caixa.abertura)}</div></div>
-    <button class="btn bs bxs" onclick="nav('caixa')">Ver caixa</button></div>
+    <div style="display:flex;gap:7px">
+      <button class="btn bs bxs" onclick="nav('dados')">📊 Dados</button>
+      <button class="btn bs bxs" onclick="nav('caixa')">💰 Caixa</button>
+    </div></div>
   </div>`}
-  <div class="g4 mb14">
-    <div class="kpi"><div class="kpi-v ac">${fmtR(pedHoje.length?receita/pedHoje.length:0)}</div><div class="kpi-l">Ticket médio</div></div>
-    <div class="kpi"><div class="kpi-v">${pedHoje.length}</div><div class="kpi-l">Pagos hoje</div></div>
-    <div class="kpi"><div class="kpi-v">${mesasCnt}</div><div class="kpi-l">Mesas abertas</div></div>
-    <div class="kpi" style="${abertos.length?'border-color:var(--ambr);background:var(--ambg)':''}"><div class="kpi-v am">${abertos.length}</div><div class="kpi-l">Em produção</div></div>
-  </div>
-  <div class="sec-title">Ações rápidas</div>
-  <div class="g4 mb14">
+  <div class="g4 mb12">
     <button class="btn bp bw" style="padding:12px 6px;flex-direction:column;gap:4px;font-size:13px" onclick="nav('mesas')">🪑<span>Mesas</span></button>
     <button class="btn bb bw" style="padding:12px 6px;flex-direction:column;gap:4px;font-size:13px" onclick="novoBalcao()">🧾<span>Balcão</span></button>
     <button class="btn bpu bw" style="padding:12px 6px;flex-direction:column;gap:4px;font-size:13px" onclick="novoDelivery()">🛵<span>Delivery</span></button>
     <button class="btn bcy bw" style="padding:12px 6px;flex-direction:column;gap:4px;font-size:13px" onclick="nav('producao')">📟<span>Produção</span></button>
   </div>
-  <div class="sec-title">Em produção (${abertos.length})</div>
-  ${abertos.length===0?`<div class="card" style="text-align:center;color:var(--t2);padding:24px">Nenhum pedido em aberto 🎉</div>`:''}
-  ${abertos.map(p=>{
+  ${aguardando.length?`
+  <div class="sec-title" style="color:var(--gn)">✅ Prontos — aguardando retirada (${aguardando.length})</div>
+  ${aguardando.map(p=>{
     const tipo=p.tipo||'balcao';
-    const ico=origemIco[tipo]||'📋';
     const lbl=tipo==='mesa'?(p.mesa_label||'Mesa'):origemLbl[tipo]||tipo;
-    const cls=origemCls[tipo]||'ba';
-    const itensResumo=p.itens.map(i=>`${i.qty}x ${i.nome}`).join(' · ');
-    return`<div class="card mb8" style="cursor:pointer" onclick="nav('fechar','${p.id}')">
+    return`<div class="card mb8" style="border-color:var(--gnbr);background:var(--gnbg)">
       <div class="rb mb6">
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-          <span class="bold fs14">${p.num}</span>
-          <span class="bdg ${cls}">${ico} ${lbl}</span>
-          ${p.consumo==='viagem'?`<span class="bdg bpu">🥡 Viagem</span>`:''}
+          <span class="bold fs15">${p.num}</span>
+          <span class="bdg ${origemCls[tipo]||'ba'}">${origemIco[tipo]||'📋'} ${lbl}</span>
+          ${p.cliente_nome?`<span class="fs12 t2">👤 ${p.cliente_nome}</span>`:''}
         </div>
         <span class="fs12 t2">${elapsed(Date.now()-new Date(p.created).getTime())}</span>
       </div>
-      ${p.cliente_nome?`<div class="fs12 t2 mb6">👤 ${p.cliente_nome}</div>`:''}
-      <div class="fs12 t2 mb8" style="line-height:1.6">${itensResumo}</div>
-      <div class="rb">
-        <div class="bold am mono fs15">${fmtR(p.total_bruto)}</div>
-        <button class="btn bp bxs" onclick="event.stopPropagation();nav('pagamento','${p.id}')">💳 Pagar</button>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn bg bsm" style="flex:1" onclick="confirmarEntrega('${p.id}')">✅ Confirmar entrega</button>
+        <button class="btn ba bsm" onclick="chamarPedido(ST.pedidos.find(x=>x.id==='${p.id}'))">🔔 Chamar</button>
+      </div>
+    </div>`;
+  }).join('')}`:''}
+  <div class="rb mb8" style="margin-top:${aguardando.length?'12px':'0'}">
+    <div class="sec-title" style="margin-bottom:0">Em produção (${ordenados.length})</div>
+    ${ordenados.length?`<span class="fs12 t3">prioridade ↑</span>`:''}
+  </div>
+  ${ordenados.length===0?`<div class="card" style="text-align:center;color:var(--t2);padding:32px">
+    <div style="font-size:32px;margin-bottom:8px">✅</div>
+    <div class="bold fs14">Nenhum pedido em aberto</div>
+    <div class="fs12 t3 mt4">Tudo em dia!</div>
+  </div>`:''}
+  ${ordenados.map(p=>{
+    const tipo=p.tipo||'balcao';
+    const lbl=tipo==='mesa'?(p.mesa_label||'Mesa'):origemLbl[tipo]||tipo;
+    const mins=Math.floor((Date.now()-new Date(p.created).getTime())/60000);
+    const late=mins>30;
+    const urgente=mins>15&&!late;
+    const borderCor=late?'var(--rdbr)':urgente?'var(--ambr)':'var(--br)';
+    const bgCor=late?'var(--rdbg)':urgente?'var(--ambg)':'var(--sf)';
+    const itensResumo=p.itens.map(i=>`${i.qty}× ${i.nome}`).join(' · ');
+    return`<div class="card mb8" style="border-color:${borderCor};background:${bgCor}">
+      <div class="rb mb6">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span class="bold fs15">${p.num}</span>
+          <span class="bdg ${origemCls[tipo]||'ba'}">${origemIco[tipo]||'📋'} ${lbl}</span>
+          ${p.consumo==='viagem'?`<span class="bdg bpu">🥡 Viagem</span>`:''}
+          ${p.status==='preparo'?`<span class="bdg bg">🍳 Preparo</span>`:`<span class="bdg ba">🕐 Novo</span>`}
+          ${late?`<span class="bdg" style="background:var(--rdbg);color:var(--rd);border:1px solid var(--rdbr)">🔴 +${mins}min</span>`:urgente?`<span class="bdg" style="background:var(--ambg);color:var(--am);border:1px solid var(--ambr)">⚠️ ${mins}min</span>`:''}
+        </div>
+        <span class="fs12 t2">${elapsed(Date.now()-new Date(p.created).getTime())}</span>
+      </div>
+      ${p.cliente_nome?`<div class="fs12 t2 mb4">👤 ${p.cliente_nome}</div>`:''}
+      <div class="fs12 t2 mb8" style="line-height:1.7">${itensResumo}</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn bp bxs" style="flex:1" onclick="nav('pagamento','${p.id}')">💳 Pagar</button>
+        <button class="btn ba bxs" onclick="chamarPedido(ST.pedidos.find(x=>x.id==='${p.id}'))">🔔 Chamar</button>
+        <button class="btn bs bxs" onclick="nav('fechar','${p.id}')">📋 Ver</button>
       </div>
     </div>`;
   }).join('')}`;
+}
+
+function renderDados(){
+  const hoje=new Date().toDateString();
+  const pedHoje=ST.pedidos.filter(p=>p.status==='pago'&&new Date(p.pago_em||p.created).toDateString()===hoje);
+  const receita=pedHoje.reduce((s,p)=>s+(p.total||0),0);
+  const abertos=ST.pedidos.filter(naFila);
+  const mesasCnt=[...new Set(abertos.filter(p=>p.tipo==='mesa'&&(p.status==='aberto'||p.status==='preparo')).map(p=>p.mesa_id))].length;
+  const ticketMedio=pedHoje.length?receita/pedHoje.length:0;
+  // agrupamento por hora (últimas 8h)
+  const agora=Date.now();
+  const porCategoria={};
+  pedHoje.forEach(p=>(p.itens||[]).forEach(i=>{const cat=i.categoria||'Sem categoria';porCategoria[cat]=(porCategoria[cat]||0)+(i.preco*i.qty);}));
+  const cats=Object.entries(porCategoria).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  const formas={};
+  pedHoje.forEach(p=>{const f=p.forma_pag||'Não inf.';formas[f]=(formas[f]||0)+(p.total||0);});
+  document.getElementById('pg-dados').innerHTML=`
+  <div class="g4 mb14">
+    <div class="kpi"><div class="kpi-v gn">${fmtR(receita)}</div><div class="kpi-l">Faturamento hoje</div></div>
+    <div class="kpi"><div class="kpi-v ac">${fmtR(ticketMedio)}</div><div class="kpi-l">Ticket médio</div></div>
+    <div class="kpi"><div class="kpi-v">${pedHoje.length}</div><div class="kpi-l">Pagos hoje</div></div>
+    <div class="kpi" style="${abertos.length?'border-color:var(--ambr);background:var(--ambg)':''}"><div class="kpi-v am">${abertos.length}</div><div class="kpi-l">Em aberto agora</div></div>
+    <div class="kpi"><div class="kpi-v">${mesasCnt}</div><div class="kpi-l">Mesas ocupadas</div></div>
+    <div class="kpi"><div class="kpi-v">${pedHoje.filter(p=>p.tipo==='delivery').length}</div><div class="kpi-l">Deliveries hoje</div></div>
+    <div class="kpi"><div class="kpi-v">${pedHoje.filter(p=>p.tipo==='balcao').length}</div><div class="kpi-l">Balcão hoje</div></div>
+    <div class="kpi"><div class="kpi-v">${pedHoje.filter(p=>p.tipo==='mesa').length}</div><div class="kpi-l">Mesas hoje</div></div>
+  </div>
+  ${cats.length?`<div class="sec-title">Vendas por categoria</div>
+  <div class="card mb14">
+    ${cats.map(([cat,val])=>{
+      const pct=receita?Math.round(val/receita*100):0;
+      return`<div style="margin-bottom:10px">
+        <div class="rb mb4"><span class="fs13 bold">${cat}</span><span class="fs13 bold ac">${fmtR(val)}</span></div>
+        <div style="height:6px;background:var(--s3);border-radius:99px;overflow:hidden">
+          <div style="height:100%;width:${pct}%;background:var(--ac);border-radius:99px;transition:width .4s"></div>
+        </div>
+      </div>`;
+    }).join('')}
+  </div>`:''}
+  ${Object.keys(formas).length?`<div class="sec-title">Formas de pagamento</div>
+  <div class="card mb14">
+    ${Object.entries(formas).sort((a,b)=>b[1]-a[1]).map(([f,v])=>{
+      const pct=receita?Math.round(v/receita*100):0;
+      return`<div style="margin-bottom:10px">
+        <div class="rb mb4"><span class="fs13 bold">${f}</span><span class="fs13 bold">${fmtR(v)} <span class="t3 fs12">(${pct}%)</span></span></div>
+        <div style="height:6px;background:var(--s3);border-radius:99px;overflow:hidden">
+          <div style="height:100%;width:${pct}%;background:var(--bl);border-radius:99px;transition:width .4s"></div>
+        </div>
+      </div>`;
+    }).join('')}
+  </div>`:''}
+  <div class="sec-title">Últimos pagamentos</div>
+  ${pedHoje.length===0?`<div class="card" style="text-align:center;color:var(--t2);padding:24px">Nenhum pagamento hoje ainda.</div>`:''}
+  ${[...pedHoje].reverse().slice(0,10).map(p=>`<div class="card mb8">
+    <div class="rb"><div style="display:flex;gap:8px;align-items:center"><span class="bold">${p.num}</span><span class="bdg ${p.tipo==='mesa'?'bg':p.tipo==='delivery'?'bpu':'ba'}">${p.tipo==='mesa'?'🪑':p.tipo==='delivery'?'🛵':'🧾'} ${p.tipo==='mesa'?(p.mesa_label||'Mesa'):p.tipo==='delivery'?'Delivery':'Balcão'}</span></div><span class="bold gn">${fmtR(p.total)}</span></div>
+    ${p.cliente_nome?`<div class="fs12 t2 mt4">👤 ${p.cliente_nome}</div>`:''}
+    <div class="fs12 t3 mt2">${fmtDH(p.pago_em||p.created)} · ${p.forma_pag||'—'}</div>
+  </div>`).join('')}`;
 }
 
 // ═══════════════════════════════════════════
@@ -3088,6 +3198,7 @@ function confirmarEntrega(id){
   if(pg==='producao')renderProducao();
   else if(pg==='balcao')renderBalcao();
   else if(pg==='dash')renderDash();
+  else if(pg==='dados')renderDados();
   updateBadges();
 }
 
