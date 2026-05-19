@@ -3524,8 +3524,14 @@ function saveProd(){
   if(!nome){toast('Nome obrigatório','r');return}
   const _parsePreco=v=>parseFloat((v||'').replace(',','.'))||0;
   const data={nome,preco:_parsePreco(document.getElementById('ep-preco').value),ico:document.getElementById('ep-ico').value||'🍽️',desc:document.getElementById('ep-desc').value||'',cat_id:document.getElementById('ep-cat').value,tempo:parseInt(document.getElementById('ep-tempo').value)||15,dest:[..._prodDests],obs_grupos:[..._editObsGrupos],ativo:swVal('sw-prod-ativo'),foto:_epFoto||null};
-  if(ST.editProd)Object.assign(ST.editProd,data);
-  else ST.produtos.push({id:uid(),...data});
+  if(ST.editProd){
+    // Busca pelo ID no array atual — sync pode ter substituído ST.produtos enquanto o modal estava aberto
+    const idx=ST.produtos.findIndex(p=>p.id===ST.editProd.id);
+    if(idx>=0)Object.assign(ST.produtos[idx],data);
+    else ST.produtos.push({id:ST.editProd.id,...data}); // fallback: produto sumiu do array
+  }else{
+    ST.produtos.push({id:uid(),...data});
+  }
   save('produtos');closeMc('mc-prod');renderCardapio();toast('✅ Produto salvo!','g');
 }
 function delProd(id){confirm2('🗑️','Excluir produto?','Não pode ser desfeito.','Excluir','br_',()=>{ST.produtos=ST.produtos.filter(p=>p.id!==id);save('produtos');renderCardapio();toast('Produto excluído','a')})}
