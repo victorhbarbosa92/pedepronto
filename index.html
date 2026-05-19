@@ -4432,9 +4432,10 @@ async function resetarSistema(){
   // 1. Desinscreve listener Firestore
   if(_fsUnsubscribe){try{_fsUnsubscribe();}catch(e){}_fsUnsubscribe=null;}
   _syncEnabled=false;
-  // 2. Limpa localStorage
+  // 2. Limpa localStorage (preserva licença — ativação é separada dos dados)
+  const licBackup=localStorage.getItem('pp_licenca');
   DB.keys().forEach(k=>DB.del(k));
-  localStorage.removeItem('pp_licenca');
+  if(licBackup) localStorage.setItem('pp_licenca',licBackup);
   // 3. Limpa sessionStorage
   sessionStorage.clear();
   // 4. Limpa cache offline do Firestore (IndexedDB)
@@ -5591,8 +5592,12 @@ async function verificarLicenca(){
           return true;
         }
       }
-    }catch(e){}
-    // Logado mas sem licença no Firestore → pede o código
+    }catch(e){
+      console.warn('[PedePronto] Erro buscando licença:',e.code||e.message);
+      // Se Firestore falhou (rede, permissão), não bloqueia o boot — permite login e retry
+      return 'await_login';
+    }
+    // Logado mas sem licença no Firestore → pede o código, mas não bloqueia completamente
     _mostrarTelaAtivacao('Nenhuma licença encontrada para '+user.email+'. Cole o código abaixo para ativar.');
     return false;
   }
@@ -5726,6 +5731,8 @@ function _atualizarBadgeLicenca(){
         // Se estava aguardando login para verificar licença pelo e-mail
         if(window._pendingLicLogin&&!window.PP_LIC){
           window._pendingLicLogin=false;
+          // Tenta buscar licença vinculada ao e-mail no Firestore
+          let licFound=false;
           try{
             const snap=await fbDB.collection('licencas_clientes').doc(user.email).get();
             if(snap.exists&&snap.data()?.code){
@@ -5735,11 +5742,22 @@ function _atualizarBadgeLicenca(){
                 window.PP_LIC=lic;
                 _verificarRevogacaoFirebase(lic.id);
                 _atualizarBadgeLicenca();
+                licFound=true;
               }
             }
-          }catch(e){}
-          if(!window.PP_LIC){
-            // Logado mas sem licença → pede o código
+          }catch(e){
+            console.warn('[PedePronto] Erro buscando licença por e-mail:',e.code||e.message);
+          }
+          // Se não encontrou no Firestore, tenta novamente no localStorage
+          // (pode ter sido salvo antes do login por ativarLicenca)
+          if(!licFound&&!window.PP_LIC){
+            const raw2=localStorage.getItem('pp_licenca');
+            if(raw2){
+              const lic2=await _validarCodigoLicenca(raw2);
+              if(lic2){window.PP_LIC=lic2;_verificarRevogacaoFirebase(lic2.id);_atualizarBadgeLicenca();licFound=true;}
+            }
+          }
+          if(!licFound&&!window.PP_LIC){
             _mostrarTelaAtivacao('Nenhuma licença encontrada para '+user.email+'. Cole o código abaixo para ativar.');
             return;
           }
