@@ -1262,9 +1262,10 @@ const _PP_PUBKEY_JWK={"crv":"P-256","ext":true,"key_ops":["verify"],"kty":"EC","
     <!-- ETAPA 1: cards de seleção -->
     <div id="login-step-sel">
       <div style="text-align:center;margin-bottom:20px">
-        <div style="font-size:30px;margin-bottom:6px">🍔</div>
-        <div style="font-size:19px;font-weight:900;color:var(--ac);letter-spacing:-.4px">PedePronto PDV</div>
-        <div style="font-size:13px;color:var(--t2);margin-top:4px">Quem está operando agora?</div>
+        <div style="display:flex;justify-content:center;margin-bottom:8px"><div class="sb-brand-icon" style="width:48px;height:48px;border-radius:14px"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h18l-1 4H4zM5 12v8h14v-8M9 16h6"/></svg></div></div>
+        <div style="font-size:19px;font-weight:900;color:var(--ac);letter-spacing:-.04em;font-family:var(--mono)">PedePronto</div>
+        <div style="font-size:11px;color:var(--t3);margin-top:2px;font-family:var(--mono);letter-spacing:.5px">PONTO DE VENDA</div>
+        <div style="font-size:13px;color:var(--t2);margin-top:8px">Quem está operando agora?</div>
       </div>
       <div id="login-user-list" class="login-grid"></div>
       <div id="login-empty" class="fs12 t2" style="display:none;text-align:center;padding:20px 0">
@@ -1299,7 +1300,7 @@ const _PP_PUBKEY_JWK={"crv":"P-256","ext":true,"key_ops":["verify"],"kty":"EC","
 <div class="mc" id="mc-admin-auth">
   <div class="mb" style="max-width:320px;text-align:center">
     <input id="mc-admin-focus" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none" tabindex="0" readonly inputmode="none">
-    <div style="font-size:28px;margin-bottom:6px">🔐</div>
+    <div style="margin-bottom:8px;display:flex;justify-content:center;color:var(--ac)"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 11h14v10H5zM8 11V7a4 4 0 018 0v4"/></svg></div>
     <div style="font-size:15px;font-weight:800;margin-bottom:3px" id="auth-ttl">Requer Administrador</div>
     <div style="font-size:12px;color:var(--t2);margin-bottom:16px" id="auth-sub">Digite o PIN do administrador</div>
     <div class="pin-display">
@@ -1553,6 +1554,27 @@ const PP_ICONS={
   sun:'M12 12a4 4 0 100-8 4 4 0 000 8zM12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4',
   moon:'M21 13A9 9 0 1111 3a7 7 0 0010 10z',
   hamburguer:'M4 6h16M4 12h16M4 18h16',
+  alertTriangle:'M12 2L2 20h20zM12 9v4M12 17h.01',
+  user:'M12 12a4 4 0 100-8 4 4 0 000 8zM4 21c0-4 3-6 8-6s8 2 8 6',
+  crown:'M2 18l3-12 5 5 2-9 2 9 5-5 3 12z',
+  lock:'M5 11h14v10H5zM8 11V7a4 4 0 018 0v4',
+  edit:'M11 4H4v16h16v-7M18.5 2.5a2.1 2.1 0 013 3L12 15l-4 1 1-4z',
+  phone:'M22 16.9v3a2 2 0 01-2.2 2A19.8 19.8 0 013.1 5.2 2 2 0 015.1 3h3a2 2 0 012 1.7 12.7 12.7 0 00.7 2.8 2 2 0 01-.5 2.1l-1.3 1.3a16 16 0 006.1 6.1l1.3-1.3a2 2 0 012.1-.5 12.7 12.7 0 002.8.7 2 2 0 011.7 2z',
+  mapPin:'M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1118 0zM12 13a3 3 0 100-6 3 3 0 000 6z',
+  clock:'M12 12a10 10 0 100-20 10 10 0 000 20zM12 6v6l4 2',
+  fire:'M12 2C6.5 6.5 4 10 4 14a8 8 0 0016 0c0-4-2.5-7.5-8-12z',
+  bag:'M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4zM3 6h18M16 10a4 4 0 01-8 0',
+  utensils:'M3 2v8a4 4 0 008 0V2M7 2v20M21 12h-4l-2-8h1a5 5 0 015 5v3zM17 12v10',
+  cart:'M1 1h4l2.7 13.4a2 2 0 002 1.6h9.7a2 2 0 002-1.6L23 6H6M10 21a1 1 0 100-2 1 1 0 000 2zM21 21a1 1 0 100-2 1 1 0 000 2z',
+  star:'M12 2l3.1 6.3 6.9 1-5 4.9 1.2 6.8-6.2-3.3-6.2 3.3 1.2-6.8-5-4.9 6.9-1z',
+  send:'M22 2L11 13M22 2l-7 20-4-9-9-4z',
+  eye:'M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12zM12 15a3 3 0 100-6 3 3 0 000 6z',
+  checkCircle:'M22 12a10 10 0 11-20 0 10 10 0 0120 0zM9 12l2 2 4-4',
+  xCircle:'M12 22a10 10 0 100-20 10 10 0 000 20zM15 9l-6 6M9 9l6 6',
+  dollarSign:'M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6',
+  credit:'M2 6h20v13H2zM2 11h20',
+  timer:'M12 12a8 8 0 100-16 8 8 0 000 16zM12 6v6l4 2M10 2h4',
+  package:'M16.5 9.4l-9-5.2M21 16V8l-9-5-9 5v8l9 5 9-5zM3.3 7L12 12l8.7-5M12 22V12',
 };
 function ppIcon(name,size=20,stroke=1.6,cls=''){
   const d=PP_ICONS[name]||PP_ICONS.home;
@@ -2543,12 +2565,11 @@ function showCaixaQuick(){
   const movs=ST.caixa.movs||[];
   const saldo=movs.reduce((s,m)=>s+(['entrada','abertura','suprimento'].includes(m.tipo)?m.valor:-m.valor),0);
   const user=ST.currentUser;
-  const msg=user?(user.cargo==='admin'?'👑 ':'👤 ')+user.nome+' · '+(ST.caixa.aberto?fmtR(saldo):'Caixa fechado'):'Sem usuário logado';
   const sheet=document.getElementById('sh-obs');
   sheet.innerHTML=`<div class="sh-handle"></div>
   <div class="sh-title">Usuário e Caixa</div>
   <div style="text-align:center;padding:14px 0;border-bottom:1px solid var(--br);margin-bottom:14px">
-    <div style="font-size:40px;margin-bottom:6px">${user?.cargo==='admin'?'👑':'👤'}</div>
+    <div style="display:flex;justify-content:center;margin-bottom:8px;color:var(--ac)">${user?.cargo==='admin'?ppIcon('crown',36):ppIcon('user',36)}</div>
     <div class="bold fs16">${esc(user?.nome||'—')}</div>
     <div class="fs13 t2">${user?.cargo==='admin'?'Administrador':'Funcionário'}</div>
   </div>
@@ -2556,8 +2577,8 @@ function showCaixaQuick(){
   ${ST.caixa.aberto?`<div class="rb mb8"><span class="fs13 t2">Saldo</span><span class="bold am mono">${fmtR(saldo)}</span></div>
   <div class="rb mb14"><span class="fs13 t2">Turno</span><span>${ST.caixa.turno||'—'}</span></div>`:''}
   <div style="display:flex;flex-direction:column;gap:8px">
-    <button class="btn bs bw" onclick="closeOv('ov-obs');nav('caixa')">💰 Ir para Caixa</button>
-    <button class="btn ba bw" onclick="closeOv('ov-obs');trocarUsuario()">🔄 Trocar usuário</button>
+    <button class="btn bs bw" style="gap:6px" onclick="closeOv('ov-obs');nav('caixa')">${ppIcon('cash',16)} Ir para Caixa</button>
+    <button class="btn ba bw" style="gap:6px" onclick="closeOv('ov-obs');trocarUsuario()">${ppIcon('arrowRight',16)} Trocar usuário</button>
   </div>`;
   openOv('ov-obs');
 }
@@ -2574,8 +2595,9 @@ function chamarPedido(p){
 }
 
 function renderDash(){
-  const origemIco={mesa:'🪑',balcao:'🧾',delivery:'🛵'};
-  const origemLbl={mesa:'Mesa',balcao:'Balcão',delivery:'🛵 Delivery'};
+  const _i=(n,s=14)=>ppIcon(n,s,1.7);
+  const origemIco={mesa:_i('table'),balcao:_i('counter'),delivery:_i('bike')};
+  const origemLbl={mesa:'Mesa',balcao:'Balcão',delivery:'Delivery'};
   const origemCls={mesa:'bg',balcao:'ba',delivery:'bpu'};
 
   // Pedidos em produção — ordenados por prioridade: atrasados > preparo > aberto, depois por tempo
@@ -2598,24 +2620,24 @@ function renderDash(){
 
   document.getElementById('pg-dash').innerHTML=`
   ${!ST.caixa.aberto?`<div style="background:var(--rdbg);border:1px solid var(--rdbr);border-radius:12px;padding:14px;margin-bottom:14px;text-align:center">
-    <div class="bold rd fs14">⚠️ Caixa Fechado</div>
+    <div class="bold rd fs14" style="display:flex;align-items:center;justify-content:center;gap:6px">${_i('alertTriangle',16)} Caixa Fechado</div>
     <div class="fs12 t2 mt4">Abra o caixa para iniciar as operações do dia</div>
-    <button class="btn bp mt8" onclick="pedirAberturaCaixa()">💰 Abrir Caixa</button>
+    <button class="btn bp mt8" style="gap:6px" onclick="pedirAberturaCaixa()">${_i('cash',16)} Abrir Caixa</button>
   </div>`:`<div style="background:var(--gnbg);border:1px solid var(--gnbr);border-radius:12px;padding:10px 14px;margin-bottom:14px">
-    <div class="rb"><div><div class="bold gn fs13">✅ Caixa Aberto</div><div class="fs12 t2">👤 ${ST.caixa.operador} · ${ST.caixa.turno||''} · desde ${fmtH(ST.caixa.abertura)}</div></div>
+    <div class="rb"><div><div class="bold gn fs13" style="display:flex;align-items:center;gap:5px">${_i('checkCircle',14)} Caixa Aberto</div><div class="fs12 t2" style="display:flex;align-items:center;gap:4px">${_i('user',12)} ${ST.caixa.operador} · ${ST.caixa.turno||''} · desde ${fmtH(ST.caixa.abertura)}</div></div>
     <div style="display:flex;gap:7px">
-      <button class="btn bs bxs" onclick="nav('dados')">📊 Dados</button>
-      <button class="btn bs bxs" onclick="nav('caixa')">💰 Caixa</button>
+      <button class="btn bs bxs" style="gap:5px" onclick="nav('dados')">${_i('chart',14)} Dados</button>
+      <button class="btn bs bxs" style="gap:5px" onclick="nav('caixa')">${_i('cash',14)} Caixa</button>
     </div></div>
   </div>`}
   <div class="g4 mb12">
-    <button class="btn bp bw" style="padding:12px 6px;flex-direction:column;gap:4px;font-size:13px" onclick="nav('mesas')">🪑<span>Mesas</span></button>
-    <button class="btn bb bw" style="padding:12px 6px;flex-direction:column;gap:4px;font-size:13px" onclick="novoBalcao()">🧾<span>Balcão</span></button>
-    <button class="btn bpu bw" style="padding:12px 6px;flex-direction:column;gap:4px;font-size:13px" onclick="novoDelivery()">🛵<span>Delivery</span></button>
-    <button class="btn bcy bw" style="padding:12px 6px;flex-direction:column;gap:4px;font-size:13px" onclick="nav('producao')">📟<span>Produção</span></button>
+    <button class="btn bp bw" style="padding:12px 6px;flex-direction:column;gap:4px;font-size:13px" onclick="nav('mesas')">${_i('table',22)}<span>Mesas</span></button>
+    <button class="btn bb bw" style="padding:12px 6px;flex-direction:column;gap:4px;font-size:13px" onclick="novoBalcao()">${_i('counter',22)}<span>Balcão</span></button>
+    <button class="btn bpu bw" style="padding:12px 6px;flex-direction:column;gap:4px;font-size:13px" onclick="novoDelivery()">${_i('bike',22)}<span>Delivery</span></button>
+    <button class="btn bcy bw" style="padding:12px 6px;flex-direction:column;gap:4px;font-size:13px" onclick="nav('producao')">${_i('monitor',22)}<span>Produção</span></button>
   </div>
   ${aguardando.length?`
-  <div class="sec-title" style="color:var(--gn)">✅ Prontos — aguardando retirada (${aguardando.length})</div>
+  <div class="sec-title" style="color:var(--gn);display:flex;align-items:center;gap:6px">${_i('checkCircle',16)} Prontos — aguardando retirada (${aguardando.length})</div>
   ${aguardando.map(p=>{
     const tipo=p.tipo||'balcao';
     const lbl=tipo==='mesa'?(p.mesa_label||'Mesa'):origemLbl[tipo]||tipo;
@@ -2623,14 +2645,14 @@ function renderDash(){
       <div class="rb mb6">
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
           <span class="bold fs15">${p.num}</span>
-          <span class="bdg ${origemCls[tipo]||'ba'}">${origemIco[tipo]||'📋'} ${lbl}</span>
-          ${p.cliente_nome?`<span class="fs12 t2">👤 ${p.cliente_nome}</span>`:''}
+          <span class="bdg ${origemCls[tipo]||'ba'}" style="display:inline-flex;align-items:center;gap:4px">${origemIco[tipo]||_i('receipt')} ${lbl}</span>
+          ${p.cliente_nome?`<span class="fs12 t2" style="display:inline-flex;align-items:center;gap:3px">${_i('user',12)} ${p.cliente_nome}</span>`:''}
         </div>
         <span class="fs12 t2">${elapsed(Date.now()-new Date(p.created).getTime())}</span>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn bg bsm" style="flex:1" onclick="confirmarEntrega('${p.id}')">✅ Confirmar entrega</button>
-        <button class="btn ba bsm" onclick="chamarPedido(ST.pedidos.find(x=>x.id==='${p.id}'))">🔔 Chamar</button>
+        <button class="btn bg bsm" style="flex:1;gap:5px" onclick="confirmarEntrega('${p.id}')">${_i('check',14)} Confirmar entrega</button>
+        <button class="btn ba bsm" style="gap:5px" onclick="chamarPedido(ST.pedidos.find(x=>x.id==='${p.id}'))">${_i('bell',14)} Chamar</button>
       </div>
     </div>`;
   }).join('')}`:''}
@@ -2639,7 +2661,7 @@ function renderDash(){
     ${ordenados.length?`<span class="fs12 t3">prioridade ↑</span>`:''}
   </div>
   ${ordenados.length===0?`<div class="card" style="text-align:center;color:var(--t2);padding:32px">
-    <div style="font-size:32px;margin-bottom:8px">✅</div>
+    <div style="margin-bottom:8px;display:flex;justify-content:center;color:var(--gn)">${_i('checkCircle',32)}</div>
     <div class="bold fs14">Nenhum pedido em aberto</div>
     <div class="fs12 t3 mt4">Tudo em dia!</div>
   </div>`:''}
@@ -2656,19 +2678,19 @@ function renderDash(){
       <div class="rb mb6">
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
           <span class="bold fs15">${p.num}</span>
-          <span class="bdg ${origemCls[tipo]||'ba'}">${origemIco[tipo]||'📋'} ${lbl}</span>
-          ${p.consumo==='viagem'?`<span class="bdg bpu">🥡 Viagem</span>`:''}
-          ${p.status==='preparo'?`<span class="bdg bg">🍳 Preparo</span>`:`<span class="bdg ba">🕐 Novo</span>`}
-          ${late?`<span class="bdg" style="background:var(--rdbg);color:var(--rd);border:1px solid var(--rdbr)">🔴 +${mins}min</span>`:urgente?`<span class="bdg" style="background:var(--ambg);color:var(--am);border:1px solid var(--ambr)">⚠️ ${mins}min</span>`:''}
+          <span class="bdg ${origemCls[tipo]||'ba'}" style="display:inline-flex;align-items:center;gap:4px">${origemIco[tipo]||_i('receipt')} ${lbl}</span>
+          ${p.consumo==='viagem'?`<span class="bdg bpu" style="display:inline-flex;align-items:center;gap:3px">${_i('bag',12)} Viagem</span>`:''}
+          ${p.status==='preparo'?`<span class="bdg bg" style="display:inline-flex;align-items:center;gap:3px">${_i('fire',12)} Preparo</span>`:`<span class="bdg ba" style="display:inline-flex;align-items:center;gap:3px">${_i('clock',12)} Novo</span>`}
+          ${late?`<span class="bdg" style="display:inline-flex;align-items:center;gap:3px;background:var(--rdbg);color:var(--rd);border:1px solid var(--rdbr)">${_i('alertTriangle',12)} +${mins}min</span>`:urgente?`<span class="bdg" style="display:inline-flex;align-items:center;gap:3px;background:var(--ambg);color:var(--am);border:1px solid var(--ambr)">${_i('clock',12)} ${mins}min</span>`:''}
         </div>
         <span class="fs12 t2">${elapsed(Date.now()-new Date(p.created).getTime())}</span>
       </div>
-      ${p.cliente_nome?`<div class="fs12 t2 mb4">👤 ${p.cliente_nome}</div>`:''}
+      ${p.cliente_nome?`<div class="fs12 t2 mb4" style="display:flex;align-items:center;gap:4px">${_i('user',12)} ${p.cliente_nome}</div>`:''}
       <div class="fs12 t2 mb8" style="line-height:1.7">${itensResumo}</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn bp bxs" style="flex:1" onclick="nav('pagamento','${p.id}')">💳 Pagar</button>
-        <button class="btn ba bxs" onclick="chamarPedido(ST.pedidos.find(x=>x.id==='${p.id}'))">🔔 Chamar</button>
-        <button class="btn bs bxs" onclick="nav('fechar','${p.id}')">📋 Ver</button>
+        <button class="btn bp bxs" style="flex:1;gap:5px" onclick="nav('pagamento','${p.id}')">${_i('credit',14)} Pagar</button>
+        <button class="btn ba bxs" style="gap:5px" onclick="chamarPedido(ST.pedidos.find(x=>x.id==='${p.id}'))">${_i('bell',14)} Chamar</button>
+        <button class="btn bs bxs" style="gap:5px" onclick="nav('fechar','${p.id}')">${_i('eye',14)} Ver</button>
       </div>
     </div>`;
   }).join('')}`;
@@ -2725,9 +2747,9 @@ function renderDados(){
   </div>`:''}
   <div class="sec-title">Últimos pagamentos</div>
   ${pedHoje.length===0?`<div class="card" style="text-align:center;color:var(--t2);padding:24px">Nenhum pagamento hoje ainda.</div>`:''}
-  ${[...pedHoje].reverse().slice(0,10).map(p=>`<div class="card mb8">
-    <div class="rb"><div style="display:flex;gap:8px;align-items:center"><span class="bold">${p.num}</span><span class="bdg ${p.tipo==='mesa'?'bg':p.tipo==='delivery'?'bpu':'ba'}">${p.tipo==='mesa'?'🪑':p.tipo==='delivery'?'🛵':'🧾'} ${p.tipo==='mesa'?(p.mesa_label||'Mesa'):p.tipo==='delivery'?'Delivery':'Balcão'}</span></div><span class="bold gn">${fmtR(p.total)}</span></div>
-    ${p.cliente_nome?`<div class="fs12 t2 mt4">👤 ${p.cliente_nome}</div>`:''}
+  ${[...pedHoje].reverse().slice(0,10).map(p=>{const _i2=(n,s=14)=>ppIcon(n,s,1.7);return`<div class="card mb8">
+    <div class="rb"><div style="display:flex;gap:8px;align-items:center"><span class="bold">${p.num}</span><span class="bdg ${p.tipo==='mesa'?'bg':p.tipo==='delivery'?'bpu':'ba'}" style="display:inline-flex;align-items:center;gap:4px">${p.tipo==='mesa'?_i2('table'):p.tipo==='delivery'?_i2('bike'):_i2('counter')} ${p.tipo==='mesa'?(p.mesa_label||'Mesa'):p.tipo==='delivery'?'Delivery':'Balcão'}</span></div><span class="bold gn">${fmtR(p.total)}</span></div>
+    ${p.cliente_nome?`<div class="fs12 t2 mt4" style="display:flex;align-items:center;gap:4px">${_i2('user',12)} ${p.cliente_nome}</div>`:''}
     <div class="fs12 t3 mt2">${fmtDH(p.pago_em||p.created)} · ${p.forma_pag||'—'}</div>
   </div>`).join('')}`;
 }
@@ -2809,7 +2831,7 @@ function renderPedido(){
       </div>
       <input class="pos-inp-sm" id="inp-comp" value="${esc(np.complemento||'')}" placeholder="Complemento / referência (opcional)" oninput="ST.novoPedido.complemento=this.value" style="margin-bottom:8px">
       <div style="display:flex;gap:6px">
-        ${[['dinheiro','💵 Dinheiro'],['cartao','💳 Cartão'],['pix','📱 PIX']].map(([m,lbl])=>`<button class="cart-consumo-btn ${(np.del_pagamento||'dinheiro')===m?'on':''}" onclick="setDelPag('${m}')">${lbl}</button>`).join('')}
+        ${[['dinheiro','dollarSign','Dinheiro'],['cartao','credit','Cartão'],['pix','pix','PIX']].map(([m,ico,lbl])=>`<button class="cart-consumo-btn ${(np.del_pagamento||'dinheiro')===m?'on':''}" onclick="setDelPag('${m}')" style="display:flex;align-items:center;gap:4px">${ppIcon(ico,14,1.7)} ${lbl}</button>`).join('')}
       </div>
       ${(np.del_pagamento||'dinheiro')==='dinheiro'?`<input class="pos-inp-sm" id="inp-troco-para" type="number" step="0.01" value="${esc(np.del_troco_para||'')}" placeholder="Troco para quanto? (opcional)" oninput="ST.novoPedido.del_troco_para=this.value" style="margin-top:8px">`:''}
     </div>`;
@@ -2821,7 +2843,7 @@ function renderPedido(){
 
   // ── Cart items HTML ──
   const cartItemsHtml = np.cart.length===0
-    ? `<div class="cart-empty"><div class="cart-empty-ico">🛒</div><div class="cart-empty-txt">Nenhum item adicionado<br><span style="font-size:11px;font-weight:400">Clique em um produto para adicionar</span></div></div>`
+    ? `<div class="cart-empty"><div class="cart-empty-ico" style="color:var(--t3)">${ppIcon('cart',32)}</div><div class="cart-empty-txt">Nenhum item adicionado<br><span style="font-size:11px;font-weight:400">Clique em um produto para adicionar</span></div></div>`
     : np.cart.map((item,idx)=>{
         const unitTotal=item.preco+(item.obs_extras||0);
         return`<div class="cart-item-v2">
@@ -2829,7 +2851,7 @@ function renderPedido(){
             <div class="cart-item-v2-name">${item.ico?item.ico+' ':''}${esc(item.nome)}</div>
             ${item.obs_extras>0?`<div class="cart-item-v2-extras">+${fmtR(item.obs_extras)} adicionais</div>`:''}
             ${item.obs?`<div class="cart-item-v2-obs">${esc(item.obs)}</div>`:''}
-            <button class="cart-item-v2-edit" onclick="openObsSheet(${idx})">✏️ Obs / Adicionais</button>
+            <button class="cart-item-v2-edit" onclick="openObsSheet(${idx})" style="display:inline-flex;align-items:center;gap:4px">${ppIcon('edit',12,1.7)} Obs / Adicionais</button>
           </div>
           <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">
             <div class="cart-qty-v2">
@@ -2855,7 +2877,7 @@ function renderPedido(){
           <div class="pos-prod-body">
             <div class="pos-prod-name">${esc(p.nome)}</div>
             <div class="pos-prod-price">${fmtR(p.preco)}</div>
-            ${p.tempo?`<div class="pos-prod-tempo">⏱ ${p.tempo} min</div>`:''}
+            ${p.tempo?`<div class="pos-prod-tempo" style="display:flex;align-items:center;gap:3px">${ppIcon('timer',11,1.5)} ${p.tempo} min</div>`:''}
           </div>
           <div class="pos-prod-footer">
             <button class="pos-prod-add" onclick="event.stopPropagation();addCart('${p.id}')">+</button>
@@ -2893,8 +2915,8 @@ function renderPedido(){
         <div class="cart-panel-title">Pedido atual</div>
         <div class="cart-panel-order">${esc(np.cliente_nome||np.mesa_label||'—')}</div>
         <div class="cart-panel-consumo">
-          <button class="cart-consumo-btn${np.consumo!=='viagem'?' on':''}" onclick="setConsumo('local')">🏠 Local</button>
-          <button class="cart-consumo-btn${np.consumo==='viagem'?' on':''}" onclick="setConsumo('viagem')">🥡 Viagem</button>
+          <button class="cart-consumo-btn${np.consumo!=='viagem'?' on':''}" onclick="setConsumo('local')" style="display:flex;align-items:center;gap:4px">${ppIcon('home',14,1.7)} Local</button>
+          <button class="cart-consumo-btn${np.consumo==='viagem'?' on':''}" onclick="setConsumo('viagem')" style="display:flex;align-items:center;gap:4px">${ppIcon('bag',14,1.7)} Viagem</button>
         </div>
       </div>
       <div class="cart-items-scroll">${cartItemsHtml}</div>
@@ -2904,7 +2926,7 @@ function renderPedido(){
           <span class="cart-total-val">${fmtR(total)}</span>
         </div>
         <button class="btn-pay" ${np.cart.length===0?'disabled':''} onclick="confirmarPedido()">
-          ${np.tipo==='delivery'?'🛵 Confirmar Delivery':'✅ Enviar Pedido'}
+          ${np.tipo==='delivery'?ppIcon('bike',16,1.7)+' Confirmar Delivery':ppIcon('send',16,1.7)+' Enviar Pedido'}
         </button>
         <button class="btn-cancel-order" onclick="nav(ST.backNav||'mesas')">✕ Cancelar pedido</button>
       </div>
@@ -3616,14 +3638,14 @@ function renderBalcao(){
     <div class="mstat"><div class="mstat-v am">${fmtR(totalVal)}</div><div class="mstat-l">Total fila</div></div>
     <div class="mstat"><div class="mstat-v" style="color:var(--bl)">${tempoMed}min</div><div class="mstat-l">Tempo médio</div></div>
   </div>
-  ${peds.length===0&&aguardando.length===0?`<div class="card mb10" style="text-align:center;color:var(--t2);padding:22px">Nenhum pedido no balcão 🎉</div>`:''}
+  ${peds.length===0&&aguardando.length===0?`<div class="card mb10" style="text-align:center;color:var(--t2);padding:22px">Nenhum pedido no balcão</div>`:''}
   ${peds.map(p=>`<div class="card mb8">
     <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:8px">
       <div class="senha-badge">${p.num.replace('#','')}</div>
       <div style="flex:1;min-width:0">
         <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px">
           <span class="bold fs13">${esc(p.cliente_nome||'Sem nome')}</span>
-          <span class="bdg ${p.consumo==='viagem'?'bpu':'bg'}" style="font-size:10px">${p.consumo==='viagem'?'🥡 Viagem':'🍽 Local'}</span>
+          <span class="bdg ${p.consumo==='viagem'?'bpu':'bg'}" style="font-size:10px;display:inline-flex;align-items:center;gap:3px">${p.consumo==='viagem'?ppIcon('bag',11,1.7)+' Viagem':ppIcon('utensils',11,1.7)+' Local'}</span>
         </div>
         <div class="fs12 t2">${elapsed(Date.now()-new Date(p.created).getTime())} · ${p.itens.length} item(ns)</div>
         <div class="fs12 t3 mt2">${p.itens.map(i=>i.qty+'x '+i.nome).join(' · ')}</div>
@@ -3631,9 +3653,9 @@ function renderBalcao(){
     </div>
     <div class="rb"><div class="bold am mono">${fmtR(p.total)}</div>
     <div style="display:flex;gap:6px">
-      <button class="btn bb bxs" onclick="showCupomPrevia('${p.id}','comanda')">🖨️</button>
-      <button class="btn ba bxs" onclick="editarPedido('${p.id}')">✏️ Editar</button>
-      <button class="btn bp bxs" onclick="nav('pagamento','${p.id}')">💳 Pagar</button>
+      <button class="btn bb bxs" onclick="showCupomPrevia('${p.id}','comanda')">${ppIcon('printer',14,1.7)}</button>
+      <button class="btn ba bxs" style="gap:4px" onclick="editarPedido('${p.id}')">${ppIcon('edit',14,1.7)} Editar</button>
+      <button class="btn bp bxs" style="gap:4px" onclick="nav('pagamento','${p.id}')">${ppIcon('credit',14,1.7)} Pagar</button>
     </div></div>
   </div>`).join('')}
   ${aguardando.length?`<div class="sec-title mt4">Aguardando retirada</div>
@@ -3643,8 +3665,8 @@ function renderBalcao(){
       <div style="flex:1;min-width:0">
         <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px">
           <span class="bold fs13">${esc(p.cliente_nome||'Sem nome')}</span>
-          <span class="bdg bg" style="font-size:10px">✅ Pago</span>
-          <span class="bdg ${p.consumo==='viagem'?'bpu':'bg'}" style="font-size:10px">${p.consumo==='viagem'?'🥡 Viagem':'🍽 Local'}</span>
+          <span class="bdg bg" style="font-size:10px;display:inline-flex;align-items:center;gap:3px">${ppIcon('check',11,1.7)} Pago</span>
+          <span class="bdg ${p.consumo==='viagem'?'bpu':'bg'}" style="font-size:10px;display:inline-flex;align-items:center;gap:3px">${p.consumo==='viagem'?ppIcon('bag',11,1.7)+' Viagem':ppIcon('utensils',11,1.7)+' Local'}</span>
         </div>
         <div class="fs12 t2">${elapsed(Date.now()-new Date(p.created).getTime())} · ${p.itens.length} item(ns)</div>
         <div class="fs12 t3 mt2">${p.itens.map(i=>i.qty+'x '+i.nome).join(' · ')}</div>
@@ -3652,7 +3674,7 @@ function renderBalcao(){
     </div>
     <div class="rb">
       <div class="bold gn mono">${fmtR(p.total)}</div>
-      <button class="btn bg bsm" onclick="confirmarEntrega('${p.id}')">✅ Confirmar entrega</button>
+      <button class="btn bg bsm" style="gap:5px" onclick="confirmarEntrega('${p.id}')">${ppIcon('check',14,1.7)} Confirmar entrega</button>
     </div>
   </div>`).join('')}`:''}
   ${hist.length?`<div class="sec-title mt12">Histórico recente</div>
@@ -3671,22 +3693,22 @@ function renderDelivery(){
   <div class="rb mb12"><div class="bold fs14">Delivery</div>
   <button class="btn bp bsm" onclick="novoDelivery()">+ Novo pedido</button></div>
   <div class="tabbar mb10">
-    ${[['preparo','🍳 Preparo'],['rota','🛵 Na Rota'],['entregue','✅ Entregue']].map(([id,lbl])=>`<button class="tabitem ${tab===id?'on':''}" onclick="ST._delTab='${id}';renderDelivery()">${lbl} <span style="opacity:.6">${peds[id].length}</span></button>`).join('')}
+    ${[['preparo','fire','Preparo'],['rota','bike','Na Rota'],['entregue','check','Entregue']].map(([id,ico,lbl])=>`<button class="tabitem ${tab===id?'on':''}" style="gap:5px" onclick="ST._delTab='${id}';renderDelivery()">${ppIcon(ico,14,1.7)} ${lbl} <span style="opacity:.6">${peds[id].length}</span></button>`).join('')}
   </div>
   ${peds[tab].length===0?`<div class="card" style="text-align:center;color:var(--t2);padding:22px">Nenhum pedido aqui</div>`:''}
   ${peds[tab].map(p=>`<div class="card mb8">
     <div class="rb mb6"><div><div class="bold">${p.num}</div>
     <div class="fs12 t2">${p.cliente_nome||'—'}</div></div>
     <span class="bdg ${tab==='preparo'?'bg-a':tab==='rota'?'bg-b':'bg-g'}">${tab==='preparo'?'Preparando':tab==='rota'?'Na rota':'Entregue'}</span></div>
-    ${p.telefone?`<div class="fs12 t2 mb3">📞 ${esc(p.telefone)}</div>`:''}
-    ${p.endereco?`<div class="fs12 t2 mb3">📍 ${esc(p.endereco)}</div>`:''}
-    ${p.del_pagamento?`<div class="fs12 t2 mb6">💰 ${p.del_pagamento==='dinheiro'?'Dinheiro'+(p.del_troco_para?' (troco p/ R$ '+p.del_troco_para+')':''):p.del_pagamento==='cartao'?'Cartão':'PIX'}</div>`:''}
+    ${p.telefone?`<div class="fs12 t2 mb3" style="display:flex;align-items:center;gap:4px">${ppIcon('phone',12,1.7)} ${esc(p.telefone)}</div>`:''}
+    ${p.endereco?`<div class="fs12 t2 mb3" style="display:flex;align-items:center;gap:4px">${ppIcon('mapPin',12,1.7)} ${esc(p.endereco)}</div>`:''}
+    ${p.del_pagamento?`<div class="fs12 t2 mb6" style="display:flex;align-items:center;gap:4px">${ppIcon('dollarSign',12,1.7)} ${p.del_pagamento==='dinheiro'?'Dinheiro'+(p.del_troco_para?' (troco p/ R$ '+p.del_troco_para+')':''):p.del_pagamento==='cartao'?'Cartão':'PIX'}</div>`:''}
     <div class="fs12 t2 mb8">${p.itens.map(i=>i.qty+'x '+i.nome).join(' · ')}</div>
     <div class="rb"><div class="bold am mono">${fmtR(p.total)}</div>
     <div style="display:flex;gap:5px">
-      ${tab==='preparo'?`<button class="btn bb bxs" onclick="pedidoRota('${p.id}')">🛵 Sair p/ rota</button>`:''}
-      ${tab==='rota'?`<button class="btn bg bxs" onclick="nav('pagamento','${p.id}')">✅ Entregue</button>`:''}
-      <button class="btn bs bxs" onclick="showCupomPrevia('${p.id}','comanda')">🖨️</button>
+      ${tab==='preparo'?`<button class="btn bb bxs" style="gap:4px" onclick="pedidoRota('${p.id}')">${ppIcon('bike',14,1.7)} Sair p/ rota</button>`:''}
+      ${tab==='rota'?`<button class="btn bg bxs" style="gap:4px" onclick="nav('pagamento','${p.id}')">${ppIcon('check',14,1.7)} Entregue</button>`:''}
+      <button class="btn bs bxs" onclick="showCupomPrevia('${p.id}','comanda')">${ppIcon('printer',14,1.7)}</button>
     </div></div>
   </div>`).join('')}`;
 }
@@ -3712,27 +3734,27 @@ function renderProducao(){
   document.getElementById('pg-producao').innerHTML=`
   <div class="rb mb10">
     <div class="tabbar" style="flex:1">
-      <button class="tabitem kds-coz ${tab==='cozinha'?'on':''}" onclick="ST._kdsTab='cozinha';renderProducao()">🍳 Cozinha ${cozAtivos>0?`<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--ac);margin-left:4px;vertical-align:middle"></span>`:''}${cozProntos>0?`<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--gn);margin-left:3px;vertical-align:middle"></span>`:''}</button>
-      <button class="tabitem kds-bar ${tab==='bar'?'on':''}" onclick="ST._kdsTab='bar';renderProducao()">🍺 Bar ${barAtivos>0?`<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--bl);margin-left:4px;vertical-align:middle"></span>`:''}${barProntos>0?`<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--gn);margin-left:3px;vertical-align:middle"></span>`:''}</button>
+      <button class="tabitem kds-coz ${tab==='cozinha'?'on':''}" style="gap:5px" onclick="ST._kdsTab='cozinha';renderProducao()">${ppIcon('fire',14,1.7)} Cozinha ${cozAtivos>0?`<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--ac);margin-left:4px;vertical-align:middle"></span>`:''}${cozProntos>0?`<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--gn);margin-left:3px;vertical-align:middle"></span>`:''}</button>
+      <button class="tabitem kds-bar ${tab==='bar'?'on':''}" style="gap:5px" onclick="ST._kdsTab='bar';renderProducao()">${ppIcon('utensils',14,1.7)} Bar ${barAtivos>0?`<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--bl);margin-left:4px;vertical-align:middle"></span>`:''}${barProntos>0?`<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--gn);margin-left:3px;vertical-align:middle"></span>`:''}</button>
     </div>
     <span class="fs12 t3" style="padding-left:10px;white-space:nowrap">${peds.length} preparo · ${prontos.length} pronto${prontos.length!==1?'s':''}</span>
   </div>
   ${peds.length===0&&prontos.length===0?`<div class="card" style="text-align:center;color:var(--t2);padding:40px">
-    <div style="font-size:36px;margin-bottom:8px">✅</div>
+    <div style="margin-bottom:8px;display:flex;justify-content:center;color:var(--gn)">${ppIcon('checkCircle',36)}</div>
     <div class="bold fs14">Tudo em dia!</div>
     <div class="fs12 t3 mt4">Nenhum pedido em produção no momento.</div>
   </div>`:''}
-  ${prontos.length?`<div class="sec-title" style="color:var(--gn)">✅ Prontos — aguardando retirada</div>
+  ${prontos.length?`<div class="sec-title" style="color:var(--gn);display:flex;align-items:center;gap:6px">${ppIcon('checkCircle',16)} Prontos — aguardando retirada</div>
   ${prontos.map(p=>`<div class="card mb8" style="border-color:var(--gnbr);background:var(--gnbg)">
     <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px">
       <span class="bold fs15">${p.num}</span>
       <span class="bold t2">·</span>
       <span class="bold fs14">${p.mesa_label||p.tipo}</span>
-      ${p.cliente_nome?`<span class="fs12 t2">👤 ${p.cliente_nome}</span>`:''}
-      <span class="bdg ${p.consumo==='viagem'?'bpu':'bg'}" style="font-size:10px">${p.consumo==='viagem'?'🥡 Viagem':'🍽 Local'}</span>
+      ${p.cliente_nome?`<span class="fs12 t2" style="display:inline-flex;align-items:center;gap:3px">${ppIcon('user',12,1.7)} ${p.cliente_nome}</span>`:''}
+      <span class="bdg ${p.consumo==='viagem'?'bpu':'bg'}" style="font-size:10px;display:inline-flex;align-items:center;gap:3px">${p.consumo==='viagem'?ppIcon('bag',11,1.7)+' Viagem':ppIcon('utensils',11,1.7)+' Local'}</span>
     </div>
     <div class="fs12 t2 mb10">${p.itens.filter(i=>i.dest===dest).map(i=>i.qty+'× '+i.nome).join(' · ')}</div>
-    <button class="btn bg bw bsm" onclick="confirmarEntrega('${p.id}')">✅ Confirmar entrega</button>
+    <button class="btn bg bw bsm" style="gap:5px" onclick="confirmarEntrega('${p.id}')">${ppIcon('check',14,1.7)} Confirmar entrega</button>
   </div>`).join('')}<div class="sec-title mt8">Em preparo</div>`:''}
   ${peds.map((p,qi)=>{
     const created=new Date(p.created).getTime();
@@ -3761,11 +3783,11 @@ function renderProducao(){
             <div class="bold fs15">${p.num}</div>
             <div class="bold fs14 t2">·</div>
             <div class="bold fs14">${p.mesa_label||p.tipo}</div>
-            <span class="bdg ${p.consumo==='viagem'?'bpu':'bg'}" style="font-size:10px">${p.consumo==='viagem'?'🛍 Viagem':'🍽 Local'}</span>
-            ${qi>0?`<span style="font-size:10px;font-weight:800;color:var(--am);background:var(--ambg);padding:2px 7px;border-radius:99px;border:1px solid var(--ambr)">🕑 +${qi}min na fila</span>`:''}
-            ${late?`<span class="kds-late-badge" style="display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:800;color:var(--rd);background:var(--rdbg);padding:2px 8px;border-radius:99px;border:1px solid var(--rdbr)">🔴 +${Math.ceil((Date.now()-prevMs)/60000)}min</span>`:'<span class="kds-late-badge" style="display:none"></span>'}
+            <span class="bdg ${p.consumo==='viagem'?'bpu':'bg'}" style="font-size:10px;display:inline-flex;align-items:center;gap:3px">${p.consumo==='viagem'?ppIcon('bag',11,1.7)+' Viagem':ppIcon('utensils',11,1.7)+' Local'}</span>
+            ${qi>0?`<span style="font-size:10px;font-weight:800;color:var(--am);background:var(--ambg);padding:2px 7px;border-radius:99px;border:1px solid var(--ambr);display:inline-flex;align-items:center;gap:3px">${ppIcon('clock',10,1.7)} +${qi}min na fila</span>`:''}
+            ${late?`<span class="kds-late-badge" style="display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:800;color:var(--rd);background:var(--rdbg);padding:2px 8px;border-radius:99px;border:1px solid var(--rdbr)">${ppIcon('alertTriangle',11,1.7)} +${Math.ceil((Date.now()-prevMs)/60000)}min</span>`:'<span class="kds-late-badge" style="display:none"></span>'}
           </div>
-          <div class="fs12 t2">${p.cliente_nome?'👤 '+p.cliente_nome:''}</div>
+          <div class="fs12 t2" style="display:flex;align-items:center;gap:4px">${p.cliente_nome?ppIcon('user',12,1.7)+' '+p.cliente_nome:''}</div>
         </div>
         <!-- 2.1 ANEL DE PROGRESSO -->
         <div class="kds-ring-wrap">
@@ -3787,19 +3809,19 @@ function renderProducao(){
             <div style="flex:1;min-width:0">
               <div class="bold fs13">${it.qty}× ${it.nome}</div>
               ${it.obs?`<div class="fs12 t3 mt2">› ${it.obs}</div>`:''}
-              ${it.obs_livre?`<div class="fs12 t3 mt1 italic">📝 ${it.obs_livre}</div>`:''}
+              ${it.obs_livre?`<div class="fs12 t3 mt1 italic" style="display:flex;align-items:center;gap:4px">${ppIcon('edit',11,1.7)} ${it.obs_livre}</div>`:''}
             </div>
             ${it.concluido
-              ?`<span class="bdg bg" style="font-size:11px">✅ Pronto</span>`
-              :`<button class="btn bg bxs" onclick="concluirItem('${p.id}',${itIdx})" style="flex-shrink:0">✓</button>`}
+              ?`<span class="bdg bg" style="font-size:11px;display:inline-flex;align-items:center;gap:3px">${ppIcon('check',11,1.7)} Pronto</span>`
+              :`<button class="btn bg bxs" onclick="concluirItem('${p.id}',${itIdx})" style="flex-shrink:0">${ppIcon('check',14,1.7)}</button>`}
           </div>`;
         }).join('')}
       </div>
       <div style="display:flex;gap:8px">
         ${todoConcluido
-          ?`<div class="btn bg bw bsm" style="flex:1;opacity:.5;pointer-events:none">✅ Tudo pronto</div>`
-          :`<button class="btn bg bw bsm" style="flex:1" onclick="concluirKDS('${p.id}','${dest}')">✅ Tudo pronto</button>`}
-        <button class="btn bs bxs" onclick="showCupomPrevia('${p.id}','comanda')">🖨️</button>
+          ?`<div class="btn bg bw bsm" style="flex:1;opacity:.5;pointer-events:none;gap:5px">${ppIcon('checkCircle',14,1.7)} Tudo pronto</div>`
+          :`<button class="btn bg bw bsm" style="flex:1;gap:5px" onclick="concluirKDS('${p.id}','${dest}')">${ppIcon('checkCircle',14,1.7)} Tudo pronto</button>`}
+        <button class="btn bs bxs" onclick="showCupomPrevia('${p.id}','comanda')">${ppIcon('printer',14,1.7)}</button>
       </div>
     </div>`;
   }).join('')}`;
@@ -5024,7 +5046,7 @@ function showLogin(){
         return`<div class="login-card" onclick="selectLoginUser('${f.id}')">
           <div class="login-avatar ${isAdmin?'admin':'func'}">${initials}</div>
           <div class="login-card-nome">${esc(f.nome.split(' ')[0])}</div>
-          <span class="login-card-cargo ${isAdmin?'admin':'func'}">${isAdmin?'👑 Admin':'👤 Func'}</span>
+          <span class="login-card-cargo ${isAdmin?'admin':'func'}" style="display:inline-flex;align-items:center;gap:3px">${isAdmin?ppIcon('crown',11,1.7)+' Admin':ppIcon('user',11,1.7)+' Func'}</span>
         </div>`;
       }).join('');
     }
@@ -5043,7 +5065,7 @@ function selectLoginUser(id){
   if(nm)nm.textContent=f.nome;
   const badge=document.getElementById('login-pin-cargo-badge');
   if(badge){
-    badge.textContent=isAdmin?'👑 Administrador':'👤 Funcionário';
+    badge.innerHTML=isAdmin?ppIcon('crown',12,1.7)+' Administrador':ppIcon('user',12,1.7)+' Funcionário';
     badge.style.background=isAdmin?'var(--acbg)':'var(--blbg)';
     badge.style.color=isAdmin?'var(--ac)':'var(--bl)';
     badge.style.border=`1px solid ${isAdmin?'var(--acg)':'var(--blbr)'}`;
