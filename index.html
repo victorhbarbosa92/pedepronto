@@ -5178,7 +5178,7 @@ async function verificarLicenca(){
   // 2. Firestore — busca licença vinculada ao e-mail do usuário logado
   if(fbDB&&fbAuth){
     try{
-      const user=await new Promise(res=>{const u=fbAuth.onAuthStateChanged(u=>{u();res(u);});});
+      const user=await new Promise(res=>{const unsub=fbAuth.onAuthStateChanged(u=>{unsub();res(u);});});
       if(user?.email){
         const snap=await fbDB.collection('licencas_clientes').doc(user.email).get();
         if(snap.exists&&snap.data()?.code){
