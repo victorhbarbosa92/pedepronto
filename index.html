@@ -1517,6 +1517,7 @@ let _syncStatus='idle'; // 'idle'|'ok'|'error'|'syncing'
 let _lastSyncAt=null;
 let _fsFirstSnap=true; // flag: primeiro snapshot após login
 let _localDirty=false; // flag: dados locais pendentes de push — impede que onSnapshot sobrescreva
+let _fsUnsubscribe=null; // referência para desinscrever listener anterior
 function _setSyncStatus(s){
   _syncStatus=s;
   const b=document.getElementById('btn-drive');
@@ -4423,10 +4424,42 @@ function renderConfig(){
     </div>
   </div>
   <button class="btn bp bw mb10" onclick="requireAdmin('Salvar Configurações',()=>{save('cfg');toast('✅ Configurações salvas!','g');renderConfig()})">💾 Salvar configurações</button>
-  <button class="btn br_ bw" onclick="confirm2('⚠️','Resetar sistema?','TODOS os dados serão apagados permanentemente!','Resetar','br_',()=>{DB.keys().forEach(k=>DB.del(k));location.reload()})">⚠️ Resetar sistema</button>`;
+  <button class="btn br_ bw" onclick="confirm2('⚠️','Resetar sistema?','TODOS os dados serão apagados permanentemente!','Resetar','br_',resetarSistema)">⚠️ Resetar sistema</button>`;
   document.getElementById('sb-est').textContent=cfg.nome||'PedePronto PDV';
 }
 function changePIN(){askPin('Alterar PIN','Digite o PIN atual',()=>{const n=prompt('Novo PIN de 4 dígitos:');if(!n||n.length!==4||isNaN(n)){toast('PIN deve ter 4 dígitos','r');return}ST.cfg.pin=n;save('cfg');toast('✅ PIN alterado!','g')})}
+async function resetarSistema(){
+  // 1. Desinscreve listener Firestore
+  if(_fsUnsubscribe){try{_fsUnsubscribe();}catch(e){}_fsUnsubscribe=null;}
+  _syncEnabled=false;
+  // 2. Limpa localStorage
+  DB.keys().forEach(k=>DB.del(k));
+  localStorage.removeItem('pp_licenca');
+  // 3. Limpa sessionStorage
+  sessionStorage.clear();
+  // 4. Limpa cache offline do Firestore (IndexedDB)
+  try{
+    if(typeof firebase!=='undefined'&&firebase.firestore){
+      await firebase.firestore().clearPersistence();
+      console.log('[PedePronto] IndexedDB Firestore limpo');
+    }
+  }catch(e){
+    // clearPersistence pode falhar se há listeners ativos — tenta deletar IndexedDB diretamente
+    try{
+      const dbs=await indexedDB.databases();
+      for(const db of dbs){
+        if(db.name&&(db.name.includes('firestore')||db.name.includes('firebase'))){
+          indexedDB.deleteDatabase(db.name);
+          console.log('[PedePronto] Deletado IndexedDB:',db.name);
+        }
+      }
+    }catch(e2){console.warn('[PedePronto] Erro limpando IndexedDB:',e2);}
+  }
+  // 5. Desloga Firebase Auth
+  try{if(fbAuth)await fbAuth.signOut();}catch(e){}
+  // 6. Recarrega
+  location.reload();
+}
 
 // ═══════════════════════════════════════════
 // ═══════════════════════════════════════════
@@ -4776,7 +4809,7 @@ function openDiagnostico(){
   </div>
   <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
     <button class="btn ba bsm" onclick="Drive.exportJSON()">📥 Backup JSON</button>
-    <button class="btn bs bsm" onclick="if(confirm('Limpar TODOS os dados locais? (irrecuperável)')){'pedepronto_'.split('').forEach(()=>{});Object.keys(localStorage).filter(k=>k.startsWith('pedepronto_')).forEach(k=>localStorage.removeItem(k));location.reload();}">🗑️ Reset dados</button>
+    <button class="btn bs bsm" onclick="confirm2('⚠️','Resetar dados?','TODOS os dados locais e cache serão apagados!','Resetar','br_',resetarSistema)">🗑️ Reset dados</button>
     <button class="btn bg bsm" onclick="location.reload()">🔄 Recarregar</button>
   </div>`;
   confirm2('🔬','Diagnóstico do Sistema',html,'Fechar','bs',()=>{});
@@ -5366,9 +5399,11 @@ function fbLogout(){
 
 function fsListen(uid){
   if(!fbDB) return;
+  // Desinscreve listener anterior (evita duplicatas ao re-autenticar)
+  if(_fsUnsubscribe){try{_fsUnsubscribe();}catch(e){} _fsUnsubscribe=null;}
   _fsFirstSnap=true;
   const ref=fbDB.collection('estabelecimentos').doc(uid).collection('dados').doc('principal');
-  ref.onSnapshot(snap=>{
+  _fsUnsubscribe=ref.onSnapshot(snap=>{
     if(!snap.exists){
       // Nuvem vazia → envia dados locais
       if(_fsFirstSnap){_fsFirstSnap=false;fsPush();}
