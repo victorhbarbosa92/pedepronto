@@ -11,44 +11,49 @@
 <title>PedePronto PDV</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800;900&family=Geist+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{
-  --bg:#080A0E;--sf:#0F1117;--s2:#161B24;--s3:#1E2533;--s4:#252D3D;
-  --ac:#FF5C1A;--acd:#CC4A14;--acbg:rgba(255,92,26,.13);--acg:rgba(255,92,26,.3);
-  --gn:#2ECC71;--gnbg:rgba(46,204,113,.12);--gnbr:rgba(46,204,113,.3);
-  --am:#F5A623;--ambg:rgba(245,166,35,.12);--ambr:rgba(245,166,35,.3);
-  --rd:#E74C3C;--rdbg:rgba(231,76,60,.12);--rdbr:rgba(231,76,60,.3);
-  --bl:#3498DB;--blbg:rgba(52,152,219,.12);--blbr:rgba(52,152,219,.3);
+  /* ── PedePronto Design System v2 — Dark ── */
+  --bg:#121318;--sf:#1a1b22;--s2:#22232c;--s3:#2c2d38;--s4:#363844;
+  --ac:#D97757;--acd:#c0603f;--acbg:rgba(217,119,87,.14);--acg:rgba(217,119,87,.3);
+  --ac-text:#e8956e;--ac-soft:rgba(217,119,87,.16);--ac-ink:#1a1b22;
+  --gn:#5ec99a;--gnbg:rgba(94,201,154,.12);--gnbr:rgba(94,201,154,.3);
+  --am:#d4a04a;--ambg:rgba(212,160,74,.12);--ambr:rgba(212,160,74,.3);
+  --rd:#d45a4f;--rdbg:rgba(212,90,79,.12);--rdbr:rgba(212,90,79,.3);
+  --bl:#5a9fd4;--blbg:rgba(90,159,212,.12);--blbr:rgba(90,159,212,.3);
   --pu:#9B59B6;--pubg:rgba(155,89,182,.12);--pubr:rgba(155,89,182,.3);
   --cy:#1ABC9C;--cybg:rgba(26,188,156,.12);--cybr:rgba(26,188,156,.3);
-  --tx:#EEF0F4;--t2:#8896B0;--t3:#3D4557;--t4:#1A2030;
-  --br:rgba(255,255,255,.055);--br2:rgba(255,255,255,.10);--br3:rgba(255,255,255,.18);
-  --r:13px;--sh:0 8px 32px rgba(0,0,0,.5);
+  --tx:#eaedf2;--t2:#8a8fa0;--t3:#555869;--t4:#3a3d4c;
+  --br:rgba(255,255,255,.07);--br2:rgba(255,255,255,.10);--br3:rgba(255,255,255,.16);
+  --r:10px;--sh:0 6px 24px rgba(0,0,0,.45);
+  --font:'Geist','Inter',system-ui,sans-serif;
+  --mono:'Geist Mono','JetBrains Mono',ui-monospace,monospace;
 }
 /* ── MODO CLARO ── */
 html.light{
-  --bg:#F0F3F8;--sf:#FFFFFF;--s2:#F5F7FB;--s3:#E8ECF3;--s4:#DBE0EB;
-  --tx:#111827;--t2:#4B5568;--t3:#9CA3AF;--t4:#D1D5DB;
-  --br:rgba(0,0,0,.07);--br2:rgba(0,0,0,.11);--br3:rgba(0,0,0,.18);
-  --sh:0 4px 24px rgba(0,0,0,.10);
-  --acbg:rgba(255,92,26,.10);--acg:rgba(255,92,26,.28);
-  --gnbg:rgba(46,204,113,.10);--gnbr:rgba(46,204,113,.30);
-  --ambg:rgba(245,166,35,.10);--ambr:rgba(245,166,35,.30);
-  --rdbg:rgba(231,76,60,.10);--rdbr:rgba(231,76,60,.30);
-  --blbg:rgba(52,152,219,.10);--blbr:rgba(52,152,219,.30);
-  --pubg:rgba(155,89,182,.10);--pubr:rgba(155,89,182,.30);
-  --cybg:rgba(26,188,156,.10);--cybr:rgba(26,188,156,.30);
+  --bg:#F7F7F8;--sf:#FFFFFF;--s2:#FAFAFB;--s3:#ECECEE;--s4:#DFDFE3;
+  --ac:#D97757;--acd:#c0603f;--acbg:rgba(217,119,87,.10);--acg:rgba(217,119,87,.25);
+  --ac-text:#a85a3d;--ac-soft:rgba(217,119,87,.08);--ac-ink:#FFFFFF;
+  --tx:#0A0A0B;--t2:#6E6E76;--t3:#A4A4AB;--t4:#D1D1D6;
+  --br:rgba(0,0,0,.06);--br2:rgba(0,0,0,.09);--br3:rgba(0,0,0,.14);
+  --sh:0 4px 18px rgba(0,0,0,.08);
+  --gnbg:rgba(46,180,100,.08);--gnbr:rgba(46,180,100,.22);
+  --ambg:rgba(200,150,40,.08);--ambr:rgba(200,150,40,.22);
+  --rdbg:rgba(200,70,60,.08);--rdbr:rgba(200,70,60,.22);
+  --blbg:rgba(52,140,200,.08);--blbr:rgba(52,140,200,.22);
+  --pubg:rgba(140,75,170,.08);--pubr:rgba(140,75,170,.22);
+  --cybg:rgba(26,170,140,.08);--cybr:rgba(26,170,140,.22);
 }
-html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);font-family:'Inter',-apple-system,'Segoe UI',system-ui,sans-serif;line-height:1.5;font-size:16px;-webkit-font-smoothing:antialiased}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);font-family:var(--font);line-height:1.5;font-size:16px;-webkit-font-smoothing:antialiased}
 ::-webkit-scrollbar{width:3px;height:3px}::-webkit-scrollbar-thumb{background:var(--br2);border-radius:99px}
 #app{position:fixed;inset:0;display:flex;flex-direction:column}
 
 /* ── TOPBAR ── */
 #topbar{height:56px;background:var(--sf);border-bottom:1px solid var(--br);display:flex;align-items:center;padding:0 12px;gap:8px;flex-shrink:0;z-index:20;box-shadow:0 1px 6px rgba(0,0,0,.18)}
-.logo{font-size:17px;font-weight:900;font-family:monospace;color:var(--ac);white-space:nowrap}
+.logo{font-size:17px;font-weight:800;font-family:var(--mono);color:var(--ac);white-space:nowrap;letter-spacing:-.03em}
 .logo s{color:var(--t2);font-weight:400;text-decoration:none}
 #top-title{font-size:15px;font-weight:800;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 6px;letter-spacing:-.2px}
 .tbtn{height:38px;min-width:38px;border-radius:10px;background:var(--s2);border:1px solid var(--br2);color:var(--t2);font-size:13px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:0 12px;font-family:inherit;font-weight:700;white-space:nowrap;transition:all .15s}
@@ -73,12 +78,13 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);font-
 @media(max-width:768px){#sidebar{display:none}#bnav{display:flex}}
 
 /* ── SIDEBAR ── */
-.sb-sec{padding:4px 8px;font-size:9px;font-weight:800;color:var(--t3);letter-spacing:1.3px;text-transform:uppercase;margin-top:10px}
+.sb-sec{padding:4px 8px;font-size:10px;font-weight:700;color:var(--t3);letter-spacing:1.2px;text-transform:uppercase;margin-top:10px;font-family:var(--mono);display:flex;align-items:center;gap:8px}
+.sb-sec::after{content:'';flex:1;height:1px;background:var(--br2)}
 .sb-item{display:flex;align-items:center;gap:9px;padding:9px 12px;border-radius:10px;margin:2px 7px;cursor:pointer;font-size:14px;font-weight:600;color:var(--t2);transition:all .15s;position:relative;border:none;background:transparent;width:calc(100% - 14px);font-family:inherit;text-align:left}
 .sb-item:hover{background:var(--s2);color:var(--tx)}
 .sb-item.on{background:var(--acbg);color:var(--ac)}
 .sb-item.on::before{content:'';position:absolute;left:-7px;top:25%;height:50%;width:3px;background:var(--ac);border-radius:99px}
-.sb-ico{font-size:16px;width:20px;text-align:center;flex-shrink:0}
+.sb-ico{width:20px;height:20px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .sb-bdg{min-width:18px;height:18px;border-radius:99px;background:var(--ac);color:#fff;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;padding:0 5px;margin-left:auto}
 .sb-foot{margin-top:auto;padding:12px 10px;border-top:1px solid var(--br);font-size:10px;color:var(--t3);line-height:1.6}
 
@@ -86,7 +92,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);font-
 .bn-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;font-size:9px;font-weight:700;color:var(--t3);transition:all .15s;border:none;background:transparent;font-family:inherit;position:relative;padding:0 2px}
 .bn-item.on{color:var(--ac)}
 .bn-item.on::before{content:'';position:absolute;top:0;left:20%;right:20%;height:2px;background:var(--ac);border-radius:0 0 99px 99px}
-.bn-ico{font-size:22px;line-height:1;flex-shrink:0}
+.bn-ico{line-height:1;flex-shrink:0;display:flex;align-items:center;justify-content:center}
 .bn-lbl{font-size:9px;font-weight:700;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 .bn-bdg{position:absolute;top:3px;right:calc(50% - 22px);min-width:16px;height:16px;border-radius:99px;background:var(--rd);color:#fff;font-size:9px;font-weight:800;display:none;align-items:center;justify-content:center;padding:0 4px}
 .bn-bdg.on{display:flex}
@@ -109,8 +115,8 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);font-
 /* ── CARDS ── */
 .card{background:var(--sf);border:1px solid var(--br2);border-radius:var(--r);padding:16px}
 .kpi{background:var(--sf);border:1px solid var(--br2);border-radius:var(--r);padding:16px;text-align:center}
-.kpi-v{font-size:26px;font-weight:900;font-family:monospace}
-.kpi-l{font-size:11px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.8px;margin-top:4px}
+.kpi-v{font-size:26px;font-weight:700;font-family:var(--mono);letter-spacing:-.02em}
+.kpi-l{font-size:10px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:1px;margin-top:4px;font-family:var(--mono)}
 
 /* ── BUTTONS ── */
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:11px 18px;border-radius:11px;font-size:15px;font-weight:700;cursor:pointer;border:none;font-family:inherit;transition:all .15s;white-space:nowrap;line-height:1;min-height:46px}
@@ -391,7 +397,7 @@ select.inp{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns=
   #sidebar>div:first-child>div:nth-child(3){display:none}
   #sidebar>div:first-child>div:nth-child(1){font-size:22px}
   .sb-item{padding:13px 0;justify-content:center;margin:2px 5px;width:calc(100% - 10px);position:relative;border-radius:11px}
-  .sb-ico{font-size:22px;width:auto;margin:0}
+  .sb-ico{width:24px;height:24px;margin:0}
   .sb-bdg{position:absolute;top:4px;right:3px;min-width:15px;height:15px;font-size:9px;padding:0 3px}
   .sb-item.on::before{left:-5px;top:20%;height:60%}
   /* tooltip ao hover nos itens slim */
@@ -423,7 +429,7 @@ select.inp{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns=
   /* bottom nav: apenas ícones, mais altos */
   #bnav{height:62px}
   .bn-item{font-size:10px;gap:3px}
-  .bn-ico{font-size:24px}
+  .bn-ico svg{width:22px;height:22px}
   /* produto: 2 colunas */
   .prod-grid{grid-template-columns:1fr 1fr;gap:9px}
   /* cards com menos padding */
@@ -451,7 +457,7 @@ select.inp{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns=
   /* bottom nav: só ícones grandes, sem labels */
   #bnav{height:66px}
   .bn-lbl{display:none}
-  .bn-ico{font-size:28px;line-height:1}
+  .bn-ico svg{width:26px;height:26px}
   .bn-bdg{font-size:9px;top:4px;right:calc(50% - 18px)}
 
   /* botões: mínimo 52px de altura */
@@ -939,20 +945,20 @@ const _PP_PUBKEY_JWK={"crv":"P-256","ext":true,"key_ops":["verify"],"kty":"EC","
       </div>
     </div>
     <div class="sb-sec">Operações</div>
-    <button class="sb-item on" id="sbm-dash" title="Início" onclick="nav('dash')"><span class="sb-ico">🏠</span><span class="sb-lbl">Início</span></button>
-    <button class="sb-item" id="sbm-mesas" title="Mesas" onclick="nav('mesas')"><span class="sb-ico">🪑</span><span class="sb-lbl">Mesas</span><span class="sb-bdg" id="sb-mesa-bdg" style="display:none">0</span></button>
-    <button class="sb-item" id="sbm-balcao" title="Balcão" onclick="nav('balcao')"><span class="sb-ico">🧾</span><span class="sb-lbl">Balcão</span><span class="sb-bdg" id="sb-bal-bdg" style="display:none">0</span></button>
-    <button class="sb-item" id="sbm-delivery" title="Delivery" onclick="nav('delivery')"><span class="sb-ico">🛵</span><span class="sb-lbl">Delivery</span><span class="sb-bdg" id="sb-del-bdg" style="display:none">0</span></button>
-    <button class="sb-item" id="sbm-producao" title="Produção" onclick="nav('producao')"><span class="sb-ico">📟</span><span class="sb-lbl">Produção</span></button>
+    <button class="sb-item on" id="sbm-dash" title="Início" onclick="nav('dash')"><span class="sb-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8M5 10v10h14V10"/></svg></span><span class="sb-lbl">Início</span></button>
+    <button class="sb-item" id="sbm-mesas" title="Mesas" onclick="nav('mesas')"><span class="sb-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 12h18M8 6V4M16 6V4M8 18v2M16 18v2"/></svg></span><span class="sb-lbl">Mesas</span><span class="sb-bdg" id="sb-mesa-bdg" style="display:none">0</span></button>
+    <button class="sb-item" id="sbm-balcao" title="Balcão" onclick="nav('balcao')"><span class="sb-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h18l-1 4H4zM5 12v8h14v-8M9 16h6"/></svg></span><span class="sb-lbl">Balcão</span><span class="sb-bdg" id="sb-bal-bdg" style="display:none">0</span></button>
+    <button class="sb-item" id="sbm-delivery" title="Delivery" onclick="nav('delivery')"><span class="sb-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="17" r="3"/><circle cx="18" cy="17" r="3"/><path d="M9 17h6l-3-8h-2M14 9l2-4h3"/></svg></span><span class="sb-lbl">Delivery</span><span class="sb-bdg" id="sb-del-bdg" style="display:none">0</span></button>
+    <button class="sb-item" id="sbm-producao" title="Produção" onclick="nav('producao')"><span class="sb-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="14" rx="2"/><path d="M8 22h8M12 18v4"/></svg></span><span class="sb-lbl">Produção</span></button>
     <div class="sb-sec">Gestão</div>
-    <button class="sb-item" id="sbm-dados" title="Dados" onclick="nav('dados')"><span class="sb-ico">📊</span><span class="sb-lbl">Dados</span></button>
-    <button class="sb-item" id="sbm-cardapio" title="Cardápio" onclick="nav('cardapio')"><span class="sb-ico">📋</span><span class="sb-lbl">Cardápio</span></button>
-    <button class="sb-item" id="sbm-clientes" title="Clientes" onclick="nav('clientes')"><span class="sb-ico">👥</span><span class="sb-lbl">Clientes</span></button>
-    <button class="sb-item" id="sbm-caixa" title="Caixa" onclick="nav('caixa')"><span class="sb-ico">💰</span><span class="sb-lbl">Caixa</span></button>
-    <button class="sb-item" id="sbm-relatorio" title="Relatórios" onclick="nav('relatorio')"><span class="sb-ico">📈</span><span class="sb-lbl">Relatórios</span></button>
+    <button class="sb-item" id="sbm-dados" title="Dados" onclick="nav('dados')"><span class="sb-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18M7 15l4-4 3 3 5-6"/></svg></span><span class="sb-lbl">Dados</span></button>
+    <button class="sb-item" id="sbm-cardapio" title="Cardápio" onclick="nav('cardapio')"><span class="sb-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg></span><span class="sb-lbl">Cardápio</span></button>
+    <button class="sb-item" id="sbm-clientes" title="Clientes" onclick="nav('clientes')"><span class="sb-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="4"/><path d="M2 21c0-4 3-6 7-6s7 2 7 6M17 11a4 4 0 100-8M22 21c0-3-2-5-5-5.5"/></svg></span><span class="sb-lbl">Clientes</span></button>
+    <button class="sb-item" id="sbm-caixa" title="Caixa" onclick="nav('caixa')"><span class="sb-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M6 9v6M18 9v6"/></svg></span><span class="sb-lbl">Caixa</span></button>
+    <button class="sb-item" id="sbm-relatorio" title="Relatórios" onclick="nav('relatorio')"><span class="sb-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M22 7l-9 9-4-4-7 7M16 7h6v6"/></svg></span><span class="sb-lbl">Relatórios</span></button>
     <div class="sb-sec">Sistema</div>
-    <button class="sb-item" id="sbm-funcionarios" title="Funcionários" onclick="nav('funcionarios')"><span class="sb-ico">👤</span><span class="sb-lbl">Funcionários</span></button>
-    <button class="sb-item" id="sbm-config" title="Configurações" onclick="nav('config')"><span class="sb-ico">⚙️</span><span class="sb-lbl">Configurações</span></button>
+    <button class="sb-item" id="sbm-funcionarios" title="Funcionários" onclick="nav('funcionarios')"><span class="sb-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="4"/><path d="M2 21c0-4 3-6 7-6s7 2 7 6"/></svg></span><span class="sb-lbl">Funcionários</span></button>
+    <button class="sb-item" id="sbm-config" title="Configurações" onclick="nav('config')"><span class="sb-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 01-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 01-4 0v-.1a1.7 1.7 0 00-1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 01-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 010-4h.1a1.7 1.7 0 001.5-1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 012.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 014 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 012.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 010 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg></span><span class="sb-lbl">Configurações</span></button>
     <div class="sb-foot" id="sb-foot" style="display:flex;flex-direction:column;gap:8px">
       <div style="font-size:10px;color:var(--t3);line-height:1.6">PedePronto v2.0<br>Dados: local + Drive</div>
       <button onclick="toggleTheme()" style="display:flex;align-items:center;gap:6px;background:var(--s2);border:1px solid var(--br2);border-radius:9px;padding:7px 10px;cursor:pointer;font-size:12px;font-weight:700;color:var(--t2);font-family:inherit;width:100%;transition:all .15s" id="sb-theme-btn">
@@ -983,11 +989,11 @@ const _PP_PUBKEY_JWK={"crv":"P-256","ext":true,"key_ops":["verify"],"kty":"EC","
 
     <!-- BOTTOM NAV mobile -->
     <div id="bnav">
-      <button class="bn-item" id="bnm-balcao" onclick="nav('balcao')"><div class="bn-ico">🧾</div><div class="bn-lbl">Balcão</div><div class="bn-bdg" id="bn-bal-bdg">0</div></button>
-      <button class="bn-item" id="bnm-mesas" onclick="nav('mesas')"><div class="bn-ico">🪑</div><div class="bn-lbl">Mesas</div><div class="bn-bdg" id="bn-mesa-bdg">0</div></button>
-      <button class="bn-item" id="bnm-delivery" onclick="nav('delivery')"><div class="bn-ico">🛵</div><div class="bn-lbl">Delivery</div><div class="bn-bdg" id="bn-del-bdg">0</div></button>
-      <button class="bn-item" id="bnm-producao" onclick="nav('producao')"><div class="bn-ico">📟</div><div class="bn-lbl">Produção</div></button>
-      <button class="bn-item" id="bnm-menu" onclick="openMenuSheet()"><div class="bn-ico">☰</div><div class="bn-lbl">Menu</div></button>
+      <button class="bn-item" id="bnm-balcao" onclick="nav('balcao')"><div class="bn-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h18l-1 4H4zM5 12v8h14v-8M9 16h6"/></svg></div><div class="bn-lbl">Balcão</div><div class="bn-bdg" id="bn-bal-bdg">0</div></button>
+      <button class="bn-item" id="bnm-mesas" onclick="nav('mesas')"><div class="bn-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18v12H3zM3 12h18M8 6V4M16 6V4M8 18v2M16 18v2"/></svg></div><div class="bn-lbl">Mesas</div><div class="bn-bdg" id="bn-mesa-bdg">0</div></button>
+      <button class="bn-item" id="bnm-delivery" onclick="nav('delivery')"><div class="bn-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17a2 2 0 104 0 2 2 0 10-4 0M15 17a2 2 0 104 0 2 2 0 10-4 0M5 17H3V8l4-3h6l4 5h4v7h-2"/><path d="M9 17h6M13 5v5h4"/></svg></div><div class="bn-lbl">Delivery</div><div class="bn-bdg" id="bn-del-bdg">0</div></button>
+      <button class="bn-item" id="bnm-producao" onclick="nav('producao')"><div class="bn-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6h20v14H2zM6 6V4h12v2M8 12h8M8 15h5"/></svg></div><div class="bn-lbl">Produção</div></button>
+      <button class="bn-item" id="bnm-menu" onclick="openMenuSheet()"><div class="bn-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg></div><div class="bn-lbl">Menu</div></button>
     </div>
   </div>
 </div>
@@ -1461,6 +1467,42 @@ const _PP_PUBKEY_JWK={"crv":"P-256","ext":true,"key_ops":["verify"],"kty":"EC","
 
 <script>
 // ═══════════════════════════════════════════
+//  ÍCONES SVG (Lucide-like line icons)
+// ═══════════════════════════════════════════
+const PP_ICONS={
+  home:'M3 11l9-8 9 8M5 10v10h14V10',
+  table:'M3 6h18v12H3zM3 12h18M8 6V4M16 6V4M8 18v2M16 18v2',
+  counter:'M3 8h18l-1 4H4zM5 12v8h14v-8M9 16h6',
+  bike:'M6 17a3 3 0 100-6 3 3 0 000 6zM18 17a3 3 0 100-6 3 3 0 000 6zM9 17h6l-3-8h-2M14 9l2-4h3',
+  monitor:'M2 4h20v14H2zM8 22h8M12 18v4',
+  menu:'M3 6h18M3 12h18M3 18h18',
+  users:'M9 8a4 4 0 100-8 4 4 0 000 8zM2 21c0-4 3-6 7-6s7 2 7 6M17 11a4 4 0 100-8M22 21c0-3-2-5-5-5.5',
+  cash:'M2 6h20v12H2zM12 12a3 3 0 100-6 3 3 0 000 6zM6 9v6M18 9v6',
+  chart:'M3 3v18h18M7 15l4-4 3 3 5-6',
+  settings:'M12 12a3 3 0 100-6 3 3 0 000 6zM19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 01-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 01-4 0v-.1a1.7 1.7 0 00-1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 01-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 010-4h.1a1.7 1.7 0 001.5-1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 012.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 014 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 012.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 010 4h-.1a1.7 1.7 0 00-1.5 1z',
+  bell:'M6 8a6 6 0 1112 0c0 7 3 9 3 9H3s3-2 3-9M10 21a2 2 0 004 0',
+  printer:'M6 3h12v6H6zM6 14h12v7H6zM6 17H3a1 1 0 01-1-1v-5a2 2 0 012-2h16a2 2 0 012 2v5a1 1 0 01-1 1h-3',
+  cloud:'M17.5 19a4.5 4.5 0 00.5-9 6 6 0 00-11.5 1.5A4 4 0 007 19h10.5z',
+  search:'M11 11a7 7 0 100-14 7 7 0 000 14zM21 21l-4.3-4.3',
+  plus:'M12 5v14M5 12h14',
+  minus:'M5 12h14',
+  check:'M5 12l5 5L20 6',
+  arrowRight:'M5 12h14M13 6l6 6-6 6',
+  arrowLeft:'M19 12H5M11 6l-6 6 6 6',
+  pix:'M12 3l4 4-4 4-4-4zM3 12l4-4 4 4-4 4zM21 12l-4-4-4 4 4 4zM12 21l-4-4 4-4 4 4z',
+  card:'M2 6h20v13H2zM2 11h20M6 16h4',
+  receipt:'M5 3h14v18l-2-1.5-2 1.5-2-1.5-2 1.5-2-1.5-2 1.5-2-1.5V3zM9 8h6M9 12h6M9 16h3',
+  trend:'M22 7l-9 9-4-4-7 7M16 7h6v6',
+  sun:'M12 12a4 4 0 100-8 4 4 0 000 8zM12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4',
+  moon:'M21 13A9 9 0 1111 3a7 7 0 0010 10z',
+  hamburguer:'M4 6h16M4 12h16M4 18h16',
+};
+function ppIcon(name,size=20,stroke=1.6,cls=''){
+  const d=PP_ICONS[name]||PP_ICONS.home;
+  return `<svg class="pp-ico ${cls}" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${stroke}" stroke-linecap="round" stroke-linejoin="round"><path d="${d}"/></svg>`;
+}
+
+// ═══════════════════════════════════════════
 //  STORAGE
 // ═══════════════════════════════════════════
 // Firebase — inicializado no boot() após ST estar pronto
@@ -1860,15 +1902,16 @@ function _silentRefresh(){
 
 function openMenuSheet(){
   const sh=document.getElementById('sh-menu');
+  const mIco=(name,s=18)=>ppIcon(name,s,1.7);
   sh.innerHTML=`<div class="sh-handle"></div>
-  <div style="font-size:15px;font-weight:800;margin-bottom:14px">🍔 PedePronto — Menu</div>
+  <div style="font-size:15px;font-weight:800;margin-bottom:14px;display:flex;align-items:center;gap:8px">${mIco('menu')} PedePronto — Menu</div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-    ${[['delivery','🛵','Delivery'],['cardapio','📋','Cardápio'],['clientes','👥','Clientes'],['caixa','💰','Caixa'],['relatorio','📈','Relatórios'],['funcionarios','👤','Equipe'],['config','⚙️','Config']].map(([id,ico,lbl])=>`<button class="btn bs bw" style="justify-content:flex-start;gap:8px;padding:13px" onclick="closeOv('ov-menu');nav('${id}')">${ico} ${lbl}</button>`).join('')}
+    ${[['delivery','bike','Delivery'],['cardapio','menu','Cardápio'],['clientes','users','Clientes'],['caixa','cash','Caixa'],['relatorio','chart','Relatórios'],['funcionarios','users','Equipe'],['config','settings','Config']].map(([id,ico,lbl])=>`<button class="btn bs bw" style="justify-content:flex-start;gap:8px;padding:13px;align-items:center" onclick="closeOv('ov-menu');nav('${id}')">${mIco(ico)} ${lbl}</button>`).join('')}
   </div>
   <div class="divider mt12 mb12"></div>
   <div style="display:flex;gap:8px">
-    <button class="btn ba bw" onclick="closeOv('ov-menu');openMc('mc-bt')">🖨️ Impressora</button>
-    <button class="btn bb bw" onclick="closeOv('ov-menu');fbAuth?.currentUser?fbLogout():fbLogin()">☁️ Drive</button>
+    <button class="btn ba bw" style="align-items:center;gap:6px" onclick="closeOv('ov-menu');openMc('mc-bt')">${mIco('printer')} Impressora</button>
+    <button class="btn bb bw" style="align-items:center;gap:6px" onclick="closeOv('ov-menu');fbAuth?.currentUser?fbLogout():fbLogin()">${mIco('cloud')} Drive</button>
   </div>`;
   openOv('ov-menu');
 }
