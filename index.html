@@ -3522,7 +3522,8 @@ function addObsGrupo(){renderCardapio();ST._cardTab='obs';}
 function saveProd(){
   const nome=document.getElementById('ep-nome').value.trim();
   if(!nome){toast('Nome obrigatório','r');return}
-  const data={nome,preco:parseFloat(document.getElementById('ep-preco').value)||0,ico:document.getElementById('ep-ico').value||'🍽️',desc:document.getElementById('ep-desc').value||'',cat_id:document.getElementById('ep-cat').value,tempo:parseInt(document.getElementById('ep-tempo').value)||15,dest:[..._prodDests],obs_grupos:[..._editObsGrupos],ativo:swVal('sw-prod-ativo'),foto:_epFoto||null};
+  const _parsePreco=v=>parseFloat((v||'').replace(',','.'))||0;
+  const data={nome,preco:_parsePreco(document.getElementById('ep-preco').value),ico:document.getElementById('ep-ico').value||'🍽️',desc:document.getElementById('ep-desc').value||'',cat_id:document.getElementById('ep-cat').value,tempo:parseInt(document.getElementById('ep-tempo').value)||15,dest:[..._prodDests],obs_grupos:[..._editObsGrupos],ativo:swVal('sw-prod-ativo'),foto:_epFoto||null};
   if(ST.editProd)Object.assign(ST.editProd,data);
   else ST.produtos.push({id:uid(),...data});
   save('produtos');closeMc('mc-prod');renderCardapio();toast('✅ Produto salvo!','g');
@@ -5358,7 +5359,9 @@ function _atualizarBadgeLicenca(){
         _syncEnabled = true; // agora save() pode sincronizar
         hideLoginScreen();
         fsListen(user.uid);
-        setTimeout(function(){ fsPush(); }, 3000);
+        // Push condicional: só envia dados locais se a nuvem estiver vazia ou local for mais novo
+        // fsListen já faz fsPush no primeiro snapshot — este timer é fallback para falha de rede
+        setTimeout(function(){ if(!_lastSyncAt) fsPush(); }, 10000);
         // Pedir PIN do funcionário (não desloga Google)
         if(!ST.currentUser){
           setTimeout(showLogin, 500);
