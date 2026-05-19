@@ -1,0 +1,23 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Licenças ──────────────────────────────────────────────────────────────
+    // Leitura pública: o PDV verifica revogação sem precisar estar autenticado
+    // Escrita: somente via Firebase Console / Admin SDK (nunca pelo cliente)
+    match /licenses/{licId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // ── Dados do estabelecimento ──────────────────────────────────────────────
+    // Apenas o próprio usuário autenticado acessa seus dados
+    match /estabelecimentos/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+
+      match /dados/{doc} {
+        allow read, write: if request.auth != null && request.auth.uid == uid;
+      }
+    }
+  }
+}
