@@ -5132,6 +5132,17 @@ async function _verificarAssinatura(licObj){
   return crypto.subtle.verify({name:'ECDSA',hash:'SHA-256'},pubKey,sigBytes,msgBytes);
 }
 
+// Valida um código PP-... e retorna o objeto de licença ou null
+async function _validarCodigoLicenca(code){
+  try{
+    const licObj=JSON.parse(decodeURIComponent(escape(atob(code.replace('PP-','')))));
+    const valida=await _verificarAssinatura(licObj);
+    if(!valida)return null;
+    if(licObj.validade&&new Date(licObj.validade)<new Date())return null;
+    return licObj;
+  }catch(e){return null;}
+}
+
 async function verificarLicenca(){
   // Modo dev: chave pública não configurada — acesso livre com aviso
   if(!_PP_PUBKEY_JWK){
@@ -5139,23 +5150,37 @@ async function verificarLicenca(){
     console.warn('⚠️ PedePronto: modo dev — configure _PP_PUBKEY_JWK para ativar licenciamento');
     return true;
   }
+
+  // 1. localStorage — rápido, funciona offline
   const raw=localStorage.getItem('pp_licenca');
-  if(!raw){_mostrarTelaAtivacao('Ative sua licença para continuar usando o PedePronto.');return false;}
-  try{
-    const licObj=JSON.parse(decodeURIComponent(escape(atob(raw.replace('PP-','')))));
-    const valida=await _verificarAssinatura(licObj);
-    if(!valida){_mostrarTelaAtivacao('Licença inválida. Verifique o código e tente novamente.');return false;}
-    if(licObj.validade&&new Date(licObj.validade)<new Date()){
-      _mostrarTelaAtivacao('Sua licença expirou em '+licObj.validade+'. Renove para continuar.');
-      return false;
-    }
-    window.PP_LIC=licObj;
-    _verificarRevogacaoFirebase(licObj.id);
-    return true;
-  }catch(e){
-    _mostrarTelaAtivacao('Erro ao ler licença. Tente ativar novamente.');
-    return false;
+  if(raw){
+    const lic=await _validarCodigoLicenca(raw);
+    if(lic){window.PP_LIC=lic;_verificarRevogacaoFirebase(lic.id);return true;}
+    localStorage.removeItem('pp_licenca'); // inválida ou expirada, limpa
   }
+
+  // 2. Firestore — busca licença vinculada ao e-mail do usuário logado
+  if(fbDB&&fbAuth){
+    try{
+      const user=await new Promise(res=>{const u=fbAuth.onAuthStateChanged(u=>{u();res(u);});});
+      if(user?.email){
+        const snap=await fbDB.collection('licencas_clientes').doc(user.email).get();
+        if(snap.exists&&snap.data()?.code){
+          const lic=await _validarCodigoLicenca(snap.data().code);
+          if(lic){
+            localStorage.setItem('pp_licenca',snap.data().code);
+            window.PP_LIC=lic;
+            _verificarRevogacaoFirebase(lic.id);
+            return true;
+          }
+        }
+      }
+    }catch(e){}
+  }
+
+  // 3. Pede ativação manual
+  _mostrarTelaAtivacao('Ative sua licença para continuar usando o PedePronto.');
+  return false;
 }
 
 function _verificarRevogacaoFirebase(licId){
@@ -5185,6 +5210,15 @@ async function ativarLicenca(){
     if(!valida){err.textContent='Assinatura inválida. Este código não é oficial.';err.style.display='block';btn.textContent='🔓 Ativar';btn.disabled=false;return;}
     if(licObj.validade&&new Date(licObj.validade)<new Date()){err.textContent='Esta licença expirou em '+licObj.validade;err.style.display='block';btn.textContent='🔓 Ativar';btn.disabled=false;return;}
     localStorage.setItem('pp_licenca',code);
+    // Sincroniza no Firestore vinculado ao e-mail — todos os dispositivos auto-ativam
+    if(fbDB&&fbAuth?.currentUser?.email){
+      try{
+        await fbDB.collection('licencas_clientes').doc(fbAuth.currentUser.email).set({
+          code,plano:licObj.plano,nome:licObj.nome,validade:licObj.validade||'',
+          id:licObj.id,sincronizado_em:new Date().toISOString()
+        },{merge:true});
+      }catch(e){}
+    }
     btn.textContent='✅ Ativado! Carregando...';
     setTimeout(()=>window.location.reload(),800);
   }catch(e){

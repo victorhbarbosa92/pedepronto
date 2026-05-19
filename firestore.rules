@@ -10,6 +10,14 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // ── Licenças por e-mail (auto-ativação multi-dispositivo) ────────────────
+    // Cada documento = e-mail do cliente; só o próprio usuário lê sua licença
+    // Escrita: qualquer autenticado (admin via admin.html) — ECDSA garante integridade
+    match /licencas_clientes/{email} {
+      allow read: if request.auth != null && request.auth.token.email == email;
+      allow write: if request.auth != null;
+    }
+
     // ── Dados do estabelecimento ──────────────────────────────────────────────
     // Apenas o próprio usuário autenticado acessa seus dados
     match /estabelecimentos/{uid} {

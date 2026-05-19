@@ -328,10 +328,20 @@ async function gerarLicenca(){
   const licObj={...payload,sig};
   const code='PP-'+btoa(unescape(encodeURIComponent(JSON.stringify(licObj))));
   _codigoGerado=code;
-  // salva na lista
+  // salva na lista local
   const registro={...payload,obs:document.getElementById('lic-obs').value.trim(),code,revogada:false,created:new Date().toISOString()};
   _licencasEmitidas.unshift(registro);
   localStorage.setItem('pp_admin_lics',JSON.stringify(_licencasEmitidas));
+  // Salva no Firestore vinculado ao e-mail — o cliente auto-ativa em qualquer dispositivo
+  const emailCliente=document.getElementById('lic-email').value.trim();
+  if(emailCliente&&typeof firebase!=='undefined'){
+    try{
+      firebase.firestore().collection('licencas_clientes').doc(emailCliente).set({
+        code,plano:payload.plano,nome:payload.nome,validade:payload.validade||'',
+        id:payload.id,emitida:payload.emitida
+      },{merge:true});
+    }catch(e){}
+  }
   // mostra resultado
   document.getElementById('card-resultado').style.display='block';
   document.getElementById('resultado-code').textContent=code;
