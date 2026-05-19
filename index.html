@@ -52,10 +52,18 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);font-
 #app{position:fixed;inset:0;display:flex;flex-direction:column}
 
 /* ── TOPBAR ── */
-#topbar{height:56px;background:var(--sf);border-bottom:1px solid var(--br);display:flex;align-items:center;padding:0 12px;gap:8px;flex-shrink:0;z-index:20;box-shadow:0 1px 6px rgba(0,0,0,.18)}
-.logo{font-size:17px;font-weight:800;font-family:var(--mono);color:var(--ac);white-space:nowrap;letter-spacing:-.03em}
+#topbar{height:52px;background:var(--sf);border-bottom:1px solid var(--br);display:flex;align-items:center;padding:0 12px;gap:8px;flex-shrink:0;z-index:20}
+.logo{font-size:16px;font-weight:800;font-family:var(--mono);color:var(--ac);white-space:nowrap;letter-spacing:-.04em}
 .logo s{color:var(--t2);font-weight:400;text-decoration:none}
-#top-title{font-size:15px;font-weight:800;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 6px;letter-spacing:-.2px}
+#top-title{font-size:14px;font-weight:700;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 4px;letter-spacing:-.02em;font-family:var(--mono)}
+.tb-session{display:flex;align-items:center;gap:6px;padding:4px 10px;background:var(--s2);border:1px solid var(--br);border-radius:7px;font-family:var(--mono);font-size:11px;font-weight:500;color:var(--t2);flex-shrink:0;cursor:pointer;transition:all .15s}
+.tb-session:hover{background:var(--s3);color:var(--tx)}
+.tb-session-dot{width:6px;height:6px;border-radius:50%;background:var(--t3);flex-shrink:0}
+.tb-session-dot.open{background:var(--gn)}
+.tb-session-lbl{white-space:nowrap}
+.tb-actions{display:flex;gap:4px;align-items:center;flex-shrink:0}
+.tb-divider{width:1px;height:24px;background:var(--br2);margin:0 4px;flex-shrink:0}
+.tb-caixa{font-size:12px;padding:0 12px;font-weight:700;font-family:var(--mono);gap:6px}
 .tbtn{height:38px;min-width:38px;border-radius:10px;background:var(--s2);border:1px solid var(--br2);color:var(--t2);font-size:13px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:0 12px;font-family:inherit;font-weight:700;white-space:nowrap;transition:all .15s}
 .tbtn:hover{background:var(--s3);color:var(--tx)}
 .tbtn:active{background:var(--s4);transform:scale(.95)}
@@ -86,7 +94,24 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);font-
 .sb-item.on::before{content:'';position:absolute;left:-7px;top:25%;height:50%;width:3px;background:var(--ac);border-radius:99px}
 .sb-ico{width:20px;height:20px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .sb-bdg{min-width:18px;height:18px;border-radius:99px;background:var(--ac);color:#fff;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;padding:0 5px;margin-left:auto}
-.sb-foot{margin-top:auto;padding:12px 10px;border-top:1px solid var(--br);font-size:10px;color:var(--t3);line-height:1.6}
+.sb-foot{margin-top:auto;padding:0;border-top:1px solid var(--br);font-size:10px;color:var(--t3);display:flex;flex-direction:column}
+.sb-brand-area{padding:14px 12px 10px;border-bottom:1px solid var(--br)}
+.sb-brand-icon{width:36px;height:36px;border-radius:10px;background:var(--acbg);color:var(--ac);display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1px solid var(--ac-soft,rgba(217,119,87,.18))}
+.sb-brand-name{font-size:15px;font-weight:800;color:var(--tx);font-family:var(--mono);letter-spacing:-.04em;line-height:1.2}
+.sb-foot-status{padding:8px 10px;display:flex;flex-direction:column;gap:2px}
+.sb-foot-row{display:flex;align-items:center;gap:7px;padding:5px 6px;border-radius:7px;cursor:pointer;color:var(--t2);transition:all .15s;font-size:11px}
+.sb-foot-row:hover{background:var(--s2);color:var(--tx)}
+.sb-foot-label{flex:1;font-family:var(--mono);font-size:11px;font-weight:500}
+.sb-foot-dot{width:7px;height:7px;border-radius:50%;background:var(--gn);flex-shrink:0}
+.sb-foot-dot.off{background:var(--t3)}
+.sb-foot-dot.warn{background:var(--am)}
+.sb-foot-dot.err{background:var(--rd)}
+.sb-foot-divider{height:1px;background:var(--br);margin:0 10px}
+.sb-foot-bottom{display:flex;align-items:center;justify-content:space-between;padding:8px 10px}
+.sb-theme-toggle{display:flex;align-items:center;gap:5px;background:var(--s2);border:1px solid var(--br2);border-radius:7px;padding:5px 10px;cursor:pointer;font-size:11px;font-weight:600;color:var(--t2);font-family:var(--mono);transition:all .15s}
+.sb-theme-toggle:hover{background:var(--s3);color:var(--tx)}
+.sb-theme-toggle svg{flex-shrink:0}
+.sb-foot-ver{font-family:var(--mono);font-size:10px;color:var(--t3);font-weight:500}
 
 /* ── BOTTOM NAV ── */
 .bn-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;font-size:9px;font-weight:700;color:var(--t3);transition:all .15s;border:none;background:transparent;font-family:inherit;position:relative;padding:0 2px}
@@ -390,12 +415,13 @@ select.inp{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns=
 @media(min-width:769px) and (max-width:1100px){
   #sidebar{width:68px;overflow:visible}
   .sb-sec{display:none}
-  .sb-foot{display:none}
+  .sb-foot{display:none!important}
   .sb-lbl{display:none}
-  #sidebar>div:first-child{padding:10px 0 6px;text-align:center}
-  #sidebar>div:first-child>div:nth-child(2),
-  #sidebar>div:first-child>div:nth-child(3){display:none}
-  #sidebar>div:first-child>div:nth-child(1){font-size:22px}
+  .sb-brand-area{padding:10px 0 8px;text-align:center;display:flex;justify-content:center}
+  .sb-brand-area>div>div:not(.sb-brand-icon){display:none}
+  .sb-brand-area>div>img{display:none!important}
+  .sb-brand-area>div{justify-content:center}
+  .sb-brand-icon{width:40px;height:40px;border-radius:12px}
   .sb-item{padding:13px 0;justify-content:center;margin:2px 5px;width:calc(100% - 10px);position:relative;border-radius:11px}
   .sb-ico{width:24px;height:24px;margin:0}
   .sb-bdg{position:absolute;top:4px;right:3px;min-width:15px;height:15px;font-size:9px;padding:0 3px}
@@ -430,6 +456,11 @@ select.inp{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns=
   #bnav{height:62px}
   .bn-item{font-size:10px;gap:3px}
   .bn-ico svg{width:22px;height:22px}
+  /* topbar: hide session strip, compact actions */
+  .tb-session{display:none}
+  .tb-divider{display:none}
+  .tb-caixa{display:none}
+  #topbar{height:48px;padding:0 8px;gap:4px}
   /* produto: 2 colunas */
   .prod-grid{grid-template-columns:1fr 1fr;gap:9px}
   /* cards com menos padding */
@@ -447,12 +478,13 @@ select.inp{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns=
   .pg{padding:10px}
 
   /* topbar compacta */
-  #topbar{height:52px;padding:0 8px;gap:5px}
-  #top-title{font-size:14px}
-  .tbtn-ico{width:40px;height:40px;font-size:18px;border-radius:10px}
-  #btn-back{height:40px;font-size:13px;padding:0 10px}
+  #topbar{height:48px;padding:0 6px;gap:4px}
+  #top-title{font-size:13px}
+  .tbtn-ico{width:38px;height:38px;border-radius:10px}
+  #btn-back{height:38px;font-size:13px;padding:0 10px}
   #btn-drive{display:none!important}
-  #btn-theme{width:36px;height:36px;font-size:17px}
+  #btn-bt{display:none!important}
+  #btn-theme{width:36px;height:36px}
 
   /* bottom nav: só ícones grandes, sem labels */
   #bnav{height:66px}
@@ -907,18 +939,24 @@ const _PP_PUBKEY_JWK={"crv":"P-256","ext":true,"key_ops":["verify"],"kty":"EC","
   <!-- DESKTOP: logo -->
   <div class="logo" style="display:none" id="tb-logo">Pede<s>Pronto</s></div>
   <!-- MOBILE: home -->
-  <button class="tbtn-ico" id="btn-home" onclick="nav('dash')" style="display:none" title="Início">🏠</button>
-  <!-- VOLTAR: aparece em todas as telas quando há destino de volta -->
-  <button id="btn-back" onclick="_goBack()" title="Voltar">← Voltar</button>
+  <button class="tbtn-ico" id="btn-home" onclick="nav('dash')" style="display:none" title="Início"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8M5 10v10h14V10"/></svg></button>
+  <!-- VOLTAR -->
+  <button id="btn-back" onclick="_goBack()" title="Voltar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg> Voltar</button>
   <!-- título da página -->
-  <div id="top-title" style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 4px">Início</div>
+  <div id="top-title">Início</div>
+  <!-- session strip: caixa status -->
+  <div class="tb-session" id="tb-session">
+    <span class="tb-session-dot" id="tb-session-dot"></span>
+    <span class="tb-session-lbl" id="tb-session-lbl">Caixa fechado</span>
+  </div>
   <!-- ações da direita -->
-  <div style="display:flex;gap:6px;align-items:center;flex-shrink:0">
-    <button id="btn-theme" onclick="toggleTheme()" title="Alternar tema">🌙</button>
-    <button class="tbtn-ico" id="alerta-bell" onclick="openAlertas()" title="Alertas">🔔<span class="alerta-dot" id="alerta-dot"></span></button>
-    <button class="tbtn-ico" id="btn-bt" onclick="openMc('mc-bt')" title="Impressora">🖨️</button>
-    <button class="tbtn-ico" id="btn-drive" onclick="showCloudStatus()" title="Sincronização">☁️</button>
-    <button class="tbtn" onclick="showCaixaQuick()" title="Caixa" id="btn-caixa-st" style="font-size:12px;padding:0 12px;font-weight:800">💰 Caixa</button>
+  <div class="tb-actions">
+    <button id="btn-theme" onclick="toggleTheme()" title="Alternar tema"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg></button>
+    <button class="tbtn-ico" id="alerta-bell" onclick="openAlertas()" title="Alertas"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg><span class="alerta-dot" id="alerta-dot"></span></button>
+    <button class="tbtn-ico" id="btn-bt" onclick="openMc('mc-bt')" title="Impressora"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6z"/></svg></button>
+    <button class="tbtn-ico" id="btn-drive" onclick="showCloudStatus()" title="Sincronização"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 110-14h.5M17.5 19a4.5 4.5 0 100-9H9"/></svg></button>
+    <div class="tb-divider"></div>
+    <button class="tbtn tb-caixa" onclick="showCaixaQuick()" title="Caixa" id="btn-caixa-st"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M6 9v6M18 9v6"/></svg> Caixa</button>
   </div>
 </div>
 
@@ -933,14 +971,17 @@ const _PP_PUBKEY_JWK={"crv":"P-256","ext":true,"key_ops":["verify"],"kty":"EC","
 <div id="layout">
   <!-- SIDEBAR desktop -->
   <div id="sidebar">
-    <div style="padding:16px 12px 8px;border-bottom:1px solid var(--br)">
-      <div style="display:flex;align-items:center;gap:9px">
-        <img id="sb-logo-img" src="" style="display:none;width:38px;height:38px;border-radius:9px;object-fit:cover;flex-shrink:0">
+    <div class="sb-brand-area">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div class="sb-brand-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h18l-1 4H4zM5 12v8h14v-8M9 16h6"/></svg>
+        </div>
+        <img id="sb-logo-img" src="" style="display:none;width:36px;height:36px;border-radius:8px;object-fit:cover;flex-shrink:0">
         <div style="min-width:0">
-          <div style="font-size:15px;font-weight:900;color:var(--ac);font-family:monospace;letter-spacing:-.3px" id="sb-brand">🍔 PedePronto</div>
-          <div id="sb-est" style="font-size:12px;color:var(--t2);margin-top:2px;font-weight:600">Carregando...</div>
-        <div id="sb-lic-badge" style="display:none;margin-top:4px"></div>
-          <div id="sb-op" style="font-size:11px;color:var(--t3);margin-top:1px"></div>
+          <div class="sb-brand-name" id="sb-brand">PedePronto</div>
+          <div id="sb-est" style="font-size:11px;color:var(--t2);margin-top:1px;font-weight:500;font-family:var(--mono)">Carregando...</div>
+          <div id="sb-lic-badge" style="display:none;margin-top:3px"></div>
+          <div id="sb-op" style="font-size:10px;color:var(--t3);margin-top:1px;font-family:var(--mono)"></div>
         </div>
       </div>
     </div>
@@ -959,11 +1000,27 @@ const _PP_PUBKEY_JWK={"crv":"P-256","ext":true,"key_ops":["verify"],"kty":"EC","
     <div class="sb-sec">Sistema</div>
     <button class="sb-item" id="sbm-funcionarios" title="Funcionários" onclick="nav('funcionarios')"><span class="sb-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="4"/><path d="M2 21c0-4 3-6 7-6s7 2 7 6"/></svg></span><span class="sb-lbl">Funcionários</span></button>
     <button class="sb-item" id="sbm-config" title="Configurações" onclick="nav('config')"><span class="sb-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 01-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 01-4 0v-.1a1.7 1.7 0 00-1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 01-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 010-4h.1a1.7 1.7 0 001.5-1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 012.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 014 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 012.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 010 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg></span><span class="sb-lbl">Configurações</span></button>
-    <div class="sb-foot" id="sb-foot" style="display:flex;flex-direction:column;gap:8px">
-      <div style="font-size:10px;color:var(--t3);line-height:1.6">PedePronto v2.0<br>Dados: local + Drive</div>
-      <button onclick="toggleTheme()" style="display:flex;align-items:center;gap:6px;background:var(--s2);border:1px solid var(--br2);border-radius:9px;padding:7px 10px;cursor:pointer;font-size:12px;font-weight:700;color:var(--t2);font-family:inherit;width:100%;transition:all .15s" id="sb-theme-btn">
-        <span id="sb-theme-ico">🌙</span><span id="sb-theme-lbl">Modo Escuro</span>
-      </button>
+    <div class="sb-foot" id="sb-foot">
+      <div class="sb-foot-status">
+        <div class="sb-foot-row" id="sb-foot-sync" onclick="showCloudStatus()" title="Status da sincronização">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 110-14h.5M17.5 19a4.5 4.5 0 100-9H9"/></svg>
+          <span class="sb-foot-label" id="sb-foot-sync-lbl">Offline</span>
+          <span class="sb-foot-dot" id="sb-foot-sync-dot"></span>
+        </div>
+        <div class="sb-foot-row" id="sb-foot-printer" onclick="openMc('mc-bt')" title="Impressora Bluetooth">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6z"/></svg>
+          <span class="sb-foot-label" id="sb-foot-printer-lbl">Sem impressora</span>
+          <span class="sb-foot-dot off" id="sb-foot-printer-dot"></span>
+        </div>
+      </div>
+      <div class="sb-foot-divider"></div>
+      <div class="sb-foot-bottom">
+        <button onclick="toggleTheme()" class="sb-theme-toggle" id="sb-theme-btn" title="Alternar tema">
+          <span id="sb-theme-ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg></span>
+          <span id="sb-theme-lbl">Escuro</span>
+        </button>
+        <span class="sb-foot-ver">v2.0</span>
+      </div>
     </div>
   </div>
 
@@ -1560,17 +1617,19 @@ let _lastSyncAt=null;
 let _fsFirstSnap=true; // flag: primeiro snapshot após login
 let _localDirty=false; // flag: dados locais pendentes de push — impede que onSnapshot sobrescreva
 let _fsUnsubscribe=null; // referência para desinscrever listener anterior
+const _cloudSvg='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 110-14h.5M17.5 19a4.5 4.5 0 100-9H9"/></svg>';
 function _setSyncStatus(s){
   _syncStatus=s;
   const b=document.getElementById('btn-drive');
   const banner=document.getElementById('sync-banner');
   if(b){
-    if(s==='ok'){b.innerHTML='<span style="color:var(--gn)">☁️</span>';b.title='Sincronizado'+((_lastSyncAt)?' às '+fmtH(_lastSyncAt):'');}
-    else if(s==='syncing'){b.innerHTML='<span style="color:var(--bl)">☁️</span>';b.title='Sincronizando...';}
-    else if(s==='error'){b.innerHTML='<span style="color:var(--rd)">☁️</span>';b.title='Erro — toque para detalhes';}
-    else{b.innerHTML='☁️';b.title='Sincronização';}
+    if(s==='ok'){b.innerHTML=_cloudSvg;b.style.color='var(--gn)';b.title='Sincronizado'+((_lastSyncAt)?' às '+fmtH(_lastSyncAt):'');}
+    else if(s==='syncing'){b.innerHTML=_cloudSvg;b.style.color='var(--bl)';b.title='Sincronizando...';}
+    else if(s==='error'){b.innerHTML=_cloudSvg;b.style.color='var(--rd)';b.title='Erro — toque para detalhes';}
+    else{b.innerHTML=_cloudSvg;b.style.color='';b.title='Sincronização';}
   }
   if(banner)banner.style.display=(s==='error')?'flex':'none';
+  updateSyncStatus();
 }
 function save(k){
   ST.cfg._savedAt=new Date().toISOString();
@@ -1801,12 +1860,16 @@ function applyResponsiveNav(){
 
 // ── TEMA CLARO / ESCURO ──
 function _syncThemeUI(isLight){
+  const sunSvg='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>';
+  const moonSvg='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>';
+  const sunSm='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>';
+  const moonSm='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>';
   const btn=document.getElementById('btn-theme');
-  if(btn)btn.textContent=isLight?'🌑':'🌙';
+  if(btn)btn.innerHTML=isLight?sunSvg:moonSvg;
   const sbIco=document.getElementById('sb-theme-ico');
-  if(sbIco)sbIco.textContent=isLight?'🌑':'🌙';
+  if(sbIco)sbIco.innerHTML=isLight?sunSm:moonSm;
   const sbLbl=document.getElementById('sb-theme-lbl');
-  if(sbLbl)sbLbl.textContent=isLight?'Modo Claro':'Modo Escuro';
+  if(sbLbl)sbLbl.textContent=isLight?'Claro':'Escuro';
 }
 function toggleTheme(){
   const isLight=document.documentElement.classList.toggle('light');
@@ -2290,7 +2353,13 @@ function updateBtUI(){
   BT.setPaper(ST.cfg.papel||58);
   const sw=document.getElementById('sw-autoprint');if(sw){if(ST.cfg.autoprint)sw.classList.add('on');else sw.classList.remove('on')}
   const sw2=document.getElementById('sw-autocupom');if(sw2){if(ST.cfg.autocupom!==false)sw2.classList.add('on');else sw2.classList.remove('on')}
-  const btn=document.getElementById('btn-bt');if(btn)btn.textContent=ok?'🖨️✅':'🖨️';
+  const btn=document.getElementById('btn-bt');
+  if(btn)btn.style.color=ok?'var(--gn)':'';
+  // sidebar footer printer status
+  const pLbl=document.getElementById('sb-foot-printer-lbl');
+  const pDot=document.getElementById('sb-foot-printer-dot');
+  if(pLbl)pLbl.textContent=ok?(BT.device?.name||'Conectada'):'Sem impressora';
+  if(pDot){pDot.className='sb-foot-dot'+(ok?'':' off')}
 }
 
 // ═══════════════════════════════════════════
@@ -2442,9 +2511,33 @@ function fecharCaixa(){
 }
 function updateSbOperador(){
   const el=document.getElementById('sb-op');
-  if(el)el.textContent=ST.caixa.aberto?'👤 '+ST.caixa.operador+(ST.caixa.turno?' ('+ST.caixa.turno+')':''):'';
+  if(el)el.textContent=ST.caixa.aberto?ST.caixa.operador+(ST.caixa.turno?' · '+ST.caixa.turno:''):'';
+  // topbar caixa button
   const btn=document.getElementById('btn-caixa-st');
-  if(btn)btn.textContent=ST.caixa.aberto?'💰 '+ST.caixa.operador.split(' ')[0]:'⚠️ Caixa';
+  if(btn){
+    const cashIco='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M6 9v6M18 9v6"/></svg>';
+    btn.innerHTML=cashIco+' '+(ST.caixa.aberto?ST.caixa.operador.split(' ')[0]:'Caixa');
+    btn.classList.toggle('pr',!ST.caixa.aberto);
+  }
+  // topbar session strip
+  const dot=document.getElementById('tb-session-dot');
+  const lbl=document.getElementById('tb-session-lbl');
+  if(dot)dot.classList.toggle('open',!!ST.caixa.aberto);
+  if(lbl)lbl.textContent=ST.caixa.aberto?ST.caixa.operador.split(' ')[0]+' · Aberto':'Caixa fechado';
+}
+function updateSyncStatus(){
+  const sLbl=document.getElementById('sb-foot-sync-lbl');
+  const sDot=document.getElementById('sb-foot-sync-dot');
+  if(!sLbl||!sDot)return;
+  if(!window.IS_HOSTED){sLbl.textContent='Local only';sDot.className='sb-foot-dot off';return}
+  if(window._noPermission){sLbl.textContent='Sem permissão';sDot.className='sb-foot-dot err';return}
+  if(_syncEnabled&&fbAuth?.currentUser){
+    sLbl.textContent='Sincronizado';sDot.className='sb-foot-dot';
+  }else if(fbAuth?.currentUser){
+    sLbl.textContent='Conectado';sDot.className='sb-foot-dot warn';
+  }else{
+    sLbl.textContent='Offline';sDot.className='sb-foot-dot off';
+  }
 }
 function showCaixaQuick(){
   const movs=ST.caixa.movs||[];
@@ -4993,10 +5086,9 @@ function checkLoginPin(){
 }
 function updateUserBar(){
   const u=ST.currentUser;
-  const btn=document.getElementById('btn-caixa-st');
-  if(btn&&u)btn.textContent=(u.cargo==='admin'?'👑 ':'👤 ')+(u.nome.split(' ')[0]);
   const sbop=document.getElementById('sb-op');
-  if(sbop&&u)sbop.textContent=u.cargo==='admin'?'👑 Admin':'👤 '+u.nome.split(' ')[0];
+  if(sbop&&u)sbop.textContent=(u.cargo==='admin'?'Admin · ':'')+u.nome.split(' ')[0];
+  updateSbOperador();
 }
 function trocarUsuario(){
   ST.currentUser=null; showLogin();
@@ -5496,14 +5588,16 @@ function fsListen(uid){
 function updateDriveBtn(){
   if(!fbAuth){
     const b=document.getElementById('btn-drive');
-    if(b){b.innerHTML='☁️';b.title='Modo local — sem sync';b.onclick=showCloudStatus;}
+    if(b){b.innerHTML=_cloudSvg;b.style.color='';b.title='Modo local — sem sync';b.onclick=showCloudStatus;}
+    updateSyncStatus();
     return;
   }
   const u=fbAuth.currentUser;
   const b=document.getElementById('btn-drive');if(!b)return;
   b.onclick=showCloudStatus;
   if(u){_setSyncStatus('idle');b.title=u.email+' · Toque para detalhes';}
-  else{b.innerHTML='☁️';b.title='Não conectado — toque para entrar';}
+  else{b.innerHTML=_cloudSvg;b.style.color='';b.title='Não conectado — toque para entrar';}
+  updateSyncStatus();
 }
 
 
@@ -5769,7 +5863,7 @@ function _atualizarBadgeLicenca(){
 
     // onAuthStateChanged dispara imediatamente com o estado atual
     fbAuth.onAuthStateChanged(async function(user){
-      updateDriveBtn();
+      updateDriveBtn();updateSyncStatus();
       if(user){
         // Se estava aguardando login para verificar licença pelo e-mail
         if(window._pendingLicLogin&&!window.PP_LIC){
@@ -5812,6 +5906,7 @@ function _atualizarBadgeLicenca(){
         clearTimeout(window._permRetryTimer);
         clearTimeout(window._listenRetryTimer);
         _syncEnabled = true; // agora save() pode sincronizar
+        updateSyncStatus();
         hideLoginScreen();
         fsListen(user.uid);
         // Push condicional: só envia dados locais se a nuvem estiver vazia ou local for mais novo
