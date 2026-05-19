@@ -2136,8 +2136,9 @@ function renderDash(){
   const origemCls={mesa:'bg',balcao:'ba',delivery:'bpu'};
 
   // Pedidos em produção — ordenados por prioridade: atrasados > preparo > aberto, depois por tempo
-  const ativos=ST.pedidos.filter(p=>p.status==='aberto'||p.status==='preparo');
-  const aguardando=ST.pedidos.filter(p=>p.status==='pago'&&!p.entregue);
+  const _isProntoD=p=>p.itens.length>0&&p.itens.every(i=>i.concluido)||(p.status==='pago'&&!p.entregue);
+  const ativos=ST.pedidos.filter(p=>(p.status==='aberto'||p.status==='preparo')&&!_isProntoD(p));
+  const aguardando=ST.pedidos.filter(p=>_isProntoD(p)&&!p.entregue&&naFila(p));
 
   function prioridade(p){
     const mins=Math.floor((Date.now()-new Date(p.created).getTime())/60000);
@@ -3212,15 +3213,17 @@ function pedidoRota(id){const p=ST.pedidos.find(x=>x.id===id);if(p){p.status='ro
 function renderProducao(){
   const tab=ST._kdsTab||'cozinha';ST._kdsTab=tab;
   const dest=tab==='cozinha'?'coz':'bar';
-  const peds=ST.pedidos.filter(p=>(p.status==='aberto'||p.status==='preparo')&&p.itens.some(i=>i.dest===dest));
-  const prontos=ST.pedidos.filter(p=>p.status==='pago'&&!p.entregue&&p.itens.some(i=>i.dest===dest));
+  // "pronto" = todos os itens concluídos (pago ou não) OU pago e não entregue
+  const _isPronto=p=>p.itens.length>0&&p.itens.every(i=>i.concluido)||(p.status==='pago'&&!p.entregue);
+  const peds=ST.pedidos.filter(p=>(p.status==='aberto'||p.status==='preparo')&&!_isPronto(p)&&p.itens.some(i=>i.dest===dest));
+  const prontos=ST.pedidos.filter(p=>_isPronto(p)&&!p.entregue&&naFila(p)&&p.itens.some(i=>i.dest===dest));
   // detecta novos pedidos e toca som
   const primLoad=_kdsSeenIds.size===0;
   peds.forEach(p=>{if(!_kdsSeenIds.has(p.id)){_kdsSeenIds.add(p.id);if(!primLoad)anunciar('novo_pedido',p);}});
-  const cozAtivos=ST.pedidos.filter(p=>(p.status==='aberto'||p.status==='preparo')&&p.itens.some(i=>i.dest==='coz')).length;
-  const barAtivos=ST.pedidos.filter(p=>(p.status==='aberto'||p.status==='preparo')&&p.itens.some(i=>i.dest==='bar')).length;
-  const cozProntos=ST.pedidos.filter(p=>p.status==='pago'&&!p.entregue&&p.itens.some(i=>i.dest==='coz')).length;
-  const barProntos=ST.pedidos.filter(p=>p.status==='pago'&&!p.entregue&&p.itens.some(i=>i.dest==='bar')).length;
+  const cozAtivos=ST.pedidos.filter(p=>(p.status==='aberto'||p.status==='preparo')&&!_isPronto(p)&&p.itens.some(i=>i.dest==='coz')).length;
+  const barAtivos=ST.pedidos.filter(p=>(p.status==='aberto'||p.status==='preparo')&&!_isPronto(p)&&p.itens.some(i=>i.dest==='bar')).length;
+  const cozProntos=ST.pedidos.filter(p=>_isPronto(p)&&!p.entregue&&naFila(p)&&p.itens.some(i=>i.dest==='coz')).length;
+  const barProntos=ST.pedidos.filter(p=>_isPronto(p)&&!p.entregue&&naFila(p)&&p.itens.some(i=>i.dest==='bar')).length;
   document.getElementById('pg-producao').innerHTML=`
   <div class="rb mb10">
     <div class="tabbar" style="flex:1">
