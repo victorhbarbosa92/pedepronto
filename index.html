@@ -5177,24 +5177,29 @@ async function verificarLicenca(){
 
   // 2. Firestore — busca licença vinculada ao e-mail do usuário logado
   if(fbDB&&fbAuth){
+    const user=await new Promise(res=>{const unsub=fbAuth.onAuthStateChanged(u=>{unsub();res(u);});});
+    if(!user){
+      // Não logado → precisa fazer login primeiro para buscar licença pelo e-mail
+      return 'await_login';
+    }
     try{
-      const user=await new Promise(res=>{const unsub=fbAuth.onAuthStateChanged(u=>{unsub();res(u);});});
-      if(user?.email){
-        const snap=await fbDB.collection('licencas_clientes').doc(user.email).get();
-        if(snap.exists&&snap.data()?.code){
-          const lic=await _validarCodigoLicenca(snap.data().code);
-          if(lic){
-            localStorage.setItem('pp_licenca',snap.data().code);
-            window.PP_LIC=lic;
-            _verificarRevogacaoFirebase(lic.id);
-            return true;
-          }
+      const snap=await fbDB.collection('licencas_clientes').doc(user.email).get();
+      if(snap.exists&&snap.data()?.code){
+        const lic=await _validarCodigoLicenca(snap.data().code);
+        if(lic){
+          localStorage.setItem('pp_licenca',snap.data().code);
+          window.PP_LIC=lic;
+          _verificarRevogacaoFirebase(lic.id);
+          return true;
         }
       }
     }catch(e){}
+    // Logado mas sem licença no Firestore → pede o código
+    _mostrarTelaAtivacao('Nenhuma licença encontrada para '+user.email+'. Cole o código abaixo para ativar.');
+    return false;
   }
 
-  // 3. Pede ativação manual
+  // 3. Sem Firebase → pede código manual
   _mostrarTelaAtivacao('Ative sua licença para continuar usando o PedePronto.');
   return false;
 }
@@ -5264,6 +5269,17 @@ function _mostrarTelaAtivacao(msg){
 }
 
 // ═══════════════════════════════════════════
+function _atualizarBadgeLicenca(){
+  if(!window.PP_LIC)return;
+  const bdg=document.getElementById('sb-lic-badge');
+  if(!bdg)return;
+  const planoIco={dev:'🛠',basico:'⭐',pro:'💎',ilimitado:'♾️'}[PP_LIC.plano]||'📄';
+  const planoCor={dev:'color:var(--am)',basico:'color:var(--gn)',pro:'color:var(--ac)',ilimitado:'color:var(--am)'}[PP_LIC.plano]||'';
+  const exp=PP_LIC.validade&&PP_LIC.validade!=='9999-12-31'?` · até ${PP_LIC.validade}`:'';
+  bdg.innerHTML=`<span style="font-size:10px;font-weight:800;${planoCor}">${planoIco} ${PP_LIC.plano.toUpperCase()}${exp}</span>`;
+  bdg.style.display='block';
+}
+
 //  BOOT
 // ═══════════════════════════════════════════
 (async function boot(){
@@ -5273,7 +5289,9 @@ function _mostrarTelaAtivacao(msg){
 
   // ── Verificação de licença (ECDSA) ──
   const _licOk=await verificarLicenca();
-  if(!_licOk)return; // tela de ativação exibida
+  if(_licOk===false)return; // licença inválida ou sem Firebase — tela de ativação exibida
+  // _licOk==='await_login': app carrega atrás da tela de login; onAuthStateChanged verifica licença após login
+  window._pendingLicLogin=(_licOk==='await_login');
 
   loadAll();
   initDefaults();
@@ -5287,16 +5305,7 @@ function _mostrarTelaAtivacao(msg){
   BT.paper=ST.cfg.papel||58;BT.auto=ST.cfg.autoprint||false;
   updateBtUI();updateSbOperador();
   document.getElementById('sb-est').textContent=ST.cfg.nome||'PedePronto';
-  if(window.PP_LIC){
-    const bdg=document.getElementById('sb-lic-badge');
-    if(bdg){
-      const planoIco={dev:'🛠',basico:'⭐',pro:'💎',ilimitado:'♾️'}[PP_LIC.plano]||'📄';
-      const planoCor={dev:'color:var(--am)',basico:'color:var(--gn)',pro:'color:var(--ac)',ilimitado:'color:var(--am)'}[PP_LIC.plano]||'';
-      const exp=PP_LIC.validade&&PP_LIC.validade!=='9999-12-31'?` · até ${PP_LIC.validade}`:'';
-      bdg.innerHTML=`<span style="font-size:10px;font-weight:800;${planoCor}">${planoIco} ${PP_LIC.plano.toUpperCase()}${exp}</span>`;
-      bdg.style.display='block';
-    }
-  }
+  _atualizarBadgeLicenca();
   renderDash();
   _updateBackBtn();
   registerSW();
@@ -5313,10 +5322,31 @@ function _mostrarTelaAtivacao(msg){
       });
 
     // onAuthStateChanged dispara imediatamente com o estado atual
-    fbAuth.onAuthStateChanged(function(user){
+    fbAuth.onAuthStateChanged(async function(user){
       updateDriveBtn();
       if(user){
-        // Usuário Google logado
+        // Se estava aguardando login para verificar licença pelo e-mail
+        if(window._pendingLicLogin&&!window.PP_LIC){
+          window._pendingLicLogin=false;
+          try{
+            const snap=await fbDB.collection('licencas_clientes').doc(user.email).get();
+            if(snap.exists&&snap.data()?.code){
+              const lic=await _validarCodigoLicenca(snap.data().code);
+              if(lic){
+                localStorage.setItem('pp_licenca',snap.data().code);
+                window.PP_LIC=lic;
+                _verificarRevogacaoFirebase(lic.id);
+                _atualizarBadgeLicenca();
+              }
+            }
+          }catch(e){}
+          if(!window.PP_LIC){
+            // Logado mas sem licença → pede o código
+            _mostrarTelaAtivacao('Nenhuma licença encontrada para '+user.email+'. Cole o código abaixo para ativar.');
+            return;
+          }
+        }
+        // Usuário Google logado e licença OK
         window._noPermission = false;
         window._permWarnShown = false;
         window._listenRetrying = false;
