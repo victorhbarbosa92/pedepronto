@@ -1516,6 +1516,7 @@ const _DEV_ID=(()=>{let id=sessionStorage.getItem('pp_dev');if(!id){id=Math.rand
 let _syncStatus='idle'; // 'idle'|'ok'|'error'|'syncing'
 let _lastSyncAt=null;
 let _fsFirstSnap=true; // flag: primeiro snapshot após login
+let _localDirty=false; // flag: dados locais pendentes de push — impede que onSnapshot sobrescreva
 function _setSyncStatus(s){
   _syncStatus=s;
   const b=document.getElementById('btn-drive');
@@ -1531,16 +1532,20 @@ function _setSyncStatus(s){
 function save(k){
   ST.cfg._savedAt=new Date().toISOString();
   DB.set(k,ST[k]);
+  DB.set('cfg',ST.cfg); // persiste _savedAt para sobreviver a reload
   if(_syncEnabled){
+    _localDirty=true; // protege contra overwrite por onSnapshot até fsPush completar
     clearTimeout(_fsTimer);
     _fsTimer=setTimeout(fsPush,2000);
   }
 }
-function saveAll(){
+function saveAll(skipPush){
   ST.cfg._savedAt=new Date().toISOString();
   Object.keys(ST).filter(k=>!['editProd','editCli'].includes(k)).forEach(k=>DB.set(k,ST[k]));
-  clearTimeout(_fsTimer);
-  _fsTimer=setTimeout(fsPush,2000);
+  if(!skipPush){
+    clearTimeout(_fsTimer);
+    _fsTimer=setTimeout(fsPush,2000);
+  }
 }
 async function fsPush(){
   if(!_syncEnabled||!fbAuth||!fbAuth.currentUser) return;
@@ -1551,6 +1556,7 @@ async function fsPush(){
     const d={_savedAt:new Date().toISOString(),_dev_id:_DEV_ID};
     ['cfg','caixa','produtos','categorias','clientes','obs_grupos_globais','pedidos','funcionarios','vouchers'].forEach(k=>d[k]=ST[k]);
     await fbDB.collection('estabelecimentos').doc(uid).collection('dados').doc('principal').set(d);
+    _localDirty=false; // push concluído — dados locais e nuvem estão iguais
     _lastSyncAt=Date.now();
     _setSyncStatus('ok');
     console.log('[PedePronto] ☁️ Sync enviado (dev:'+_DEV_ID+')');
@@ -1578,7 +1584,7 @@ async function fsPull(){
     if(!snap.exists){toast('Nenhum dado na nuvem ainda — envie primeiro','a',4000);return;}
     const r=snap.data();
     ['cfg','caixa','produtos','categorias','clientes','obs_grupos_globais','pedidos','funcionarios','vouchers'].forEach(k=>{if(r[k]!=null)ST[k]=r[k];});
-    saveAll();
+    saveAll(true); // skipPush: dados vieram da nuvem
     _lastSyncAt=Date.now();_setSyncStatus('ok');
     _silentRefresh(); // não reseta scroll — pull manual de dados
     toast('✅ Dados da nuvem aplicados!','g',4000);
@@ -5371,6 +5377,11 @@ function fsListen(uid){
     const r=snap.data();
     // Ignorar nossa própria escrita (loop)
     if(r._dev_id&&r._dev_id===_DEV_ID&&!_fsFirstSnap)return;
+    // Proteger dados locais pendentes de push — não deixa snapshot sobrescrever
+    if(_localDirty&&!_fsFirstSnap){
+      console.log('[PedePronto] ⏳ Snapshot ignorado — dados locais pendentes de push');
+      return;
+    }
     const lt=new Date(ST.cfg._savedAt||0).getTime();
     const rt=new Date(r._savedAt||0).getTime();
     // No primeiro snap: aplica se nuvem tiver dado (independente de timestamp)
@@ -5379,7 +5390,7 @@ function fsListen(uid){
     _fsFirstSnap=false;
     if(deveAplicar){
       ['cfg','caixa','produtos','categorias','clientes','obs_grupos_globais','pedidos','funcionarios','vouchers'].forEach(k=>{if(r[k]!=null)ST[k]=r[k];});
-      saveAll();
+      saveAll(true); // skipPush: dados vieram da nuvem, não precisa reenviar
       _silentRefresh(); // não reseta scroll — dados de outro device chegaram
       _lastSyncAt=Date.now();
       _setSyncStatus('ok');
