@@ -1657,12 +1657,58 @@ let ST={
 
 let _fsTimer=null;
 let _syncEnabled=false; // só liga após onAuthStateChanged confirmar o login
+let _estabUid=null;       // UID do estabelecimento (pode ser != auth.uid para membros vinculados)
+let _userRole=null;        // 'dono' | 'membro'
+let _userPermissions=[];   // ['pdv','cardapio','relatorios','config','funcionarios']
+const _ALL_PERMS=['pdv','cardapio','relatorios','config','funcionarios'];
 const _DEV_ID=(()=>{let id=sessionStorage.getItem('pp_dev');if(!id){id=Math.random().toString(36).slice(2);sessionStorage.setItem('pp_dev',id);}return id;})();
 let _syncStatus='idle'; // 'idle'|'ok'|'error'|'syncing'
 let _lastSyncAt=null;
 let _fsFirstSnap=true; // flag: primeiro snapshot após login
 let _localDirty=false; // flag: dados locais pendentes de push — impede que onSnapshot sobrescreva
 let _fsUnsubscribe=null; // referência para desinscrever listener anterior
+
+// ── Multi-device: helpers ──
+function hasPermission(perm){
+  if(!_userRole||_userRole==='dono')return true;
+  return(_userPermissions||[]).includes(perm);
+}
+
+// Resolve user_map: descobre a qual estabelecimento o usuário pertence
+async function _resolveUserMap(user){
+  if(!fbDB)return user.uid;
+  try{
+    const doc=await fbDB.collection('user_map').doc(user.uid).get();
+    if(doc.exists){
+      const d=doc.data();
+      _estabUid=d.estab_uid;
+      _userRole=d.role||'dono';
+      _userPermissions=d.permissions||_ALL_PERMS;
+      return _estabUid;
+    }
+    // Primeiro login (migração lazy) — cria como dono
+    const mapData={
+      estab_uid:user.uid,
+      role:'dono',
+      permissions:_ALL_PERMS,
+      email:user.email||'',
+      nome:user.displayName||'',
+      joined_at:new Date().toISOString()
+    };
+    await fbDB.collection('user_map').doc(user.uid).set(mapData);
+    _estabUid=user.uid;
+    _userRole='dono';
+    _userPermissions=_ALL_PERMS;
+    return _estabUid;
+  }catch(e){
+    console.warn('[PedePronto] user_map error:',e.message);
+    // Fallback: usar uid direto (compatibilidade)
+    _estabUid=user.uid;
+    _userRole='dono';
+    _userPermissions=_ALL_PERMS;
+    return user.uid;
+  }
+}
 const _cloudSvg='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 110-14h.5M17.5 19a4.5 4.5 0 100-9H9"/></svg>';
 function _setSyncStatus(s){
   _syncStatus=s;
@@ -1699,7 +1745,7 @@ async function fsPush(){
   if(!_syncEnabled||!fbAuth||!fbAuth.currentUser) return;
   if(window._noPermission) return;
   _setSyncStatus('syncing');
-  const uid=fbAuth.currentUser.uid;
+  const uid=_estabUid||fbAuth.currentUser.uid;
   try{
     const d={_savedAt:new Date().toISOString(),_dev_id:_DEV_ID};
     ['cfg','caixa','produtos','categorias','clientes','obs_grupos_globais','pedidos','funcionarios','vouchers'].forEach(k=>d[k]=ST[k]);
@@ -1726,7 +1772,7 @@ async function fsPush(){
 // Força pull: aplica dado do Firestore sobrescrevendo local
 async function fsPull(){
   if(!fbAuth?.currentUser||!fbDB)return;
-  const uid=fbAuth.currentUser.uid;
+  const uid=_estabUid||fbAuth.currentUser.uid;
   try{
     const snap=await fbDB.collection('estabelecimentos').doc(uid).collection('dados').doc('principal').get();
     if(!snap.exists){toast('Nenhum dado na nuvem ainda — envie primeiro','a',4000);return;}
@@ -5543,29 +5589,100 @@ setInterval(()=>{
 //  FIREBASE AUTH + FIRESTORE SYNC
 // ═══════════════════════════════════════════
 let _loginEl=null;
+let _registerEl=null;
+let _loginMode='login'; // 'login'|'reset'
+
+const _googleSvg=`<svg width="20" height="20" viewBox="0 0 24 24"><path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>`;
 
 function showLoginScreen(){
   if(_loginEl)return;
+  _loginMode='login';
   _loginEl=document.createElement('div');
-  _loginEl.style.cssText='position:fixed;inset:0;z-index:9000;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:20px';
-  _loginEl.innerHTML=`<div style="background:var(--sf);border:1px solid var(--br2);border-radius:20px;padding:36px 28px;max-width:360px;width:100%;text-align:center">
-    <div style="margin-bottom:10px">${ppIcon('utensils',52,1.2)}</div>
-    <div style="font-size:22px;font-weight:900;color:var(--ac);font-family:monospace;margin-bottom:4px">PedePronto PDV</div>
-    <div style="font-size:13px;color:var(--t2);margin-bottom:28px;line-height:1.6">Sistema de pedidos para bares,<br>lanchonetes e restaurantes.</div>
-    <button onclick="fbLogin()" style="width:100%;padding:14px;border-radius:12px;background:linear-gradient(135deg,var(--ac),var(--acd));border:none;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:10px">
-      <svg width="20" height="20" viewBox="0 0 24 24"><path fill="#fff" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#fff" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#fff" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#fff" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-      ${window.IS_HOSTED?'Entrar com Google':'Continuar (modo local)'}
-    </button>
-    <div style="font-size:11px;color:var(--t3);margin-top:14px;line-height:1.6">Dados sincronizados em todos os dispositivos.<br>Acesso seguro pela sua conta Google.</div>
-  </div>`;
+  _loginEl.style.cssText='position:fixed;inset:0;z-index:9000;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto';
+  _renderLoginContent();
   document.body.appendChild(_loginEl);
 }
+
+function _renderLoginContent(){
+  if(!_loginEl)return;
+  if(_loginMode==='reset'){
+    _loginEl.innerHTML=`<div style="background:var(--sf);border:1px solid var(--br2);border-radius:20px;padding:36px 28px;max-width:380px;width:100%;text-align:center">
+      <div style="margin-bottom:10px">${ppIcon('key',42,1.2)}</div>
+      <div style="font-size:20px;font-weight:900;color:var(--ac);font-family:monospace;margin-bottom:4px">Recuperar senha</div>
+      <div style="font-size:13px;color:var(--t2);margin-bottom:22px;line-height:1.6">Digite seu e-mail para receber o<br>link de redefinição de senha.</div>
+      <div id="login-err" style="display:none;color:var(--rd);font-size:12px;padding:8px 12px;background:var(--rdbg);border:1px solid var(--rdbr);border-radius:8px;margin-bottom:12px;text-align:left"></div>
+      <div class="fg" style="margin-bottom:16px;text-align:left"><label class="fl">E-mail</label><input class="inp" type="email" id="login-email" placeholder="seu@email.com" autocomplete="email"></div>
+      <button id="login-btn" onclick="_doResetPassword()" class="btn bp" style="width:100%;padding:14px;font-size:15px;border-radius:12px;margin-bottom:12px">${ppIcon('send',16,1.8)} Enviar link</button>
+      <div style="font-size:13px"><a href="#" onclick="_loginMode='login';_renderLoginContent();return false" style="color:var(--ac);text-decoration:none;font-weight:600">${ppIcon('arrowLeft',13,1.8)} Voltar ao login</a></div>
+    </div>`;
+    return;
+  }
+  // Modo login padrão
+  _loginEl.innerHTML=`<div style="background:var(--sf);border:1px solid var(--br2);border-radius:20px;padding:36px 28px;max-width:380px;width:100%;text-align:center">
+    <div style="margin-bottom:10px">${ppIcon('utensils',52,1.2)}</div>
+    <div style="font-size:22px;font-weight:900;color:var(--ac);font-family:monospace;margin-bottom:4px">PedePronto PDV</div>
+    <div style="font-size:13px;color:var(--t2);margin-bottom:22px;line-height:1.6">Sistema de pedidos para bares,<br>lanchonetes e restaurantes.</div>
+    <div id="login-err" style="display:none;color:var(--rd);font-size:12px;padding:8px 12px;background:var(--rdbg);border:1px solid var(--rdbr);border-radius:8px;margin-bottom:12px;text-align:left"></div>
+    <div class="fg" style="margin-bottom:10px;text-align:left"><label class="fl">E-mail</label><input class="inp" type="email" id="login-email" placeholder="seu@email.com" autocomplete="email"></div>
+    <div class="fg" style="margin-bottom:6px;text-align:left"><label class="fl">Senha</label><input class="inp" type="password" id="login-pass" placeholder="Sua senha" autocomplete="current-password"></div>
+    <div style="text-align:right;margin-bottom:16px"><a href="#" onclick="_loginMode='reset';_renderLoginContent();return false" style="color:var(--ac);font-size:12px;text-decoration:none;font-weight:500">Esqueci minha senha</a></div>
+    <button id="login-btn" onclick="_doEmailLogin()" class="btn bp" style="width:100%;padding:14px;font-size:15px;border-radius:12px;margin-bottom:14px">${ppIcon('arrowRight',16,1.8)} Entrar</button>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px"><div style="flex:1;height:1px;background:var(--br2)"></div><span style="font-size:11px;color:var(--t3);font-weight:600">ou</span><div style="flex:1;height:1px;background:var(--br2)"></div></div>
+    <button onclick="fbLogin()" style="width:100%;padding:12px;border-radius:12px;background:var(--s2);border:1px solid var(--br2);color:var(--tx);font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:10px;transition:all .15s" onmouseover="this.style.background='var(--s3)'" onmouseout="this.style.background='var(--s2)'">${_googleSvg} ${window.IS_HOSTED?'Entrar com Google':'Continuar (modo local)'}</button>
+    <div style="margin-top:18px;font-size:13px;color:var(--t2)">Não tem conta? <a href="#" onclick="showRegisterScreen();return false" style="color:var(--ac);text-decoration:none;font-weight:700">Criar conta</a></div>
+  </div>`;
+  // Enter submits
+  setTimeout(()=>{
+    const p=document.getElementById('login-pass');
+    if(p)p.addEventListener('keydown',e=>{if(e.key==='Enter')_doEmailLogin();});
+    const em=document.getElementById('login-email');
+    if(em&&_loginMode==='reset')em.addEventListener('keydown',e=>{if(e.key==='Enter')_doResetPassword();});
+  },50);
+}
+
 function hideLoginScreen(){if(_loginEl){_loginEl.remove();_loginEl=null;}}
+
+// ── Tela de Cadastro ──
+function showRegisterScreen(){
+  hideLoginScreen();
+  if(_registerEl)return;
+  _registerEl=document.createElement('div');
+  _registerEl.style.cssText='position:fixed;inset:0;z-index:9000;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto';
+  _registerEl.innerHTML=`<div style="background:var(--sf);border:1px solid var(--br2);border-radius:20px;padding:32px 28px;max-width:420px;width:100%">
+    <div style="text-align:center;margin-bottom:6px">${ppIcon('store',42,1.2)}</div>
+    <div style="text-align:center;font-size:20px;font-weight:900;color:var(--ac);font-family:monospace;margin-bottom:4px">Criar conta</div>
+    <div style="text-align:center;font-size:13px;color:var(--t2);margin-bottom:20px;line-height:1.6">Cadastre seu estabelecimento</div>
+    <div id="reg-err" style="display:none;color:var(--rd);font-size:12px;padding:8px 12px;background:var(--rdbg);border:1px solid var(--rdbr);border-radius:8px;margin-bottom:12px;text-align:left"></div>
+    <div style="display:grid;gap:10px">
+      <div class="fg"><label class="fl">Nome do estabelecimento *</label><input class="inp" id="reg-nome" placeholder="Ex: Bar do Zé" autocomplete="organization"></div>
+      <div class="fg"><label class="fl">CNPJ</label><input class="inp" id="reg-cnpj" placeholder="00.000.000/0000-00" autocomplete="off"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="fg"><label class="fl">WhatsApp</label><input class="inp" id="reg-wa" placeholder="(00) 00000-0000" type="tel" autocomplete="tel"></div>
+        <div class="fg"><label class="fl">Telefone fixo</label><input class="inp" id="reg-tel" placeholder="(00) 0000-0000" type="tel"></div>
+      </div>
+      <div class="fg"><label class="fl">Endereço</label><input class="inp" id="reg-end" placeholder="Rua, nº, bairro, cidade" autocomplete="street-address"></div>
+      <div style="height:1px;background:var(--br2);margin:6px 0"></div>
+      <div class="fg"><label class="fl">E-mail *</label><input class="inp" id="reg-email" type="email" placeholder="seu@email.com" autocomplete="email"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="fg"><label class="fl">Senha *</label><input class="inp" id="reg-pass" type="password" placeholder="Min. 6 caracteres" autocomplete="new-password"></div>
+        <div class="fg"><label class="fl">Confirmar senha *</label><input class="inp" id="reg-pass2" type="password" placeholder="Repita a senha" autocomplete="new-password"></div>
+      </div>
+    </div>
+    <button id="reg-btn" onclick="_doRegister()" class="btn bp" style="width:100%;padding:14px;font-size:15px;border-radius:12px;margin-top:18px">${ppIcon('check',16,2)} Criar conta</button>
+    <div style="text-align:center;margin-top:14px;font-size:13px;color:var(--t2)">Já tem conta? <a href="#" onclick="hideRegisterScreen();showLoginScreen();return false" style="color:var(--ac);text-decoration:none;font-weight:700">Entrar</a></div>
+  </div>`;
+  document.body.appendChild(_registerEl);
+  // Enter submits
+  setTimeout(()=>{
+    const p2=document.getElementById('reg-pass2');
+    if(p2)p2.addEventListener('keydown',e=>{if(e.key==='Enter')_doRegister();});
+  },50);
+}
+function hideRegisterScreen(){if(_registerEl){_registerEl.remove();_registerEl=null;}}
 
 function fbLogin(){
   if(!fbAuth){
-    // Modo local: esconder tela de login Google e ir para PIN
-    hideLoginScreen();
+    hideLoginScreen();hideRegisterScreen();
     setTimeout(showLogin,200);
     return;
   }
@@ -5576,8 +5693,110 @@ function fbLogin(){
   });
 }
 function fbLogout(){
+  _estabUid=null;_userRole=null;_userPermissions=[];
   if(fbAuth) fbAuth.signOut();
-  toast('Saiu da conta Google','a');
+  toast('Saiu da conta','a');
+}
+
+// ── Email/Senha Auth ──
+const _AUTH_MSGS={
+  'auth/user-not-found':'E-mail não encontrado. Verifique ou crie uma conta.',
+  'auth/wrong-password':'Senha incorreta.',
+  'auth/invalid-email':'E-mail inválido.',
+  'auth/too-many-requests':'Muitas tentativas. Tente novamente em alguns minutos.',
+  'auth/email-already-in-use':'Este e-mail já está cadastrado. Faça login.',
+  'auth/weak-password':'A senha deve ter pelo menos 6 caracteres.',
+  'auth/invalid-credential':'E-mail ou senha incorretos.',
+  'auth/network-request-failed':'Sem conexão com a internet.',
+  'auth/missing-password':'Digite sua senha.',
+};
+function _showAuthErr(containerId,msg){
+  const el=document.getElementById(containerId);
+  if(el){el.textContent=msg;el.style.display='block';}
+}
+
+async function _doEmailLogin(){
+  const email=(document.getElementById('login-email')?.value||'').trim();
+  const pass=document.getElementById('login-pass')?.value||'';
+  const err=document.getElementById('login-err');
+  if(err)err.style.display='none';
+  if(!email){_showAuthErr('login-err','Digite seu e-mail.');return;}
+  if(!pass){_showAuthErr('login-err','Digite sua senha.');return;}
+  const btn=document.getElementById('login-btn');
+  if(btn){btn.disabled=true;btn.innerHTML=ppIcon('refresh',16,1.8)+' Entrando...';}
+  try{
+    await fbAuth.signInWithEmailAndPassword(email,pass);
+    // onAuthStateChanged cuida do resto
+  }catch(e){
+    _showAuthErr('login-err',_AUTH_MSGS[e.code]||'Erro: '+e.message);
+    if(btn){btn.disabled=false;btn.innerHTML=ppIcon('arrowRight',16,1.8)+' Entrar';}
+  }
+}
+
+async function _doResetPassword(){
+  const email=(document.getElementById('login-email')?.value||'').trim();
+  const err=document.getElementById('login-err');
+  if(err)err.style.display='none';
+  if(!email){_showAuthErr('login-err','Digite seu e-mail.');return;}
+  const btn=document.getElementById('login-btn');
+  if(btn){btn.disabled=true;btn.innerHTML=ppIcon('refresh',16,1.8)+' Enviando...';}
+  try{
+    await fbAuth.sendPasswordResetEmail(email);
+    toast('Link de recuperação enviado para '+email,'g',6000);
+    _loginMode='login';_renderLoginContent();
+  }catch(e){
+    _showAuthErr('login-err',_AUTH_MSGS[e.code]||'Erro ao enviar e-mail.');
+    if(btn){btn.disabled=false;btn.innerHTML=ppIcon('send',16,1.8)+' Enviar link';}
+  }
+}
+
+async function _doRegister(){
+  const nome=(document.getElementById('reg-nome')?.value||'').trim();
+  const cnpj=(document.getElementById('reg-cnpj')?.value||'').trim();
+  const wa=(document.getElementById('reg-wa')?.value||'').trim();
+  const tel=(document.getElementById('reg-tel')?.value||'').trim();
+  const end=(document.getElementById('reg-end')?.value||'').trim();
+  const email=(document.getElementById('reg-email')?.value||'').trim();
+  const pass=document.getElementById('reg-pass')?.value||'';
+  const pass2=document.getElementById('reg-pass2')?.value||'';
+  const err=document.getElementById('reg-err');
+  if(err)err.style.display='none';
+  // Validações
+  if(!nome){_showAuthErr('reg-err','Digite o nome do estabelecimento.');return;}
+  if(!email){_showAuthErr('reg-err','Digite seu e-mail.');return;}
+  if(!pass){_showAuthErr('reg-err','Crie uma senha.');return;}
+  if(pass.length<6){_showAuthErr('reg-err','A senha deve ter pelo menos 6 caracteres.');return;}
+  if(pass!==pass2){_showAuthErr('reg-err','As senhas não coincidem.');return;}
+  const btn=document.getElementById('reg-btn');
+  if(btn){btn.disabled=true;btn.innerHTML=ppIcon('refresh',16,1.8)+' Criando conta...';}
+  try{
+    const cred=await fbAuth.createUserWithEmailAndPassword(email,pass);
+    // Atualizar perfil com nome do estabelecimento
+    await cred.user.updateProfile({displayName:nome});
+    // Criar user_map como dono
+    await fbDB.collection('user_map').doc(cred.user.uid).set({
+      estab_uid:cred.user.uid,
+      role:'dono',
+      permissions:_ALL_PERMS,
+      email:email,
+      nome:nome,
+      joined_at:new Date().toISOString()
+    });
+    _estabUid=cred.user.uid;
+    _userRole='dono';
+    _userPermissions=_ALL_PERMS;
+    // Preencher ST.cfg com dados do cadastro
+    ST.cfg.nome=nome;
+    ST.cfg.cnpj=cnpj;
+    ST.cfg.wa=wa;
+    ST.cfg.end=end;
+    save('cfg');
+    toast('Conta criada com sucesso!','g',4000);
+    // onAuthStateChanged cuida do resto (sync, PIN, etc.)
+  }catch(e){
+    _showAuthErr('reg-err',_AUTH_MSGS[e.code]||'Erro: '+e.message);
+    if(btn){btn.disabled=false;btn.innerHTML=ppIcon('check',16,2)+' Criar conta';}
+  }
 }
 
 function fsListen(uid){
@@ -5948,7 +6167,8 @@ function _atualizarBadgeLicenca(){
             return;
           }
         }
-        // Usuário Google logado e licença OK
+        // Usuário logado e licença OK — resolver estabelecimento
+        const estabId=await _resolveUserMap(user);
         window._noPermission = false;
         window._permWarnShown = false;
         window._listenRetrying = false;
@@ -5957,7 +6177,8 @@ function _atualizarBadgeLicenca(){
         _syncEnabled = true; // agora save() pode sincronizar
         updateSyncStatus();
         hideLoginScreen();
-        fsListen(user.uid);
+        hideRegisterScreen();
+        fsListen(estabId);
         // Push condicional: só envia dados locais se a nuvem estiver vazia ou local for mais novo
         // fsListen já faz fsPush no primeiro snapshot — este timer é fallback para falha de rede
         setTimeout(function(){ if(!_lastSyncAt) fsPush(); }, 10000);

@@ -3,28 +3,55 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     // ── Licenças ──────────────────────────────────────────────────────────────
-    // Leitura pública: o PDV verifica revogação sem precisar estar autenticado
-    // Escrita: somente via Firebase Console / Admin SDK (nunca pelo cliente)
     match /licenses/{licId} {
       allow read: if true;
       allow write: if false;
     }
 
     // ── Licenças por e-mail (auto-ativação multi-dispositivo) ────────────────
-    // Cada documento = e-mail do cliente; só o próprio usuário lê sua licença
-    // Escrita: qualquer autenticado (admin via admin.html) — ECDSA garante integridade
     match /licencas_clientes/{email} {
       allow read: if request.auth != null && request.auth.token.email == email;
       allow write: if request.auth != null;
     }
 
+    // ── Mapa de usuário → estabelecimento ────────────────────────────────────
+    // Cada usuário lê/cria o próprio; dono pode atualizar membros
+    match /user_map/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow create: if request.auth != null && request.auth.uid == uid;
+      allow update: if request.auth != null && (
+        request.auth.uid == uid ||
+        request.auth.uid == resource.data.estab_uid
+      );
+    }
+
+    // ── Convites ─────────────────────────────────────────────────────────────
+    // Qualquer autenticado lê (para resgatar); dono cria/revoga
+    match /invites/{token} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update: if request.auth != null;
+      allow delete: if request.auth != null && request.auth.uid == resource.data.estab_uid;
+    }
+
     // ── Dados do estabelecimento ──────────────────────────────────────────────
-    // Apenas o próprio usuário autenticado acessa seus dados
+    // Dono tem acesso direto; membros via user_map
     match /estabelecimentos/{uid} {
       allow read, write: if request.auth != null && request.auth.uid == uid;
 
       match /dados/{doc} {
-        allow read, write: if request.auth != null && request.auth.uid == uid;
+        allow read, write: if request.auth != null && (
+          request.auth.uid == uid ||
+          (exists(/databases/$(database)/documents/user_map/$(request.auth.uid))
+           && get(/databases/$(database)/documents/user_map/$(request.auth.uid)).data.estab_uid == uid)
+        );
+      }
+
+      match /membros/{memberId} {
+        allow read: if request.auth != null && (
+          request.auth.uid == uid || request.auth.uid == memberId
+        );
+        allow write: if request.auth != null && request.auth.uid == uid;
       }
     }
   }
