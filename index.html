@@ -2751,7 +2751,7 @@ function renderDados(){
     <div class="rb"><div style="display:flex;gap:8px;align-items:center"><span class="bold">${p.num}</span><span class="bdg ${p.tipo==='mesa'?'bg':p.tipo==='delivery'?'bpu':'ba'}" style="display:inline-flex;align-items:center;gap:4px">${p.tipo==='mesa'?_i2('table'):p.tipo==='delivery'?_i2('bike'):_i2('counter')} ${p.tipo==='mesa'?(p.mesa_label||'Mesa'):p.tipo==='delivery'?'Delivery':'Balcão'}</span></div><span class="bold gn">${fmtR(p.total)}</span></div>
     ${p.cliente_nome?`<div class="fs12 t2 mt4" style="display:flex;align-items:center;gap:4px">${_i2('user',12)} ${p.cliente_nome}</div>`:''}
     <div class="fs12 t3 mt2">${fmtDH(p.pago_em||p.created)} · ${p.forma_pag||'—'}</div>
-  </div>`).join('')}`;
+  </div>`}).join('')}`;
 }
 
 // ═══════════════════════════════════════════
