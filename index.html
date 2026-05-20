@@ -1686,6 +1686,13 @@ async function _resolveUserMap(user){
       _userPermissions=d.permissions||_ALL_PERMS;
       return _estabUid;
     }
+    // Se tem convite pendente, NÃO cria como dono — _resgatarConvite vai criar como membro
+    if(_hasPendingInvite()){
+      _estabUid=user.uid;
+      _userRole=null; // será definido por _resgatarConvite
+      _userPermissions=[];
+      return user.uid;
+    }
     // Primeiro login (migração lazy) — cria como dono
     const mapData={
       estab_uid:user.uid,
@@ -5690,12 +5697,32 @@ function _renderLoginContent(){
 function hideLoginScreen(){if(_loginEl){_loginEl.remove();_loginEl=null;}}
 
 // ── Tela de Cadastro ──
+function _hasPendingInvite(){return!!sessionStorage.getItem('pp_pending_invite');}
+
 function showRegisterScreen(){
   hideLoginScreen();
   if(_registerEl)return;
+  const isInvite=_hasPendingInvite();
   _registerEl=document.createElement('div');
   _registerEl.style.cssText='position:fixed;inset:0;z-index:9000;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto';
-  _registerEl.innerHTML=`<div style="background:var(--sf);border:1px solid var(--br2);border-radius:20px;padding:32px 28px;max-width:420px;width:100%">
+  _registerEl.innerHTML=isInvite
+  ?`<div style="background:var(--sf);border:1px solid var(--br2);border-radius:20px;padding:32px 28px;max-width:420px;width:100%">
+    <div style="text-align:center;margin-bottom:6px">${ppIcon('users',42,1.2)}</div>
+    <div style="text-align:center;font-size:20px;font-weight:900;color:var(--ac);font-family:monospace;margin-bottom:4px">Cadastro de funcionário</div>
+    <div style="text-align:center;font-size:13px;color:var(--t2);margin-bottom:20px;line-height:1.6">Crie sua conta para acessar o estabelecimento</div>
+    <div id="reg-err" style="display:none;color:var(--rd);font-size:12px;padding:8px 12px;background:var(--rdbg);border:1px solid var(--rdbr);border-radius:8px;margin-bottom:12px;text-align:left"></div>
+    <div style="display:grid;gap:10px">
+      <div class="fg"><label class="fl">Seu nome *</label><input class="inp" id="reg-nome" placeholder="Ex: João Silva" autocomplete="name"></div>
+      <div class="fg"><label class="fl">E-mail *</label><input class="inp" id="reg-email" type="email" placeholder="seu@email.com" autocomplete="email"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="fg"><label class="fl">Senha *</label><input class="inp" id="reg-pass" type="password" placeholder="Min. 6 caracteres" autocomplete="new-password"></div>
+        <div class="fg"><label class="fl">Confirmar senha *</label><input class="inp" id="reg-pass2" type="password" placeholder="Repita a senha" autocomplete="new-password"></div>
+      </div>
+    </div>
+    <button id="reg-btn" onclick="_doRegister()" class="btn bp" style="width:100%;padding:14px;font-size:15px;border-radius:12px;margin-top:18px">${ppIcon('check',16,2)} Criar conta</button>
+    <div style="text-align:center;margin-top:14px;font-size:13px;color:var(--t2)">Já tem conta? <a href="#" onclick="hideRegisterScreen();showLoginScreen();return false" style="color:var(--ac);text-decoration:none;font-weight:700">Entrar</a></div>
+  </div>`
+  :`<div style="background:var(--sf);border:1px solid var(--br2);border-radius:20px;padding:32px 28px;max-width:420px;width:100%">
     <div style="text-align:center;margin-bottom:6px">${ppIcon('store',42,1.2)}</div>
     <div style="text-align:center;font-size:20px;font-weight:900;color:var(--ac);font-family:monospace;margin-bottom:4px">Criar conta</div>
     <div style="text-align:center;font-size:13px;color:var(--t2);margin-bottom:20px;line-height:1.6">Cadastre seu estabelecimento</div>
@@ -5989,18 +6016,15 @@ async function _doResetPassword(){
 }
 
 async function _doRegister(){
+  const isInvite=_hasPendingInvite();
   const nome=(document.getElementById('reg-nome')?.value||'').trim();
-  const cnpj=(document.getElementById('reg-cnpj')?.value||'').trim();
-  const wa=(document.getElementById('reg-wa')?.value||'').trim();
-  const tel=(document.getElementById('reg-tel')?.value||'').trim();
-  const end=(document.getElementById('reg-end')?.value||'').trim();
   const email=(document.getElementById('reg-email')?.value||'').trim();
   const pass=document.getElementById('reg-pass')?.value||'';
   const pass2=document.getElementById('reg-pass2')?.value||'';
   const err=document.getElementById('reg-err');
   if(err)err.style.display='none';
   // Validações
-  if(!nome){_showAuthErr('reg-err','Digite o nome do estabelecimento.');return;}
+  if(!nome){_showAuthErr('reg-err',isInvite?'Digite seu nome.':'Digite o nome do estabelecimento.');return;}
   if(!email){_showAuthErr('reg-err','Digite seu e-mail.');return;}
   if(!pass){_showAuthErr('reg-err','Crie uma senha.');return;}
   if(pass.length<6){_showAuthErr('reg-err','A senha deve ter pelo menos 6 caracteres.');return;}
@@ -6009,27 +6033,35 @@ async function _doRegister(){
   if(btn){btn.disabled=true;btn.innerHTML=ppIcon('refresh',16,1.8)+' Criando conta...';}
   try{
     const cred=await fbAuth.createUserWithEmailAndPassword(email,pass);
-    // Atualizar perfil com nome do estabelecimento
     await cred.user.updateProfile({displayName:nome});
-    // Criar user_map como dono
-    await fbDB.collection('user_map').doc(cred.user.uid).set({
-      estab_uid:cred.user.uid,
-      role:'dono',
-      permissions:_ALL_PERMS,
-      email:email,
-      nome:nome,
-      joined_at:new Date().toISOString()
-    });
-    _estabUid=cred.user.uid;
-    _userRole='dono';
-    _userPermissions=_ALL_PERMS;
-    // Preencher ST.cfg com dados do cadastro
-    ST.cfg.nome=nome;
-    ST.cfg.cnpj=cnpj;
-    ST.cfg.wa=wa;
-    ST.cfg.end=end;
-    save('cfg');
-    toast('Conta criada com sucesso!','g',4000);
+    if(isInvite){
+      // Membro via convite — NÃO cria user_map como dono aqui
+      // onAuthStateChanged → _resgatarConvite cuida de criar user_map como membro
+      toast('Conta criada! Vinculando ao estabelecimento...','g',4000);
+    }else{
+      // Dono — cadastro completo do estabelecimento
+      const cnpj=(document.getElementById('reg-cnpj')?.value||'').trim();
+      const wa=(document.getElementById('reg-wa')?.value||'').trim();
+      const tel=(document.getElementById('reg-tel')?.value||'').trim();
+      const end=(document.getElementById('reg-end')?.value||'').trim();
+      await fbDB.collection('user_map').doc(cred.user.uid).set({
+        estab_uid:cred.user.uid,
+        role:'dono',
+        permissions:_ALL_PERMS,
+        email:email,
+        nome:nome,
+        joined_at:new Date().toISOString()
+      });
+      _estabUid=cred.user.uid;
+      _userRole='dono';
+      _userPermissions=_ALL_PERMS;
+      ST.cfg.nome=nome;
+      ST.cfg.cnpj=cnpj;
+      ST.cfg.wa=wa;
+      ST.cfg.end=end;
+      save('cfg');
+      toast('Conta criada com sucesso!','g',4000);
+    }
     // onAuthStateChanged cuida do resto (sync, PIN, etc.)
   }catch(e){
     _showAuthErr('reg-err',_AUTH_MSGS[e.code]||'Erro: '+e.message);
@@ -6374,28 +6406,43 @@ function _atualizarBadgeLicenca(){
     fbAuth.onAuthStateChanged(async function(user){
       updateDriveBtn();updateSyncStatus();
       if(user){
-        // Se estava aguardando login para verificar licença pelo e-mail
+        // 1. Resolver estabelecimento ANTES da licença (membro herda licença do dono)
+        const estabId=await _resolveUserMap(user);
+        // 2. Verifica convite pendente (pode mudar _estabUid se aceitar)
+        const inviteAccepted=await _resgatarConvite(user);
+        const finalEstabId=inviteAccepted?_estabUid:estabId;
+
+        // 3. Verificação de licença — membro busca pelo dono, dono busca pelo próprio email
         if(window._pendingLicLogin&&!window.PP_LIC){
           window._pendingLicLogin=false;
-          // Tenta buscar licença vinculada ao e-mail no Firestore
           let licFound=false;
-          try{
-            const snap=await fbDB.collection('licencas_clientes').doc(user.email).get();
-            if(snap.exists&&snap.data()?.code){
-              const lic=await _validarCodigoLicenca(snap.data().code);
-              if(lic){
-                localStorage.setItem('pp_licenca',snap.data().code);
-                window.PP_LIC=lic;
-                _verificarRevogacaoFirebase(lic.id);
-                _atualizarBadgeLicenca();
-                licFound=true;
-              }
-            }
-          }catch(e){
-            console.warn('[PedePronto] Erro buscando licença por e-mail:',e.code||e.message);
+          // Determina qual e-mail buscar a licença: membro usa e-mail do dono
+          let licEmails=[user.email];
+          if(_userRole==='membro'&&finalEstabId!==user.uid){
+            try{
+              const ownerSnap=await fbDB.collection('user_map').doc(finalEstabId).get();
+              if(ownerSnap.exists&&ownerSnap.data().email)licEmails.unshift(ownerSnap.data().email);
+            }catch(e){}
           }
-          // Se não encontrou no Firestore, tenta novamente no localStorage
-          // (pode ter sido salvo antes do login por ativarLicenca)
+          for(const licEmail of licEmails){
+            if(licFound)break;
+            try{
+              const snap=await fbDB.collection('licencas_clientes').doc(licEmail).get();
+              if(snap.exists&&snap.data()?.code){
+                const lic=await _validarCodigoLicenca(snap.data().code);
+                if(lic){
+                  localStorage.setItem('pp_licenca',snap.data().code);
+                  window.PP_LIC=lic;
+                  _verificarRevogacaoFirebase(lic.id);
+                  _atualizarBadgeLicenca();
+                  licFound=true;
+                }
+              }
+            }catch(e){
+              console.warn('[PedePronto] Erro buscando licença ('+licEmail+'):',e.code||e.message);
+            }
+          }
+          // Fallback: tenta localStorage
           if(!licFound&&!window.PP_LIC){
             const raw2=localStorage.getItem('pp_licenca');
             if(raw2){
@@ -6408,11 +6455,6 @@ function _atualizarBadgeLicenca(){
             return;
           }
         }
-        // Usuário logado e licença OK — resolver estabelecimento
-        const estabId=await _resolveUserMap(user);
-        // Verifica convite pendente (pode mudar _estabUid se aceitar)
-        const inviteAccepted=await _resgatarConvite(user);
-        const finalEstabId=inviteAccepted?_estabUid:estabId;
         window._noPermission = false;
         window._permWarnShown = false;
         window._listenRetrying = false;
