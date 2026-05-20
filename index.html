@@ -2002,7 +2002,24 @@ function _updateBackBtn(){
   btn.textContent='← '+destLbl;
 }
 
+// Mapeamento de páginas a permissões necessárias
+const _PAGE_PERMS={cardapio:'cardapio',relatorio:'relatorios',funcionarios:'funcionarios',config:'config'};
+// pdv: mesas, balcao, delivery, producao, pedido, fechar, pagamento — todos sob 'pdv'
+['mesas','balcao','delivery','producao','pedido','fechar','pagamento','caixa','clientes'].forEach(p=>{_PAGE_PERMS[p]='pdv';});
+
+function _applyPermissionUI(){
+  // Sidebar + bottom nav: esconde itens sem permissão
+  Object.entries(_PAGE_PERMS).forEach(([pg,perm])=>{
+    const show=hasPermission(perm);
+    const sb=document.getElementById('sbm-'+pg);if(sb)sb.style.display=show?'':'none';
+    const bn=document.getElementById('bnm-'+pg);if(bn)bn.style.display=show?'':'none';
+  });
+}
+
 function nav(pg,extra){
+  // Bloqueia navegação sem permissão
+  const neededPerm=_PAGE_PERMS[pg];
+  if(neededPerm&&!hasPermission(neededPerm)){toast('Sem permissão para acessar esta seção','r',3000);return;}
   const prevPg=ST.curNav;
   const isPageChange=pg!==prevPg;
   if(!['pedido','fechar','pagamento'].includes(pg))ST.backNav=prevPg;
@@ -4504,7 +4521,7 @@ function renderConfig(){
   <div class="card mb10">
     <div class="rb" style="padding:10px 0;border-bottom:1px solid var(--br)">
       <div>
-        <div class="fs13 bold">Conta Google</div>
+        <div class="fs13 bold">Conta</div>
         <div class="fs12 t2">${fbAuth?(fbAuth.currentUser?fbAuth.currentUser.email:'Não conectado'):'Modo local (sem sync)'}</div>
       </div>
       ${fbAuth
@@ -4651,9 +4668,39 @@ function renderConfig(){
       <div class="fs11 t3 mt6">Dispara anúncio "pedido pronto" com as configurações acima.</div>
     </div>
   </div>
+  ${_userRole==='dono'&&window.IS_HOSTED?`
+  <div class="sec-title" style="display:flex;align-items:center;gap:6px">${ppIcon('users',14,1.7)} Dispositivos vinculados</div>
+  <div class="card mb10">
+    <div id="cfg-membros-list" class="fs12 t2" style="margin-bottom:8px">Carregando...</div>
+    <div class="fs12 bold mb4">Permissões do convite:</div>
+    <div id="cfg-convite-perms" style="display:flex;flex-wrap:wrap;gap:4px 12px;margin-bottom:10px">
+      ${_ALL_PERMS.map(p=>{
+        const labels={pdv:'PDV',cardapio:'Cardápio',relatorios:'Relatórios',config:'Config',funcionarios:'Funcionários'};
+        return`<label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:12px"><input type="checkbox" class="invite-perm-cb" value="${p}" checked> ${labels[p]||p}</label>`;
+      }).join('')}
+    </div>
+    <button class="btn bp bsm bw" onclick="_gerarConvite()">${ppIcon('send',13,1.7)} Gerar convite</button>
+    <div id="cfg-convite-area" style="display:none;margin-top:12px;padding:14px;background:var(--s2);border:1px solid var(--br2);border-radius:12px">
+      <div class="fs12 bold mb6">${ppIcon('key',13,1.7)} Link de convite gerado</div>
+      <input class="inp mono" id="cfg-convite-link" readonly style="font-size:11px;margin-bottom:8px">
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="btn bs bsm" onclick="_copiarConvite()">${ppIcon('receipt',12,1.7)} Copiar</button>
+        <button class="btn bg bsm" onclick="_compartilharWA()" style="color:#25D366">${ppIcon('send',12,1.7)} WhatsApp</button>
+        <button class="btn bb bsm" onclick="_mostrarQRConvite()">${ppIcon('search',12,1.7)} QR Code</button>
+      </div>
+      <div id="cfg-qr-area" style="display:none;margin-top:10px;text-align:center">
+        <img id="cfg-qr-img" style="width:180px;height:180px;border-radius:8px;border:1px solid var(--br2)">
+      </div>
+    </div>
+  </div>
+  `:''}
   <button class="btn bp bw mb10" onclick="requireAdmin('Salvar Configurações',()=>{save('cfg');toast('Configurações salvas!','g');renderConfig()})">${ppIcon('save',14,1.7)} Salvar configurações</button>
   <button class="btn br_ bw" onclick="confirm2(ppIcon('alertTriangle',36,1.6),'Resetar sistema?','TODOS os dados serão apagados permanentemente!','Resetar','br_',resetarSistema)">${ppIcon('alertTriangle',14,1.7)} Resetar sistema</button>`;
   document.getElementById('sb-est').textContent=cfg.nome||'PedePronto PDV';
+  // Carrega membros vinculados (async, preenche #cfg-membros-list)
+  if(_userRole==='dono'&&window.IS_HOSTED&&document.getElementById('cfg-membros-list')){
+    _carregarMembros();
+  }
 }
 function changePIN(){askPin('Alterar PIN','Digite o PIN atual',()=>{const n=prompt('Novo PIN de 4 dígitos:');if(!n||n.length!==4||isNaN(n)){toast('PIN deve ter 4 dígitos','r');return}ST.cfg.pin=n;save('cfg');toast('PIN alterado!','g')})}
 async function resetarSistema(){
@@ -5680,6 +5727,196 @@ function showRegisterScreen(){
 }
 function hideRegisterScreen(){if(_registerEl){_registerEl.remove();_registerEl=null;}}
 
+// ── Sistema de Convites + Gestão de Membros ──
+let _lastInviteToken=null;
+
+async function _gerarConvite(){
+  if(!fbDB||!fbAuth?.currentUser||_userRole!=='dono'){toast('Apenas o dono pode gerar convites','r');return;}
+  // Ler permissões selecionadas
+  const cbs=document.querySelectorAll('.invite-perm-cb');
+  const selectedPerms=[];
+  cbs.forEach(cb=>{if(cb.checked)selectedPerms.push(cb.value);});
+  if(!selectedPerms.length){toast('Selecione pelo menos uma permissão para o convite','a');return;}
+  const token=Math.random().toString(36).slice(2)+Date.now().toString(36);
+  const url=(window.location.origin+window.location.pathname+'?invite='+token);
+  try{
+    await fbDB.collection('invites').doc(token).set({
+      estab_uid:_estabUid,
+      created_by:fbAuth.currentUser.uid,
+      created_at:new Date().toISOString(),
+      expires_at:new Date(Date.now()+7*24*60*60*1000).toISOString(),
+      permissions:selectedPerms,
+      status:'pending',
+      used_by:null,
+      used_at:null,
+      estab_name:ST.cfg.nome||'PedePronto'
+    });
+    _lastInviteToken=token;
+    const area=document.getElementById('cfg-convite-area');
+    const inp=document.getElementById('cfg-convite-link');
+    if(area)area.style.display='block';
+    if(inp)inp.value=url;
+    toast('Convite gerado! Válido por 7 dias.','g',4000);
+  }catch(e){
+    toast('Erro ao gerar convite: '+e.message,'r',5000);
+  }
+}
+
+function _copiarConvite(){
+  const inp=document.getElementById('cfg-convite-link');
+  if(!inp)return;
+  navigator.clipboard.writeText(inp.value).then(()=>toast('Link copiado!','g')).catch(()=>{
+    inp.select();document.execCommand('copy');toast('Link copiado!','g');
+  });
+}
+
+function _compartilharWA(){
+  const inp=document.getElementById('cfg-convite-link');
+  if(!inp)return;
+  const msg=encodeURIComponent('Olá! Você foi convidado para acessar o PedePronto PDV do estabelecimento "'+(ST.cfg.nome||'PedePronto')+'". Clique no link para vincular seu dispositivo:\n\n'+inp.value);
+  window.open('https://wa.me/?text='+msg,'_blank');
+}
+
+function _mostrarQRConvite(){
+  const area=document.getElementById('cfg-qr-area');
+  const img=document.getElementById('cfg-qr-img');
+  const inp=document.getElementById('cfg-convite-link');
+  if(!area||!img||!inp)return;
+  if(area.style.display==='block'){area.style.display='none';return;}
+  img.src='https://api.qrserver.com/v1/create-qr-code/?size=200x200&data='+encodeURIComponent(inp.value);
+  area.style.display='block';
+}
+
+async function _carregarMembros(){
+  const el=document.getElementById('cfg-membros-list');
+  if(!el||!fbDB||!_estabUid)return;
+  try{
+    const snap=await fbDB.collection('estabelecimentos').doc(_estabUid).collection('membros').get();
+    if(snap.empty){
+      el.innerHTML=ppIcon('users',14,1.5)+' Nenhum dispositivo vinculado ainda.';
+      return;
+    }
+    el.innerHTML=snap.docs.map(d=>{
+      const m=d.data();
+      const permLabels={pdv:'PDV',cardapio:'Cardápio',relatorios:'Relatórios',config:'Config',funcionarios:'Funcionários'};
+      const perms=(m.permissions||_ALL_PERMS).map(p=>permLabels[p]||p).join(', ');
+      return`<div style="padding:8px 0;border-bottom:1px solid var(--br)">
+        <div class="rb">
+          <div style="flex:1;min-width:0">
+            <div class="fs13 bold">${esc(m.nome||m.email)}</div>
+            <div class="fs11 t3">${esc(m.email)} · ${m.active!==false?'<span style="color:var(--gn)">Ativo</span>':'<span style="color:var(--rd)">Inativo</span>'}</div>
+            <div class="fs10 t3">Permissões: ${perms}</div>
+          </div>
+          <div style="display:flex;gap:4px">
+            <button class="btn bs bxs" onclick="_editarPermMembro('${d.id}')" title="Editar permissões">${ppIcon('settings',13,1.7)}</button>
+            <button class="btn br_ bxs" onclick="_removerMembro('${d.id}')" title="Desvincular">${ppIcon('xCircle',14,1.7)}</button>
+          </div>
+        </div>
+        <div id="perm-edit-${d.id}" style="display:none;margin-top:8px;padding:8px;background:var(--s2);border-radius:8px">
+          ${_ALL_PERMS.map(p=>{
+            const checked=(m.permissions||_ALL_PERMS).includes(p);
+            return`<label style="display:flex;align-items:center;gap:6px;margin:4px 0;cursor:pointer;font-size:12px"><input type="checkbox" class="perm-cb-${d.id}" value="${p}" ${checked?'checked':''}> ${permLabels[p]||p}</label>`;
+          }).join('')}
+          <button class="btn bp bxs mt6" onclick="_salvarPermMembro('${d.id}')">${ppIcon('save',12,1.7)} Salvar</button>
+        </div>
+      </div>`;
+    }).join('');
+  }catch(e){
+    el.innerHTML='<span class="fs12 t3">Erro ao carregar membros</span>';
+  }
+}
+
+async function _removerMembro(memberId){
+  if(!fbDB||!_estabUid)return;
+  confirm2(ppIcon('alertTriangle',36,1.6),'Desvincular dispositivo?','O membro perderá acesso aos dados do estabelecimento.','Desvincular','br_',async()=>{
+    try{
+      await fbDB.collection('estabelecimentos').doc(_estabUid).collection('membros').doc(memberId).delete();
+      // Atualizar user_map do membro para desvincular
+      await fbDB.collection('user_map').doc(memberId).update({estab_uid:memberId,role:'dono'});
+      toast('Membro desvinculado','g');
+      _carregarMembros();
+    }catch(e){toast('Erro: '+e.message,'r');}
+  });
+}
+
+function _editarPermMembro(memberId){
+  const el=document.getElementById('perm-edit-'+memberId);
+  if(!el)return;
+  el.style.display=el.style.display==='none'?'block':'none';
+}
+
+async function _salvarPermMembro(memberId){
+  if(!fbDB||!_estabUid)return;
+  const cbs=document.querySelectorAll('.perm-cb-'+memberId);
+  const perms=[];
+  cbs.forEach(cb=>{if(cb.checked)perms.push(cb.value);});
+  if(!perms.length){toast('Selecione pelo menos uma permissão','a');return;}
+  try{
+    await fbDB.collection('estabelecimentos').doc(_estabUid).collection('membros').doc(memberId).update({permissions:perms});
+    await fbDB.collection('user_map').doc(memberId).update({permissions:perms});
+    toast('Permissões atualizadas!','g');
+    _carregarMembros();
+  }catch(e){toast('Erro: '+e.message,'r');}
+}
+
+// ── Resgate de convite ──
+async function _checkPendingInvite(){
+  const params=new URLSearchParams(window.location.search);
+  const token=params.get('invite');
+  if(!token)return false;
+  // Limpar URL
+  history.replaceState({},'',window.location.pathname);
+  sessionStorage.setItem('pp_pending_invite',token);
+  return true;
+}
+
+async function _resgatarConvite(user){
+  const token=sessionStorage.getItem('pp_pending_invite');
+  if(!token||!fbDB)return false;
+  try{
+    const doc=await fbDB.collection('invites').doc(token).get();
+    if(!doc.exists){toast('Convite não encontrado ou inválido','r',5000);sessionStorage.removeItem('pp_pending_invite');return false;}
+    const inv=doc.data();
+    if(inv.status!=='pending'){toast('Este convite já foi utilizado','r',5000);sessionStorage.removeItem('pp_pending_invite');return false;}
+    if(inv.expires_at&&new Date(inv.expires_at)<new Date()){toast('Este convite expirou','r',5000);sessionStorage.removeItem('pp_pending_invite');return false;}
+    if(inv.estab_uid===user.uid){toast('Você não pode aceitar seu próprio convite','a',4000);sessionStorage.removeItem('pp_pending_invite');return false;}
+    // Confirmar aceitação
+    const aceitar=await new Promise(resolve=>{
+      confirm2(ppIcon('handshake',36,1.4),'Convite recebido!','Deseja vincular ao estabelecimento "'+esc(inv.estab_name||'PedePronto')+'"?','Aceitar convite','bp',()=>resolve(true),()=>resolve(false));
+    });
+    if(!aceitar){sessionStorage.removeItem('pp_pending_invite');return false;}
+    // Aceitar convite
+    await fbDB.collection('invites').doc(token).update({status:'used',used_by:user.uid,used_at:new Date().toISOString()});
+    await fbDB.collection('user_map').doc(user.uid).set({
+      estab_uid:inv.estab_uid,
+      role:'membro',
+      permissions:inv.permissions||_ALL_PERMS,
+      email:user.email||'',
+      nome:user.displayName||'',
+      joined_at:new Date().toISOString(),
+      invited_by:inv.created_by
+    });
+    await fbDB.collection('estabelecimentos').doc(inv.estab_uid).collection('membros').doc(user.uid).set({
+      email:user.email||'',
+      nome:user.displayName||'',
+      role:'membro',
+      permissions:inv.permissions||_ALL_PERMS,
+      joined_at:new Date().toISOString(),
+      active:true
+    });
+    _estabUid=inv.estab_uid;
+    _userRole='membro';
+    _userPermissions=inv.permissions||_ALL_PERMS;
+    sessionStorage.removeItem('pp_pending_invite');
+    toast('Vinculado com sucesso! Sincronizando dados...','g',4000);
+    return true;
+  }catch(e){
+    toast('Erro ao aceitar convite: '+e.message,'r',5000);
+    sessionStorage.removeItem('pp_pending_invite');
+    return false;
+  }
+}
+
 function fbLogin(){
   if(!fbAuth){
     hideLoginScreen();hideRegisterScreen();
@@ -5693,7 +5930,8 @@ function fbLogin(){
   });
 }
 function fbLogout(){
-  _estabUid=null;_userRole=null;_userPermissions=[];
+  _estabUid=null;_userRole='dono';_userPermissions=_ALL_PERMS.slice();
+  _applyPermissionUI();
   if(fbAuth) fbAuth.signOut();
   toast('Saiu da conta','a');
 }
@@ -6097,6 +6335,9 @@ function _atualizarBadgeLicenca(){
   fbAuth = window.auth || null;
   fbDB   = window.db   || null;
 
+  // Captura ?invite=TOKEN da URL antes de qualquer redirect
+  _checkPendingInvite();
+
   // ── Verificação de licença (ECDSA) ──
   const _licOk=await verificarLicenca();
   if(_licOk===false)return; // licença inválida ou sem Firebase — tela de ativação exibida
@@ -6169,6 +6410,9 @@ function _atualizarBadgeLicenca(){
         }
         // Usuário logado e licença OK — resolver estabelecimento
         const estabId=await _resolveUserMap(user);
+        // Verifica convite pendente (pode mudar _estabUid se aceitar)
+        const inviteAccepted=await _resgatarConvite(user);
+        const finalEstabId=inviteAccepted?_estabUid:estabId;
         window._noPermission = false;
         window._permWarnShown = false;
         window._listenRetrying = false;
@@ -6178,7 +6422,8 @@ function _atualizarBadgeLicenca(){
         updateSyncStatus();
         hideLoginScreen();
         hideRegisterScreen();
-        fsListen(estabId);
+        _applyPermissionUI();
+        fsListen(finalEstabId);
         // Push condicional: só envia dados locais se a nuvem estiver vazia ou local for mais novo
         // fsListen já faz fsPush no primeiro snapshot — este timer é fallback para falha de rede
         setTimeout(function(){ if(!_lastSyncAt) fsPush(); }, 10000);
