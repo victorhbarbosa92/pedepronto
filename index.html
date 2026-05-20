@@ -962,7 +962,7 @@ const _PP_PUBKEY_JWK={"crv":"P-256","ext":true,"key_ops":["verify"],"kty":"EC","
 
 <!-- ══════════ SYNC BANNER ══════════ -->
 <div id="sync-banner" style="display:none;background:var(--rdbg);border-bottom:1px solid var(--rdbr);padding:8px 14px;font-size:12px;color:var(--rd);align-items:center;gap:8px;cursor:pointer" onclick="showFirestoreHelp()">
-  <span>⚠️</span>
+  <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 20h20zM12 9v4M12 17h.01"/></svg></span>
   <span style="flex:1">Sincronização com a nuvem com erro — toque para configurar</span>
   <span style="font-weight:700;text-decoration:underline">Corrigir →</span>
 </div>
@@ -1083,14 +1083,14 @@ const _PP_PUBKEY_JWK={"crv":"P-256","ext":true,"key_ops":["verify"],"kty":"EC","
 <!-- MODAL: PIX QR CODE -->
 <div class="mc" id="mc-pix-qr">
   <div class="mb" style="max-width:340px;text-align:center">
-    <div style="font-size:28px;margin-bottom:4px">🔑</div>
+    <div style="margin-bottom:4px"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--ac)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l4 4-4 4-4-4zM3 12l4-4 4 4-4 4zM21 12l-4-4-4 4 4 4zM12 21l-4-4 4-4 4 4z"/></svg></div>
     <div style="font-size:16px;font-weight:800;margin-bottom:2px">PIX</div>
     <div class="fs13 bold am mb2" id="pix-qr-valor"></div>
     <div class="fs12 t2 mb14">Aponte a câmera do app do banco para pagar</div>
     <div class="pix-qr-wrap"><div id="pix-qr-div" style="width:200px;height:200px"></div></div>
     <div class="fs11 t2 mb2">Chave PIX</div>
     <div class="fs12 bold mb14" id="pix-qr-chave" style="word-break:break-all;padding:0 8px"></div>
-    <button class="btn bp bw mb8" onclick="pixConfirmarPag()">✅ Confirmar recebimento do PIX</button>
+    <button class="btn bp bw mb8" onclick="pixConfirmarPag()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12a10 10 0 11-20 0 10 10 0 0120 0zM9 12l2 2 4-4"/></svg> Confirmar recebimento do PIX</button>
     <button class="btn bs bw" onclick="closeMc('mc-pix-qr')">Cancelar</button>
   </div>
 </div>
@@ -1098,13 +1098,13 @@ const _PP_PUBKEY_JWK={"crv":"P-256","ext":true,"key_ops":["verify"],"kty":"EC","
 <!-- MODAL: MAQUININHA STATUS -->
 <div class="mc" id="mc-maq-status">
   <div class="mb" style="max-width:360px;text-align:center">
-    <div id="maq-status-ico" style="font-size:44px;margin-bottom:8px">💳</div>
+    <div id="maq-status-ico" style="margin-bottom:8px"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="var(--ac)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6h20v13H2zM2 11h20"/></svg></div>
     <div style="font-size:16px;font-weight:800;margin-bottom:6px" id="maq-status-ttl">Aguardando pagamento...</div>
     <div class="fs12 t2 mb16" id="maq-status-sub">O valor foi enviado para a maquininha</div>
     <div id="maq-spinner" class="maq-spinner"></div>
     <div id="maq-status-btns" style="display:none">
-      <button class="btn bp bw mb8" onclick="maqConfirmarManual()">✅ Confirmar manualmente</button>
-      <button class="btn br_ bw" onclick="maqCancelar()">❌ Cancelar cobrança</button>
+      <button class="btn bp bw mb8" onclick="maqConfirmarManual()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12a10 10 0 11-20 0 10 10 0 0120 0zM9 12l2 2 4-4"/></svg> Confirmar manualmente</button>
+      <button class="btn br_ bw" onclick="maqCancelar()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a10 10 0 100-20 10 10 0 000 20zM15 9l-6 6M9 9l6 6"/></svg> Cancelar cobrança</button>
     </div>
     <button id="maq-btn-fechar" class="btn bs bw mt8" style="display:none" onclick="closeMc('mc-maq-status')">Fechar</button>
   </div>
@@ -1114,7 +1114,7 @@ const _PP_PUBKEY_JWK={"crv":"P-256","ext":true,"key_ops":["verify"],"kty":"EC","
 <div class="mc" id="mc-pin">
   <div class="mb" style="max-width:310px;text-align:center">
     <input id="mc-pin-focus" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none" tabindex="0" readonly inputmode="none">
-    <div style="font-size:26px;margin-bottom:6px">🔒</div>
+    <div style="margin-bottom:6px"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--ac)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 11h14v10H5zM8 11V7a4 4 0 018 0v4"/></svg></div>
     <div style="font-size:15px;font-weight:800;margin-bottom:3px" id="pin-ttl">PIN de Segurança</div>
     <div style="font-size:12px;color:var(--t2);margin-bottom:16px" id="pin-sub">Digite o PIN de 4 dígitos</div>
     <div class="pin-display">
@@ -1134,7 +1134,7 @@ const _PP_PUBKEY_JWK={"crv":"P-256","ext":true,"key_ops":["verify"],"kty":"EC","
 <!-- MODAL: BLUETOOTH -->
 <div class="mc" id="mc-bt">
   <div class="mb" style="max-width:360px">
-    <div style="font-size:26px;text-align:center;margin-bottom:6px">🖨️</div>
+    <div style="text-align:center;margin-bottom:6px"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--ac)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v6H6zM6 14h12v7H6zM6 17H3a1 1 0 01-1-1v-5a2 2 0 012-2h16a2 2 0 012 2v5a1 1 0 01-1 1h-3"/></svg></div>
     <div style="font-size:15px;font-weight:800;margin-bottom:3px;text-align:center">Impressora Bluetooth</div>
     <div style="font-size:12px;color:var(--t2);margin-bottom:14px;text-align:center" id="bt-status-txt">Nenhuma impressora pareada</div>
     <div id="bt-paired-info" style="display:none;background:var(--gnbg);border:1px solid var(--gnbr);border-radius:10px;padding:10px;margin-bottom:12px;text-align:center">
@@ -1154,9 +1154,9 @@ const _PP_PUBKEY_JWK={"crv":"P-256","ext":true,"key_ops":["verify"],"kty":"EC","
       <button class="sw on" id="sw-autocupom" onclick="toggleSw(this);ST.cfg.autocupom=swVal('sw-autocupom');save('cfg')"></button>
     </div>
     <div style="display:flex;flex-direction:column;gap:8px">
-      <button class="btn bp bw" onclick="BT.pair()">📡 Parear impressora</button>
-      <button class="btn ba bw" onclick="BT.testPrint()">🖨️ Teste de impressão</button>
-      <button class="btn bb bw" onclick="closeMc('mc-bt');openDiagnostico()">🔬 Diagnóstico</button>
+      <button class="btn bp bw" onclick="BT.pair()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h.01M7 20v-4M12 20v-8M17 20V8M22 20V4"/></svg> Parear impressora</button>
+      <button class="btn ba bw" onclick="BT.testPrint()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v6H6zM6 14h12v7H6zM6 17H3a1 1 0 01-1-1v-5a2 2 0 012-2h16a2 2 0 012 2v5a1 1 0 01-1 1h-3"/></svg> Teste de impressão</button>
+      <button class="btn bb bw" onclick="closeMc('mc-bt');openDiagnostico()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 18h8M14 10V4a2 2 0 00-4 0v6M6 12l6.4 6.4M14 6l2.3 2.3M10 22h4M12 18v4"/></svg> Diagnóstico</button>
       <button class="btn bs bw" onclick="closeMc('mc-bt')">Fechar</button>
     </div>
   </div>
@@ -1165,23 +1165,23 @@ const _PP_PUBKEY_JWK={"crv":"P-256","ext":true,"key_ops":["verify"],"kty":"EC","
 <!-- MODAL: ABERTURA CAIXA -->
 <div class="mc" id="mc-abrir-caixa">
   <div class="mb" style="max-width:380px">
-    <div style="font-size:26px;text-align:center;margin-bottom:8px">💰</div>
+    <div style="text-align:center;margin-bottom:8px"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--ac)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6h20v12H2zM12 12a3 3 0 100-6 3 3 0 000 6zM6 9v6M18 9v6"/></svg></div>
     <div style="font-size:15px;font-weight:800;margin-bottom:3px;text-align:center">Abertura de Caixa</div>
     <div style="font-size:12px;color:var(--t2);margin-bottom:16px;text-align:center">Preencha os dados para iniciar o turno</div>
     <div class="fg"><label class="fl">Nome do operador</label><input class="inp" id="caixa-op-nome" placeholder="Nome do atendente / caixa" autocomplete="name"></div>
     <div class="fg"><label class="fl">Turno</label>
       <select class="inp" id="caixa-turno">
-        <option value="manhã">☀️ Manhã</option>
-        <option value="tarde">🌤️ Tarde</option>
-        <option value="noite" selected>🌙 Noite</option>
-        <option value="integral">📅 Integral</option>
+        <option value="manhã">Manhã</option>
+        <option value="tarde">Tarde</option>
+        <option value="noite" selected>Noite</option>
+        <option value="integral">Integral</option>
       </select>
     </div>
     <div class="fg"><label class="fl">Troco / Fundo de caixa (R$)</label><input class="inp" id="caixa-valor-ini" type="number" step="0.01" value="200" placeholder="200,00"></div>
     <div class="fg"><label class="fl">Observações do turno</label><textarea class="inp" id="caixa-obs" rows="2" placeholder="Observações opcionais..."></textarea></div>
     <div class="g2">
       <button class="btn bs bw" onclick="closeMc('mc-abrir-caixa')">Cancelar</button>
-      <button class="btn bp bw" onclick="confirmarAberturaCaixa()">💰 Abrir Caixa</button>
+      <button class="btn bp bw" onclick="confirmarAberturaCaixa()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6h20v12H2zM12 12a3 3 0 100-6 3 3 0 000 6zM6 9v6M18 9v6"/></svg> Abrir Caixa</button>
     </div>
   </div>
 </div>
@@ -1194,11 +1194,11 @@ const _PP_PUBKEY_JWK={"crv":"P-256","ext":true,"key_ops":["verify"],"kty":"EC","
     <div class="fg">
       <label class="fl">Foto do produto (opcional)</label>
       <div style="display:flex;align-items:center;gap:12px">
-        <div class="foto-pick-prev" id="ep-foto-prev" onclick="document.getElementById('ep-foto-inp').click()">📷</div>
+        <div class="foto-pick-prev" id="ep-foto-prev" onclick="document.getElementById('ep-foto-inp').click()"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--t2)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2zM12 17a4 4 0 100-8 4 4 0 000 8z"/></svg></div>
         <div style="flex:1">
           <input type="file" id="ep-foto-inp" accept="image/*" style="display:none" onchange="pickProdFoto(this)">
-          <button class="btn bs bsm bw" onclick="document.getElementById('ep-foto-inp').click()">📷 Escolher foto</button>
-          <button class="btn bs bxs bw" id="ep-foto-del" style="display:none;margin-top:6px" onclick="clearProdFoto()">🗑 Remover foto</button>
+          <button class="btn bs bsm bw" onclick="document.getElementById('ep-foto-inp').click()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2zM12 17a4 4 0 100-8 4 4 0 000 8z"/></svg> Escolher foto</button>
+          <button class="btn bs bxs bw" id="ep-foto-del" style="display:none;margin-top:6px" onclick="clearProdFoto()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6"/></svg> Remover foto</button>
         </div>
       </div>
     </div>
@@ -1214,8 +1214,8 @@ const _PP_PUBKEY_JWK={"crv":"P-256","ext":true,"key_ops":["verify"],"kty":"EC","
     <div class="fg">
       <label class="fl">Destino de produção</label>
       <div class="g2">
-        <button class="btn bw" id="ep-dest-coz" onclick="toggleDest('coz')">🍳 Cozinha</button>
-        <button class="btn bw" id="ep-dest-bar" onclick="toggleDest('bar')">🍺 Bar</button>
+        <button class="btn bw" id="ep-dest-coz" onclick="toggleDest('coz')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v8a4 4 0 008 0V2M7 2v20M21 12h-4l-2-8h1a5 5 0 015 5v3zM17 12v10"/></svg> Cozinha</button>
+        <button class="btn bw" id="ep-dest-bar" onclick="toggleDest('bar')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2h8l-4 9zM12 11v11M6 22h12"/></svg> Bar</button>
       </div>
     </div>
     <div class="fg"><label class="fl">Descrição / ingredientes</label><textarea class="inp" id="ep-desc" rows="2" placeholder="Ingredientes, observações fixas..."></textarea></div>
@@ -1236,7 +1236,7 @@ const _PP_PUBKEY_JWK={"crv":"P-256","ext":true,"key_ops":["verify"],"kty":"EC","
     </div>
     <div class="g2">
       <button class="btn bs bw" onclick="closeMc('mc-prod')">Cancelar</button>
-      <button class="btn bp bw" onclick="saveProd()">💾 Salvar</button>
+      <button class="btn bp bw" onclick="saveProd()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2zM17 21v-8H7v8M7 3v5h8"/></svg> Salvar</button>
     </div>
   </div>
 </div>
@@ -1251,7 +1251,7 @@ const _PP_PUBKEY_JWK={"crv":"P-256","ext":true,"key_ops":["verify"],"kty":"EC","
     <div class="fg"><label class="fl">Observações / alergias</label><textarea class="inp" id="ec-obs" rows="2" placeholder="Sem cebola, alérgico a camarão..."></textarea></div>
     <div class="g2">
       <button class="btn bs bw" onclick="closeMc('mc-cli')">Cancelar</button>
-      <button class="btn bp bw" onclick="saveCli()">💾 Salvar</button>
+      <button class="btn bp bw" onclick="saveCli()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2zM17 21v-8H7v8M7 3v5h8"/></svg> Salvar</button>
     </div>
   </div>
 </div>
@@ -1325,8 +1325,8 @@ const _PP_PUBKEY_JWK={"crv":"P-256","ext":true,"key_ops":["verify"],"kty":"EC","
     <div class="fg"><label class="fl">CPF (opcional)</label><input class="inp" id="ef-cpf" placeholder="000.000.000-00" style="font-family:monospace"></div>
     <div class="fg"><label class="fl">Cargo / Nível de acesso</label>
       <div class="g2">
-        <button class="btn bw" id="ef-cargo-admin" onclick="selCargo('admin')">👑 Administrador</button>
-        <button class="btn bw" id="ef-cargo-func" onclick="selCargo('funcionario')">👤 Funcionário</button>
+        <button class="btn bw" id="ef-cargo-admin" onclick="selCargo('admin')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2 18l3-12 5 5 2-9 2 9 5-5 3 12z"/></svg> Administrador</button>
+        <button class="btn bw" id="ef-cargo-func" onclick="selCargo('funcionario')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 12a4 4 0 100-8 4 4 0 000 8zM4 21c0-4 3-6 8-6s8 2 8 6"/></svg> Funcionário</button>
       </div>
       <div id="ef-cargo-info" class="fs11 t2 mt8" style="line-height:1.5"></div>
     </div>
@@ -1340,7 +1340,7 @@ const _PP_PUBKEY_JWK={"crv":"P-256","ext":true,"key_ops":["verify"],"kty":"EC","
     </div>
     <div class="g2">
       <button class="btn bs bw" onclick="closeMc('mc-func')">Cancelar</button>
-      <button class="btn bp bw" onclick="saveFunc()">💾 Salvar</button>
+      <button class="btn bp bw" onclick="saveFunc()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2zM17 21v-8H7v8M7 3v5h8"/></svg> Salvar</button>
     </div>
   </div>
 </div>
@@ -1350,7 +1350,7 @@ const _PP_PUBKEY_JWK={"crv":"P-256","ext":true,"key_ops":["verify"],"kty":"EC","
   <div class="mb" style="max-width:400px">
     <!-- ETAPA 1: digitar código -->
     <div id="vc-step-code">
-      <div style="font-size:28px;text-align:center;margin-bottom:6px">🎟️</div>
+      <div style="text-align:center;margin-bottom:6px"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--ac)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9a3 3 0 010 6v5h18v-5a3 3 0 010-6V4H2zM13 4v2M13 18v2M13 11v2"/></svg></div>
       <div style="font-size:15px;font-weight:800;text-align:center;margin-bottom:14px">Código do Voucher</div>
       <div class="fg">
         <label class="fl">Código</label>
@@ -1366,7 +1366,7 @@ const _PP_PUBKEY_JWK={"crv":"P-256","ext":true,"key_ops":["verify"],"kty":"EC","
     </div>
     <!-- ETAPA 2a: PERMUTA (descrição da troca) -->
     <div id="vc-step-permuta" style="display:none">
-      <div style="font-size:28px;text-align:center;margin-bottom:6px">🤝</div>
+      <div style="text-align:center;margin-bottom:6px"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--pu)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 14l6-6 4 4 8-8M15 4h5v5"/></svg></div>
       <div style="font-size:15px;font-weight:800;text-align:center;margin-bottom:4px">Permuta</div>
       <div class="fs12 t2 mb12" style="text-align:center">Descreva o que está sendo trocado nesta permuta</div>
       <div class="fg">
@@ -1376,17 +1376,17 @@ const _PP_PUBKEY_JWK={"crv":"P-256","ext":true,"key_ops":["verify"],"kty":"EC","
       </div>
       <div class="g2 mt4">
         <button class="btn bs bw" onclick="vcVoltarCodigo()">← Voltar</button>
-        <button class="btn bpu bw" onclick="confirmarVoucherPermuta()">🤝 Confirmar Permuta</button>
+        <button class="btn bpu bw" onclick="confirmarVoucherPermuta()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2 14l6-6 4 4 8-8M15 4h5v5"/></svg> Confirmar Permuta</button>
       </div>
     </div>
     <!-- ETAPA 2b: voucher de campanha -->
     <div id="vc-step-campanha" style="display:none">
-      <div style="font-size:28px;text-align:center;margin-bottom:6px">🎉</div>
+      <div style="text-align:center;margin-bottom:6px"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--gn)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12a10 10 0 11-20 0 10 10 0 0120 0zM9 12l2 2 4-4"/></svg></div>
       <div class="fs15 bold mb12" style="text-align:center" id="vc-camp-nome"></div>
       <div id="vc-camp-info" class="card mb12" style="font-size:13px;line-height:1.8"></div>
       <div class="g2">
         <button class="btn bs bw" onclick="vcVoltarCodigo()">← Voltar</button>
-        <button class="btn bp bw" onclick="confirmarVoucherCampanha()">✅ Aplicar Voucher</button>
+        <button class="btn bp bw" onclick="confirmarVoucherCampanha()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12a10 10 0 11-20 0 10 10 0 0120 0zM9 12l2 2 4-4"/></svg> Aplicar Voucher</button>
       </div>
     </div>
   </div>
@@ -1395,7 +1395,7 @@ const _PP_PUBKEY_JWK={"crv":"P-256","ext":true,"key_ops":["verify"],"kty":"EC","
 <!-- MODAL: CRIAR / EDITAR VOUCHER -->
 <div class="mc" id="mc-voucher-edit">
   <div class="mb" style="max-width:420px">
-    <div style="font-size:22px;text-align:center;margin-bottom:8px">🎟️</div>
+    <div style="text-align:center;margin-bottom:8px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--ac)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9a3 3 0 010 6v5h18v-5a3 3 0 010-6V4H2zM13 4v2M13 18v2M13 11v2"/></svg></div>
     <div style="font-size:15px;font-weight:800;text-align:center;margin-bottom:16px" id="vce-titulo">Novo Voucher</div>
     <div class="fg"><label class="fl">Código (sem espaços)</label>
       <input class="inp" id="vce-code" placeholder="Ex: PROMO20"
@@ -1407,9 +1407,9 @@ const _PP_PUBKEY_JWK={"crv":"P-256","ext":true,"key_ops":["verify"],"kty":"EC","
       <input class="inp" id="vce-desc" placeholder="Descrição interna do voucher"></div>
     <div class="fg"><label class="fl">Tipo de desconto</label>
       <select class="inp" id="vce-dtype" onchange="vceAtualizarDesc()">
-        <option value="total">🆓 Pedido grátis (100%)</option>
+        <option value="total">Pedido grátis (100%)</option>
         <option value="pct">% Percentual</option>
-        <option value="valor">💵 Valor fixo (R$)</option>
+        <option value="valor">Valor fixo (R$)</option>
       </select></div>
     <div class="fg" id="vce-valor-row" style="display:none">
       <label class="fl" id="vce-valor-lbl">Valor</label>
@@ -1424,7 +1424,7 @@ const _PP_PUBKEY_JWK={"crv":"P-256","ext":true,"key_ops":["verify"],"kty":"EC","
     </div>
     <div class="g2 mt4">
       <button class="btn bs bw" onclick="closeMc('mc-voucher-edit')">Cancelar</button>
-      <button class="btn bp bw" onclick="salvarVoucherEdit()">💾 Salvar</button>
+      <button class="btn bp bw" onclick="salvarVoucherEdit()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2zM17 21v-8H7v8M7 3v5h8"/></svg> Salvar</button>
     </div>
   </div>
 </div>
@@ -1469,7 +1469,7 @@ const _PP_PUBKEY_JWK={"crv":"P-256","ext":true,"key_ops":["verify"],"kty":"EC","
     <div id="og-opcoes-list" style="max-height:260px;overflow-y:auto"></div>
     <div class="g2 mt14">
       <button class="btn bs bw" onclick="closeMc('mc-obs-grupo')">Cancelar</button>
-      <button class="btn bp bw" onclick="salvarObsGrupo()">💾 Salvar grupo</button>
+      <button class="btn bp bw" onclick="salvarObsGrupo()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2zM17 21v-8H7v8M7 3v5h8"/></svg> Salvar grupo</button>
     </div>
   </div>
 </div>
@@ -1478,7 +1478,7 @@ const _PP_PUBKEY_JWK={"crv":"P-256","ext":true,"key_ops":["verify"],"kty":"EC","
 <div class="mc" id="mc-alertas">
   <div class="mb" style="max-width:400px;width:100%">
     <div class="rb mb14">
-      <div style="font-size:15px;font-weight:800">🔔 Alertas</div>
+      <div style="font-size:15px;font-weight:800;display:flex;align-items:center;gap:6px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 1112 0c0 7 3 9 3 9H3s3-2 3-9M10 21a2 2 0 004 0"/></svg> Alertas</div>
       <div style="display:flex;gap:8px;align-items:center">
         <button class="btn bs bxs" onclick="limparAlertas()">Limpar</button>
         <button class="btn bs bsm" onclick="closeMc('mc-alertas')">✕</button>
@@ -1505,7 +1505,7 @@ const _PP_PUBKEY_JWK={"crv":"P-256","ext":true,"key_ops":["verify"],"kty":"EC","
     </div>
     <div class="g2">
       <button class="btn bs bw" onclick="closeMc('mc-pag-valor')">Cancelar</button>
-      <button class="btn bp bw" onclick="confirmarParcela()">✅ Confirmar</button>
+      <button class="btn bp bw" onclick="confirmarParcela()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg> Confirmar</button>
     </div>
   </div>
 </div>
@@ -1513,7 +1513,7 @@ const _PP_PUBKEY_JWK={"crv":"P-256","ext":true,"key_ops":["verify"],"kty":"EC","
 <!-- MODAL: CONFIRM -->
 <div class="mc" id="mc-confirm">
   <div class="mb" style="max-width:340px;text-align:center">
-    <div style="font-size:36px;margin-bottom:8px" id="mc-conf-ico">⚠️</div>
+    <div style="margin-bottom:8px" id="mc-conf-ico"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--am)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 20h20zM12 9v4M12 17h.01"/></svg></div>
     <div style="font-size:15px;font-weight:800;margin-bottom:6px" id="mc-conf-ttl">Confirmar</div>
     <div style="font-size:13px;color:var(--t2);margin-bottom:18px;line-height:1.5" id="mc-conf-msg"></div>
     <div class="g2">
@@ -1575,6 +1575,27 @@ const PP_ICONS={
   credit:'M2 6h20v13H2zM2 11h20',
   timer:'M12 12a8 8 0 100-16 8 8 0 000 16zM12 6v6l4 2M10 2h4',
   package:'M16.5 9.4l-9-5.2M21 16V8l-9-5-9 5v8l9 5 9-5zM3.3 7L12 12l8.7-5M12 22V12',
+  key:'M21 2l-2 2m-7.6 7.6a5.5 5.5 0 11-7.8 7.8 5.5 5.5 0 017.8-7.8zm0 0L15.1 7.4M19 4l-1.5 1.5M17 6l2 2',
+  signal:'M2 20h.01M7 20v-4M12 20v-8M17 20V8M22 20V4',
+  microscope:'M6 18h8M14 10V4a2 2 0 00-4 0v6M6 12l6.4 6.4M14 6l2.3 2.3M10 22h4M12 18v4',
+  handshake:'M2 14l6-6 4 4 8-8M15 4h5v5',
+  gift:'M20 12v10H4V12M2 7h20v5H2zM12 22V7M12 7H7.5a2.5 2.5 0 110-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 100-5C13 2 12 7 12 7z',
+  save:'M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2zM17 21v-8H7v8M7 3v5h8',
+  trash:'M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6',
+  upload:'M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12',
+  download:'M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3',
+  refresh:'M23 4v6h-6M1 20v-6h6M3.5 9a9 9 0 0114.8-3.4L23 10M1 14l4.6 4.4A9 9 0 0020.5 15',
+  scissors:'M6 9a3 3 0 100-6 3 3 0 000 6zM6 21a3 3 0 100-6 3 3 0 000 6zM20 4L8.1 15.9M14.5 15.4L20 20M8.1 8.1l12 12',
+  flag:'M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1zM4 22v-7',
+  smartphone:'M5 2h14a2 2 0 012 2v16a2 2 0 01-2 2H5a2 2 0 01-2-2V4a2 2 0 012-2zM12 18h.01',
+  volume:'M11 5L6 9H2v6h4l5 4zM19.1 4.9a10 10 0 010 14.2M15.5 8.5a5 5 0 010 7',
+  volumeX:'M11 5L6 9H2v6h4l5 4zM23 9l-6 6M17 9l6 6',
+  mic:'M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3zM19 10v2a7 7 0 01-14 0v-2M12 19v4M8 23h8',
+  banknote:'M2 6h20v12H2zM12 12a3 3 0 100-6 3 3 0 000 6z',
+  ticket:'M2 9a3 3 0 010 6v5h18v-5a3 3 0 010-6V4H2zM13 4v2M13 18v2M13 11v2',
+  store:'M3 3h18l-2 4H5zM5 7v14h14V7M9 10v4M15 10v4',
+  camera:'M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2zM12 17a4 4 0 100-8 4 4 0 000 8z',
+  atm:'M2 6h20v13H2zM12 12a3 3 0 100-6 3 3 0 000 6zM6 16h12',
 };
 function ppIcon(name,size=20,stroke=1.6,cls=''){
   const d=PP_ICONS[name]||PP_ICONS.home;
@@ -1590,7 +1611,7 @@ var fbAuth=null, fbDB=null;
 const DB={
   PFX:'pedepronto_',
   get(k,d=null){try{const v=localStorage.getItem(this.PFX+k);return v!=null?JSON.parse(v):d}catch{return d}},
-  set(k,v){try{localStorage.setItem(this.PFX+k,JSON.stringify(v));return true}catch(e){toast('⚠️ Armazenamento cheio!','a');return false}},
+  set(k,v){try{localStorage.setItem(this.PFX+k,JSON.stringify(v));return true}catch(e){toast('Armazenamento cheio!','a');return false}},
   del(k){localStorage.removeItem(this.PFX+k)},
   keys(){return Object.keys(localStorage).filter(k=>k.startsWith(this.PFX)).map(k=>k.slice(this.PFX.length))},
   migrate(){
@@ -1711,7 +1732,7 @@ async function fsPull(){
     saveAll(true); // skipPush: dados vieram da nuvem
     _lastSyncAt=Date.now();_setSyncStatus('ok');
     _silentRefresh(); // não reseta scroll — pull manual de dados
-    toast('✅ Dados da nuvem aplicados!','g',4000);
+    toast('Dados da nuvem aplicados!','g',4000);
     playSound('sucesso');
   }catch(e){
     toast('Erro ao puxar dados: '+e.message,'r',5000);
@@ -1749,7 +1770,7 @@ function showFirestoreHelp(){
   var sh=document.getElementById('sh-obs');
   sh.innerHTML=`
     <div class="sh-handle"></div>
-    <div style="font-size:28px;text-align:center;margin-bottom:8px">🔐</div>
+    <div style="text-align:center;margin-bottom:8px"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--ac)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 11h14v10H5zM8 11V7a4 4 0 018 0v4"/></svg></div>
     <div style="font-size:16px;font-weight:800;text-align:center;margin-bottom:6px">Configurar regras do Firestore</div>
     <div class="fs12 t2 mb12" style="line-height:1.7;text-align:center">
       O Firebase está bloqueando o acesso.<br>Siga os 3 passos abaixo para ativar o sync.
@@ -1770,7 +1791,7 @@ function showFirestoreHelp(){
     </div>
     <div style="background:var(--s3);border:1px solid var(--br2);border-radius:10px;padding:12px;margin-bottom:12px;font-family:monospace;font-size:10px;line-height:1.8;white-space:pre;overflow-x:auto;color:var(--ac)">${_FIRESTORE_RULES}</div>
     <div style="display:flex;flex-direction:column;gap:8px">
-      <button class="btn ba bw" onclick="navigator.clipboard?.writeText(_FIRESTORE_RULES).then(()=>toast('Regras copiadas!','g'))">📋 Copiar regras</button>
+      <button class="btn ba bw" onclick="navigator.clipboard?.writeText(_FIRESTORE_RULES).then(()=>toast('Regras copiadas!','g'))">${ppIcon('receipt',14,1.7)} Copiar regras</button>
       <button class="btn bp bw" onclick="window.open('https://console.firebase.google.com/project/pedepronto-40790/firestore/rules','_blank')">🔗 Abrir Firebase Console</button>
       <button class="btn bs bw" onclick="closeOv('ov-obs')">Fechar</button>
     </div>`;
@@ -1844,7 +1865,7 @@ function updatePinDots(){for(let i=0;i<4;i++){const d=document.getElementById('p
 function checkPin(){
   if(_pinBuf===ST.cfg.pin){closeMc('mc-pin');if(_pinCb)_pinCb();}
   else{
-    toast('❌ PIN incorreto!','r');_pinBuf='';updatePinDots();
+    toast('PIN incorreto!','r');_pinBuf='';updatePinDots();
     const el=document.getElementById('mc-pin');
     if(el){el.style.animation='shake .4s';setTimeout(()=>{if(el)el.style.animation=''},400);}
   }
@@ -2023,9 +2044,9 @@ const BT={
   device:null,char:null,paper:58,auto:false,
   setPaper(mm){this.paper=mm;['58','80'].forEach(v=>{const b=document.getElementById('btp-'+v);if(b)b.className='btn bw '+(v==mm?'bp':'bs')});ST.cfg.papel=mm;save('cfg')},
   async pair(){
-    if(!navigator.bluetooth){toast('❌ Use Chrome ou Edge para Bluetooth','r',5000);return}
+    if(!navigator.bluetooth){toast('Use Chrome ou Edge para Bluetooth','r',5000);return}
     try{
-      toast('📡 Selecione a impressora...','b',10000);
+      toast('Selecione a impressora...','b',10000);
       const dev=await navigator.bluetooth.requestDevice({
         filters:[{services:['000018f0-0000-1000-8000-00805f9b34fb']},{namePrefix:'POS'},{namePrefix:'Thermal'},{namePrefix:'RPP'},{namePrefix:'MTP'},{name:'Printer'}],
         optionalServices:this.SVCS
@@ -2036,16 +2057,16 @@ const BT={
       let chr=null;
       for(const s of this.SVCS){try{const ss=await srv.getPrimaryService(s);for(const c of this.CHARS){try{chr=await ss.getCharacteristic(c);break}catch{}}if(chr)break}catch{}}
       if(!chr){const svs=await srv.getPrimaryServices();for(const s of svs){try{const cs=await s.getCharacteristics();if(cs.length){chr=cs[0];break}}catch{}}}
-      if(!chr){toast('❌ Impressora não compatível (ESC/POS)','r',5000);return}
+      if(!chr){toast('Impressora não compatível (ESC/POS)','r',5000);return}
       this.device=dev;this.char=chr;ST.cfg.bt_name=dev.name;save('cfg');
-      updateBtUI();toast('✅ Pareado: '+dev.name,'g');
-      dev.addEventListener('gattserverdisconnected',()=>{this.device=null;this.char=null;updateBtUI();toast('⚠️ Impressora desconectada','a')});
-    }catch(e){if(e.name!=='NotFoundError')toast('❌ '+e.message,'r',5000)}
+      updateBtUI();toast('Pareado: '+dev.name,'g');
+      dev.addEventListener('gattserverdisconnected',()=>{this.device=null;this.char=null;updateBtUI();toast('Impressora desconectada','a')});
+    }catch(e){if(e.name!=='NotFoundError')toast(''+e.message,'r',5000)}
   },
   async write(bytes){
     if(!this.char)return false;
     try{const CHUNK=512;for(let i=0;i<bytes.length;i+=CHUNK){await this.char.writeValueWithoutResponse(bytes.slice(i,i+CHUNK));await new Promise(r=>setTimeout(r,20))}return true}
-    catch(e){toast('❌ Erro: '+e.message,'r');return false}
+    catch(e){toast('Erro: '+e.message,'r');return false}
   },
   norm(s){
     // 1. Remove emojis first (before any other replacement)
@@ -2325,7 +2346,7 @@ const BT={
     }catch(e){toast('Erro fechamento: '+e.message,'r');return false;}
   },
     async testPrint(){
-    if(!this.char){toast('❌ Nenhuma impressora conectada','r');return}
+    if(!this.char){toast('Nenhuma impressora conectada','r');return}
     const W=this.paper===58?32:42;
     const enc=new TextEncoder();
     const N=(s)=>this.norm(s||'');
@@ -2363,7 +2384,7 @@ const BT={
       0x1D,0x56,0x01,     // cut
     ];
     await this.write(new Uint8Array(all));
-    toast('✅ Teste enviado!','g');
+    toast('Teste enviado!','g');
   }
 };
 
@@ -2393,12 +2414,12 @@ const Drive={
     if(!this.ativo)this.activate();else this.deactivate();
   },
   activate(){
-    toast('☁️ Google Drive: exportando backup local (OAuth2 necessário em produção)','b',5000);
+    toast('Google Drive: exportando backup local (OAuth2 necessário em produção)','b',5000);
     ST.cfg.drive_ativo=true;this.ativo=true;save('cfg');this.updateBtn();
     this.exportJSON();
   },
-  deactivate(){ST.cfg.drive_ativo=false;this.ativo=false;save('cfg');this.updateBtn();toast('☁️ Drive desativado','a')},
-  updateBtn(){const b=document.getElementById('btn-drive');if(b){b.textContent=this.ativo?'☁️✅':'☁️';b.title=this.ativo?'Drive ativo':'Ativar Drive'}},
+  deactivate(){ST.cfg.drive_ativo=false;this.ativo=false;save('cfg');this.updateBtn();toast('Drive desativado','a')},
+  updateBtn(){const b=document.getElementById('btn-drive');if(b){b.innerHTML=this.ativo?ppIcon('cloud',16,1.7):ppIcon('cloud',16,1.7);b.title=this.ativo?'Drive ativo':'Ativar Drive'}},
   exportJSON(){
     const data={...deepClone(ST),backup_at:now(),version:'2.0'};
     delete data.editProd;delete data.editCli;
@@ -2406,15 +2427,15 @@ const Drive={
     const url=URL.createObjectURL(blob);
     const a=document.createElement('a');a.href=url;a.download='PedePronto_backup_'+new Date().toISOString().slice(0,10)+'.json';a.click();
     URL.revokeObjectURL(url);
-    toast('💾 Backup exportado!','g');
+    toast('Backup exportado!','g');
   },
   import(file){
     const r=new FileReader();
     r.onload=e=>{try{
       const d=JSON.parse(e.target.result);
       ['cfg','caixa','produtos','categorias','clientes','obs_grupos_globais','pedidos','funcionarios','vouchers'].forEach(k=>{if(d[k])ST[k]=d[k]});
-      saveAll();_silentRefresh();toast('✅ Backup importado!','g');
-    }catch{toast('❌ Arquivo inválido','r')}};
+      saveAll();_silentRefresh();toast('Backup importado!','g');
+    }catch{toast('Arquivo inválido','r')}};
     r.readAsText(file);
   }
 };
@@ -2512,7 +2533,7 @@ function confirmarAberturaCaixa(){
   save('caixa');closeMc('mc-abrir-caixa');
   renderDash();
   updateSbOperador();
-  toast('💰 Caixa aberto! Operador: '+nome,'g',4000);
+  toast('Caixa aberto! Operador: '+nome,'g',4000);
   anunciar('caixa_aberto',{operador:opNome});
 }
 function fecharCaixa(){
@@ -2529,7 +2550,7 @@ function fecharCaixa(){
   anunciar('caixa_fechado',{pedidos:pedsPagos.length,total:saldo});
   if(BT.char)setTimeout(()=>BT.printFechamento(),500);
   renderCaixa();updateSbOperador();
-  toast('🔒 Caixa fechado. Saldo: '+fmtR(saldo),'a',5000);
+  toast('Caixa fechado. Saldo: '+fmtR(saldo),'a',5000);
 }
 function updateSbOperador(){
   const el=document.getElementById('sb-op');
@@ -2590,7 +2611,7 @@ function chamarPedido(p){
   const call={num:p.num,nome:p.cliente_nome||'',tipo:p.tipo||'balcao',mesa:p.mesa_label||'',ts:Date.now()};
   try{const bc=new BroadcastChannel('pp_display');bc.postMessage({type:'call',...call});bc.close();}catch(e){}
   localStorage.setItem('pp_display_call',JSON.stringify(call));
-  toast('🔔 Pedido #'+p.num+' chamado na vitrine!','g',3000);
+  toast('Pedido #'+p.num+' chamado na vitrine!','g',3000);
   anunciar('chime',p);
 }
 
@@ -2963,7 +2984,7 @@ function openObsSheet(cartIdx){
     const curQty=ST.novoPedido.cart[cartIdx]?.qty||1;
     sh.innerHTML=`<div class="sh-handle"></div>
     <div class="rb mb12">
-      <div class="sh-title" style="margin:0">✏️ ${esc(item.nome)}</div>
+      <div class="sh-title" style="margin:0">${ppIcon('edit',16,1.7)} ${esc(item.nome)}</div>
       <!-- 6.2 qty no modal -->
       <div style="display:flex;align-items:center;gap:0;border:1px solid var(--br2);border-radius:10px;overflow:hidden;flex-shrink:0">
         <button style="width:38px;height:38px;background:var(--s2);border:none;color:var(--tx);font-size:18px;cursor:pointer;font-family:inherit" onclick="obsQty(${cartIdx},-1)">−</button>
@@ -2993,10 +3014,10 @@ function openObsSheet(cartIdx){
     <div class="fg mt8"><label class="fl">Observação livre (opcional)</label>
     <textarea class="inp" id="obs-livre" rows="2" placeholder="Ex: sem sal, bem gelado, capricha...">${esc(curObs)}</textarea></div>
     ${extras>0?`<div class="rb mt8 mb4"><span class="fs13 t2">Adicionais selecionados:</span><span class="bold am mono">+${fmtR(extras)}</span></div>`:''}
-    ${!ok?`<div class="fs12 mt8 mb4" style="color:var(--rd);font-weight:700;text-align:center">⚠️ Preencha os campos obrigatórios para continuar</div>`:''}
+    ${!ok?`<div class="fs12 mt8 mb4" style="color:var(--rd);font-weight:700;text-align:center">${ppIcon('alertTriangle',13,1.7)} Preencha os campos obrigatórios para continuar</div>`:''}
     <div class="g2 mt12">
       <button class="btn bs bw" onclick="closeOv('ov-obs')">Cancelar</button>
-      <button class="btn bp bw" ${ok?'':'disabled style="opacity:.4;pointer-events:none"'} onclick="salvarObs(${cartIdx})">✅ Confirmar</button>
+      <button class="btn bp bw" ${ok?'':'disabled style="opacity:.4;pointer-events:none"'} onclick="salvarObs(${cartIdx})">${ppIcon('check',14,1.7)} Confirmar</button>
     </div>`;
   }
   window.toggleObsSel=function(gid,idx,multi){
@@ -3017,7 +3038,7 @@ function openObsSheet(cartIdx){
     ST.novoPedido.cart[cartIdx].obs_livre=livre;
     ST.novoPedido.cart[cartIdx].obs_extras=extras;
     closeOv('ov-obs');renderPedido();
-    toast('✅ Observação salva','g');
+    toast('Observação salva','g');
   };
   buildSheet();
   openOv('ov-obs');
@@ -3063,23 +3084,23 @@ function addCart(prod_id){
 }
 
 function confirmarPedido(){
-  if(!ST.caixa.aberto){toast('❌ Abra o caixa antes de criar pedidos','r',4000);return}
+  if(!ST.caixa.aberto){toast('Abra o caixa antes de criar pedidos','r',4000);return}
   const np=ST.novoPedido;
   if(!np.cart.length){toast('Carrinho vazio!','a');return}
   // nome obrigatório para balcão e delivery
   if((np.tipo==='balcao'||np.tipo==='delivery')&&!(np.cliente_nome||'').trim()){
-    toast('⚠️ Informe o nome do cliente','r',3000);
+    toast('Informe o nome do cliente','r',3000);
     document.getElementById('inp-cli-nome')?.focus();return;
   }
   // 3.3 telefone obrigatório para delivery
   if(np.tipo==='delivery'&&!(np.telefone||'').trim()){
-    toast('⚠️ Informe o telefone para delivery','r',3000);
+    toast('Informe o telefone para delivery','r',3000);
     document.getElementById('inp-tel')?.focus();return;
   }
   // C3: _addingTo — adiciona itens a pedido já existente
   if(np._addingTo){
     const pedExist=ST.pedidos.find(p=>p.id===np._addingTo);
-    if(!pedExist){toast('❌ Pedido não encontrado','r');return;}
+    if(!pedExist){toast('Pedido não encontrado','r');return;}
     const novosItens=deepClone(np.cart);
     novosItens.forEach(it=>pedExist.itens.push(it));
     const novoTotal=pedExist.itens.reduce((s,i)=>s+(i.preco+(i.obs_extras||0))*i.qty,0);
@@ -3091,7 +3112,7 @@ function confirmarPedido(){
     if(tCoz.length)pedExist.prev_coz=addMin(now(),Math.max(...tCoz));
     if(tBar.length)pedExist.prev_bar=addMin(now(),Math.max(...tBar));
     save('pedidos');
-    toast('✅ '+novosItens.length+' item(ns) adicionado(s) ao '+pedExist.num,'g');
+    toast(''+novosItens.length+' item(ns) adicionado(s) ao '+pedExist.num,'g');
     anunciar('novo_pedido',pedExist);
     if(BT.char&&ST.cfg.autoprint)setTimeout(()=>BT.printPedido(pedExist),500);
     nav(pedExist.tipo==='mesa'?'mesas':pedExist.tipo==='balcao'?'balcao':'delivery');
@@ -3127,7 +3148,7 @@ function confirmarPedido(){
     ped.del_troco_para=np.del_troco_para||'';
   }
   ST.pedidos.push(ped);save('pedidos');
-  toast('✅ Pedido '+num+' enviado!','g');
+  toast('Pedido '+num+' enviado!','g');
   anunciar('novo_pedido',ped);
   if(BT.char&&ST.cfg.autoprint)setTimeout(()=>BT.printPedido(ped),500);
   nav(np.tipo==='mesa'?'mesas':np.tipo==='balcao'?'balcao':'delivery');
@@ -3144,7 +3165,7 @@ function renderFechar(ped_id){
   <div class="rb mb12">
     <div><div class="bold fs14">${ped.num} · ${ped.mesa_label||ped.tipo}</div>
     <div class="fs12 t2">${ped.cliente_nome||'—'} · ${elapsed(Date.now()-new Date(ped.created).getTime())}</div>
-    <div class="fs12 t2">${ped.consumo==='viagem'?'🛍️ Para viagem':'🍽️ Consumo local'}</div></div>
+    <div class="fs12 t2">${ped.consumo==='viagem'?ppIcon('bag',12,1.7)+' Para viagem':ppIcon('utensils',12,1.7)+' Consumo local'}</div></div>
     <button class="btn bs bsm" onclick="nav(ST.backNav||'mesas')">← Voltar</button>
   </div>
   <div class="card mb10">
@@ -3186,18 +3207,18 @@ function renderFechar(ped_id){
         </div>
       </div>
     </div>
-    <button class="btn br_ bw bsm" onclick="askCortesia('${ped.id}')">🎁 Cortesia total (100%)</button>
+    <button class="btn br_ bw bsm" onclick="askCortesia('${ped.id}')">${ppIcon('gift',14,1.7)} Cortesia total (100%)</button>
   </div>
   <div class="g2 mb8">
-    <button class="btn bb bw" onclick="showCupomPrevia('${ped.id}','comanda')">🖨️ Imprimir</button>
-    <button class="btn ba bw" onclick="editarPedido('${ped.id}')">✏️ Editar itens</button>
+    <button class="btn bb bw" onclick="showCupomPrevia('${ped.id}','comanda')">${ppIcon('printer',14,1.7)} Imprimir</button>
+    <button class="btn ba bw" onclick="editarPedido('${ped.id}')">${ppIcon('edit',14,1.7)} Editar itens</button>
   </div>
   <div class="g2 mb12">
-    <button class="btn bpu bw" onclick="addItemExistente('${ped.id}')">➕ Adicionar item</button>
-    <button class="btn bcy bw" onclick="abrirDivisao('${ped.id}')">✂️ Dividir conta</button>
+    <button class="btn bpu bw" onclick="addItemExistente('${ped.id}')">${ppIcon('plus',14,1.7)} Adicionar item</button>
+    <button class="btn bcy bw" onclick="abrirDivisao('${ped.id}')">${ppIcon('scissors',14,1.7)} Dividir conta</button>
   </div>
   <button class="btn bp bw" style="padding:14px;font-size:15px" onclick="nav('pagamento','${ped.id}')">
-    💳 Ir para Pagamento · ${fmtR(ped.total)}
+    ${ppIcon('credit',14,1.7)} Ir para Pagamento · ${fmtR(ped.total)}
   </button>`;
 }
 
@@ -3206,13 +3227,13 @@ function aplicarDescPct(ped_id){
   const pct=parseFloat(inp?.value||'0');
   if(!pct||pct<=0||pct>100){toast('Informe % valido (1-100)','r');return}
   // 1.4 desconto com PIN — usa askPin para autorização rápida
-  askPin('💸 Desconto '+pct+'%','Digite o PIN para autorizar o desconto',()=>{
+  askPin('Desconto '+pct+'%','Digite o PIN para autorizar o desconto',()=>{
     const ped=ST.pedidos.find(p=>p.id===ped_id);if(!ped)return;
     const v=+(ped.total_bruto*(pct/100)).toFixed(2);
     ped.desconto=v;ped.total=+(ped.total_bruto-v).toFixed(2);
     save('pedidos');renderFechar(ped_id);
     toast('Desconto de '+pct+'% aplicado — -'+fmtR(v),'g',4000);
-    _addAlerta('💸','Desconto '+pct+'% aplicado em '+ped.num,'info');
+    _addAlerta(ppIcon('dollarSign',16,1.7),'Desconto '+pct+'% aplicado em '+ped.num,'info');
   });
 }
 function aplicarDescVal(ped_id){
@@ -3226,7 +3247,7 @@ function aplicarDescVal(ped_id){
     ped.desconto=+v.toFixed(2);ped.total=+(ped.total_bruto-v).toFixed(2);
     save('pedidos');renderFechar(ped_id);
     toast('Desconto de '+fmtR(v)+' aplicado','g',4000);
-    _addAlerta('💸','Desconto '+fmtR(v)+' aplicado em '+ped.num,'info');
+    _addAlerta(ppIcon('dollarSign',16,1.7),'Desconto '+fmtR(v)+' aplicado em '+ped.num,'info');
   });
 }
 function aplicarDescPctDireto(ped_id,pct){
@@ -3243,8 +3264,8 @@ function cancelarItemDireto(ped_id,idx){
   requireAdmin('Remover item',()=>{
     ped.itens.splice(idx,1);
     recalcPedido(ped);save('pedidos');renderFechar(ped_id);
-    toast('❌ '+nome+' removido do pedido','a',3000);
-    _addAlerta('❌','Item removido: '+nome+' ('+ped.num+')','info');
+    toast(''+nome+' removido do pedido','a',3000);
+    _addAlerta(ppIcon('xCircle',16,1.7),'Item removido: '+nome+' ('+ped.num+')','info');
   });
 }
 function waiveTaxaServico(ped_id){
@@ -3273,7 +3294,7 @@ function _buildSplitSheet(ped,modo,n){
   const valorPP=+(total/n).toFixed(2);
   const ajuste=+(total-valorPP*(n-1)).toFixed(2);
   sh.innerHTML=`<div class="sh-handle"></div>
-  <div class="sh-title">✂️ Dividir conta · ${fmtR(total)}</div>
+  <div class="sh-title">${ppIcon('scissors',16,1.7)} Dividir conta · ${fmtR(total)}</div>
   <div class="tabbar" style="margin:10px 0 16px">
     <button class="tabitem ${modo==='igual'?'on':''}" onclick="_buildSplitSheet(ST.pedidos.find(p=>p.id==='${ped.id}'),'igual',${n})">Por valor igual</button>
     <button class="tabitem ${modo==='item'?'on':''}" onclick="_splitItens=new Set();_buildSplitSheet(ST.pedidos.find(p=>p.id==='${ped.id}'),'item',${n})">Por item</button>
@@ -3297,7 +3318,7 @@ function _buildSplitSheet(ped,modo,n){
         <span class="fs13 bold">Pessoa ${i+1}</span>
         <div style="display:flex;align-items:center;gap:10px">
           <span class="bold mono ac">${fmtR(v)}</span>
-          <button class="btn bp bxs" onclick="_splitCobrar('${ped.id}',${v})">💳 Cobrar</button>
+          <button class="btn bp bxs" onclick="_splitCobrar('${ped.id}',${v})">${ppIcon('credit',13,1.7)} Cobrar</button>
         </div>
       </div>`;
     }).join('')}
@@ -3318,7 +3339,7 @@ function _buildSplitSheet(ped,modo,n){
     </div>
     <div style="display:flex;gap:8px;margin-top:10px">
       <button class="btn bs bw bsm" style="flex:1" onclick="closeOv('ov-obs')">Cancelar</button>
-      <button class="btn bp bw bsm" style="flex:1" ${sub<=0?'disabled':''} onclick="_splitCobrar('${ped.id}',${+sub.toFixed(2)})">💳 Pagar ${fmtR(sub)}</button>
+      <button class="btn bp bw bsm" style="flex:1" ${sub<=0?'disabled':''} onclick="_splitCobrar('${ped.id}',${+sub.toFixed(2)})">${ppIcon('credit',13,1.7)} Pagar ${fmtR(sub)}</button>
     </div>`;
   })()}
   `}`;
@@ -3340,11 +3361,11 @@ function _splitCobrar(ped_id,valor){
 // askDesconto era alias de aplicarDescPct — removido (dead code B18)
 function askCortesia(ped_id){
   // 1.4 cortesia com PIN
-  askPin('🎁 Cortesia Total','Digite o PIN para autorizar a cortesia',()=>{
+  askPin('Cortesia Total','Digite o PIN para autorizar a cortesia',()=>{
     const ped=ST.pedidos.find(p=>p.id===ped_id);if(!ped)return;
     ped.cortesia=true;ped.desconto=ped.total_bruto;ped.total=0;
-    save('pedidos');renderFechar(ped_id);toast('🎁 Cortesia total aplicada','g');
-    _addAlerta('🎁','Cortesia total em '+ped.num,'info');
+    save('pedidos');renderFechar(ped_id);toast('Cortesia total aplicada','g');
+    _addAlerta(ppIcon('gift',16,1.7),'Cortesia total em '+ped.num,'info');
   });
 }
 function addItemExistente(ped_id){
@@ -3408,7 +3429,7 @@ function showCupomPrevia(ped_id, tipo='cupom'){
     </div>`;
   }
   let html=`<div class="sh-handle"></div>
-  <div class="sh-title">${tipo==='cupom'?'🧾 Cupom Não Fiscal':'🖨️ Prévia de Impressão'}</div>
+  <div class="sh-title">${tipo==='cupom'?ppIcon('receipt',16,1.7)+' Cupom Não Fiscal':ppIcon('printer',16,1.7)+' Prévia de Impressão'}</div>
   <div style="display:flex;justify-content:center;padding-bottom:6px">
   <div style="max-width:${W}px;width:100%">`;
   if(tipo==='cupom'){
@@ -3419,13 +3440,13 @@ function showCupomPrevia(ped_id, tipo='cupom'){
     html+=bloco('cli',ped.itens,'** VIA CLIENTE **',ped.prev_coz||ped.prev_bar||null,true);
     if(hasCoz){
       html+=`<div class="tpaper" style="border-radius:0;margin:0;padding:5px 12px">
-        <div class="tcut"><hr class="tcut-line"><div class="tcut-lbl">✂️ ${ped.num} — DESTACAR COZINHA</div></div>
+        <div class="tcut"><hr class="tcut-line"><div class="tcut-lbl">${ppIcon('scissors',12,1.7)} ${ped.num} — DESTACAR COZINHA</div></div>
       </div>`;
       html+=bloco('coz',ped.itens.filter(i=>i.dest==='coz'),'** COZINHA **',ped.prev_coz,false);
     }
     if(hasBar){
       html+=`<div class="tpaper" style="border-radius:0;margin:0;padding:5px 12px">
-        <div class="tcut"><hr class="tcut-line"><div class="tcut-lbl">✂️ ${ped.num} — DESTACAR BAR</div></div>
+        <div class="tcut"><hr class="tcut-line"><div class="tcut-lbl">${ppIcon('scissors',12,1.7)} ${ped.num} — DESTACAR BAR</div></div>
       </div>`;
       html+=bloco('bar',ped.itens.filter(i=>i.dest==='bar'),'** BAR **',ped.prev_bar,false);
     }
@@ -3433,7 +3454,7 @@ function showCupomPrevia(ped_id, tipo='cupom'){
   html+=`</div></div>`;
   html+=`<div class="ttail" style="max-width:${W}px;margin:0 auto"></div>`;
   html+=`<div style="display:flex;gap:8px;margin-top:14px">
-    <button class="btn bp bw" onclick="${tipo==='cupom'?`BT.printCupom(ST.pedidos.find(p=>p.id==='${ped_id}'))`:`BT.printPedido(ST.pedidos.find(p=>p.id==='${ped_id}'))`}">🖨️ Imprimir via BT</button>
+    <button class="btn bp bw" onclick="${tipo==='cupom'?`BT.printCupom(ST.pedidos.find(p=>p.id==='${ped_id}'))`:`BT.printPedido(ST.pedidos.find(p=>p.id==='${ped_id}'))`}">${ppIcon('printer',14,1.7)} Imprimir via BT</button>
     <button class="btn bs bw" onclick="closeOv('ov-imp')">✕ Fechar</button>
   </div>`;
   document.getElementById('sh-imp').innerHTML=html;
@@ -3447,12 +3468,12 @@ let _pagParcelas=[];
 let _pagCtxPed=null;
 let _pagValorCtx=null;
 const _PAG_FORMAS=[
-  {id:'dinheiro',  ico:'💵',lbl:'Dinheiro'},
-  {id:'credito',   ico:'💳',lbl:'Crédito'},
-  {id:'debito',    ico:'💳',lbl:'Débito'},
-  {id:'pix',       ico:'📱',lbl:'PIX'},
-  {id:'voucher',   ico:'🎟️',lbl:'Voucher'},
-  {id:'maquininha',ico:'🏧',lbl:'Maquininha'},
+  {id:'dinheiro',  ico:ppIcon('banknote',18,1.6),lbl:'Dinheiro'},
+  {id:'credito',   ico:ppIcon('credit',18,1.6),lbl:'Crédito'},
+  {id:'debito',    ico:ppIcon('credit',18,1.6),lbl:'Débito'},
+  {id:'pix',       ico:ppIcon('pix',18,1.6),lbl:'PIX'},
+  {id:'voucher',   ico:ppIcon('ticket',18,1.6),lbl:'Voucher'},
+  {id:'maquininha',ico:ppIcon('atm',18,1.6),lbl:'Maquininha'},
 ];
 
 function renderPagamento(ped_id){
@@ -3487,7 +3508,7 @@ function _renderPagScreen(){
     <div class="rb mt4">
       <span class="fs11 t2">Pago: <span class="bold mono" style="color:var(--gn)">${fmtR(pago)}</span></span>
       <span class="fs11" style="color:${quitado?'var(--gn)':'var(--t2)'};font-weight:${quitado?700:400}">
-        ${quitado?'✅ Quitado':'Restante: '+fmtR(restante)}
+        ${quitado?ppIcon('checkCircle',13,1.7)+' Quitado':'Restante: '+fmtR(restante)}
       </span>
     </div>
   </div>
@@ -3512,18 +3533,18 @@ function _renderPagScreen(){
   ${quitado?`
   <div class="mt12">
     <button class="btn bp bw" style="padding:16px;font-size:15px" onclick="finalizarPagMisto('${ped.id}')">
-      🏁 Finalizar Conta · ${fmtR(total)}
+      ${ppIcon('flag',14,1.7)} Finalizar Conta · ${fmtR(total)}
     </button>
   </div>`:_pagParcelas.length===0?`
   <div class="card mt10" style="text-align:center;padding:22px;color:var(--t2)">
-    <div style="font-size:30px;margin-bottom:6px">💳</div>
+    <div style="margin-bottom:6px">${ppIcon('credit',30,1.4)}</div>
     <div class="fs13">Selecione uma forma acima</div>
     <div class="fs11 t3 mt4">Você pode combinar múltiplas formas de pagamento</div>
   </div>`:''}
   <div class="divider mt14 mb10"></div>
   <div class="sec-title mb6">Cobrança na maquininha</div>
   <button class="btn bcy bw" style="padding:12px;font-size:13px" onclick="maqCobrar('${_pagCtxPed}')">
-    🏧 Cobrar ${fmtR(restante>0?restante:total)} na ${formas[5].lbl}
+    ${ppIcon('atm',14,1.7)} Cobrar ${fmtR(restante>0?restante:total)} na ${formas[5].lbl}
   </button>
   ${!maqCfg.provider||maqCfg.provider==='manual'?`<div class="fs11 t3 mt4 mb4" style="text-align:center">Configure a maquininha em ⚙️ Configurações</div>`:''}`;
 }
@@ -3535,7 +3556,7 @@ function openPagModal(forma){
   const pago=+(_pagParcelas.reduce((s,p)=>s+p.valor,0).toFixed(2));
   const restante=+(Math.max(0,ped.total-pago).toFixed(2));
   if(restante<0.01){toast('Conta já está quitada','a');return}
-  const fm=_PAG_FORMAS.find(f=>f.id===forma)||{ico:'💳',lbl:forma};
+  const fm=_PAG_FORMAS.find(f=>f.id===forma)||{ico:ppIcon('credit',18,1.6),lbl:forma};
   _pagValorCtx={forma,ico:fm.ico,lbl:fm.lbl,restante};
   document.getElementById('mc-pv-title').innerHTML=`${fm.ico} ${fm.lbl}`;
   document.getElementById('mc-pv-label').textContent=forma==='dinheiro'?'Valor recebido (R$)':'Valor a cobrar (R$)';
@@ -3591,7 +3612,7 @@ function finalizarPagMisto(ped_id){
       ST.caixa.movs.push({id:uid(),tipo:'entrada',valor:p.valor,desc:'Pedido '+ped.num+' · '+p.lbl,created:now()});
   });
   save('pedidos');save('caixa');
-  toast('✅ Pagamento '+fmtR(ped.total)+' confirmado!','g',4000);
+  toast('Pagamento '+fmtR(ped.total)+' confirmado!','g',4000);
   anunciar('pagamento',{total:ped.total,forma:formaStr,cliente_nome:ped.cliente_nome,num:ped.num});
   const _pId=ped_id;_pagParcelas=[];_pagCtxPed=null;
   if(BT.char&&ST.cfg.autocupom!==false){setTimeout(()=>BT.printCupom(ped),400);}
@@ -3601,7 +3622,7 @@ function finalizarPagMisto(ped_id){
 // Compatibilidade: voucher e maquininha chamam _finalizarPagamento diretamente
 function _finalizarPagamento(ped_id,forma,valorOverride){
   const ped=ST.pedidos.find(p=>p.id===ped_id);if(!ped)return;
-  const fm=_PAG_FORMAS.find(f=>f.id===forma)||{ico:'💳',lbl:forma};
+  const fm=_PAG_FORMAS.find(f=>f.id===forma)||{ico:ppIcon('credit',18,1.6),lbl:forma};
   _pagCtxPed=ped_id;
   _pagParcelas=[{forma,ico:fm.ico,lbl:fm.lbl,valor:valorOverride||ped.total,troco:0}];
   finalizarPagMisto(ped_id);
@@ -3841,7 +3862,7 @@ function concluirKDS(id,dest){
   // usa o dispatcher central — já cuida de chime + voz
   anunciar('pronto', p);
   renderProducao();
-  toast('✅ Pedido '+p.num+' marcado como pronto!','g',3500);
+  toast('Pedido '+p.num+' marcado como pronto!','g',3500);
   updateBadges();
 }
 function confirmarEntrega(id){
@@ -3849,7 +3870,7 @@ function confirmarEntrega(id){
   p.entregue=true;
   p.entregue_em=new Date().toISOString();
   save('pedidos');
-  toast('✅ Pedido '+p.num+' entregue!','g',3000);
+  toast('Pedido '+p.num+' entregue!','g',3000);
   anunciar('entregue',p);
   const pg=ST.curNav;
   if(pg==='producao')renderProducao();
@@ -3866,8 +3887,8 @@ let _prodDests=['coz'],_editObsGrupos=[];
 function renderCardapio(){
   document.getElementById('pg-cardapio').innerHTML=`
   <div class="tabbar mb10">
-    <button class="tabitem ${ST._cardTab==='prods'?'on':''}" onclick="ST._cardTab='prods';renderCardapio()">🍽️ Produtos</button>
-    <button class="tabitem ${ST._cardTab==='cats'?'on':''}" onclick="ST._cardTab='cats';renderCardapio()">📂 Categorias</button>
+    <button class="tabitem ${ST._cardTab==='prods'?'on':''}" onclick="ST._cardTab='prods';renderCardapio()">${ppIcon('utensils',14,1.7)} Produtos</button>
+    <button class="tabitem ${ST._cardTab==='cats'?'on':''}" onclick="ST._cardTab='cats';renderCardapio()">${ppIcon('bag',14,1.7)} Categorias</button>
     <button class="tabitem ${ST._cardTab==='obs'?'on':''}" onclick="ST._cardTab='obs';renderCardapio()">📝 Grupos de Obs.</button>
   </div>
   <div id="card-content"></div>`;
@@ -3895,8 +3916,8 @@ function renderCardProds(){
       <div style="display:flex;flex-direction:column;gap:5px;align-items:flex-end;flex-shrink:0">
         <span class="bdg ${p.ativo?'bg-g':'bg-s'}">${p.ativo?'Ativo':'Inativo'}</span>
         <div style="display:flex;gap:4px">
-          <button class="btn bs bxs" onclick="editProd('${p.id}')">✏️</button>
-          <button class="btn br_ bxs" onclick="delProd('${p.id}')">🗑</button>
+          <button class="btn bs bxs" onclick="editProd('${p.id}')">${ppIcon('edit',13,1.7)}</button>
+          <button class="btn br_ bxs" onclick="delProd('${p.id}')">${ppIcon('trash',13,1.7)}</button>
         </div>
       </div>
     </div>
@@ -3909,8 +3930,8 @@ function renderCardCats(){
   ${ST.categorias.map(c=>`<div class="card mb8"><div class="rb">
     <div style="display:flex;align-items:center;gap:10px"><span style="font-size:22px">${c.emoji||'📂'}</span><div class="bold">${esc(c.nome)}</div></div>
     <div style="display:flex;gap:5px">
-      <button class="btn bs bxs" onclick="editCat('${c.id}')">✏️</button>
-      <button class="btn br_ bxs" onclick="delCat('${c.id}')">🗑</button>
+      <button class="btn bs bxs" onclick="editCat('${c.id}')">${ppIcon('edit',13,1.7)}</button>
+      <button class="btn br_ bxs" onclick="delCat('${c.id}')">${ppIcon('trash',13,1.7)}</button>
     </div>
   </div></div>`).join('')}`;
 }
@@ -3924,14 +3945,14 @@ function renderCardObs(){
       <div><div class="bold">${esc(g.nome)}</div><div class="fs11 t2 mt2">${(g.opcoes||[]).length} opções · ${g.multi?'múltipla escolha':'escolha única'}</div></div>
       <div style="display:flex;gap:5px">
         <span class="bdg ${g.multi?'bb':'bs'}" style="font-size:10px">${g.multi?'Multi':'Única'}</span>
-        <button class="btn bs bxs" onclick="editObsGrupoGlobal('${g.id}')">✏️</button>
-        <button class="btn br_ bxs" onclick="delObsGrupo('${g.id}')">🗑</button>
+        <button class="btn bs bxs" onclick="editObsGrupoGlobal('${g.id}')">${ppIcon('edit',13,1.7)}</button>
+        <button class="btn br_ bxs" onclick="delObsGrupo('${g.id}')">${ppIcon('trash',13,1.7)}</button>
       </div>
     </div>
     <div style="display:flex;flex-wrap:wrap;gap:5px">
       ${(g.opcoes||[]).map(op=>{const o=normOp(op);return`<span class="obs-chip" style="cursor:default">${esc(o.nome)}${o.preco>0?`<span class="obs-chip-preco">+${fmtR(o.preco)}</span>`:''}</span>`;}).join('')}
     </div>
-  </div>`).join('')||'<div class="card" style="text-align:center;padding:24px;color:var(--t2)"><div style="font-size:30px;margin-bottom:8px">📋</div><div class="fs13">Nenhum grupo criado ainda.</div><div class="fs12 t3 mt4">Crie grupos como "Ponto da Carne", "Molhos" ou "Adicionais" para aparecerem nas observações do pedido.</div></div>'}`;
+  </div>`).join('')||'<div class="card" style="text-align:center;padding:24px;color:var(--t2)"><div style="margin-bottom:8px">'+ppIcon('receipt',30,1.4)+'</div><div class="fs13">Nenhum grupo criado ainda.</div><div class="fs12 t3 mt4">Crie grupos como "Ponto da Carne", "Molhos" ou "Adicionais" para aparecerem nas observações do pedido.</div></div>'}`;
 }
 
 // PRODUTO EDIT
@@ -3987,7 +4008,7 @@ function _compressImg(file,maxW,maxH,quality,cb){
 }
 function pickLogo(inp){
   if(!inp.files[0])return;
-  _compressImg(inp.files[0],300,300,0.85,b64=>{ST.cfg.logo=b64;save('cfg');_updateSbLogo();renderConfig();toast('✅ Logo salva!','g');});
+  _compressImg(inp.files[0],300,300,0.85,b64=>{ST.cfg.logo=b64;save('cfg');_updateSbLogo();renderConfig();toast('Logo salva!','g');});
   inp.value='';
 }
 function clearLogo(){ST.cfg.logo=null;save('cfg');_updateSbLogo();renderConfig();}
@@ -4039,19 +4060,19 @@ function saveProd(){
   }else{
     ST.produtos.push({id:uid(),...data});
   }
-  save('produtos');closeMc('mc-prod');renderCardapio();toast('✅ Produto salvo!','g');
+  save('produtos');closeMc('mc-prod');renderCardapio();toast('Produto salvo!','g');
 }
-function delProd(id){confirm2('🗑️','Excluir produto?','Não pode ser desfeito.','Excluir','br_',()=>{ST.produtos=ST.produtos.filter(p=>p.id!==id);save('produtos');renderCardapio();toast('Produto excluído','a')})}
+function delProd(id){confirm2(ppIcon('trash',36,1.4),'Excluir produto?','Não pode ser desfeito.','Excluir','br_',()=>{ST.produtos=ST.produtos.filter(p=>p.id!==id);save('produtos');renderCardapio();toast('Produto excluído','a')})}
 function editCat(id){
   const c=id?ST.categorias.find(x=>x.id===id):null;
   const nome=prompt('Nome da categoria:',c?.nome||'');if(!nome)return;
   const emoji=prompt('Emoji:',c?.emoji||'📂')||'📂';
   if(c){c.nome=nome;c.emoji=emoji;}else ST.categorias.push({id:uid(),nome,emoji});
-  save('categorias');renderCardapio();toast('✅ Categoria salva!','g');
+  save('categorias');renderCardapio();toast('Categoria salva!','g');
 }
 function delCat(id){
   if(ST.produtos.some(p=>p.cat_id===id)){toast('Categoria tem produtos','r');return}
-  confirm2('🗑️','Excluir categoria?','','Excluir','br_',()=>{ST.categorias=ST.categorias.filter(c=>c.id!==id);save('categorias');renderCardapio();});
+  confirm2(ppIcon('trash',36,1.4),'Excluir categoria?','','Excluir','br_',()=>{ST.categorias=ST.categorias.filter(c=>c.id!==id);save('categorias');renderCardapio();});
 }
 
 // GRUPOS DE OBS GLOBAIS — modal
@@ -4126,10 +4147,10 @@ function salvarObsGrupo(){
   save('obs_grupos_globais');
   closeMc('mc-obs-grupo');
   renderCardapio();
-  toast('✅ Grupo salvo!','g');
+  toast('Grupo salvo!','g');
 }
 function delObsGrupo(id){
-  confirm2('🗑️','Excluir grupo?','Produtos que usam este grupo perderão a associação.','Excluir','br_',()=>{
+  confirm2(ppIcon('trash',36,1.4),'Excluir grupo?','Produtos que usam este grupo perderão a associação.','Excluir','br_',()=>{
     ST.obs_grupos_globais=ST.obs_grupos_globais.filter(g=>g.id!==id);
     ST.produtos.forEach(p=>{if(p.obs_grupos)p.obs_grupos=p.obs_grupos.filter(x=>x!==id)});
     save('obs_grupos_globais');save('produtos');renderCardapio();
@@ -4151,10 +4172,10 @@ function renderClientes(){
     const gasto=peds.reduce((s,p)=>s+(p.total||0),0);
     return`<div class="card mb8">
       <div class="rb mb4">
-        <div><div class="bold">${esc(c.nome)}</div><div class="fs12 t2">📱 ${c.wa||'—'}</div></div>
+        <div><div class="bold">${esc(c.nome)}</div><div class="fs12 t2" style="display:flex;align-items:center;gap:3px">${ppIcon('phone',11,1.7)} ${c.wa||'—'}</div></div>
         <div style="display:flex;gap:5px">
           ${c.wa?`<button class="btn bg bxs" onclick="window.open('https://wa.me/55'+('${c.wa}'.replace(/\\D/g,'')))">💬</button>`:''}
-          <button class="btn bs bxs" onclick="editCli('${c.id}')">✏️</button>
+          <button class="btn bs bxs" onclick="editCli('${c.id}')">${ppIcon('edit',13,1.7)}</button>
         </div>
       </div>
       <div class="rb"><div class="fs12 t2">${peds.length} pedidos · ${fmtR(gasto)}</div>
@@ -4177,7 +4198,7 @@ function saveCli(){
   if(!nome){toast('Nome obrigatório','r');return}
   const data={nome,wa:document.getElementById('ec-wa').value||'',nasc:document.getElementById('ec-nasc').value||'',obs:document.getElementById('ec-obs').value||'',pontos:ST.editCli?.pontos||0};
   if(ST.editCli)Object.assign(ST.editCli,data);else ST.clientes.push({id:uid(),...data});
-  save('clientes');closeMc('mc-cli');renderClientes();toast('✅ Cliente salvo!','g');
+  save('clientes');closeMc('mc-cli');renderClientes();toast('Cliente salvo!','g');
 }
 
 // ═══════════════════════════════════════════
@@ -4190,7 +4211,7 @@ function renderCaixa(){
   const pedHoje=ST.pedidos.filter(p=>p.status==='pago'&&p.pago_em&&new Date(p.pago_em).toDateString()===hoje);
   const recHoje=pedHoje.reduce((s,p)=>s+(p.total||0),0);
   // 7.1 breakdown por forma de pagamento no turno atual
-  const fmIco={dinheiro:'💵',credito:'💳',debito:'💳',pix:'📱',voucher:'🎟️',maquininha:'🏧'};
+  const fmIco={dinheiro:ppIcon('banknote',14,1.7),credito:ppIcon('credit',14,1.7),debito:ppIcon('credit',14,1.7),pix:ppIcon('pix',14,1.7),voucher:ppIcon('ticket',14,1.7),maquininha:ppIcon('atm',14,1.7)};
   const fmLbl={dinheiro:'Dinheiro',credito:'Crédito',debito:'Débito',pix:'PIX',voucher:'Voucher',maquininha:'Maquininha'};
   // M1: helper robusto — remove acentos para comparação
   const deAcent=s=>s.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
@@ -4212,18 +4233,18 @@ function renderCaixa(){
   <div class="card mb10" style="text-align:center">
     <div class="fs11 t2 mb4">Saldo em caixa</div>
     <div style="font-size:32px;font-weight:900;font-family:monospace;color:var(--gn)">${fmtR(saldo)}</div>
-    ${ST.caixa.aberto?`<div class="fs12 t2 mt6">👤 ${ST.caixa.operador} · ${ST.caixa.turno} · desde ${fmtH(ST.caixa.abertura)}</div>`:'<div class="fs12 rd bold mt4">Caixa fechado</div>'}
+    ${ST.caixa.aberto?`<div class="fs12 t2 mt6">${ppIcon('user',12,1.7)} ${ST.caixa.operador} · ${ST.caixa.turno} · desde ${fmtH(ST.caixa.abertura)}</div>`:'<div class="fs12 rd bold mt4">Caixa fechado</div>'}
   </div>
   <div class="g2 mb10">
     <div class="kpi"><div class="kpi-v ac">${fmtR(recHoje)}</div><div class="kpi-l">Receita hoje</div></div>
     <div class="kpi"><div class="kpi-v">${pedHoje.length}</div><div class="kpi-l">Pedidos</div></div>
   </div>
-  ${bdEntries.length?`<div class="sec-title mb8">💳 Breakdown do turno</div>
+  ${bdEntries.length?`<div class="sec-title mb8">${ppIcon('credit',14,1.7)} Breakdown do turno</div>
   <div class="card mb10">
     ${bdEntries.map(([f,v])=>{
       const pct=recHoje?Math.round((v/recHoje)*100):0;
       return`<div style="margin-bottom:10px">
-        <div class="rb mb4"><span class="fs13">${fmIco[f]||'💰'} ${fmLbl[f]||f}</span><span class="bold mono am">${fmtR(v)}</span></div>
+        <div class="rb mb4"><span class="fs13" style="display:flex;align-items:center;gap:4px">${fmIco[f]||ppIcon('cash',14,1.7)} ${fmLbl[f]||f}</span><span class="bold mono am">${fmtR(v)}</span></div>
         <div style="height:6px;border-radius:99px;background:var(--s3);overflow:hidden">
           <div style="height:100%;border-radius:99px;width:${pct}%;background:linear-gradient(90deg,var(--ac),var(--acd));transition:width .5s ease"></div>
         </div>
@@ -4234,13 +4255,13 @@ function renderCaixa(){
 
   ${ST.caixa.aberto?`
   <div class="g2 mb10">
-    <button class="btn ba bw" onclick="askSangria()">📤 Sangria</button>
-    <button class="btn bg bw" onclick="askSuprimento()">📥 Suprimento</button>
+    <button class="btn ba bw" onclick="askSangria()">${ppIcon('upload',14,1.7)} Sangria</button>
+    <button class="btn bg bw" onclick="askSuprimento()">${ppIcon('download',14,1.7)} Suprimento</button>
   </div>
   <div class="g2 mb12">
-    <button class="btn bb bw" onclick="BT.printFechamento()">🖨️ Imprimir Fechamento</button>
-    <button class="btn br_ bw" onclick="requireAdmin('Fechar Caixa',fecharCaixa)">🔒 Fechar Caixa</button>
-  </div>`:`<button class="btn bp bw mb12" onclick="pedirAberturaCaixa()">💰 Abrir Caixa</button>`}
+    <button class="btn bb bw" onclick="BT.printFechamento()">${ppIcon('printer',14,1.7)} Imprimir Fechamento</button>
+    <button class="btn br_ bw" onclick="requireAdmin('Fechar Caixa',fecharCaixa)">${ppIcon('lock',14,1.7)} Fechar Caixa</button>
+  </div>`:`<button class="btn bp bw mb12" onclick="pedirAberturaCaixa()">${ppIcon('cash',14,1.7)} Abrir Caixa</button>`}
   <div class="sec-title">Movimentações</div>
   ${movs.length===0?'<div class="card" style="text-align:center;color:var(--t2);padding:20px">Nenhuma movimentação</div>':''}
   ${movs.slice().reverse().slice(0,25).map(m=>`<div class="card mb6">
@@ -4263,14 +4284,14 @@ function askSangria(){
     const v=parseFloat(prompt('Valor da sangria (R$):')||'0');if(!v||v<=0)return;
     const mot=prompt('Motivo:')||'Sangria';
     ST.caixa.movs.push({id:uid(),tipo:'sangria',valor:v,desc:'Sangria: '+mot,created:now()});
-    save('caixa');renderCaixa();toast('📤 Sangria de '+fmtR(v),'a');
+    save('caixa');renderCaixa();toast('Sangria de '+fmtR(v),'a');
   });
 }
 function askSuprimento(){
   const v=parseFloat(prompt('Valor do suprimento (R$):')||'0');if(!v||v<=0)return;
   const mot=prompt('Descrição:')||'Suprimento';
   ST.caixa.movs.push({id:uid(),tipo:'suprimento',valor:v,desc:'Suprimento: '+mot,created:now()});
-  save('caixa');renderCaixa();toast('📥 Suprimento de '+fmtR(v),'g');
+  save('caixa');renderCaixa();toast('Suprimento de '+fmtR(v),'g');
 }
 
 // ═══════════════════════════════════════════
@@ -4330,7 +4351,7 @@ function renderRelatorio(){
   <div class="sec-title">Por forma de pagamento</div>
   <div class="card mb10">
     ${Object.entries(formaData).filter(([,v])=>v>0).map(([f,v])=>`<div class="rb" style="padding:7px 0;border-bottom:1px solid var(--br)">
-      <div class="fs13">${ ({'dinheiro':'💵 Dinheiro','credito':'💳 Crédito','debito':'💳 Débito','pix':'🔑 PIX','voucher':'🎟️ Voucher','maquininha':'💳 Maquininha'})[f]||f }</div>
+      <div class="fs13" style="display:flex;align-items:center;gap:4px">${ ({'dinheiro':ppIcon('banknote',14,1.7)+' Dinheiro','credito':ppIcon('credit',14,1.7)+' Crédito','debito':ppIcon('credit',14,1.7)+' Débito','pix':ppIcon('pix',14,1.7)+' PIX','voucher':ppIcon('ticket',14,1.7)+' Voucher','maquininha':ppIcon('atm',14,1.7)+' Maquininha'})[f]||f }</div>
       <div class="bold mono am">${fmtR(v)}</div>
     </div>`).join('')||'<div class="fs12 t2 ta-center">Sem dados</div>'}
   </div>
@@ -4342,8 +4363,8 @@ function renderRelatorio(){
     </div>`).join('')}
   </div>`:''}
   <div class="g2 mt4">
-    <button class="btn bs bw" onclick="Drive.exportJSON()">💾 Exportar backup</button>
-    <button class="btn bb bw" onclick="importBackup()">📥 Importar</button>
+    <button class="btn bs bw" onclick="Drive.exportJSON()">${ppIcon('save',14,1.7)} Exportar backup</button>
+    <button class="btn bb bw" onclick="importBackup()">${ppIcon('download',14,1.7)} Importar</button>
   </div>`;
 }
 
@@ -4361,12 +4382,12 @@ function renderConfig(){
       <label class="fl">Logo do estabelecimento</label>
       <div style="display:flex;align-items:center;gap:12px">
         <div class="foto-pick-prev" id="cfg-logo-prev" onclick="document.getElementById('cfg-logo-inp').click()" style="width:64px;height:64px;border-radius:12px">
-          ${cfg.logo?`<img src="${cfg.logo}" style="width:100%;height:100%;object-fit:cover;border-radius:10px">`:'🏪'}
+          ${cfg.logo?`<img src="${cfg.logo}" style="width:100%;height:100%;object-fit:cover;border-radius:10px">`:ppIcon('store',28,1.4)}
         </div>
         <div style="flex:1">
           <input type="file" id="cfg-logo-inp" accept="image/*" style="display:none" onchange="pickLogo(this)">
-          <button class="btn bs bsm bw" onclick="document.getElementById('cfg-logo-inp').click()">📷 Carregar logo</button>
-          ${cfg.logo?`<button class="btn bs bxs bw" style="margin-top:6px" onclick="clearLogo()">🗑 Remover logo</button>`:''}
+          <button class="btn bs bsm bw" onclick="document.getElementById('cfg-logo-inp').click()">${ppIcon('camera',13,1.7)} Carregar logo</button>
+          ${cfg.logo?`<button class="btn bs bxs bw" style="margin-top:6px" onclick="clearLogo()">${ppIcon('trash',13,1.7)} Remover logo</button>`:''}
         </div>
       </div>
     </div>
@@ -4419,9 +4440,9 @@ function renderConfig(){
     <div class="rb" style="padding:8px 0;border-bottom:1px solid var(--br)">
       <div><div class="fs13 bold">${BT.device?.name||'Nenhuma impressora'}</div>
       <div class="fs12 ${BT.device?.gatt?.connected?'gn':'t3'}">${BT.device?.gatt?.connected?'● Conectada':'Não pareada'}</div></div>
-      <button class="btn bp bsm" onclick="BT.pair()">📡 Parear</button>
+      <button class="btn bp bsm" onclick="BT.pair()">${ppIcon('signal',13,1.7)} Parear</button>
     </div>
-    <button class="btn ba bw mt8" onclick="BT.testPrint()">🖨️ Imprimir teste</button>
+    <button class="btn ba bw mt8" onclick="BT.testPrint()">${ppIcon('printer',14,1.7)} Imprimir teste</button>
   </div>
   <div class="sec-title">Segurança</div>
   <div class="card mb10">
@@ -4440,34 +4461,34 @@ function renderConfig(){
       ${fbAuth
         ? (fbAuth.currentUser
             ? `<div style="display:flex;gap:6px">
-                <button class="btn bg bsm" onclick="fsPush().then(()=>toast('☁️ Sincronizado!','g'))">🔄 Sync</button>
+                <button class="btn bg bsm" onclick="fsPush().then(()=>toast('Sincronizado!','g'))">${ppIcon('refresh',13,1.7)} Sync</button>
                 <button class="btn br_ bsm" onclick="fbLogout();renderConfig()">Sair</button>
                </div>`
-            : `<button class="btn bp bsm" onclick="fbLogin()">☁️ Conectar Google</button>`)
-        : `<span class="bdg bg-s">📵 Offline</span>`}
+            : `<button class="btn bp bsm" onclick="fbLogin()">${ppIcon('cloud',13,1.7)} Conectar Google</button>`)
+        : `<span class="bdg bg-s">${ppIcon('smartphone',11,1.7)} Offline</span>`}
     </div>
     <div style="padding:8px 0;border-bottom:1px solid var(--br)">
       <div class="fs13 bold mb4">Status da sincronização</div>
       <div class="fs12 t2" style="line-height:1.7">
         ${fbAuth&&fbAuth.currentUser
-          ? '☁️✅ Firebase ativo — dados sincronizam automaticamente em todos os dispositivos a cada operação.'
+          ? ppIcon('checkCircle',13,1.7)+' Firebase ativo — dados sincronizam automaticamente em todos os dispositivos.'
           : fbAuth
-            ? '⚠️ Faça login com Google para ativar a sincronização.'
-            : '📵 Modo local — dados salvos apenas neste dispositivo.'}
+            ? ppIcon('alertTriangle',13,1.7)+' Faça login com Google para ativar a sincronização.'
+            : ppIcon('smartphone',13,1.7)+' Modo local — dados salvos apenas neste dispositivo.'}
       </div>
       ${fbAuth&&fbAuth.currentUser
         ? `<div class="fs11 t3 mt4">Projeto: pedepronto-40790 · Firestore</div>` : ''}
     </div>
     <div class="rb" style="padding:8px 0;border-bottom:1px solid var(--br)">
       <div><div class="fs13 bold">Exportar backup local</div><div class="fs12 t2">Salva JSON no dispositivo</div></div>
-      <button class="btn bs bsm" onclick="Drive.exportJSON()">💾 Exportar</button>
+      <button class="btn bs bsm" onclick="Drive.exportJSON()">${ppIcon('save',13,1.7)} Exportar</button>
     </div>
     <div class="rb" style="padding:8px 0">
       <div><div class="fs13 bold">Importar backup</div></div>
-      <button class="btn bb bsm" onclick="importBackup()">📥 Importar</button>
+      <button class="btn bb bsm" onclick="importBackup()">${ppIcon('download',13,1.7)} Importar</button>
     </div>
   </div>
-  <div class="sec-title">🎟️ Vouchers e Permuta</div>
+  <div class="sec-title" style="display:flex;align-items:center;gap:6px">${ppIcon('ticket',14,1.7)} Vouchers e Permuta</div>
   <div class="card mb10">
     ${ST.vouchers.map(v=>`
     <div class="rb" style="padding:9px 0;border-bottom:1px solid var(--br)">
@@ -4477,13 +4498,13 @@ function renderConfig(){
           ${v.tipo==='fixo'?'<span class="bdg bg-pu" style="font-size:9px">FIXO</span>':''}
           ${!v.ativo?'<span class="bdg bg-r" style="font-size:9px">INATIVO</span>':''}
         </div>
-        <div class="fs12 t2">${esc(v.nome)}${v.desconto_tipo==='total'?' · 🆓 Grátis':v.desconto_tipo==='pct'?` · ${v.desconto_valor}% off`:` · -${fmtR(v.desconto_valor)}`}</div>
+        <div class="fs12 t2">${esc(v.nome)}${v.desconto_tipo==='total'?' · Grátis':v.desconto_tipo==='pct'?` · ${v.desconto_valor}% off`:` · -${fmtR(v.desconto_valor)}`}</div>
         <div class="fs11 t3">${v.limite_usos>0?`Usos: ${v.usos}/${v.limite_usos}`:'Ilimitado'}${v.validade?' · Válido até '+fmtD(v.validade):''}</div>
       </div>
       <div style="display:flex;gap:5px;flex-shrink:0">
         ${v.tipo!=='fixo'?`<button class="btn bxs ${v.ativo?'ba':'bg'}" onclick="toggleVoucher('${v.id}')">${v.ativo?'Pausar':'Ativar'}</button>
-        <button class="btn bxs bs" onclick="abrirEditarVoucher('${v.id}')">✏️</button>
-        <button class="btn bxs br_" onclick="excluirVoucher('${v.id}')">🗑️</button>`
+        <button class="btn bxs bs" onclick="abrirEditarVoucher('${v.id}')">${ppIcon('edit',13,1.7)}</button>
+        <button class="btn bxs br_" onclick="excluirVoucher('${v.id}')">${ppIcon('trash',13,1.7)}</button>`
         :`<span class="fs11 t3">Não editável</span>`}
       </div>
     </div>`).join('')}
@@ -4497,17 +4518,17 @@ function renderConfig(){
     <input class="inp" id="cfg-pix-nome" value="${esc(cfg.pix_nome||cfg.nome||'')}" oninput="ST.cfg.pix_nome=this.value"></div>
     <div class="fg"><label class="fl">Cidade (aparece no QR)</label>
     <input class="inp" id="cfg-pix-cidade" value="${esc(cfg.pix_cidade||'')}" oninput="ST.cfg.pix_cidade=this.value" placeholder="Ex: SAO PAULO"></div>
-    ${cfg.pix_chave?`<button class="btn bb bw mt4" onclick="mostrarPixQRTeste()">🔍 Testar QR Code PIX</button>`:''}
+    ${cfg.pix_chave?`<button class="btn bb bw mt4" onclick="mostrarPixQRTeste()">${ppIcon('search',14,1.7)} Testar QR Code PIX</button>`:''}
   </div>
-  <div class="sec-title">💳 Maquininha integrada</div>
+  <div class="sec-title" style="display:flex;align-items:center;gap:6px">${ppIcon('credit',14,1.7)} Maquininha integrada</div>
   <div class="card mb10">
     <div class="fg">
       <label class="fl">Provedor</label>
       <select class="inp" id="cfg-maq-prov" onchange="ST.cfg.maquininha=ST.cfg.maquininha||{};ST.cfg.maquininha.provider=this.value;save('cfg');renderConfig()">
-        <option value="manual" ${(!cfg.maquininha?.provider||cfg.maquininha?.provider==='manual')?'selected':''}>🧾 Maquininha manual (Stone, Cielo, Rede...)</option>
-        <option value="mp" ${cfg.maquininha?.provider==='mp'?'selected':''}>🟡 Mercado Pago Point</option>
-        <option value="pagseguro" ${cfg.maquininha?.provider==='pagseguro'?'selected':''}>🔵 PagSeguro Moderninha (Android)</option>
-        <option value="infinitepay" ${cfg.maquininha?.provider==='infinitepay'?'selected':''}>🟢 InfinitePay (Android)</option>
+        <option value="manual" ${(!cfg.maquininha?.provider||cfg.maquininha?.provider==='manual')?'selected':''}>Maquininha manual (Stone, Cielo, Rede...)</option>
+        <option value="mp" ${cfg.maquininha?.provider==='mp'?'selected':''}>Mercado Pago Point</option>
+        <option value="pagseguro" ${cfg.maquininha?.provider==='pagseguro'?'selected':''}>PagSeguro Moderninha (Android)</option>
+        <option value="infinitepay" ${cfg.maquininha?.provider==='infinitepay'?'selected':''}>InfinitePay (Android)</option>
       </select>
     </div>
     ${(!cfg.maquininha?.provider||cfg.maquininha?.provider==='manual')?`
@@ -4535,16 +4556,16 @@ function renderConfig(){
       Ao cobrar, o app InfinitePay abre automaticamente com o valor preenchido.
     </div>`:''}
   </div>
-  <div class="sec-title">🔊 Sons & Voz</div>
+  <div class="sec-title" style="display:flex;align-items:center;gap:6px">${ppIcon('volume',14,1.7)} Sons & Voz</div>
   <div class="card mb10">
     <div class="fs12 t2 mb10">Escolha como o sistema se comunica durante o atendimento.</div>
     <div class="fs12 bold mb6" style="color:var(--t2);text-transform:uppercase;letter-spacing:.7px">Modo de áudio</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:14px">
       ${[
-        ['mudo','🔇','Mudo','Sem sons e sem voz'],
-        ['sons','🔔','Só sons','Alertas sonoros, sem voz'],
-        ['voz','🗣️','Voz','Anúncios por voz nos eventos'],
-        ['guiado','🎙️','Guiado','Voz em tudo + navegação'],
+        ['mudo',ppIcon('volumeX',18,1.6),'Mudo','Sem sons e sem voz'],
+        ['sons',ppIcon('bell',18,1.6),'Só sons','Alertas sonoros, sem voz'],
+        ['voz',ppIcon('volume',18,1.6),'Voz','Anúncios por voz nos eventos'],
+        ['guiado',ppIcon('mic',18,1.6),'Guiado','Voz em tudo + navegação'],
       ].map(([m,ico,label,desc])=>`
       <button class="btn bsm" style="flex-direction:column;align-items:flex-start;gap:2px;height:auto;padding:10px 12px;text-align:left;border:2px solid ${(_AUDIO.modo===m)?'var(--ac)':'var(--br2)'};background:${(_AUDIO.modo===m)?'var(--acbg)':'var(--s2)'};color:${(_AUDIO.modo===m)?'var(--ac)':'var(--t2)'}" onclick="ST.cfg.audio=ST.cfg.audio||{};ST.cfg.audio.modo='${m}';save('cfg');renderConfig()">
         <span style="font-size:18px">${ico}</span>
@@ -4581,11 +4602,11 @@ function renderConfig(){
       <div class="fs11 t3 mt6">Dispara anúncio "pedido pronto" com as configurações acima.</div>
     </div>
   </div>
-  <button class="btn bp bw mb10" onclick="requireAdmin('Salvar Configurações',()=>{save('cfg');toast('✅ Configurações salvas!','g');renderConfig()})">💾 Salvar configurações</button>
-  <button class="btn br_ bw" onclick="confirm2('⚠️','Resetar sistema?','TODOS os dados serão apagados permanentemente!','Resetar','br_',resetarSistema)">⚠️ Resetar sistema</button>`;
+  <button class="btn bp bw mb10" onclick="requireAdmin('Salvar Configurações',()=>{save('cfg');toast('Configurações salvas!','g');renderConfig()})">${ppIcon('save',14,1.7)} Salvar configurações</button>
+  <button class="btn br_ bw" onclick="confirm2(ppIcon('alertTriangle',36,1.6),'Resetar sistema?','TODOS os dados serão apagados permanentemente!','Resetar','br_',resetarSistema)">${ppIcon('alertTriangle',14,1.7)} Resetar sistema</button>`;
   document.getElementById('sb-est').textContent=cfg.nome||'PedePronto PDV';
 }
-function changePIN(){askPin('Alterar PIN','Digite o PIN atual',()=>{const n=prompt('Novo PIN de 4 dígitos:');if(!n||n.length!==4||isNaN(n)){toast('PIN deve ter 4 dígitos','r');return}ST.cfg.pin=n;save('cfg');toast('✅ PIN alterado!','g')})}
+function changePIN(){askPin('Alterar PIN','Digite o PIN atual',()=>{const n=prompt('Novo PIN de 4 dígitos:');if(!n||n.length!==4||isNaN(n)){toast('PIN deve ter 4 dígitos','r');return}ST.cfg.pin=n;save('cfg');toast('PIN alterado!','g')})}
 async function resetarSistema(){
   // 1. Desinscreve listener Firestore
   if(_fsUnsubscribe){try{_fsUnsubscribe();}catch(e){}_fsUnsubscribe=null;}
@@ -4660,10 +4681,10 @@ function checkAdminPin(){
   if(ok){
     closeMc('mc-admin-auth');
     const adminUser=admins.find(a=>a.pin===_adminBuf);
-    toast('✅ Autorizado: '+adminUser.nome,'g');
+    toast('Autorizado: '+adminUser.nome,'g');
     if(_adminCb)_adminCb();
   } else {
-    toast('❌ PIN incorreto!','r');_adminBuf='';updateAdminDots();
+    toast('PIN incorreto!','r');_adminBuf='';updateAdminDots();
     const el=document.getElementById('mc-admin-auth');
     if(el){el.style.animation='shake .4s';setTimeout(()=>{if(el)el.style.animation=''},400);}
   }
@@ -4800,8 +4821,8 @@ function anunciar(tipo,dados){
               ped.tipo==='mesa'?`Leve para a ${ped.mesa_label||'mesa'}.`:'Retire no balcão.';
 
   // alimenta central de alertas para eventos relevantes
-  if(tipo==='novo_pedido')_addAlerta('🆕',`Novo pedido ${ped.num||''}${ped.mesa_label?' · '+ped.mesa_label:''}${ped.cliente_nome?' · '+ped.cliente_nome:''}`.trim(),'novo');
-  if(tipo==='atrasado')_addAlerta('⏰',`Pedido ${ped.num||ped.id||''} atrasado`,'atrasado');
+  if(tipo==='novo_pedido')_addAlerta(ppIcon('plus',16,1.7),`Novo pedido ${ped.num||''}${ped.mesa_label?' · '+ped.mesa_label:''}${ped.cliente_nome?' · '+ped.cliente_nome:''}`.trim(),'novo');
+  if(tipo==='atrasado')_addAlerta(ppIcon('timer',16,1.7),`Pedido ${ped.num||ped.id||''} atrasado`,'atrasado');
 
   switch(tipo){
     case 'novo_pedido':
@@ -4921,7 +4942,7 @@ function _kdsStartTick(){
           _kdsLateAlerted.add(oid);
           const ped=ST.pedidos.find(p=>p.id===oid);
           anunciar('atrasado',ped||{id:oid,num:card.querySelector('.bold.fs15')?.textContent||''});
-          _addAlerta('⏰','Pedido atrasado: '+(ped?.num||oid),'atrasado');
+          _addAlerta(ppIcon('timer',16,1.7),'Pedido atrasado: '+(ped?.num||oid),'atrasado');
         }
       }
     });
@@ -4944,22 +4965,23 @@ function openDiagnostico(){
   const btOk=!!BT.char;
   const btApi='bluetooth' in navigator;
   const swOk=!!navigator.serviceWorker?.controller;
+  const _d=(n)=>ppIcon(n,13,1.7);
   const lines=[
-    ['📦 Pedidos total', pedTotal],
-    ['📋 Pedidos abertos', pedAbertos],
-    ['🍽️ Produtos', prodTotal],
-    ['📂 Categorias', ST.categorias.length],
-    ['👥 Clientes', ST.clientes.length],
-    ['👤 Funcionários', ST.funcionarios.length],
-    ['💾 LocalStorage usado', lsUsado+'KB'],
-    ['☁️ Firestore sync', fsOk?'✅ OK':'⚠️ '+(_syncStatus||'desligado')],
-    ['🖨️ Impressora BT', btOk?'✅ Conectada':'❌ Desconectada'],
-    ['📡 Web Bluetooth API', btApi?'✅ Disponível':'❌ Indisponível'],
-    ['🔊 Web Audio API', audioCtx?'✅ Disponível':'❌ Indisponível'],
-    ['🗣️ Speech Synthesis', speechOk?'✅ Disponível':'❌ Indisponível'],
-    ['⚙️ Service Worker', swOk?'✅ Ativo':'⚠️ Inativo'],
-    ['📱 Modo mobile', isMobile()?'Sim':'Não'],
-    ['🌐 User Agent', navigator.userAgent.slice(0,60)+'...'],
+    [_d('package')+' Pedidos total', pedTotal],
+    [_d('receipt')+' Pedidos abertos', pedAbertos],
+    [_d('utensils')+' Produtos', prodTotal],
+    [_d('bag')+' Categorias', ST.categorias.length],
+    [_d('users')+' Clientes', ST.clientes.length],
+    [_d('user')+' Funcionários', ST.funcionarios.length],
+    [_d('save')+' LocalStorage usado', lsUsado+'KB'],
+    [_d('cloud')+' Firestore sync', fsOk?ppIcon('checkCircle',13,1.7)+' OK':ppIcon('alertTriangle',13,1.7)+' '+(_syncStatus||'desligado')],
+    [_d('printer')+' Impressora BT', btOk?ppIcon('checkCircle',13,1.7)+' Conectada':ppIcon('xCircle',13,1.7)+' Desconectada'],
+    [_d('signal')+' Web Bluetooth API', btApi?ppIcon('checkCircle',13,1.7)+' Disponível':ppIcon('xCircle',13,1.7)+' Indisponível'],
+    [_d('volume')+' Web Audio API', audioCtx?ppIcon('checkCircle',13,1.7)+' Disponível':ppIcon('xCircle',13,1.7)+' Indisponível'],
+    [_d('mic')+' Speech Synthesis', speechOk?ppIcon('checkCircle',13,1.7)+' Disponível':ppIcon('xCircle',13,1.7)+' Indisponível'],
+    [_d('settings')+' Service Worker', swOk?ppIcon('checkCircle',13,1.7)+' Ativo':ppIcon('alertTriangle',13,1.7)+' Inativo'],
+    [_d('smartphone')+' Modo mobile', isMobile()?'Sim':'Não'],
+    [_d('eye')+' User Agent', navigator.userAgent.slice(0,60)+'...'],
   ];
   const html=`<div style="font-family:monospace;font-size:12px;line-height:1.8">
     ${lines.map(([k,v])=>`<div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--br);padding:4px 0;gap:12px">
@@ -4967,11 +4989,11 @@ function openDiagnostico(){
     </div>`).join('')}
   </div>
   <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
-    <button class="btn ba bsm" onclick="Drive.exportJSON()">📥 Backup JSON</button>
-    <button class="btn bs bsm" onclick="confirm2('⚠️','Resetar dados?','TODOS os dados locais e cache serão apagados!','Resetar','br_',resetarSistema)">🗑️ Reset dados</button>
-    <button class="btn bg bsm" onclick="location.reload()">🔄 Recarregar</button>
+    <button class="btn ba bsm" onclick="Drive.exportJSON()">${ppIcon('download',13,1.7)} Backup JSON</button>
+    <button class="btn bs bsm" onclick="confirm2(ppIcon('alertTriangle',36,1.6),'Resetar dados?','TODOS os dados locais e cache serão apagados!','Resetar','br_',resetarSistema)">${ppIcon('trash',13,1.7)} Reset dados</button>
+    <button class="btn bg bsm" onclick="location.reload()">${ppIcon('refresh',13,1.7)} Recarregar</button>
   </div>`;
-  confirm2('🔬','Diagnóstico do Sistema',html,'Fechar','bs',()=>{});
+  confirm2(ppIcon('microscope',36,1.4),'Diagnóstico do Sistema',html,'Fechar','bs',()=>{});
   // hack para mostrar html no corpo do confirm
   setTimeout(()=>{
     const msg=document.getElementById('mc-conf-msg');
@@ -5004,7 +5026,7 @@ function openAlertas(){
   if(list){
     const items=(ST.alertas||[]);
     list.innerHTML=items.length===0
-      ?`<div style="text-align:center;color:var(--t2);padding:30px"><div style="font-size:32px;margin-bottom:8px">🔔</div><div class="fs13">Nenhum alerta no momento</div></div>`
+      ?`<div style="text-align:center;color:var(--t2);padding:30px"><div style="margin-bottom:8px">${ppIcon('bell',32,1.4)}</div><div class="fs13">Nenhum alerta no momento</div></div>`
       :items.map(a=>`<div class="alerta-item">
           <div class="alerta-ico">${a.ico}</div>
           <div style="flex:1;min-width:0">
@@ -5020,7 +5042,7 @@ function limparAlertas(){
   const dot=document.getElementById('alerta-dot');
   if(dot)dot.className='alerta-dot';
   const list=document.getElementById('alertas-list');
-  if(list)list.innerHTML=`<div style="text-align:center;color:var(--t2);padding:30px"><div style="font-size:32px;margin-bottom:8px">🔔</div><div class="fs13">Nenhum alerta no momento</div></div>`;
+  if(list)list.innerHTML=`<div style="text-align:center;color:var(--t2);padding:30px"><div style="margin-bottom:8px">${ppIcon('bell',32,1.4)}</div><div class="fs13">Nenhum alerta no momento</div></div>`;
 }
 
 // ── LOGIN ──────────────────────────────────────────────────────────────
@@ -5101,7 +5123,7 @@ function checkLoginPin(){
     // Se caixa fechado, pede abertura
     if(!ST.caixa.aberto)setTimeout(pedirAberturaCaixa,500);
   } else {
-    toast('❌ PIN incorreto!','r');_loginBuf='';updateLoginDots();
+    toast('PIN incorreto!','r');_loginBuf='';updateLoginDots();
     const el=document.getElementById('mc-login');
     if(el){el.style.animation='shake .4s';setTimeout(()=>{if(el)el.style.animation=''},400);}
   }
@@ -5127,32 +5149,32 @@ function renderFuncionarios(){
   </div>
 
   <div class="card mb14" style="padding:0;overflow:hidden;border-color:var(--br2)">
-    <div style="padding:12px 14px;background:var(--s2);border-bottom:1px solid var(--br);font-size:13px;font-weight:800;color:var(--t2);letter-spacing:.5px;text-transform:uppercase">🔐 Níveis de acesso</div>
+    <div style="padding:12px 14px;background:var(--s2);border-bottom:1px solid var(--br);font-size:13px;font-weight:800;color:var(--t2);letter-spacing:.5px;text-transform:uppercase;display:flex;align-items:center;gap:6px">${ppIcon('lock',14,1.7)} Níveis de acesso</div>
     <div style="display:grid;grid-template-columns:1fr 1fr">
       <div style="padding:14px;border-right:1px solid var(--br)">
-        <div style="font-size:13px;font-weight:800;color:var(--ac);margin-bottom:8px">👑 Administrador</div>
+        <div style="font-size:13px;font-weight:800;color:var(--ac);margin-bottom:8px;display:flex;align-items:center;gap:4px">${ppIcon('crown',14,1.7)} Administrador</div>
         <div class="fs12 t2" style="line-height:1.85">
-          ✅ Abrir/fechar caixa<br>
-          ✅ Cancelar pedidos<br>
-          ✅ Descontos e cortesias<br>
-          ✅ Vouchers e permutas<br>
-          ✅ Sangria e suprimento<br>
-          ✅ Gerenciar equipe<br>
-          ✅ Configurações gerais<br>
-          ✅ Relatórios completos
+          ${ppIcon('check',11,2)} Abrir/fechar caixa<br>
+          ${ppIcon('check',11,2)} Cancelar pedidos<br>
+          ${ppIcon('check',11,2)} Descontos e cortesias<br>
+          ${ppIcon('check',11,2)} Vouchers e permutas<br>
+          ${ppIcon('check',11,2)} Sangria e suprimento<br>
+          ${ppIcon('check',11,2)} Gerenciar equipe<br>
+          ${ppIcon('check',11,2)} Configurações gerais<br>
+          ${ppIcon('check',11,2)} Relatórios completos
         </div>
       </div>
       <div style="padding:14px">
-        <div style="font-size:13px;font-weight:800;color:var(--bl);margin-bottom:8px">👤 Funcionário</div>
+        <div style="font-size:13px;font-weight:800;color:var(--bl);margin-bottom:8px;display:flex;align-items:center;gap:4px">${ppIcon('user',14,1.7)} Funcionário</div>
         <div class="fs12 t2" style="line-height:1.85">
-          ✅ Criar pedidos<br>
-          ✅ Receber pagamentos<br>
-          ✅ Imprimir comandas<br>
-          ✅ Consultar cardápio<br>
-          🔒 Cancelar pedido<br>
-          🔒 Descontos/vouchers<br>
-          🔒 Caixa e sangria<br>
-          🔒 Configurações
+          ${ppIcon('check',11,2)} Criar pedidos<br>
+          ${ppIcon('check',11,2)} Receber pagamentos<br>
+          ${ppIcon('check',11,2)} Imprimir comandas<br>
+          ${ppIcon('check',11,2)} Consultar cardápio<br>
+          ${ppIcon('lock',11,1.7)} Cancelar pedido<br>
+          ${ppIcon('lock',11,1.7)} Descontos/vouchers<br>
+          ${ppIcon('lock',11,1.7)} Caixa e sangria<br>
+          ${ppIcon('lock',11,1.7)} Configurações
         </div>
       </div>
     </div>
@@ -5161,7 +5183,7 @@ function renderFuncionarios(){
   ${ST.funcionarios.map(f=>`<div class="card mb8 ${!f.ativo?'' :''}">
     <div class="rb">
       <div style="display:flex;align-items:center;gap:12px;flex:1;min-width:0">
-        <div style="width:44px;height:44px;border-radius:50%;background:${f.cargo==='admin'?'var(--acbg)':'var(--blbg)'};border:2px solid ${f.cargo==='admin'?'var(--acg)':'var(--blbr)'};display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">${f.cargo==='admin'?'👑':'👤'}</div>
+        <div style="width:44px;height:44px;border-radius:50%;background:${f.cargo==='admin'?'var(--acbg)':'var(--blbg)'};border:2px solid ${f.cargo==='admin'?'var(--acg)':'var(--blbr)'};display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${f.cargo==='admin'?'var(--ac)':'var(--bl)'}">${f.cargo==='admin'?ppIcon('crown',22,1.5):ppIcon('user',22,1.5)}</div>
         <div style="min-width:0">
           <div class="bold fs14">${esc(f.nome)}</div>
           <div class="fs12 t2">${f.cargo==='admin'?'Administrador':'Funcionário'}${f.cpf?' · CPF: '+f.cpf:''}</div>
@@ -5169,14 +5191,14 @@ function renderFuncionarios(){
         </div>
       </div>
       <div style="display:flex;gap:6px;flex-shrink:0">
-        <button class="btn bs bxs" onclick="requireAdmin('Editar Funcionário',()=>editFunc('${f.id}'))">✏️</button>
-        ${f.id!=='f1'?`<button class="btn br_ bxs" onclick="requireAdmin('Remover Funcionário',()=>delFunc('${f.id}'))">🗑</button>`:''}
+        <button class="btn bs bxs" onclick="requireAdmin('Editar Funcionário',()=>editFunc('${f.id}'))">${ppIcon('edit',13,1.7)}</button>
+        ${f.id!=='f1'?`<button class="btn br_ bxs" onclick="requireAdmin('Remover Funcionário',()=>delFunc('${f.id}'))">${ppIcon('trash',13,1.7)}</button>`:''}
       </div>
     </div>
   </div>`).join('')}
 
   <div class="sec-title mt16">Trocar usuário logado</div>
-  <button class="btn bs bw mt4" onclick="trocarUsuario()">🔄 Sair e trocar usuário</button>`;
+  <button class="btn bs bw mt4" onclick="trocarUsuario()">${ppIcon('refresh',14,1.7)} Sair e trocar usuário</button>`;
 }
 
 function selCargo(cargo){
@@ -5187,28 +5209,28 @@ function selCargo(cargo){
   });
   const info=document.getElementById('ef-cargo-info');
   if(info)info.innerHTML=cargo==='admin'?
-    `<div style="color:var(--ac);font-weight:700;margin-bottom:5px">👑 Administrador — acesso total</div>
+    `<div style="color:var(--ac);font-weight:700;margin-bottom:5px;display:flex;align-items:center;gap:4px">${ppIcon('crown',14,1.7)} Administrador — acesso total</div>
      <div class="fs12" style="color:var(--t2);line-height:1.7">
-       ✅ Abrir e fechar caixa<br>
-       ✅ Cancelar e editar qualquer pedido<br>
-       ✅ Aplicar descontos e cortesias<br>
-       ✅ Usar vouchers e permutas<br>
-       ✅ Adicionar e remover funcionários<br>
-       ✅ Sangria e suprimento<br>
-       ✅ Alterar configurações do sistema<br>
-       ✅ Ver relatórios e histórico completo
+       ${ppIcon('check',11,2)} Abrir e fechar caixa<br>
+       ${ppIcon('check',11,2)} Cancelar e editar qualquer pedido<br>
+       ${ppIcon('check',11,2)} Aplicar descontos e cortesias<br>
+       ${ppIcon('check',11,2)} Usar vouchers e permutas<br>
+       ${ppIcon('check',11,2)} Adicionar e remover funcionários<br>
+       ${ppIcon('check',11,2)} Sangria e suprimento<br>
+       ${ppIcon('check',11,2)} Alterar configurações do sistema<br>
+       ${ppIcon('check',11,2)} Ver relatórios e histórico completo
      </div>` :
-    `<div style="color:var(--bl);font-weight:700;margin-bottom:5px">👤 Funcionário — acesso operacional</div>
+    `<div style="color:var(--bl);font-weight:700;margin-bottom:5px;display:flex;align-items:center;gap:4px">${ppIcon('user',14,1.7)} Funcionário — acesso operacional</div>
      <div class="fs12" style="color:var(--t2);line-height:1.7">
-       ✅ Criar e gerenciar pedidos<br>
-       ✅ Receber pagamentos (dinheiro, cartão, PIX)<br>
-       ✅ Imprimir comandas<br>
-       ✅ Consultar cardápio e clientes<br>
-       🔒 Cancelar pedido → requer Admin<br>
-       🔒 Descontos e cortesias → requer Admin<br>
-       🔒 Vouchers e permutas → requer Admin<br>
-       🔒 Fechar caixa / sangria → requer Admin<br>
-       🔒 Configurações → requer Admin
+       ${ppIcon('check',11,2)} Criar e gerenciar pedidos<br>
+       ${ppIcon('check',11,2)} Receber pagamentos (dinheiro, cartão, PIX)<br>
+       ${ppIcon('check',11,2)} Imprimir comandas<br>
+       ${ppIcon('check',11,2)} Consultar cardápio e clientes<br>
+       ${ppIcon('lock',11,1.7)} Cancelar pedido → requer Admin<br>
+       ${ppIcon('lock',11,1.7)} Descontos e cortesias → requer Admin<br>
+       ${ppIcon('lock',11,1.7)} Vouchers e permutas → requer Admin<br>
+       ${ppIcon('lock',11,1.7)} Fechar caixa / sangria → requer Admin<br>
+       ${ppIcon('lock',11,1.7)} Configurações → requer Admin
      </div>`;
 }
 function editFunc(id){
@@ -5236,7 +5258,7 @@ function saveFunc(){
   if(_editFunc)Object.assign(_editFunc,data);
   else ST.funcionarios.push({id:uid(),...data});
   save('funcionarios');closeMc('mc-func');renderFuncionarios();
-  toast('✅ Funcionário salvo!','g');
+  toast('Funcionário salvo!','g');
 }
 function delFunc(id){
   const f=ST.funcionarios.find(x=>x.id===id);if(!f)return;
@@ -5244,7 +5266,7 @@ function delFunc(id){
     toast('Deve haver ao menos 1 administrador ativo','r');return;
   }
   ST.funcionarios=ST.funcionarios.filter(x=>x.id!==id);
-  save('funcionarios');renderFuncionarios();toast('🗑️ Removido','a');
+  save('funcionarios');renderFuncionarios();toast('Removido','a');
 }
 
 // ── VOUCHER COM MOTIVO ─────────────────────────────────────────────────
@@ -5289,9 +5311,9 @@ function validarVoucher(){
   } else {
     // Campanha: mostra detalhes e pede confirmação
     const ped=ST.pedidos.find(p=>p.id===_voucherPedId);
-    const descontoTxt=v.desconto_tipo==='total'?'🆓 Pedido inteiro grátis'
+    const descontoTxt=v.desconto_tipo==='total'?'Pedido inteiro grátis'
       :v.desconto_tipo==='pct'?`💸 ${v.desconto_valor}% de desconto`
-      :`💵 ${fmtR(v.desconto_valor)} de desconto`;
+      :`${fmtR(v.desconto_valor)} de desconto`;
     const totalFinal=ped?_calcTotalComVoucher(ped.total,v):0;
     const el=document.getElementById('vc-camp-nome');if(el)el.textContent=v.nome;
     const info=document.getElementById('vc-camp-info');
@@ -5401,7 +5423,7 @@ function salvarVoucherEdit(){
       limite_usos:parseInt(document.getElementById('vce-limite').value)||0,
       usos:0,validade:document.getElementById('vce-validade').value||null,criado:now()});
   }
-  save('vouchers');closeMc('mc-voucher-edit');renderConfig();toast('✅ Voucher salvo!','g');
+  save('vouchers');closeMc('mc-voucher-edit');renderConfig();toast('Voucher salvo!','g');
 }
 function toggleVoucher(id){
   const v=ST.vouchers.find(x=>x.id===id);if(!v||v.tipo==='fixo')return;
@@ -5409,7 +5431,7 @@ function toggleVoucher(id){
 }
 function excluirVoucher(id){
   const v=ST.vouchers.find(x=>x.id===id);if(!v||v.tipo==='fixo'){toast('Voucher fixo não pode ser excluído','r');return;}
-  confirm2('🗑️','Excluir voucher?',`Código: ${v.code} — ${v.nome}`,'Excluir','br_',()=>{
+  confirm2(ppIcon('trash',36,1.4),'Excluir voucher?',`Código: ${v.code} — ${v.nome}`,'Excluir','br_',()=>{
     ST.vouchers=ST.vouchers.filter(x=>x.id!==id);save('vouchers');renderConfig();
     toast('Voucher excluído','a');
   });
@@ -5524,7 +5546,7 @@ function showLoginScreen(){
   _loginEl=document.createElement('div');
   _loginEl.style.cssText='position:fixed;inset:0;z-index:9000;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:20px';
   _loginEl.innerHTML=`<div style="background:var(--sf);border:1px solid var(--br2);border-radius:20px;padding:36px 28px;max-width:360px;width:100%;text-align:center">
-    <div style="font-size:52px;margin-bottom:10px">🍽️</div>
+    <div style="margin-bottom:10px">${ppIcon('utensils',52,1.2)}</div>
     <div style="font-size:22px;font-weight:900;color:var(--ac);font-family:monospace;margin-bottom:4px">PedePronto PDV</div>
     <div style="font-size:13px;color:var(--t2);margin-bottom:28px;line-height:1.6">Sistema de pedidos para bares,<br>lanchonetes e restaurantes.</div>
     <button onclick="fbLogin()" style="width:100%;padding:14px;border-radius:12px;background:linear-gradient(135deg,var(--ac),var(--acd));border:none;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:10px">
@@ -5636,7 +5658,7 @@ function showCloudStatus(){
     <div class="sh-handle"></div>
     <div class="rb mb14">
       <div>
-        <div style="font-size:16px;font-weight:800">☁️ Sincronização</div>
+        <div style="font-size:16px;font-weight:800;display:flex;align-items:center;gap:6px">${ppIcon('cloud',18,1.6)} Sincronização</div>
         <div class="fs12 t2">${isHosted?'Firestore · pedepronto-40790':'Modo local'}</div>
       </div>
       ${fbUser?`<div class="fs12" style="display:flex;align-items:center;gap:6px">${statIco} <span style="color:var(--t2)">${statTxt}</span></div>`:''}
@@ -5644,7 +5666,7 @@ function showCloudStatus(){
 
     ${fbUser?`
     <div style="background:${_syncStatus==='error'?'var(--rdbg)':'var(--gnbg)'};border:1px solid ${_syncStatus==='error'?'var(--rdbr)':'var(--gnbr)'};border-radius:12px;padding:14px;margin-bottom:14px">
-      <div class="fs13 bold mb4">${_syncStatus==='error'?'⚠️ Verificar configuração':'✅ Conta conectada'}</div>
+      <div class="fs13 bold mb4" style="display:flex;align-items:center;gap:4px">${_syncStatus==='error'?ppIcon('alertTriangle',14,1.7)+' Verificar configuração':ppIcon('checkCircle',14,1.7)+' Conta conectada'}</div>
       <div class="fs12 t2">${fbUser.email}</div>
       ${_syncStatus==='error'?`<div class="fs12 rd mt6">Erro de permissão — as regras do Firestore podem não estar publicadas.</div>`:`<div class="fs12 t2 mt4">Dados sincronizados automaticamente entre PC, celular e tablet.</div>`}
     </div>
@@ -5655,7 +5677,7 @@ function showCloudStatus(){
       <button class="btn bb bw" onclick="closeOv('ov-obs');fsPull()">
         ↓ Puxar dados da nuvem para este dispositivo
       </button>
-      ${_syncStatus==='error'?`<button class="btn ba bw" onclick="showFirestoreHelp()">🔐 Ver regras do Firestore</button>`:''}
+      ${_syncStatus==='error'?`<button class="btn ba bw" onclick="showFirestoreHelp()">${ppIcon('lock',14,1.7)} Ver regras do Firestore</button>`:''}
       <button class="btn br_ bw" onclick="fbLogout();closeOv('ov-obs');updateDriveBtn()">🚪 Sair da conta Google</button>
     </div>
     <div style="background:var(--s2);border-radius:10px;padding:12px;font-size:11px;color:var(--t3);line-height:1.7">
@@ -5667,20 +5689,20 @@ function showCloudStatus(){
     </div>
     `:(isHosted?`
     <div style="background:var(--ambg);border:1px solid var(--ambr);border-radius:12px;padding:14px;margin-bottom:14px">
-      <div class="fs13 bold am mb4">⚠️ Nenhuma conta conectada</div>
+      <div class="fs13 bold am mb4" style="display:flex;align-items:center;gap:4px">${ppIcon('alertTriangle',14,1.7)} Nenhuma conta conectada</div>
       <div class="fs12 t2">Faça login com Google para sincronizar dados entre dispositivos com o mesmo e-mail.</div>
     </div>
-    <button class="btn bp bw" style="padding:14px" onclick="closeOv('ov-obs');fbLogin()">☁️ Entrar com Google</button>
+    <button class="btn bp bw" style="padding:14px" onclick="closeOv('ov-obs');fbLogin()">${ppIcon('cloud',14,1.7)} Entrar com Google</button>
     `:`
     <div style="background:var(--s2);border:1px solid var(--br2);border-radius:12px;padding:14px;margin-bottom:14px">
-      <div class="fs13 bold mb4">📵 Modo local</div>
+      <div class="fs13 bold mb4">${ppIcon('smartphone',14,1.7)} Modo local</div>
       <div class="fs12 t2">Acesse pelo link abaixo para ativar a sincronização:</div>
       <div class="fs12 ac bold mt6">victorhbarbosa92.github.io/pedepronto</div>
     </div>
-    <button class="btn bs bw" onclick="navigator.clipboard?.writeText('https://victorhbarbosa92.github.io/pedepronto').then(()=>toast('Link copiado!','g'))">📋 Copiar link</button>
+    <button class="btn bs bw" onclick="navigator.clipboard?.writeText('https://victorhbarbosa92.github.io/pedepronto').then(()=>toast('Link copiado!','g'))">${ppIcon('receipt',14,1.7)} Copiar link</button>
     `)}
     <div class="divider mt12 mb12"></div>
-    <button class="btn bs bw bsm" onclick="closeOv('ov-obs');Drive.exportJSON()">💾 Exportar backup local (.json)</button>
+    <button class="btn bs bw bsm" onclick="closeOv('ov-obs');Drive.exportJSON()">${ppIcon('save',14,1.7)} Exportar backup local (.json)</button>
   `;
   openOv('ov-obs');
 }
@@ -5802,7 +5824,7 @@ async function ativarLicenca(){
         },{merge:true});
       }catch(e){}
     }
-    btn.textContent='✅ Ativado! Carregando...';
+    btn.textContent='Ativado! Carregando...';
     setTimeout(()=>window.location.reload(),800);
   }catch(e){
     err.textContent='Código corrompido ou inválido: '+e.message;
@@ -5818,7 +5840,7 @@ function _mostrarTelaAtivacao(msg){
   _licTelaEl.style.cssText='position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:24px;flex-direction:column';
   _licTelaEl.innerHTML=`
     <div style="max-width:440px;width:100%;background:var(--sf);border:1px solid var(--br2);border-radius:22px;padding:36px 28px;text-align:center">
-      <div style="font-size:52px;margin-bottom:12px">🔐</div>
+      <div style="margin-bottom:12px"><svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="var(--ac)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 11h14v10H5zM8 11V7a4 4 0 018 0v4"/></svg></div>
       <div style="font-size:22px;font-weight:900;color:var(--ac);font-family:monospace;margin-bottom:6px">PedePronto PDV</div>
       <div style="font-size:13px;color:var(--t2);margin-bottom:24px;line-height:1.6">${msg}</div>
       <textarea id="pp-act-code" style="width:100%;background:var(--sf2,var(--s2));border:1.5px solid var(--br2);border-radius:10px;color:var(--tx);padding:12px;font-size:11px;font-family:monospace;min-height:90px;outline:none;resize:vertical;margin-bottom:10px" placeholder="Cole o código de licença aqui&#10;(começa com PP-)"></textarea>
@@ -6125,7 +6147,7 @@ const MAQ={
   },
   // ── Manual (Stone, Cielo, Rede, SumUp etc.) ────────
   manual(ped){
-    maqSetStatus('🧾','Cobrar na maquininha',
+    maqSetStatus(ppIcon('receipt',36,1.4),'Cobrar na maquininha',
       `Valor: ${fmtR(ped.total)} — Cobre externamente e confirme abaixo`,true,false);
   }
 };
@@ -6135,23 +6157,23 @@ function maqCobrar(ped_id){
   _maqPedId=ped_id;_maqIntentId=null;_maqPollCount=0;
   if(_maqPollTimer){clearTimeout(_maqPollTimer);_maqPollTimer=null;}
   const provider=(ST.cfg.maquininha||{}).provider||'manual';
-  maqSetStatus('💳','Iniciando cobrança...','Aguarde...',false,false);
+  maqSetStatus(ppIcon('credit',36,1.4),'Iniciando cobrança...','Aguarde...',false,false);
   openMc('mc-maq-status');
   if(provider==='mp'){
     MAQ.mpCobrar(ped).then(intentId=>{
       if(!intentId){closeMc('mc-maq-status');return;}
       _maqIntentId=intentId;
-      maqSetStatus('💳','Aguardando pagamento',
+      maqSetStatus(ppIcon('credit',36,1.4),'Aguardando pagamento',
         'Aproxime, insira ou passe o cartão na maquininha',false,false);
       _maqDoPoll();
     });
   } else if(provider==='pagseguro'){
     MAQ.pagseguro(ped);
-    maqSetStatus('📱','App PagSeguro aberto',
+    maqSetStatus(ppIcon('smartphone',36,1.4),'App PagSeguro aberto',
       `Confirme após receber ${fmtR(ped.total)} no app`,true,false);
   } else if(provider==='infinitepay'){
     MAQ.infinitepay(ped);
-    maqSetStatus('📱','App InfinitePay aberto',
+    maqSetStatus(ppIcon('smartphone',36,1.4),'App InfinitePay aberto',
       `Confirme após receber ${fmtR(ped.total)} no app`,true,false);
   } else {
     MAQ.manual(ped);
@@ -6167,10 +6189,10 @@ function _maqDoPoll(){
   }
   MAQ.mpPoll(_maqIntentId).then(state=>{
     if(state==='FINISHED'||state==='PROCESSED'){
-      maqSetStatus('✅','Pagamento aprovado!','Transação concluída com sucesso.',false,true);
+      maqSetStatus(ppIcon('checkCircle',36,1.4),'Pagamento aprovado!','Transação concluída com sucesso.',false,true);
       setTimeout(()=>{closeMc('mc-maq-status');_finalizarPagamento(_maqPedId,'maquininha');},1500);
     } else if(state==='ERROR'||state==='CANCELED'){
-      maqSetStatus('❌','Pagamento '+(state==='CANCELED'?'cancelado':'recusado'),
+      maqSetStatus(ppIcon('xCircle',36,1.4),'Pagamento '+(state==='CANCELED'?'cancelado':'recusado'),
         'Tente novamente ou use outra forma de pagamento.',false,true);
     } else {
       _maqPollTimer=setTimeout(_maqDoPoll,3000);
