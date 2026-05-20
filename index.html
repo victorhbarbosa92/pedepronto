@@ -1520,7 +1520,7 @@ const _PP_PUBKEY_JWK={"crv":"P-256","ext":true,"key_ops":["verify"],"kty":"EC","
     <div style="font-size:15px;font-weight:800;margin-bottom:6px" id="mc-conf-ttl">Confirmar</div>
     <div style="font-size:13px;color:var(--t2);margin-bottom:18px;line-height:1.5" id="mc-conf-msg"></div>
     <div class="g2">
-      <button class="btn bs bw" onclick="closeMc('mc-confirm')">Cancelar</button>
+      <button class="btn bs bw" id="mc-conf-cancel" onclick="closeMc('mc-confirm')">Cancelar</button>
       <button class="btn bw" id="mc-conf-ok">Confirmar</button>
     </div>
   </div>
@@ -1930,13 +1930,16 @@ function checkPin(){
 // ═══════════════════════════════════════════
 //  CONFIRM
 // ═══════════════════════════════════════════
-function confirm2(ico,title,msg,okLbl,okCls,cb){
-  document.getElementById('mc-conf-ico').textContent=ico;
+function confirm2(ico,title,msg,okLbl,okCls,cb,cancelCb){
+  document.getElementById('mc-conf-ico').innerHTML=ico;
   document.getElementById('mc-conf-ttl').textContent=title;
-  document.getElementById('mc-conf-msg').textContent=msg;
+  document.getElementById('mc-conf-msg').innerHTML=msg;
   const btn=document.getElementById('mc-conf-ok');
   btn.textContent=okLbl;btn.className='btn bw '+(okCls||'bp');
-  btn.onclick=()=>{closeMc('mc-confirm');cb()};
+  btn.onclick=()=>{closeMc('mc-confirm');if(cb)cb()};
+  // Botão cancelar com callback opcional
+  const cancelBtn=document.getElementById('mc-conf-cancel');
+  if(cancelBtn)cancelBtn.onclick=()=>{closeMc('mc-confirm');if(cancelCb)cancelCb()};
   openMc('mc-confirm');
 }
 
