@@ -5916,7 +5916,9 @@ async function _resgatarConvite(user){
     });
     if(!aceitar){sessionStorage.removeItem('pp_pending_invite');return false;}
     // Aceitar convite
+    // Escrita crítica: marcar convite como usado
     await fbDB.collection('invites').doc(token).update({status:'used',used_by:user.uid,used_at:new Date().toISOString()});
+    // Escrita crítica: criar user_map como membro
     await fbDB.collection('user_map').doc(user.uid).set({
       estab_uid:inv.estab_uid,
       role:'membro',
@@ -5926,14 +5928,15 @@ async function _resgatarConvite(user){
       joined_at:new Date().toISOString(),
       invited_by:inv.created_by
     });
-    await fbDB.collection('estabelecimentos').doc(inv.estab_uid).collection('membros').doc(user.uid).set({
+    // Escrita informacional: registrar na lista de membros do dono (pode falhar sem bloquear)
+    try{await fbDB.collection('estabelecimentos').doc(inv.estab_uid).collection('membros').doc(user.uid).set({
       email:user.email||'',
       nome:user.displayName||'',
       role:'membro',
       permissions:inv.permissions||_ALL_PERMS,
       joined_at:new Date().toISOString(),
       active:true
-    });
+    });}catch(e){console.warn('[PedePronto] Erro ao registrar em membros (não-crítico):',e.message);}
     _estabUid=inv.estab_uid;
     _userRole='membro';
     _userPermissions=inv.permissions||_ALL_PERMS;
