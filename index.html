@@ -6406,9 +6406,12 @@ function _atualizarBadgeLicenca(){
     fbAuth.onAuthStateChanged(async function(user){
       updateDriveBtn();updateSyncStatus();
       if(user){
-        // 1. Resolver estabelecimento ANTES da licença (membro herda licença do dono)
+        // 1. Esconder telas de login/registro antes de qualquer popup
+        hideLoginScreen();
+        hideRegisterScreen();
+        // 2. Resolver estabelecimento ANTES da licença (membro herda licença do dono)
         const estabId=await _resolveUserMap(user);
-        // 2. Verifica convite pendente (pode mudar _estabUid se aceitar)
+        // 3. Verifica convite pendente (pode mudar _estabUid se aceitar)
         const inviteAccepted=await _resgatarConvite(user);
         const finalEstabId=inviteAccepted?_estabUid:estabId;
 
@@ -6462,8 +6465,6 @@ function _atualizarBadgeLicenca(){
         clearTimeout(window._listenRetryTimer);
         _syncEnabled = true; // agora save() pode sincronizar
         updateSyncStatus();
-        hideLoginScreen();
-        hideRegisterScreen();
         _applyPermissionUI();
         fsListen(finalEstabId);
         // Push condicional: só envia dados locais se a nuvem estiver vazia ou local for mais novo
