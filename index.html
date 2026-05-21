@@ -4005,7 +4005,7 @@ function renderDelivery(){
   ${peds[tab].map(p=>`<div class="card mb8">
     <div class="rb mb6"><div><div class="bold">${p.num}</div>
     <div class="fs12 t2">${p.cliente_nome||'—'}</div></div>
-    <span class="bdg ${tab==='preparo'?'bg-a':tab==='rota'?'bg-b':'bg-g'}">${tab==='preparo'?'Preparando':tab==='rota'?'Na rota':'Entregue'}</span></div>
+    <div style="display:flex;gap:4px;align-items:center">${p._origem==='whatsapp'?'<span class="bdg bg-gn" style="font-size:9px">WhatsApp</span>':''}<span class="bdg ${tab==='preparo'?'bg-a':tab==='rota'?'bg-b':'bg-g'}">${tab==='preparo'?'Preparando':tab==='rota'?'Na rota':'Entregue'}</span></div></div>
     ${p.telefone?`<div class="fs12 t2 mb3" style="display:flex;align-items:center;gap:4px">${ppIcon('phone',12,1.7)} ${esc(p.telefone)}</div>`:''}
     ${p.endereco?`<div class="fs12 t2 mb3" style="display:flex;align-items:center;gap:4px">${ppIcon('mapPin',12,1.7)} ${esc(p.endereco)}</div>`:''}
     ${p.del_pagamento?`<div class="fs12 t2 mb6" style="display:flex;align-items:center;gap:4px">${ppIcon('dollarSign',12,1.7)} ${p.del_pagamento==='dinheiro'?'Dinheiro'+(p.del_troco_para?' (troco p/ R$ '+p.del_troco_para+')':''):p.del_pagamento==='cartao'?'Cartão':'PIX'}</div>`:''}
@@ -4906,6 +4906,68 @@ function renderConfig(){
       <div class="fs11 t3 mt6">Dispara anúncio "pedido pronto" com as configurações acima.</div>
     </div>
   </div>
+  ${hasPermission('config_editar')&&window.IS_HOSTED?`
+  <div class="sec-title" style="display:flex;align-items:center;gap:6px">${ppIcon('send',14,1.7)} Agente WhatsApp</div>
+  <div class="card mb10">
+    <div class="rb" style="padding:8px 0;border-bottom:1px solid var(--br)">
+      <div><div class="fs13 bold">Atendente virtual WhatsApp</div><div class="fs12 t2">Recebe pedidos, envia PIX, confirma pagamento</div></div>
+      <button class="sw ${cfg.whatsapp_agent?.ativo?'on':''}" id="sw-wa-ativo" onclick="toggleSw(this);ST.cfg.whatsapp_agent=ST.cfg.whatsapp_agent||{};ST.cfg.whatsapp_agent.ativo=swVal('sw-wa-ativo');save('cfg');renderConfig()"></button>
+    </div>
+    ${cfg.whatsapp_agent?.ativo?`
+    <div class="fs12 t2 mb10" style="line-height:1.7;padding:10px;background:var(--s2);border-radius:8px;margin-top:10px">
+      <strong>Como configurar:</strong><br>
+      1. Crie um app no <strong>Meta Business Suite</strong> (developers.facebook.com)<br>
+      2. Configure o produto <strong>WhatsApp</strong> no app<br>
+      3. Copie o <strong>Phone Number ID</strong> e <strong>Access Token</strong><br>
+      4. Configure o webhook URL: <code style="background:var(--s3);padding:2px 6px;border-radius:4px;font-size:11px">https://southamerica-east1-pedepronto-40790.cloudfunctions.net/whatsappWebhook</code><br>
+      5. No Mercado Pago, configure webhook: <code style="background:var(--s3);padding:2px 6px;border-radius:4px;font-size:11px">https://southamerica-east1-pedepronto-40790.cloudfunctions.net/mercadoPagoWebhook</code>
+    </div>
+    <div class="fg"><label class="fl">Nome do restaurante (aparece nas mensagens)</label>
+    <input class="inp" value="${esc(cfg.whatsapp_agent?.nome_restaurante||cfg.nome||'')}" oninput="ST.cfg.whatsapp_agent.nome_restaurante=this.value"></div>
+    <div class="fg"><label class="fl">Phone Number ID (Meta)</label>
+    <input class="inp" value="${esc(cfg.whatsapp_agent?.phone_number_id||'')}" oninput="ST.cfg.whatsapp_agent.phone_number_id=this.value" placeholder="Ex: 123456789012345" style="font-family:monospace"></div>
+    <div class="fg"><label class="fl">Access Token (WhatsApp Cloud API)</label>
+    <input class="inp" type="password" value="${esc(cfg.whatsapp_agent?.access_token||'')}" oninput="ST.cfg.whatsapp_agent.access_token=this.value" placeholder="EAAx..."></div>
+    <div class="fg"><label class="fl">Verify Token (webhook)</label>
+    <input class="inp" value="${esc(cfg.whatsapp_agent?.verify_token||'pedepronto_verify')}" oninput="ST.cfg.whatsapp_agent.verify_token=this.value" style="font-family:monospace"></div>
+    <div style="border-top:1px solid var(--br);padding-top:12px;margin-top:6px">
+      <div class="fs12 bold mb6">Pagamento PIX (Mercado Pago)</div>
+      <div class="fg"><label class="fl">Access Token do Mercado Pago</label>
+      <input class="inp" type="password" value="${esc(cfg.whatsapp_agent?.mp_access_token||'')}" oninput="ST.cfg.whatsapp_agent.mp_access_token=this.value" placeholder="APP_USR-..."></div>
+      <div class="fg"><label class="fl">Chave PIX (fallback sem Mercado Pago)</label>
+      <input class="inp" value="${esc(cfg.whatsapp_agent?.chave_pix||cfg.pix_chave||'')}" oninput="ST.cfg.whatsapp_agent.chave_pix=this.value"></div>
+    </div>
+    <div style="border-top:1px solid var(--br);padding-top:12px;margin-top:6px">
+      <div class="fs12 bold mb6">Delivery</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="fg" style="margin:0"><label class="fl">Taxa de entrega (R$)</label>
+        <input class="inp" type="number" step="0.5" value="${cfg.whatsapp_agent?.taxa_entrega||0}" oninput="ST.cfg.whatsapp_agent.taxa_entrega=parseFloat(this.value)||0"></div>
+        <div class="fg" style="margin:0"><label class="fl">Tempo medio (min)</label>
+        <input class="inp" type="number" value="${cfg.whatsapp_agent?.tempo_medio||45}" oninput="ST.cfg.whatsapp_agent.tempo_medio=parseInt(this.value)||45"></div>
+      </div>
+    </div>
+    <div style="border-top:1px solid var(--br);padding-top:12px;margin-top:6px">
+      <div class="fs12 bold mb6">Horario de funcionamento</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="fg" style="margin:0"><label class="fl">Abre</label>
+        <input class="inp" type="time" value="${cfg.whatsapp_agent?.horario_inicio||'11:00'}" oninput="ST.cfg.whatsapp_agent.horario_inicio=this.value"></div>
+        <div class="fg" style="margin:0"><label class="fl">Fecha</label>
+        <input class="inp" type="time" value="${cfg.whatsapp_agent?.horario_fim||'23:00'}" oninput="ST.cfg.whatsapp_agent.horario_fim=this.value"></div>
+      </div>
+    </div>
+    <div style="border-top:1px solid var(--br);padding-top:12px;margin-top:6px">
+      <div class="fs12 bold mb6">Mensagens</div>
+      <div class="fg"><label class="fl">Saudacao inicial</label>
+      <input class="inp" value="${esc(cfg.whatsapp_agent?.greeting||'Ola! Bem-vindo ao '+( cfg.whatsapp_agent?.nome_restaurante||cfg.nome||'Baguetalho')+'!')}" oninput="ST.cfg.whatsapp_agent.greeting=this.value"></div>
+      <div class="fg"><label class="fl">Mensagem fora do horario</label>
+      <input class="inp" value="${esc(cfg.whatsapp_agent?.mensagem_fora_horario||'Estamos fechados no momento.')}" oninput="ST.cfg.whatsapp_agent.mensagem_fora_horario=this.value"></div>
+    </div>
+    <div class="fs11 t3 mt10" style="display:flex;align-items:center;gap:6px;padding:8px;background:var(--s2);border-radius:8px">
+      ${ppIcon('info',14,1.6)} Pedidos do WhatsApp aparecem automaticamente no PDV com a origem <span class="bdg bg-gn" style="font-size:9px">WhatsApp</span>
+    </div>
+    `:''}
+  </div>
+  `:''}
   ${hasPermission('convites')&&window.IS_HOSTED?`
   <div class="sec-title" style="display:flex;align-items:center;gap:6px">${ppIcon('users',14,1.7)} Dispositivos vinculados</div>
   <div class="card mb10">
