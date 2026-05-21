@@ -964,9 +964,9 @@ const _PP_PUBKEY_JWK={"crv":"P-256","ext":true,"key_ops":["verify"],"kty":"EC","
 </div>
 
 <!-- ══════════ SYNC BANNER ══════════ -->
-<div id="sync-banner" style="display:none;background:var(--rdbg);border-bottom:1px solid var(--rdbr);padding:8px 14px;font-size:12px;color:var(--rd);align-items:center;gap:8px;cursor:pointer" onclick="showFirestoreHelp()">
+<div id="sync-banner" style="display:none;background:var(--rdbg);border-bottom:1px solid var(--rdbr);padding:8px 14px;font-size:12px;color:var(--rd);align-items:center;gap:8px;cursor:pointer" onclick="showFirestoreHelp('PP-001')">
   <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 20h20zM12 9v4M12 17h.01"/></svg></span>
-  <span style="flex:1">Sincronização com a nuvem com erro — toque para configurar</span>
+  <span style="flex:1">Erro de sincronização — toque para ver detalhes</span>
   <span style="font-weight:700;text-decoration:underline">Corrigir →</span>
 </div>
 
@@ -1766,7 +1766,8 @@ async function fsPush(){
     _setSyncStatus('error');
     if(e.code==='permission-denied'){
       window._noPermission=true;
-      if(!window._permWarnShown){window._permWarnShown=true;showFirestoreHelp();}
+      const errCode=_ppErrorCode(e.code);
+      if(!window._permWarnShown){window._permWarnShown=true;showFirestoreHelp(errCode);}
       clearTimeout(window._permRetryTimer);
       window._permRetryTimer=setTimeout(()=>{
         window._noPermission=false;
@@ -1796,60 +1797,47 @@ async function fsPull(){
   }
 }
 
-// Mostrar ajuda sobre regras do Firestore
-const _FIRESTORE_RULES=`rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-
-    // Licenças — leitura pública para verificar revogação offline
-    match /licenses/{licId} {
-      allow read: if true;
-      allow write: if false;
-    }
-
-    // Licenças por e-mail — auto-ativação multi-dispositivo
-    match /licencas_clientes/{email} {
-      allow read: if request.auth != null && request.auth.token.email == email;
-      allow write: if request.auth != null;
-    }
-
-    // Dados do estabelecimento — acesso restrito ao dono
-    match /estabelecimentos/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-      match /dados/{doc} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
-      }
-    }
-  }
-}`;
-function showFirestoreHelp(){
+// ─── Códigos de Erro PedePronto ───
+// PP-001: Erro de permissão no servidor (Firestore permission-denied)
+// PP-002: Erro de conexão com o servidor (network/timeout)
+// PP-003: Dados corrompidos ou formato inválido
+// PP-004: Licença não encontrada ou expirada
+// PP-005: Conta não vinculada a nenhum estabelecimento
+// PP-006: Convite inválido, expirado ou já utilizado
+function _ppErrorCode(firebaseCode){
+  const map={'permission-denied':'PP-001','unavailable':'PP-002','deadline-exceeded':'PP-002','not-found':'PP-005','unauthenticated':'PP-001'};
+  return map[firebaseCode]||'PP-003';
+}
+function showFirestoreHelp(errorCode){
+  const code=errorCode||'PP-001';
+  const messages={
+    'PP-001':{title:'Acesso negado pelo servidor',desc:'O sistema não conseguiu permissão para acessar os dados na nuvem. Isso pode acontecer se sua conta foi removida ou se houve uma alteração nas configurações do servidor.',steps:['Saia da conta e entre novamente','Se o problema persistir, entre em contato com o suporte','Informe o código de erro abaixo']},
+    'PP-002':{title:'Erro de conexão',desc:'Não foi possível conectar ao servidor. Verifique sua internet e tente novamente.',steps:['Verifique sua conexão com a internet','Aguarde alguns segundos e tente novamente','Se o problema persistir, entre em contato com o suporte']},
+    'PP-003':{title:'Erro inesperado',desc:'Ocorreu um erro inesperado na sincronização dos dados.',steps:['Recarregue a página','Se o problema persistir, entre em contato com o suporte']},
+    'PP-005':{title:'Conta não vinculada',desc:'Sua conta não está vinculada a nenhum estabelecimento. Peça um convite ao dono do estabelecimento.',steps:['Solicite um link de convite ao administrador','Abra o link e crie sua conta ou faça login','Seus dados serão sincronizados automaticamente']}
+  };
+  const err=messages[code]||messages['PP-003'];
   var sh=document.getElementById('sh-obs');
   sh.innerHTML=`
     <div class="sh-handle"></div>
-    <div style="text-align:center;margin-bottom:8px"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--ac)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 11h14v10H5zM8 11V7a4 4 0 018 0v4"/></svg></div>
-    <div style="font-size:16px;font-weight:800;text-align:center;margin-bottom:6px">Configurar regras do Firestore</div>
-    <div class="fs12 t2 mb12" style="line-height:1.7;text-align:center">
-      O Firebase está bloqueando o acesso.<br>Siga os 3 passos abaixo para ativar o sync.
+    <div style="text-align:center;margin-bottom:8px">${ppIcon('alertTriangle',32,1.4,'var(--rd)')}</div>
+    <div style="font-size:16px;font-weight:800;text-align:center;margin-bottom:6px">${err.title}</div>
+    <div class="fs12 t2 mb12" style="line-height:1.7;text-align:center">${err.desc}</div>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
+      ${err.steps.map((s,i)=>`<div style="background:var(--s2);border-radius:10px;padding:12px;display:flex;align-items:flex-start;gap:10px">
+        <div style="width:24px;height:24px;border-radius:50%;background:var(--s4);color:var(--t2);font-weight:700;font-size:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0">${i+1}</div>
+        <div class="fs12 t2">${s}</div>
+      </div>`).join('')}
     </div>
-    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px">
-      <div style="background:var(--s2);border-radius:10px;padding:12px;display:flex;align-items:flex-start;gap:10px">
-        <div style="width:26px;height:26px;border-radius:50%;background:var(--ac);color:#fff;font-weight:900;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0">1</div>
-        <div class="fs12 t2"><strong style="color:var(--tx)">Abra o Firebase Console</strong><br>Clique no botão abaixo → Firestore Database → Regras</div>
-      </div>
-      <div style="background:var(--s2);border-radius:10px;padding:12px;display:flex;align-items:flex-start;gap:10px">
-        <div style="width:26px;height:26px;border-radius:50%;background:var(--ac);color:#fff;font-weight:900;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0">2</div>
-        <div class="fs12 t2"><strong style="color:var(--tx)">Substitua as regras pelo código abaixo</strong><br>Selecione tudo (Ctrl+A) e cole o texto copiado</div>
-      </div>
-      <div style="background:var(--s2);border-radius:10px;padding:12px;display:flex;align-items:flex-start;gap:10px">
-        <div style="width:26px;height:26px;border-radius:50%;background:var(--ac);color:#fff;font-weight:900;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0">3</div>
-        <div class="fs12 t2"><strong style="color:var(--tx)">Clique em "Publicar"</strong><br>O sync começa automaticamente em até 30 segundos</div>
-      </div>
+    <div style="background:var(--s3);border:1px solid var(--br2);border-radius:10px;padding:14px;margin-bottom:14px;text-align:center">
+      <div class="fs11 t3 mb4">Código de erro para suporte</div>
+      <div style="font-family:var(--mono);font-size:18px;font-weight:800;color:var(--rd);letter-spacing:2px">${code}</div>
+      ${fbAuth?.currentUser?.email?`<div class="fs11 t3 mt6">${esc(fbAuth.currentUser.email)}</div>`:''}
     </div>
-    <div style="background:var(--s3);border:1px solid var(--br2);border-radius:10px;padding:12px;margin-bottom:12px;font-family:monospace;font-size:10px;line-height:1.8;white-space:pre;overflow-x:auto;color:var(--ac)">${_FIRESTORE_RULES}</div>
     <div style="display:flex;flex-direction:column;gap:8px">
-      <button class="btn ba bw" onclick="navigator.clipboard?.writeText(_FIRESTORE_RULES).then(()=>toast('Regras copiadas!','g'))">${ppIcon('receipt',14,1.7)} Copiar regras</button>
-      <button class="btn bp bw" onclick="window.open('https://console.firebase.google.com/project/pedepronto-40790/firestore/rules','_blank')">🔗 Abrir Firebase Console</button>
-      <button class="btn bs bw" onclick="closeOv('ov-obs')">Fechar</button>
+      <button class="btn bp bw" onclick="closeOv('ov-obs');fbLogout();updateDriveBtn()">${ppIcon('xCircle',14,1.7)} Sair e entrar novamente</button>
+      <button class="btn bs bw" onclick="location.reload()">${ppIcon('refreshCw',14,1.7)} Recarregar página</button>
+      <button class="btn br_ bw" onclick="closeOv('ov-obs')">Fechar</button>
     </div>`;
   openOv('ov-obs');
 }
@@ -6166,7 +6154,8 @@ function fsListen(uid){
     console.warn('[PedePronto] Firestore listen erro:',e.code||e.message);
     _setSyncStatus('error');
     if(e.code==='permission-denied'){
-      if(!window._permWarnShown){window._permWarnShown=true;showFirestoreHelp();}
+      const errCode=_ppErrorCode(e.code);
+      if(!window._permWarnShown){window._permWarnShown=true;showFirestoreHelp(errCode);}
       if(!window._listenRetrying){
         window._listenRetrying=true;
         clearTimeout(window._listenRetryTimer);
@@ -6219,7 +6208,7 @@ function showCloudStatus(){
     <div style="background:${_syncStatus==='error'?'var(--rdbg)':'var(--gnbg)'};border:1px solid ${_syncStatus==='error'?'var(--rdbr)':'var(--gnbr)'};border-radius:12px;padding:14px;margin-bottom:14px">
       <div class="fs13 bold mb4" style="display:flex;align-items:center;gap:4px">${_syncStatus==='error'?ppIcon('alertTriangle',14,1.7)+' Verificar configuração':ppIcon('checkCircle',14,1.7)+' Conta conectada'}</div>
       <div class="fs12 t2">${fbUser.email}</div>
-      ${_syncStatus==='error'?`<div class="fs12 rd mt6">Erro de permissão — as regras do Firestore podem não estar publicadas.</div>`:`<div class="fs12 t2 mt4">Dados sincronizados automaticamente entre PC, celular e tablet.</div>`}
+      ${_syncStatus==='error'?`<div class="fs12 rd mt6">Erro de sincronização (código PP-001). Tente sair e entrar novamente.</div>`:`<div class="fs12 t2 mt4">Dados sincronizados automaticamente entre PC, celular e tablet.</div>`}
     </div>
     <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px">
       <button class="btn bg bw" onclick="closeOv('ov-obs');_setSyncStatus('syncing');fsPush()">
@@ -6228,7 +6217,7 @@ function showCloudStatus(){
       <button class="btn bb bw" onclick="closeOv('ov-obs');fsPull()">
         ↓ Puxar dados da nuvem para este dispositivo
       </button>
-      ${_syncStatus==='error'?`<button class="btn ba bw" onclick="showFirestoreHelp()">${ppIcon('lock',14,1.7)} Ver regras do Firestore</button>`:''}
+      ${_syncStatus==='error'?`<button class="btn ba bw" onclick="showFirestoreHelp('PP-001')">${ppIcon('alertTriangle',14,1.7)} Ver detalhes do erro</button>`:''}
       <button class="btn br_ bw" onclick="fbLogout();closeOv('ov-obs');updateDriveBtn()">🚪 Sair da conta Google</button>
     </div>
     <div style="background:var(--s2);border-radius:10px;padding:12px;font-size:11px;color:var(--t3);line-height:1.7">
