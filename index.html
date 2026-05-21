@@ -2187,6 +2187,7 @@ const BT={
     if(cfg.cnpj)t+=ctr('CNPJ: '+cfg.cnpj)+LF;
     if(cfg.end)t+=ctr(N(cfg.end))+LF;
     if(cfg.wa)t+=ctr('Tel: '+cfg.wa)+LF;
+    if(cfg.tel&&cfg.tel!==cfg.wa)t+=ctr('Fixo: '+cfg.tel)+LF;
     t+=dst()+LF;
     if(tipo==='pedido'){
       t+=ctr('** COMANDA **')+LF+dst()+LF;
@@ -3476,6 +3477,7 @@ function showCupomPrevia(ped_id, tipo='cupom'){
       ${cfg.cnpj?`<div class="tc" style="font-size:11px;color:var(--t2)">CNPJ: ${cfg.cnpj}</div>`:''}
       ${cfg.end?`<div class="tc" style="font-size:11px;color:var(--t2)">${cfg.end}</div>`:''}
       ${cfg.wa?`<div class="tc" style="font-size:11px;color:var(--t2)">Tel: ${cfg.wa}</div>`:''}
+      ${cfg.tel&&cfg.tel!==cfg.wa?`<div class="tc" style="font-size:11px;color:var(--t2)">Fixo: ${cfg.tel}</div>`:''}
       <hr class="td">
       <div class="tc tb" style="font-size:13px;margin:4px 0;letter-spacing:.5px">${tituloVia}</div>
       ${tipo==='cupom'?`<div class="tfiscal" style="font-size:11px">NÃO É DOCUMENTO FISCAL</div>`:''}
@@ -4472,6 +4474,7 @@ function renderConfig(){
     <div class="fg"><label class="fl">CNPJ</label><input class="inp" value="${esc(cfg.cnpj||'')}" oninput="ST.cfg.cnpj=this.value" style="font-family:monospace"></div>
     <div class="fg"><label class="fl">Endereço completo</label><input class="inp" value="${esc(cfg.end||'')}" oninput="ST.cfg.end=this.value"></div>
     <div class="fg"><label class="fl">WhatsApp</label><input class="inp" value="${esc(cfg.wa||'')}" oninput="ST.cfg.wa=this.value" type="tel"></div>
+    <div class="fg"><label class="fl">Telefone fixo</label><input class="inp" value="${esc(cfg.tel||'')}" oninput="ST.cfg.tel=this.value" type="tel"></div>
     <div class="fg"><label class="fl">Mensagem de rodapé (cupom)</label><input class="inp" value="${esc(cfg.footer||'Obrigado pela preferência!')}" oninput="ST.cfg.footer=this.value"></div>
   </div>
   <div class="sec-title">Interface</div>
@@ -5648,6 +5651,7 @@ setInterval(()=>{
 let _loginEl=null;
 let _registerEl=null;
 let _loginMode='login'; // 'login'|'reset'
+let _pendingRegName=null; // nome digitado no cadastro (displayName pode não estar disponível no onAuthStateChanged)
 
 const _googleSvg=`<svg width="20" height="20" viewBox="0 0 24 24"><path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>`;
 
@@ -5919,19 +5923,20 @@ async function _resgatarConvite(user){
     // Escrita crítica: marcar convite como usado
     await fbDB.collection('invites').doc(token).update({status:'used',used_by:user.uid,used_at:new Date().toISOString()});
     // Escrita crítica: criar user_map como membro
+    const _regNome=_pendingRegName||user.displayName||'';
     await fbDB.collection('user_map').doc(user.uid).set({
       estab_uid:inv.estab_uid,
       role:'membro',
       permissions:inv.permissions||_ALL_PERMS,
       email:user.email||'',
-      nome:user.displayName||'',
+      nome:_regNome,
       joined_at:new Date().toISOString(),
       invited_by:inv.created_by
     });
     // Escrita informacional: registrar na lista de membros do dono (pode falhar sem bloquear)
     try{await fbDB.collection('estabelecimentos').doc(inv.estab_uid).collection('membros').doc(user.uid).set({
       email:user.email||'',
-      nome:user.displayName||'',
+      nome:_regNome,
       role:'membro',
       permissions:inv.permissions||_ALL_PERMS,
       joined_at:new Date().toISOString(),
@@ -5959,13 +5964,19 @@ function fbLogin(){
   const p=new firebase.auth.GoogleAuthProvider();
   p.setCustomParameters({prompt:'select_account'});
   fbAuth.signInWithPopup(p).catch(e=>{
-    if(e.code!=='auth/popup-closed-by-user') toast('Erro: '+e.message,'r',5000);
+    if(e.code==='auth/popup-blocked'||e.code==='auth/cancelled-popup-request'){
+      // Popup bloqueado (COOP, bloqueador) — fallback para redirect
+      fbAuth.signInWithRedirect(p);
+    } else if(e.code!=='auth/popup-closed-by-user'){
+      toast('Erro: '+e.message,'r',5000);
+    }
   });
 }
 function fbLogout(){
   _estabUid=null;_userRole='dono';_userPermissions=_ALL_PERMS.slice();
   _syncEnabled=false;
   ST.currentUser=null;
+  _pendingRegName=null;
   if(_fsUnsubscribe){try{_fsUnsubscribe();}catch(e){}_fsUnsubscribe=null;}
   _applyPermissionUI();
   if(fbAuth) fbAuth.signOut();
@@ -6041,6 +6052,7 @@ async function _doRegister(){
   const btn=document.getElementById('reg-btn');
   if(btn){btn.disabled=true;btn.innerHTML=ppIcon('refresh',16,1.8)+' Criando conta...';}
   try{
+    _pendingRegName=nome; // guardar antes do onAuthStateChanged (displayName pode não estar pronto)
     const cred=await fbAuth.createUserWithEmailAndPassword(email,pass);
     await cred.user.updateProfile({displayName:nome});
     if(isInvite){
@@ -6067,6 +6079,7 @@ async function _doRegister(){
       ST.cfg.nome=nome;
       ST.cfg.cnpj=cnpj;
       ST.cfg.wa=wa;
+      ST.cfg.tel=tel;
       ST.cfg.end=end;
       save('cfg');
       toast('Conta criada com sucesso!','g',4000);
@@ -6279,9 +6292,9 @@ async function verificarLicenca(){
       // Se Firestore falhou (rede, permissão), não bloqueia o boot — permite login e retry
       return 'await_login';
     }
-    // Logado mas sem licença no Firestore → pede o código, mas não bloqueia completamente
-    _mostrarTelaAtivacao('Nenhuma licença encontrada para '+user.email+'. Cole o código abaixo para ativar.');
-    return false;
+    // Logado mas sem licença no Firestore → delega para onAuthStateChanged
+    // Lá decide: membro herda licença do dono, dono vê tela de ativação
+    return 'await_login';
   }
 
   // 3. Sem Firebase → pede código manual
@@ -6479,10 +6492,11 @@ function _atualizarBadgeLicenca(){
         if(window.IS_HOSTED&&fbAuth.currentUser){
           ST.currentUser={
             id:fbAuth.currentUser.uid,
-            nome:fbAuth.currentUser.displayName||fbAuth.currentUser.email.split('@')[0],
+            nome:_pendingRegName||fbAuth.currentUser.displayName||fbAuth.currentUser.email.split('@')[0],
             cargo:_userRole==='dono'?'admin':'funcionario',
             pin:''
           };
+          _pendingRegName=null; // consumido
           updateUserBar();
           if(!ST.caixa.aberto) setTimeout(pedirAberturaCaixa, 600);
         } else if(!ST.currentUser){
