@@ -2612,6 +2612,24 @@ function initDefaults(){
 // ═══════════════════════════════════════════
 //  CAIXA — ABERTURA/FECHAMENTO
 // ═══════════════════════════════════════════
+// Aguarda primeiro sync antes de decidir se pede abertura de caixa
+function _pedirCaixaAposSync(){
+  if(!hasPermission('caixa_op'))return;
+  // Se já sincronizou, decide imediatamente
+  if(_lastSyncAt){
+    if(!ST.caixa.aberto) setTimeout(pedirAberturaCaixa,400);
+    return;
+  }
+  // Aguarda até 5s pelo primeiro sync; se não chegar, verifica o estado local
+  let _caixaSyncCheck=0;
+  const _caixaInterval=setInterval(()=>{
+    _caixaSyncCheck++;
+    if(_lastSyncAt||_caixaSyncCheck>=10){
+      clearInterval(_caixaInterval);
+      if(!ST.caixa.aberto) setTimeout(pedirAberturaCaixa,300);
+    }
+  },500);
+}
 function pedirAberturaCaixa(){
   document.getElementById('caixa-op-nome').value=ST.currentUser?.nome||ST.caixa.operador||'';
   document.getElementById('caixa-valor-ini').value='200';
@@ -6828,12 +6846,13 @@ function _atualizarBadgeLicenca(){
           };
           _pendingRegName=null; // consumido
           updateUserBar();
-          if(!ST.caixa.aberto&&hasPermission('caixa_op')) setTimeout(pedirAberturaCaixa, 600);
+          // Caixa: aguardar sync antes de pedir abertura (dados podem vir de outro dispositivo)
+          _pedirCaixaAposSync();
         } else if(!ST.currentUser){
           setTimeout(showLogin, 500);
         } else {
           updateUserBar();
-          if(!ST.caixa.aberto&&hasPermission('caixa_op')) setTimeout(pedirAberturaCaixa, 600);
+          _pedirCaixaAposSync();
         }
       } else {
         // Usuário não logado
