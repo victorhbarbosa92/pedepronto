@@ -335,11 +335,18 @@ select.inp{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns=
 
 /* ── CENTRAL DE ALERTAS (5.1) ── */
 #alerta-bell{position:relative}
-.alerta-dot{position:absolute;top:5px;right:5px;width:9px;height:9px;border-radius:50%;background:var(--rd);border:2px solid var(--sf);display:none;animation:prd 1.5s infinite}
-.alerta-dot.on{display:block}
-.alerta-item{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--br)}
-.alerta-item:last-child{border-bottom:none}
+.alerta-dot{position:absolute;top:3px;right:3px;min-width:16px;height:16px;border-radius:99px;background:var(--rd);border:2px solid var(--sf);display:none;font-size:9px;font-weight:800;color:#fff;align-items:center;justify-content:center;padding:0 3px;font-family:var(--mono)}
+.alerta-dot.on{display:flex}
+.alerta-item{display:flex;align-items:flex-start;gap:10px;padding:12px;border-radius:10px;margin-bottom:6px;background:var(--s2);border:1px solid var(--br);transition:all .15s}
+.alerta-item:hover{background:var(--s3)}
+.alerta-item.novo{background:var(--acbg);border-color:var(--acg)}
+.alerta-item.cancel{background:var(--rdbg);border-color:var(--rdbr)}
+.alerta-item.sucesso{background:var(--gnbg);border-color:var(--gnbr)}
 .alerta-ico{font-size:20px;flex-shrink:0;margin-top:1px}
+.notif-panel{position:fixed;top:0;right:-400px;width:380px;max-width:100vw;height:100%;background:var(--sf);border-left:1px solid var(--br2);z-index:200;display:flex;flex-direction:column;transition:right .28s cubic-bezier(.34,1.05,.64,1);box-shadow:-8px 0 30px rgba(0,0,0,.3)}
+.notif-panel.open{right:0}
+.notif-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:199;opacity:0;pointer-events:none;transition:opacity .25s}
+.notif-overlay.open{opacity:1;pointer-events:all}
 .alerta-new-dot{width:7px;height:7px;border-radius:50%;background:var(--ac);flex-shrink:0;margin-top:6px}
 
 /* ── PROD GRADIENT (6.3) ── */
@@ -1471,17 +1478,17 @@ const _PP_PUBKEY_JWK={"crv":"P-256","ext":true,"key_ops":["verify"],"kty":"EC","
 </div>
 
 <!-- MODAL: CENTRAL DE ALERTAS (5.1) -->
-<div class="mc" id="mc-alertas">
-  <div class="mb" style="max-width:400px;width:100%">
-    <div class="rb mb14">
-      <div style="font-size:15px;font-weight:800;display:flex;align-items:center;gap:6px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 1112 0c0 7 3 9 3 9H3s3-2 3-9M10 21a2 2 0 004 0"/></svg> Alertas</div>
-      <div style="display:flex;gap:8px;align-items:center">
-        <button class="btn bs bxs" onclick="limparAlertas()">Limpar</button>
-        <button class="btn bs bsm" onclick="closeMc('mc-alertas')">✕</button>
-      </div>
+<!-- PAINEL LATERAL DE NOTIFICAÇÕES -->
+<div class="notif-overlay" id="notif-overlay" onclick="closeNotifPanel()"></div>
+<div class="notif-panel" id="notif-panel">
+  <div style="padding:16px;border-bottom:1px solid var(--br2);display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
+    <div style="font-size:16px;font-weight:800;display:flex;align-items:center;gap:8px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 1112 0c0 7 3 9 3 9H3s3-2 3-9M10 21a2 2 0 004 0"/></svg> Notificações <span id="notif-count-badge" class="bdg ba" style="font-size:10px;display:none">0</span></div>
+    <div style="display:flex;gap:6px">
+      <button class="btn bs bxs" onclick="limparAlertas()" style="font-size:11px">Limpar</button>
+      <button class="btn bs bxs" onclick="closeNotifPanel()" style="font-size:16px;width:32px;height:32px;padding:0">✕</button>
     </div>
-    <div id="alertas-list" style="max-height:60vh;overflow-y:auto"></div>
   </div>
+  <div id="alertas-list" style="flex:1;overflow-y:auto;padding:12px"></div>
 </div>
 
 <!-- MODAL: PAGAMENTO — VALOR DA PARCELA -->
@@ -1786,7 +1793,7 @@ async function fsPush(){
   const uid=_estabUid||fbAuth.currentUser.uid;
   try{
     const d={_savedAt:new Date().toISOString(),_dev_id:_DEV_ID};
-    ['cfg','caixa','produtos','categorias','clientes','obs_grupos_globais','pedidos','funcionarios','vouchers'].forEach(k=>d[k]=ST[k]);
+    ['cfg','caixa','produtos','categorias','clientes','obs_grupos_globais','pedidos','funcionarios','vouchers','pedidos_cancelados','alertas'].forEach(k=>{if(ST[k]!=null)d[k]=ST[k];});
     await fbDB.collection('estabelecimentos').doc(uid).collection('dados').doc('principal').set(d);
     _localDirty=false; // push concluído — dados locais e nuvem estão iguais
     _lastSyncAt=Date.now();
@@ -1816,7 +1823,7 @@ async function fsPull(){
     const snap=await fbDB.collection('estabelecimentos').doc(uid).collection('dados').doc('principal').get();
     if(!snap.exists){toast('Nenhum dado na nuvem ainda — envie primeiro','a',4000);return;}
     const r=snap.data();
-    ['cfg','caixa','produtos','categorias','clientes','obs_grupos_globais','pedidos','funcionarios','vouchers'].forEach(k=>{if(r[k]!=null)ST[k]=r[k];});
+    ['cfg','caixa','produtos','categorias','clientes','obs_grupos_globais','pedidos','funcionarios','vouchers','pedidos_cancelados','alertas'].forEach(k=>{if(r[k]!=null)ST[k]=r[k];});
     saveAll(true); // skipPush: dados vieram da nuvem
     _lastSyncAt=Date.now();_setSyncStatus('ok');
     _silentRefresh(); // não reseta scroll — pull manual de dados
@@ -2653,6 +2660,7 @@ function confirmarAberturaCaixa(){
   renderDash();
   updateSbOperador();
   toast('Caixa aberto! Operador: '+nome,'g',4000);
+  _addAlerta(ppIcon('cash',16,1.7,'var(--gn)'),'Caixa aberto por '+opNome+' · '+turno+' · Fundo: '+fmtR(valor),'sucesso');
   anunciar('caixa_aberto',{operador:opNome});
 }
 function fecharCaixa(){
@@ -2669,6 +2677,7 @@ function fecharCaixa(){
   anunciar('caixa_fechado',{pedidos:pedsPagos.length,total:saldo});
   if(BT.char)setTimeout(()=>BT.printFechamento(),500);
   renderCaixa();updateSbOperador();
+  _addAlerta(ppIcon('lock',16,1.7,'var(--am)'),'Caixa fechado · '+pedsPagos.length+' pedidos · Saldo: '+fmtR(saldo),'info');
   toast('Caixa fechado. Saldo: '+fmtR(saldo),'a',5000);
 }
 function updateSbOperador(){
@@ -2741,7 +2750,7 @@ function _renderSolicitacoesCancelamento(_i){
   const solic=ST.pedidos.filter(p=>p.cancel_solicitado);
   if(!solic.length)return'';
   return`<div class="sec-title" style="color:var(--am);display:flex;align-items:center;gap:6px">${_i('alertTriangle',16)} Cancelamentos pendentes (${solic.length})</div>
-  ${solic.map(p=>`<div class="card mb8" style="border-color:var(--ambr);background:var(--ambg)">
+  ${solic.map(p=>`<div class="card mb8 cancel-solic-card" style="border-color:var(--ambr);background:var(--ambg)">
     <div class="rb mb6">
       <div style="flex:1;min-width:0">
         <div class="bold fs14">Pedido #${p.num}</div>
@@ -2875,6 +2884,35 @@ function _renderDashProducao(_i,origemIco,origemLbl,origemCls){
   return html;
 }
 
+function _renderDashStatusBar(_i){
+  if(!hasPermission('dados')&&!hasCargo('dono','gerente'))return'';
+  const hoje=new Date().toDateString();
+  const pedHoje=ST.pedidos.filter(p=>p.status==='pago'&&new Date(p.pago_em||p.created).toDateString()===hoje);
+  const receita=pedHoje.reduce((s,p)=>s+(p.total||0),0);
+  const abertos=ST.pedidos.filter(naFila);
+  const mesasOcupadas=[...new Set(abertos.filter(p=>p.tipo==='mesa'&&(p.status==='aberto'||p.status==='preparo')).map(p=>p.mesa_id))].length;
+  const deliveriesHoje=pedHoje.filter(p=>p.tipo==='delivery').length;
+  const cancelados=(ST.pedidos_cancelados||[]).filter(c=>new Date(c.cancelado_em||0).toDateString()===hoje).length;
+  const ticketMedio=pedHoje.length?receita/pedHoje.length:0;
+  const solicCancel=ST.pedidos.filter(p=>p.cancel_solicitado).length;
+  // Fluxo caixa: entradas - sangrias
+  const sangrias=(ST.caixa.movs||[]).filter(m=>m.tipo==='sangria').reduce((s,m)=>s+(m.valor||0),0);
+  const fundoIni=ST.caixa.saldo_inicial||0;
+  const emCaixa=fundoIni+receita-sangrias;
+  return`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px;margin-bottom:14px">
+    <div class="kpi" style="padding:10px"><div class="kpi-v gn" style="font-size:20px">${fmtR(receita)}</div><div class="kpi-l">Faturamento</div></div>
+    <div class="kpi" style="padding:10px"><div class="kpi-v ac" style="font-size:20px">${fmtR(ticketMedio)}</div><div class="kpi-l">Ticket médio</div></div>
+    <div class="kpi" style="padding:10px"><div class="kpi-v" style="font-size:20px;color:var(--bl)">${fmtR(emCaixa)}</div><div class="kpi-l">Em caixa</div></div>
+    <div class="kpi" style="padding:10px"><div class="kpi-v am" style="font-size:20px">${abertos.length}</div><div class="kpi-l">Em aberto</div></div>
+    <div class="kpi" style="padding:10px"><div class="kpi-v" style="font-size:20px">${mesasOcupadas}</div><div class="kpi-l">Mesas</div></div>
+    <div class="kpi" style="padding:10px"><div class="kpi-v" style="font-size:20px;color:var(--pu)">${deliveriesHoje}</div><div class="kpi-l">Deliveries</div></div>
+    <div class="kpi" style="padding:10px"><div class="kpi-v" style="font-size:20px">${pedHoje.length}</div><div class="kpi-l">Pagos</div></div>
+    ${cancelados>0?`<div class="kpi" style="padding:10px;border-color:var(--rdbr);background:var(--rdbg)"><div class="kpi-v rd" style="font-size:20px">${cancelados}</div><div class="kpi-l">Cancelados</div></div>`
+    :`<div class="kpi" style="padding:10px"><div class="kpi-v gn" style="font-size:20px">0</div><div class="kpi-l">Cancelados</div></div>`}
+    ${solicCancel>0?`<div class="kpi" style="padding:10px;border-color:var(--ambr);background:var(--ambg);cursor:pointer" onclick="document.querySelector('.cancel-solic-card')?.scrollIntoView({behavior:'smooth'})"><div class="kpi-v am" style="font-size:20px">${solicCancel}</div><div class="kpi-l">Solic. cancel.</div></div>`:''}
+  </div>`;
+}
+
 function _renderDashPedidosAtivos(_i){
   if(!hasPermission('pdv'))return'';
   const origemIco={mesa:ppIcon('table',12,1.7),balcao:ppIcon('counter',12,1.7),delivery:ppIcon('bike',12,1.7)};
@@ -2956,6 +2994,7 @@ function renderDash(){
     <button class="btn bpu bw" style="padding:12px 6px;flex-direction:column;gap:4px;font-size:13px" onclick="novoDelivery()">${_i('bike',22)}<span>Delivery</span></button>
     <button class="btn bcy bw" style="padding:12px 6px;flex-direction:column;gap:4px;font-size:13px" onclick="nav('producao')">${_i('monitor',22)}<span>Produção</span></button>
   </div>`:''}
+  ${_renderDashStatusBar(_i)}
   ${_renderSolicitacoesCancelamento(_i)}
   ${_renderDashProducao(_i,origemIco,origemLbl,origemCls)}
   ${_renderDashPedidosAtivos(_i)}`;
@@ -3858,6 +3897,7 @@ function finalizarPagMisto(ped_id){
   });
   save('pedidos');save('caixa');
   toast('Pagamento '+fmtR(ped.total)+' confirmado!','g',4000);
+  _addAlerta(ppIcon('dollarSign',16,1.7,'var(--gn)'),'Pagamento '+fmtR(ped.total)+' · '+ped.num+' · '+(ped.cliente_nome||'Sem nome')+' · '+formaStr,'sucesso');
   anunciar('pagamento',{total:ped.total,forma:formaStr,cliente_nome:ped.cliente_nome,num:ped.num});
   const _pId=ped_id;_pagParcelas=[];_pagCtxPed=null;
   if(BT.char&&ST.cfg.autocupom!==false){setTimeout(()=>BT.printCupom(ped),400);}
@@ -5296,43 +5336,91 @@ function openDiagnostico(){
 // ═══════════════════════════════════════════
 function _addAlerta(ico,msg,tipo='info'){
   if(!ST.alertas)ST.alertas=[];
-  // evita duplicação de alerta idêntico nos últimos 60s
   const recent=ST.alertas.find(a=>a.msg===msg&&(Date.now()-new Date(a.created).getTime())<60000);
   if(recent)return;
   ST.alertas.unshift({id:uid(),ico,msg,tipo,created:now(),lido:false});
-  if(ST.alertas.length>50)ST.alertas.length=50;
-  // M5: persiste alertas no localStorage
+  if(ST.alertas.length>80)ST.alertas.length=80;
   DB.set('alertas',ST.alertas);
-  const naoLidos=ST.alertas.filter(a=>!a.lido).length;
+  _updateNotifBadge();
+}
+function _updateNotifBadge(){
+  const naoLidos=(ST.alertas||[]).filter(a=>!a.lido).length;
   const dot=document.getElementById('alerta-dot');
-  if(dot){dot.className='alerta-dot'+(naoLidos?' on':'');}
+  if(dot){
+    dot.className='alerta-dot'+(naoLidos?' on':'');
+    dot.textContent=naoLidos>0?(naoLidos>99?'99+':naoLidos):'';
+  }
+  const badge=document.getElementById('notif-count-badge');
+  if(badge){
+    badge.style.display=naoLidos?'':'none';
+    badge.textContent=naoLidos;
+  }
 }
 function openAlertas(){
-  // marca todos como lidos
   (ST.alertas||[]).forEach(a=>a.lido=true);
-  const dot=document.getElementById('alerta-dot');
-  if(dot)dot.className='alerta-dot';
+  _updateNotifBadge();
+  _renderNotifList();
+  document.getElementById('notif-panel')?.classList.add('open');
+  document.getElementById('notif-overlay')?.classList.add('open');
+}
+function closeNotifPanel(){
+  document.getElementById('notif-panel')?.classList.remove('open');
+  document.getElementById('notif-overlay')?.classList.remove('open');
+}
+function _renderNotifList(){
   const list=document.getElementById('alertas-list');
-  if(list){
-    const items=(ST.alertas||[]);
-    list.innerHTML=items.length===0
-      ?`<div style="text-align:center;color:var(--t2);padding:30px"><div style="margin-bottom:8px">${ppIcon('bell',32,1.4)}</div><div class="fs13">Nenhum alerta no momento</div></div>`
-      :items.map(a=>`<div class="alerta-item">
-          <div class="alerta-ico">${a.ico}</div>
-          <div style="flex:1;min-width:0">
-            <div class="fs13 bold" style="${a.tipo==='atrasado'?'color:var(--rd)':a.tipo==='novo'?'color:var(--gn)':''}">${esc(a.msg)}</div>
-            <div class="fs11 t2 mt2">${fmtDH(a.created)}</div>
-          </div>
-        </div>`).join('');
+  if(!list)return;
+  const items=(ST.alertas||[]);
+  if(!items.length){
+    list.innerHTML=`<div style="text-align:center;color:var(--t2);padding:40px 20px">
+      <div style="margin-bottom:10px">${ppIcon('bell',36,1.4)}</div>
+      <div class="fs14 bold">Nenhuma notificação</div>
+      <div class="fs12 t3 mt4">Alertas de pedidos, cancelamentos e avisos do sistema aparecem aqui.</div>
+    </div>`;
+    return;
   }
-  openMc('mc-alertas');
+  // Agrupar: hoje vs anteriores
+  const hojeDt=new Date().toDateString();
+  const hojeArr=items.filter(a=>new Date(a.created).toDateString()===hojeDt);
+  const antArr=items.filter(a=>new Date(a.created).toDateString()!==hojeDt);
+  let html='';
+  if(hojeArr.length){
+    html+=`<div class="fs11 bold t2 mb8" style="text-transform:uppercase;letter-spacing:1px">Hoje</div>`;
+    html+=hojeArr.map(a=>_renderAlertaItem(a)).join('');
+  }
+  if(antArr.length){
+    html+=`<div class="fs11 bold t2 mb8 mt12" style="text-transform:uppercase;letter-spacing:1px">Anteriores</div>`;
+    html+=antArr.map(a=>_renderAlertaItem(a)).join('');
+  }
+  list.innerHTML=html;
+}
+function _renderAlertaItem(a){
+  const cls=a.tipo==='cancel'||a.tipo==='atrasado'||a.tipo==='cancelado'?'cancel':a.tipo==='novo'||a.tipo==='sucesso'?'sucesso':a.tipo==='pedido'||a.tipo==='solicitacao'?'novo':'';
+  const cor=a.tipo==='atrasado'||a.tipo==='cancel'||a.tipo==='cancelado'?'color:var(--rd)':a.tipo==='novo'||a.tipo==='sucesso'?'color:var(--gn)':a.tipo==='pedido'?'color:var(--ac)':a.tipo==='solicitacao'?'color:var(--am)':'';
+  const tempo=_tempoRelativo(a.created);
+  return`<div class="alerta-item ${cls}">
+    <div class="alerta-ico">${a.ico}</div>
+    <div style="flex:1;min-width:0">
+      <div class="fs13 bold" style="${cor}">${esc(a.msg)}</div>
+      <div class="fs11 t3 mt3">${tempo}</div>
+    </div>
+  </div>`;
+}
+function _tempoRelativo(dt){
+  const diff=Date.now()-new Date(dt).getTime();
+  const mins=Math.floor(diff/60000);
+  if(mins<1)return'Agora mesmo';
+  if(mins<60)return mins+'min atrás';
+  const hrs=Math.floor(mins/60);
+  if(hrs<24)return hrs+'h atrás';
+  const dias=Math.floor(hrs/24);
+  if(dias===1)return'Ontem';
+  return dias+' dias atrás';
 }
 function limparAlertas(){
   ST.alertas=[];
-  const dot=document.getElementById('alerta-dot');
-  if(dot)dot.className='alerta-dot';
-  const list=document.getElementById('alertas-list');
-  if(list)list.innerHTML=`<div style="text-align:center;color:var(--t2);padding:30px"><div style="margin-bottom:8px">${ppIcon('bell',32,1.4)}</div><div class="fs13">Nenhum alerta no momento</div></div>`;
+  _updateNotifBadge();
+  _renderNotifList();
 }
 
 // ═══════════════════════════════════════════
@@ -6495,7 +6583,7 @@ function fsListen(uid){
     const deveAplicar=_fsFirstSnap||(r._dev_id&&r._dev_id!==_DEV_ID)||rt>lt+3000;
     _fsFirstSnap=false;
     if(deveAplicar){
-      ['cfg','caixa','produtos','categorias','clientes','obs_grupos_globais','pedidos','funcionarios','vouchers'].forEach(k=>{if(r[k]!=null)ST[k]=r[k];});
+      ['cfg','caixa','produtos','categorias','clientes','obs_grupos_globais','pedidos','funcionarios','vouchers','pedidos_cancelados','alertas'].forEach(k=>{if(r[k]!=null)ST[k]=r[k];});
       saveAll(true); // skipPush: dados vieram da nuvem, não precisa reenviar
       _silentRefresh(); // não reseta scroll — dados de outro device chegaram
       _lastSyncAt=Date.now();
@@ -6787,6 +6875,7 @@ function _atualizarBadgeLicenca(){
   updateBtUI();updateSbOperador();
   document.getElementById('sb-est').textContent=ST.cfg.nome||'PedePronto';
   _atualizarBadgeLicenca();
+  _updateNotifBadge();
   renderDash();
   _updateBackBtn();
   registerSW();
