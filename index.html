@@ -597,24 +597,17 @@ html.tam-g .tbtn,html.tam-g .tbtn-ico{font-size:17px;min-height:44px}
    POS SPLIT-PANE LAYOUT (Balcão / Pedido)
    ══════════════════════════════════════════ */
 
-/* POS layout variables */
+/* POS layout variables — Dark (default) */
 :root{
   --pos-primary:#ea580c;
   --pos-primary-dark:#c2410c;
   --pos-primary-glow:rgba(234,88,12,.22);
-  --pos-bg-app:#f4f4f5;
-  --pos-bg-card:#ffffff;
-  --pos-text-main:#27272a;
-  --pos-text-muted:#71717a;
-  --pos-border:#e4e4e7;
+  --pos-bg-app:var(--bg);
+  --pos-bg-card:var(--sf);
+  --pos-text-main:var(--tx);
+  --pos-text-muted:var(--t2);
+  --pos-border:var(--br2);
   --pos-right-w:340px;
-}
-html.light{
-  --pos-bg-app:#f4f4f5;
-  --pos-bg-card:#ffffff;
-  --pos-text-main:#27272a;
-  --pos-text-muted:#71717a;
-  --pos-border:#e4e4e7;
 }
 
 /* Override the default .pg styles for the POS page */
@@ -1784,6 +1777,11 @@ function saveAll(skipPush){
 async function fsPush(){
   if(!_syncEnabled||!fbAuth||!fbAuth.currentUser) return;
   if(window._noPermission) return;
+  // Proteção: membro com dados locais vazios NÃO sobrescreve dados do dono
+  if(_userRole==='membro'&&!_lastSyncAt&&ST.produtos.length===0&&ST.pedidos.length===0){
+    console.log('[PedePronto] ⚠️ Push bloqueado — membro com dados vazios, aguardando sync do dono');
+    return;
+  }
   _setSyncStatus('syncing');
   const uid=_estabUid||fbAuth.currentUser.uid;
   try{
@@ -6420,8 +6418,8 @@ function fsListen(uid){
   const ref=fbDB.collection('estabelecimentos').doc(uid).collection('dados').doc('principal');
   _fsUnsubscribe=ref.onSnapshot(snap=>{
     if(!snap.exists){
-      // Nuvem vazia → envia dados locais
-      if(_fsFirstSnap){_fsFirstSnap=false;fsPush();}
+      // Nuvem vazia → envia dados locais (só dono — membro não cria dados do zero)
+      if(_fsFirstSnap){_fsFirstSnap=false;if(_userRole!=='membro')fsPush();}
       return;
     }
     const r=snap.data();
@@ -6458,7 +6456,7 @@ function fsListen(uid){
         window._listenRetryTimer=setTimeout(()=>{
           window._listenRetrying=false;
           window._noPermission=false;
-          if(_syncEnabled&&fbAuth?.currentUser) fsListen(fbAuth.currentUser.uid);
+          if(_syncEnabled&&fbAuth?.currentUser) fsListen(_estabUid||fbAuth.currentUser.uid);
         },30000);
       }
     }
@@ -6818,7 +6816,8 @@ function _atualizarBadgeLicenca(){
         fsListen(finalEstabId);
         // Push condicional: só envia dados locais se a nuvem estiver vazia ou local for mais novo
         // fsListen já faz fsPush no primeiro snapshot — este timer é fallback para falha de rede
-        setTimeout(function(){ if(!_lastSyncAt) fsPush(); }, 10000);
+        // IMPORTANTE: membros NUNCA fazem push de fallback — só recebem dados do dono via fsListen
+        setTimeout(function(){ if(!_lastSyncAt&&_userRole==='dono') fsPush(); }, 10000);
         // Modo online: usuário já autenticado por email/senha — pula PIN
         if(window.IS_HOSTED&&fbAuth.currentUser){
           ST.currentUser={
