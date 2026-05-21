@@ -4692,35 +4692,28 @@ function renderConfig(){
   <div class="sec-title" style="display:flex;align-items:center;gap:6px">${ppIcon('users',14,1.7)} Dispositivos vinculados</div>
   <div class="card mb10">
     <div id="cfg-membros-list" class="fs12 t2" style="margin-bottom:8px">Carregando...</div>
-    <div class="fs12 bold mb4">Permissões do convite:</div>
-    <div id="cfg-convite-perms" style="display:flex;flex-wrap:wrap;gap:4px 12px;margin-bottom:10px">
-      ${_ALL_PERMS.map(p=>{
-        const labels={pdv:'PDV',cardapio:'Cardápio',relatorios:'Relatórios',config:'Config',funcionarios:'Funcionários'};
-        return`<label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:12px"><input type="checkbox" class="invite-perm-cb" value="${p}" checked> ${labels[p]||p}</label>`;
-      }).join('')}
-    </div>
-    <button class="btn bp bsm bw" onclick="_gerarConvite()">${ppIcon('send',13,1.7)} Gerar convite</button>
-    <div class="fs11 t3 mt6">O convite pode ser usado por vários dispositivos. Válido por 7 dias.</div>
-    <div id="cfg-convite-area" style="display:none;margin-top:12px;padding:14px;background:var(--s2);border:1px solid var(--br2);border-radius:12px">
-      <div class="fs12 bold mb6">${ppIcon('key',13,1.7)} Link de convite (multi-uso)</div>
-      <input class="inp mono" id="cfg-convite-link" readonly style="font-size:11px;margin-bottom:8px">
-      <div style="display:flex;gap:6px;flex-wrap:wrap">
-        <button class="btn bs bsm" onclick="_copiarConvite()">${ppIcon('receipt',12,1.7)} Copiar</button>
-        <button class="btn bg bsm" onclick="_compartilharWA()" style="color:#25D366">${ppIcon('send',12,1.7)} WhatsApp</button>
-        <button class="btn bb bsm" onclick="_mostrarQRConvite()">${ppIcon('search',12,1.7)} QR Code</button>
+    <div id="cfg-convite-ativo" style="margin-bottom:12px"></div>
+    <div style="border-top:1px solid var(--br);padding-top:12px">
+      <div class="fs12 bold mb4">Gerar novo convite</div>
+      <div class="fs12 t3 mb6">Permissões do membro:</div>
+      <div id="cfg-convite-perms" style="display:flex;flex-wrap:wrap;gap:4px 12px;margin-bottom:10px">
+        ${_ALL_PERMS.map(p=>{
+          const labels={pdv:'PDV',cardapio:'Cardápio',relatorios:'Relatórios',config:'Config',funcionarios:'Funcionários'};
+          return`<label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:12px"><input type="checkbox" class="invite-perm-cb" value="${p}" checked> ${labels[p]||p}</label>`;
+        }).join('')}
       </div>
-      <div id="cfg-qr-area" style="display:none;margin-top:10px;text-align:center">
-        <img id="cfg-qr-img" style="width:180px;height:180px;border-radius:8px;border:1px solid var(--br2)">
-      </div>
+      <button class="btn bp bsm bw" onclick="_gerarConvite()">${ppIcon('send',13,1.7)} Gerar convite</button>
+      <div class="fs11 t3 mt6">O convite pode ser usado por vários dispositivos. Válido por 7 dias.</div>
     </div>
   </div>
   `:''}
   <button class="btn bp bw mb10" onclick="requireAdmin('Salvar Configurações',()=>{save('cfg');toast('Configurações salvas!','g');renderConfig()})">${ppIcon('save',14,1.7)} Salvar configurações</button>
   <button class="btn br_ bw" onclick="confirm2(ppIcon('alertTriangle',36,1.6),'Resetar sistema?','TODOS os dados serão apagados permanentemente!','Resetar','br_',resetarSistema)">${ppIcon('alertTriangle',14,1.7)} Resetar sistema</button>`;
   document.getElementById('sb-est').textContent=cfg.nome||'PedePronto PDV';
-  // Carrega membros vinculados (async, preenche #cfg-membros-list)
+  // Carrega membros vinculados e convites ativos (async)
   if(_userRole==='dono'&&window.IS_HOSTED&&document.getElementById('cfg-membros-list')){
     _carregarMembros();
+    _carregarConviteAtivo();
   }
 }
 function changePIN(){askPin('Alterar PIN','Digite o PIN atual',()=>{const n=prompt('Novo PIN de 4 dígitos:');if(!n||n.length!==4||isNaN(n)){toast('PIN deve ter 4 dígitos','r');return}ST.cfg.pin=n;save('cfg');toast('PIN alterado!','g')})}
@@ -5802,18 +5795,69 @@ async function _gerarConvite(){
       estab_name:ST.cfg.nome||'PedePronto'
     });
     _lastInviteToken=token;
-    const area=document.getElementById('cfg-convite-area');
-    const inp=document.getElementById('cfg-convite-link');
-    if(area)area.style.display='block';
-    if(inp)inp.value=url;
     toast('Convite gerado! Válido por 7 dias.','g',4000);
+    _carregarConviteAtivo(); // atualiza a área de convite ativo
   }catch(e){
     toast('Erro ao gerar convite: '+e.message,'r',5000);
   }
 }
 
+// Carrega convites ativos do Firestore e exibe na área de configuração
+async function _carregarConviteAtivo(){
+  const el=document.getElementById('cfg-convite-ativo');
+  if(!el||!fbDB||!_estabUid)return;
+  try{
+    const snap=await fbDB.collection('invites')
+      .where('estab_uid','==',_estabUid)
+      .where('status','==','active')
+      .get();
+    const ativos=snap.docs.map(d=>({id:d.id,...d.data()}))
+      .filter(inv=>!inv.expires_at||new Date(inv.expires_at)>new Date())
+      .sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+    if(!ativos.length){
+      el.innerHTML=`<div class="fs12 t3" style="padding:10px 0">${ppIcon('link',13,1.5)} Nenhum convite ativo. Gere um abaixo.</div>`;
+      return;
+    }
+    el.innerHTML=ativos.map(inv=>{
+      const url=window.location.origin+window.location.pathname+'?invite='+inv.id;
+      const criado=new Date(inv.created_at).toLocaleDateString('pt-BR');
+      const expira=inv.expires_at?new Date(inv.expires_at).toLocaleDateString('pt-BR'):'—';
+      const usos=inv.uses_count||0;
+      const permLabels={pdv:'PDV',cardapio:'Cardápio',relatorios:'Relatórios',config:'Config',funcionarios:'Funcionários'};
+      const perms=(inv.permissions||[]).map(p=>permLabels[p]||p).join(', ');
+      return`<div style="padding:14px;background:var(--s2);border:1px solid var(--br2);border-radius:12px;margin-bottom:8px">
+        <div class="fs12 bold mb6" style="display:flex;align-items:center;gap:6px">${ppIcon('key',13,1.7)} Convite ativo</div>
+        <input class="inp mono cfg-inv-link" value="${esc(url)}" readonly style="font-size:11px;margin-bottom:6px" onclick="this.select()">
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+          <button class="btn bs bsm" onclick="navigator.clipboard.writeText('${esc(url)}').then(()=>toast('Link copiado!','g'))">${ppIcon('receipt',12,1.7)} Copiar</button>
+          <button class="btn bg bsm" onclick="window.open('https://wa.me/?text='+encodeURIComponent('Acesse o PedePronto: ${esc(url)}'),'_blank')" style="color:#25D366">${ppIcon('send',12,1.7)} WhatsApp</button>
+          <button class="btn bb bsm" onclick="_mostrarQRConvite('${esc(inv.id)}')">${ppIcon('search',12,1.7)} QR Code</button>
+          <button class="btn br_ bsm" onclick="_revogarConvite('${esc(inv.id)}')">${ppIcon('xCircle',12,1.7)} Revogar</button>
+        </div>
+        <div id="cfg-qr-${inv.id}" style="display:none;margin-bottom:8px;text-align:center">
+          <img style="width:180px;height:180px;border-radius:8px;border:1px solid var(--br2)">
+        </div>
+        <div class="fs11 t3">Criado: ${criado} · Expira: ${expira} · Usos: ${usos} · Permissões: ${perms}</div>
+      </div>`;
+    }).join('');
+  }catch(e){
+    el.innerHTML=`<div class="fs12 t3">${ppIcon('link',13,1.5)} Erro ao carregar convites</div>`;
+  }
+}
+
+async function _revogarConvite(token){
+  if(!fbDB)return;
+  confirm2(ppIcon('alertTriangle',36,1.6),'Revogar convite?','Ninguém mais poderá usar este link.','Revogar','br_',async()=>{
+    try{
+      await fbDB.collection('invites').doc(token).update({status:'revoked'});
+      toast('Convite revogado','g');
+      _carregarConviteAtivo();
+    }catch(e){toast('Erro: '+e.message,'r');}
+  });
+}
+
 function _copiarConvite(){
-  const inp=document.getElementById('cfg-convite-link');
+  const inp=document.querySelector('.cfg-inv-link');
   if(!inp)return;
   navigator.clipboard.writeText(inp.value).then(()=>toast('Link copiado!','g')).catch(()=>{
     inp.select();document.execCommand('copy');toast('Link copiado!','g');
@@ -5821,19 +5865,20 @@ function _copiarConvite(){
 }
 
 function _compartilharWA(){
-  const inp=document.getElementById('cfg-convite-link');
+  const inp=document.querySelector('.cfg-inv-link');
   if(!inp)return;
   const msg=encodeURIComponent('Olá! Você foi convidado para acessar o PedePronto PDV do estabelecimento "'+(ST.cfg.nome||'PedePronto')+'". Clique no link para vincular seu dispositivo:\n\n'+inp.value);
   window.open('https://wa.me/?text='+msg,'_blank');
 }
 
-function _mostrarQRConvite(){
-  const area=document.getElementById('cfg-qr-area');
-  const img=document.getElementById('cfg-qr-img');
-  const inp=document.getElementById('cfg-convite-link');
-  if(!area||!img||!inp)return;
+function _mostrarQRConvite(token){
+  const area=document.getElementById('cfg-qr-'+token);
+  if(!area)return;
+  const img=area.querySelector('img');
+  if(!img)return;
   if(area.style.display==='block'){area.style.display='none';return;}
-  img.src='https://api.qrserver.com/v1/create-qr-code/?size=200x200&data='+encodeURIComponent(inp.value);
+  const url=window.location.origin+window.location.pathname+'?invite='+token;
+  img.src='https://api.qrserver.com/v1/create-qr-code/?size=200x200&data='+encodeURIComponent(url);
   area.style.display='block';
 }
 
