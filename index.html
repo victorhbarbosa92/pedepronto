@@ -6472,8 +6472,17 @@ function _atualizarBadgeLicenca(){
         // Push condicional: só envia dados locais se a nuvem estiver vazia ou local for mais novo
         // fsListen já faz fsPush no primeiro snapshot — este timer é fallback para falha de rede
         setTimeout(function(){ if(!_lastSyncAt) fsPush(); }, 10000);
-        // Pedir PIN do funcionário (não desloga Google)
-        if(!ST.currentUser){
+        // Modo online: usuário já autenticado por email/senha — pula PIN
+        if(window.IS_HOSTED&&fbAuth.currentUser){
+          ST.currentUser={
+            id:fbAuth.currentUser.uid,
+            nome:fbAuth.currentUser.displayName||fbAuth.currentUser.email.split('@')[0],
+            cargo:_userRole==='dono'?'admin':'funcionario',
+            pin:''
+          };
+          updateUserBar();
+          if(!ST.caixa.aberto) setTimeout(pedirAberturaCaixa, 600);
+        } else if(!ST.currentUser){
           setTimeout(showLogin, 500);
         } else {
           updateUserBar();
