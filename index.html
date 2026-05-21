@@ -4712,8 +4712,9 @@ function renderConfig(){
       }).join('')}
     </div>
     <button class="btn bp bsm bw" onclick="_gerarConvite()">${ppIcon('send',13,1.7)} Gerar convite</button>
+    <div class="fs11 t3 mt6">O convite pode ser usado por vários dispositivos. Válido por 7 dias.</div>
     <div id="cfg-convite-area" style="display:none;margin-top:12px;padding:14px;background:var(--s2);border:1px solid var(--br2);border-radius:12px">
-      <div class="fs12 bold mb6">${ppIcon('key',13,1.7)} Link de convite gerado</div>
+      <div class="fs12 bold mb6">${ppIcon('key',13,1.7)} Link de convite (multi-uso)</div>
       <input class="inp mono" id="cfg-convite-link" readonly style="font-size:11px;margin-bottom:8px">
       <div style="display:flex;gap:6px;flex-wrap:wrap">
         <button class="btn bs bsm" onclick="_copiarConvite()">${ppIcon('receipt',12,1.7)} Copiar</button>
@@ -5806,9 +5807,10 @@ async function _gerarConvite(){
       created_at:new Date().toISOString(),
       expires_at:new Date(Date.now()+7*24*60*60*1000).toISOString(),
       permissions:selectedPerms,
-      status:'pending',
-      used_by:null,
-      used_at:null,
+      status:'active',
+      uses_count:0,
+      max_uses:0,
+      used_by:[],
       estab_name:ST.cfg.nome||'PedePronto'
     });
     _lastInviteToken=token;
@@ -5937,17 +5939,25 @@ async function _resgatarConvite(user){
     const doc=await fbDB.collection('invites').doc(token).get();
     if(!doc.exists){toast('Convite não encontrado ou inválido','r',5000);sessionStorage.removeItem('pp_pending_invite');return false;}
     const inv=doc.data();
-    if(inv.status!=='pending'){toast('Este convite já foi utilizado','r',5000);sessionStorage.removeItem('pp_pending_invite');return false;}
+    if(inv.status==='revoked'){toast('Este convite foi revogado','r',5000);sessionStorage.removeItem('pp_pending_invite');return false;}
+    if(inv.max_uses>0&&(inv.uses_count||0)>=inv.max_uses){toast('Este convite atingiu o limite de usos','r',5000);sessionStorage.removeItem('pp_pending_invite');return false;}
+    // Compatibilidade com convites antigos (single-use)
+    if(inv.status==='used'){toast('Este convite já foi utilizado','r',5000);sessionStorage.removeItem('pp_pending_invite');return false;}
     if(inv.expires_at&&new Date(inv.expires_at)<new Date()){toast('Este convite expirou','r',5000);sessionStorage.removeItem('pp_pending_invite');return false;}
     if(inv.estab_uid===user.uid){toast('Você não pode aceitar seu próprio convite','a',4000);sessionStorage.removeItem('pp_pending_invite');return false;}
+    if(Array.isArray(inv.used_by)&&inv.used_by.includes(user.uid)){toast('Você já utilizou este convite','a',4000);sessionStorage.removeItem('pp_pending_invite');return false;}
     // Confirmar aceitação
     const aceitar=await new Promise(resolve=>{
       confirm2(ppIcon('handshake',36,1.4),'Convite recebido!','Deseja vincular ao estabelecimento "'+esc(inv.estab_name||'PedePronto')+'"?','Aceitar convite','bp',()=>resolve(true),()=>resolve(false));
     });
     if(!aceitar){sessionStorage.removeItem('pp_pending_invite');return false;}
     // Aceitar convite
-    // Escrita crítica: marcar convite como usado
-    await fbDB.collection('invites').doc(token).update({status:'used',used_by:user.uid,used_at:new Date().toISOString()});
+    // Escrita crítica: incrementar uso do convite (multi-uso)
+    await fbDB.collection('invites').doc(token).update({
+      uses_count:firebase.firestore.FieldValue.increment(1),
+      used_by:firebase.firestore.FieldValue.arrayUnion(user.uid),
+      last_used_at:new Date().toISOString()
+    });
     // Escrita crítica: criar user_map como membro
     const _regNome=_pendingRegName||user.displayName||'';
     await fbDB.collection('user_map').doc(user.uid).set({
