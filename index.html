@@ -2720,14 +2720,14 @@ function renderDash(){
   document.getElementById('pg-dash').innerHTML=`
   ${!ST.caixa.aberto?`<div style="background:var(--rdbg);border:1px solid var(--rdbr);border-radius:12px;padding:14px;margin-bottom:14px;text-align:center">
     <div class="bold rd fs14" style="display:flex;align-items:center;justify-content:center;gap:6px">${_i('alertTriangle',16)} Caixa Fechado</div>
-    <div class="fs12 t2 mt4">Abra o caixa para iniciar as operações do dia</div>
-    <button class="btn bp mt8" style="gap:6px" onclick="pedirAberturaCaixa()">${_i('cash',16)} Abrir Caixa</button>
+    <div class="fs12 t2 mt4">${hasPermission('pdv')?'Abra o caixa para iniciar as operações do dia':'Aguardando abertura do caixa pelo administrador'}</div>
+    ${hasPermission('pdv')?`<button class="btn bp mt8" style="gap:6px" onclick="pedirAberturaCaixa()">${_i('cash',16)} Abrir Caixa</button>`:''}
   </div>`:`<div style="background:var(--gnbg);border:1px solid var(--gnbr);border-radius:12px;padding:10px 14px;margin-bottom:14px">
     <div class="rb"><div><div class="bold gn fs13" style="display:flex;align-items:center;gap:5px">${_i('checkCircle',14)} Caixa Aberto</div><div class="fs12 t2" style="display:flex;align-items:center;gap:4px">${_i('user',12)} ${ST.caixa.operador} · ${ST.caixa.turno||''} · desde ${fmtH(ST.caixa.abertura)}</div></div>
-    <div style="display:flex;gap:7px">
+    ${hasPermission('pdv')?`<div style="display:flex;gap:7px">
       <button class="btn bs bxs" style="gap:5px" onclick="nav('dados')">${_i('chart',14)} Dados</button>
       <button class="btn bs bxs" style="gap:5px" onclick="nav('caixa')">${_i('cash',14)} Caixa</button>
-    </div></div>
+    </div>`:''}</div>
   </div>`}
   ${hasPermission('pdv')?`<div class="g4 mb12">
     <button class="btn bp bw" style="padding:12px 6px;flex-direction:column;gap:4px;font-size:13px" onclick="nav('mesas')">${_i('table',22)}<span>Mesas</span></button>
@@ -6072,6 +6072,7 @@ async function _doRegister(){
   // Validações
   if(!nome){_showAuthErr('reg-err',isInvite?'Digite seu nome.':'Digite o nome do estabelecimento.');return;}
   if(!email){_showAuthErr('reg-err','Digite seu e-mail.');return;}
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){_showAuthErr('reg-err','E-mail inválido.');return;}
   if(!pass){_showAuthErr('reg-err','Crie uma senha.');return;}
   if(pass.length<6){_showAuthErr('reg-err','A senha deve ter pelo menos 6 caracteres.');return;}
   if(pass!==pass2){_showAuthErr('reg-err','As senhas não coincidem.');return;}
@@ -6461,7 +6462,16 @@ function _atualizarBadgeLicenca(){
         const estabId=await _resolveUserMap(user);
         // 3. Verifica convite pendente (pode mudar _estabUid se aceitar)
         const inviteAccepted=await _resgatarConvite(user);
-        const finalEstabId=inviteAccepted?_estabUid:estabId;
+        // Se convite falhou (expirado/usado) e _userRole ficou null, cria como dono (fallback)
+        if(!inviteAccepted&&!_userRole&&fbDB){
+          try{
+            const mapData={estab_uid:user.uid,role:'dono',permissions:_ALL_PERMS,email:user.email||'',nome:_pendingRegName||user.displayName||'',joined_at:new Date().toISOString()};
+            await fbDB.collection('user_map').doc(user.uid).set(mapData);
+            _estabUid=user.uid;_userRole='dono';_userPermissions=_ALL_PERMS;
+            console.log('[PedePronto] Convite falhou — conta criada como dono');
+          }catch(e){console.warn('[PedePronto] Fallback user_map:',e.message);_estabUid=user.uid;_userRole='dono';_userPermissions=_ALL_PERMS;}
+        }
+        const finalEstabId=inviteAccepted?_estabUid:(_estabUid||estabId);
 
         // 4. Verificação de licença
         if(window._pendingLicLogin&&!window.PP_LIC){
@@ -6524,12 +6534,12 @@ function _atualizarBadgeLicenca(){
           };
           _pendingRegName=null; // consumido
           updateUserBar();
-          if(!ST.caixa.aberto) setTimeout(pedirAberturaCaixa, 600);
+          if(!ST.caixa.aberto&&hasPermission('pdv')) setTimeout(pedirAberturaCaixa, 600);
         } else if(!ST.currentUser){
           setTimeout(showLogin, 500);
         } else {
           updateUserBar();
-          if(!ST.caixa.aberto) setTimeout(pedirAberturaCaixa, 600);
+          if(!ST.caixa.aberto&&hasPermission('pdv')) setTimeout(pedirAberturaCaixa, 600);
         }
       } else {
         // Usuário não logado
