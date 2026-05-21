@@ -2875,6 +2875,45 @@ function _renderDashProducao(_i,origemIco,origemLbl,origemCls){
   return html;
 }
 
+function _renderDashPedidosAtivos(_i){
+  if(!hasPermission('pdv'))return'';
+  const origemIco={mesa:ppIcon('table',12,1.7),balcao:ppIcon('counter',12,1.7),delivery:ppIcon('bike',12,1.7)};
+  const origemBdg={mesa:'bg',balcao:'ba',delivery:'bpu'};
+  const origemLbl={mesa:'Mesa',balcao:'Balcão',delivery:'Delivery'};
+  const todos=ST.pedidos.filter(p=>(p.status==='aberto'||p.status==='preparo'));
+  if(!todos.length)return'';
+  // Ordenar: mais antigos primeiro
+  const ordered=[...todos].sort((a,b)=>new Date(a.created)-new Date(b.created));
+  let html=`<div class="sec-title mt8" style="display:flex;align-items:center;gap:6px">${_i('receipt',16)} Pedidos Ativos <span class="fs12 t3" style="font-weight:400">${ordered.length} pedido${ordered.length>1?'s':''}</span></div>`;
+  html+=ordered.map(p=>{
+    const tipo=p.tipo||'balcao';
+    const lbl=tipo==='mesa'?(p.mesa_label||'Mesa '+p.mesa_id):origemLbl[tipo]||tipo;
+    const mins=Math.floor((Date.now()-new Date(p.created).getTime())/60000);
+    return`<div class="card mb8">
+      <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:8px">
+        <div class="senha-badge">${(p.num||'').replace('#','')}</div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px">
+            <span class="bold fs13">${esc(p.cliente_nome||'Sem nome')}</span>
+            <span class="bdg ${origemBdg[tipo]||'bs'}" style="font-size:10px;display:inline-flex;align-items:center;gap:3px">${origemIco[tipo]||''} ${lbl}</span>
+            <span class="bdg ${p.consumo==='viagem'?'bpu':'bg'}" style="font-size:10px;display:inline-flex;align-items:center;gap:3px">${p.consumo==='viagem'?_i('bag',11)+' Viagem':_i('utensils',11)+' Local'}</span>
+          </div>
+          <div class="fs12 t2">${mins}min · ${p.itens.length} item(ns)</div>
+          <div class="fs12 t3 mt2">${p.itens.map(i=>i.qty+'× '+i.nome).join(' · ')}</div>
+        </div>
+      </div>
+      <div class="rb"><div class="bold am mono">${fmtR(p.total)}</div>
+      <div style="display:flex;gap:6px">
+        <button class="btn bb bxs" onclick="showCupomPrevia('${p.id}','comanda')">${_i('printer',14)}</button>
+        ${hasPermission('cancelar')||hasPermission('cancelar_solicitar')?`<button class="btn br_ bxs" onclick="_cancelPed('${p.id}')">${_i('x',14)}</button>`:''}
+        <button class="btn ba bxs" style="gap:4px" onclick="editarPedido('${p.id}')">${_i('edit',14)} Editar</button>
+        <button class="btn bp bxs" style="gap:4px" onclick="nav('pagamento','${p.id}')">${_i('credit',14)} Pagar</button>
+      </div></div>
+    </div>`;
+  }).join('');
+  return html;
+}
+
 function renderDash(){
   const _i=(n,s=14)=>ppIcon(n,s,1.7);
   const origemIco={mesa:_i('table'),balcao:_i('counter'),delivery:_i('bike')};
@@ -2918,7 +2957,8 @@ function renderDash(){
     <button class="btn bcy bw" style="padding:12px 6px;flex-direction:column;gap:4px;font-size:13px" onclick="nav('producao')">${_i('monitor',22)}<span>Produção</span></button>
   </div>`:''}
   ${_renderSolicitacoesCancelamento(_i)}
-  ${_renderDashProducao(_i,origemIco,origemLbl,origemCls)}`;
+  ${_renderDashProducao(_i,origemIco,origemLbl,origemCls)}
+  ${_renderDashPedidosAtivos(_i)}`;
 }
 
 function renderDados(){
