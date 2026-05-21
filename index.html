@@ -5964,6 +5964,9 @@ function fbLogin(){
 }
 function fbLogout(){
   _estabUid=null;_userRole='dono';_userPermissions=_ALL_PERMS.slice();
+  _syncEnabled=false;
+  ST.currentUser=null;
+  if(_fsUnsubscribe){try{_fsUnsubscribe();}catch(e){}_fsUnsubscribe=null;}
   _applyPermissionUI();
   if(fbAuth) fbAuth.signOut();
   toast('Saiu da conta','a');
