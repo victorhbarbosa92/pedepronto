@@ -1659,8 +1659,36 @@ let _fsTimer=null;
 let _syncEnabled=false; // só liga após onAuthStateChanged confirmar o login
 let _estabUid=null;       // UID do estabelecimento (pode ser != auth.uid para membros vinculados)
 let _userRole=null;        // 'dono' | 'membro'
-let _userPermissions=[];   // ['pdv','cardapio','relatorios','config','funcionarios']
-const _ALL_PERMS=['pdv','cardapio','relatorios','config','funcionarios'];
+let _userCargo=null;       // 'dono'|'gerente'|'caixa'|'cozinha'|null
+let _userPermissions=[];
+// ── Permissões granulares ──
+// pdv: operar pedidos, mesas, balcão, delivery
+// producao: ver/operar tela de produção (KDS)
+// caixa_op: abrir/fechar caixa
+// sangria: sangria e suprimento
+// desconto: aplicar descontos em pedidos
+// cancelar: cancelar pedido direto (com motivo)
+// cancelar_solicitar: solicitar cancelamento (gera notificação)
+// cardapio_ver: visualizar cardápio
+// cardapio_editar: editar preços/produtos/categorias
+// clientes_ver: visualizar clientes
+// clientes_editar: editar/excluir clientes
+// dados: dashboard de gestão (KPIs)
+// relatorios: relatórios completos
+// funcionarios: gerenciar funcionários
+// config_ver: visualizar configurações
+// config_editar: editar configurações raiz (nome, CNPJ, PIX, etc)
+// convites: gerenciar dispositivos e convites
+// vouchers: criar/editar vouchers e permuta
+const _ALL_PERMS=['pdv','producao','caixa_op','sangria','desconto','cancelar','cancelar_solicitar','cardapio_ver','cardapio_editar','clientes_ver','clientes_editar','dados','relatorios','funcionarios','config_ver','config_editar','convites','vouchers'];
+// ── Cargos predefinidos (presets de permissões) ──
+const _CARGO_PERMS={
+  dono:_ALL_PERMS,
+  gerente:['pdv','producao','caixa_op','sangria','desconto','cancelar','cancelar_solicitar','cardapio_ver','clientes_ver','clientes_editar','dados','relatorios','config_ver'],
+  caixa:['pdv','caixa_op','cancelar_solicitar','cardapio_ver','clientes_ver'],
+  cozinha:['producao','cancelar_solicitar']
+};
+const _CARGO_LABELS={dono:'Dono',gerente:'Gerente',caixa:'Caixa',cozinha:'Cozinha'};
 const _DEV_ID=(()=>{let id=sessionStorage.getItem('pp_dev');if(!id){id=Math.random().toString(36).slice(2);sessionStorage.setItem('pp_dev',id);}return id;})();
 let _syncStatus='idle'; // 'idle'|'ok'|'error'|'syncing'
 let _lastSyncAt=null;
@@ -1670,8 +1698,12 @@ let _fsUnsubscribe=null; // referência para desinscrever listener anterior
 
 // ── Multi-device: helpers ──
 function hasPermission(perm){
-  if(!_userRole||_userRole==='dono')return true;
+  if(!_userRole||_userRole==='dono'||_userCargo==='dono')return true;
   return(_userPermissions||[]).includes(perm);
+}
+function hasCargo(...cargos){
+  if(_userRole==='dono'||_userCargo==='dono')return true;
+  return cargos.includes(_userCargo);
 }
 
 // Resolve user_map: descobre a qual estabelecimento o usuário pertence
@@ -1683,7 +1715,8 @@ async function _resolveUserMap(user){
       const d=doc.data();
       _estabUid=d.estab_uid;
       _userRole=d.role||'dono';
-      _userPermissions=d.permissions||_ALL_PERMS;
+      _userCargo=d.cargo||(_userRole==='dono'?'dono':null);
+      _userPermissions=d.permissions||(_userCargo?_CARGO_PERMS[_userCargo]:_ALL_PERMS)||_ALL_PERMS;
       return _estabUid;
     }
     // Se tem convite pendente, NÃO cria como dono — _resgatarConvite vai criar como membro
@@ -1850,6 +1883,7 @@ function loadAll(){
   const alts=DB.get('alertas',[]);
   const cutoff=Date.now()-24*60*60*1000;
   ST.alertas=alts.filter(a=>new Date(a.created).getTime()>cutoff).slice(0,50);
+  ST.pedidos_cancelados=DB.get('pedidos_cancelados')||[];
 }
 
 // ═══════════════════════════════════════════
@@ -2001,9 +2035,13 @@ function _updateBackBtn(){
 }
 
 // Mapeamento de páginas a permissões necessárias
-const _PAGE_PERMS={cardapio:'cardapio',relatorio:'relatorios',funcionarios:'funcionarios',config:'config'};
-// pdv: mesas, balcao, delivery, producao, pedido, fechar, pagamento — todos sob 'pdv'
-['mesas','balcao','delivery','producao','pedido','fechar','pagamento','caixa','clientes'].forEach(p=>{_PAGE_PERMS[p]='pdv';});
+const _PAGE_PERMS={
+  mesas:'pdv',balcao:'pdv',delivery:'pdv',pedido:'pdv',fechar:'pdv',pagamento:'pdv',
+  producao:'producao',caixa:'caixa_op',
+  cardapio:'cardapio_ver',clientes:'clientes_ver',
+  dados:'dados',relatorio:'relatorios',
+  funcionarios:'funcionarios',config:'config_ver'
+};
 
 function _applyPermissionUI(){
   // Sidebar + bottom nav: esconde itens sem permissão
@@ -2031,8 +2069,8 @@ function nav(pg,extra){
   const bni=document.getElementById('bnm-'+pg);if(bni)bni.classList.add('on');
   const renders={dash:renderDash,dados:renderDados,mesas:renderMesas,balcao:renderBalcao,delivery:renderDelivery,producao:renderProducao,cardapio:renderCardapio,clientes:renderClientes,caixa:renderCaixa,relatorio:renderRelatorio,funcionarios:renderFuncionarios,config:renderConfig,pedido:()=>renderPedido(extra),fechar:()=>renderFechar(extra),pagamento:()=>renderPagamento(extra)};
   if(renders[pg])renders[pg]();
-  // KDS tick: ligar ao entrar, desligar ao sair
-  if(pg==='producao')_kdsStartTick();else _kdsStopTick();
+  // KDS tick: ligar no dash (produção inline) e producao, desligar ao sair
+  if(pg==='producao'||pg==='dash')_kdsStartTick();else _kdsStopTick();
   // init consumo buttons after render
   if(pg==='pedido') setConsumo(ST.novoPedido.consumo||'local');
   // ── SCROLL: só volta ao topo quando o usuário navega para uma página diferente
@@ -2657,7 +2695,7 @@ function showCaixaQuick(){
   <div style="text-align:center;padding:14px 0;border-bottom:1px solid var(--br);margin-bottom:14px">
     <div style="display:flex;justify-content:center;margin-bottom:8px;color:var(--ac)">${user?.cargo==='admin'?ppIcon('crown',36):ppIcon('user',36)}</div>
     <div class="bold fs16">${esc(user?.nome||'—')}</div>
-    <div class="fs13 t2">${_userRole==='membro'?'Membro vinculado':user?.cargo==='admin'?'Administrador':'Funcionário'}</div>
+    <div class="fs13 t2">${_userCargo?_CARGO_LABELS[_userCargo]:(_userRole==='membro'?'Membro':user?.cargo==='admin'?'Administrador':'Funcionário')}</div>
     ${window.IS_HOSTED&&fbAuth?.currentUser?`<div class="fs11 t3 mt4">${esc(fbAuth.currentUser.email)}</div>`:''}
   </div>
   <div class="rb mb8"><span class="fs13 t2">Caixa</span><span class="bold ${ST.caixa.aberto?'gn':'rd'}">${ST.caixa.aberto?'Aberto':'Fechado'}</span></div>
@@ -2679,6 +2717,146 @@ function chamarPedido(p){
   localStorage.setItem('pp_display_call',JSON.stringify(call));
   toast('Pedido #'+p.num+' chamado na vitrine!','g',3000);
   anunciar('chime',p);
+}
+
+// ── Solicitações de cancelamento pendentes (visível só para dono/gerente) ──
+function _renderSolicitacoesCancelamento(_i){
+  if(!hasPermission('cancelar'))return'';
+  const solic=ST.pedidos.filter(p=>p.cancel_solicitado);
+  if(!solic.length)return'';
+  return`<div class="sec-title" style="color:var(--am);display:flex;align-items:center;gap:6px">${_i('alertTriangle',16)} Cancelamentos pendentes (${solic.length})</div>
+  ${solic.map(p=>`<div class="card mb8" style="border-color:var(--ambr);background:var(--ambg)">
+    <div class="rb mb6">
+      <div style="flex:1;min-width:0">
+        <div class="bold fs14">Pedido #${p.num}</div>
+        <div class="fs12 t2">${p.itens.map(i=>i.qty+'× '+i.nome).join(' · ')}</div>
+      </div>
+      <span class="fs11 t2">${fmtDH(p.cancel_solic_em)}</span>
+    </div>
+    <div class="fs12 mb6" style="background:var(--s2);padding:8px 10px;border-radius:8px;border-left:3px solid var(--am)">
+      <div class="fs11 t3 mb2">Solicitado por ${esc(p.cancel_solic_cargo||'')} ${esc(p.cancel_solic_por||'')}</div>
+      <div class="bold">"${esc(p.cancel_solic_motivo||'')}"</div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn br_ bw bsm" style="flex:1;gap:5px" onclick="_aprovarCancelamento('${p.id}')">${_i('check',14)} Aprovar</button>
+      <button class="btn bg bw bsm" style="flex:1;gap:5px" onclick="_rejeitarCancelamento('${p.id}')">${_i('xCircle',14)} Rejeitar</button>
+    </div>
+  </div>`).join('')}`;
+}
+
+// ── Produção inline no Dashboard ──
+function _renderDashProducao(_i,origemIco,origemLbl,origemCls){
+  if(!hasPermission('producao')&&!hasPermission('pdv'))return'';
+  const tab=ST._dashKdsTab||'cozinha';ST._dashKdsTab=tab;
+  const dest=tab==='cozinha'?'coz':'bar';
+  const _isPronto=p=>p.itens.length>0&&p.itens.every(i=>i.concluido)||(p.status==='pago'&&!p.entregue);
+  const peds=ST.pedidos.filter(p=>(p.status==='aberto'||p.status==='preparo')&&!_isPronto(p)&&p.itens.some(i=>i.dest===dest));
+  const prontos=ST.pedidos.filter(p=>_isPronto(p)&&!p.entregue&&naFila(p)&&p.itens.some(i=>i.dest===dest));
+  // Detecta novos pedidos — som e voz
+  const primLoad=_kdsSeenIds.size===0;
+  peds.forEach(p=>{if(!_kdsSeenIds.has(p.id)){_kdsSeenIds.add(p.id);if(!primLoad)anunciar('novo_pedido',p);}});
+  const cozAtivos=ST.pedidos.filter(p=>(p.status==='aberto'||p.status==='preparo')&&!_isPronto(p)&&p.itens.some(i=>i.dest==='coz')).length;
+  const barAtivos=ST.pedidos.filter(p=>(p.status==='aberto'||p.status==='preparo')&&!_isPronto(p)&&p.itens.some(i=>i.dest==='bar')).length;
+  let html=`
+  <div class="rb mb10">
+    <div class="tabbar" style="flex:1">
+      <button class="tabitem ${tab==='cozinha'?'on':''}" style="gap:5px" onclick="ST._dashKdsTab='cozinha';renderDash()">${_i('fire',14)} Cozinha ${cozAtivos>0?`<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--ac);margin-left:4px"></span>`:''}</button>
+      <button class="tabitem ${tab==='bar'?'on':''}" style="gap:5px" onclick="ST._dashKdsTab='bar';renderDash()">${_i('utensils',14)} Bar ${barAtivos>0?`<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--bl);margin-left:4px"></span>`:''}</button>
+    </div>
+    <span class="fs12 t3" style="padding-left:10px;white-space:nowrap">${peds.length} preparo · ${prontos.length} pronto${prontos.length!==1?'s':''}</span>
+  </div>`;
+  // Prontos
+  if(prontos.length){
+    html+=`<div class="sec-title" style="color:var(--gn);display:flex;align-items:center;gap:6px">${_i('checkCircle',16)} Prontos — aguardando retirada</div>`;
+    html+=prontos.map(p=>{
+      const tipo=p.tipo||'balcao';const lbl=tipo==='mesa'?(p.mesa_label||'Mesa'):origemLbl[tipo]||tipo;
+      return`<div class="card mb8" style="border-color:var(--gnbr);background:var(--gnbg)">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+          <span class="bold fs15">${p.num}</span><span class="bold t2">·</span><span class="bold fs14">${lbl}</span>
+          ${p.cliente_nome?`<span class="fs12 t2">${_i('user',12)} ${p.cliente_nome}</span>`:''}
+        </div>
+        <div class="fs12 t2 mb10">${p.itens.filter(i=>i.dest===dest).map(i=>i.qty+'× '+i.nome).join(' · ')}</div>
+        <div style="display:flex;gap:8px">
+          <button class="btn bg bw bsm" style="flex:1;gap:5px" onclick="confirmarEntrega('${p.id}')">${_i('check',14)} Confirmar entrega</button>
+          <button class="btn ba bsm" style="gap:5px" onclick="chamarPedido(ST.pedidos.find(x=>x.id==='${p.id}'))">${_i('bell',14)} Chamar</button>
+        </div>
+      </div>`;
+    }).join('');
+    html+=`<div class="sec-title mt8">Em preparo</div>`;
+  }
+  // Em preparo — cards KDS completos com anel de progresso
+  if(!peds.length&&!prontos.length){
+    html+=`<div class="card" style="text-align:center;color:var(--t2);padding:32px">
+      <div style="margin-bottom:8px;display:flex;justify-content:center;color:var(--gn)">${_i('checkCircle',32)}</div>
+      <div class="bold fs14">Nenhum pedido em aberto</div>
+      <div class="fs12 t3 mt4">Tudo em dia!</div>
+    </div>`;
+  }
+  peds.forEach((p,qi)=>{
+    const created=new Date(p.created).getTime();
+    const prev=dest==='coz'?p.prev_coz:p.prev_bar;
+    const filaExtra=qi*60*1000;
+    const prevMs=prev?(new Date(prev).getTime()+filaExtra):0;
+    const elSec=Math.floor((Date.now()-created)/1000);
+    const mins=Math.floor(elSec/60);const secs=elSec%60;
+    const late=prevMs&&Date.now()>prevMs;
+    const minsRest=prevMs?Math.ceil((prevMs-Date.now())/60000):null;
+    const cls=late?'atrasado':mins<2?'novo':'preparo';
+    const statusCor=late?'var(--rd)':minsRest!==null&&minsRest<4?'var(--am)':'var(--gn)';
+    const itensDest=p.itens.filter(i=>i.dest===dest);
+    const todoConcluido=itensDest.every(i=>i.concluido);
+    const R=26,C=2*Math.PI*R;
+    const totalSec=prevMs?Math.floor((prevMs-created)/1000):0;
+    const prog=totalSec?Math.min(elSec/totalSec,1):0;
+    const offset=C*(1-prog);
+    const ringSt=late?'var(--rd)':prog>.75?'var(--am)':'var(--gn)';
+    const tipo=p.tipo||'balcao';const lbl=tipo==='mesa'?(p.mesa_label||'Mesa'):origemLbl[tipo]||tipo;
+    html+=`<div class="kds-c ${cls}" data-id="${p.id}" data-created="${created}" data-prev="${prevMs}" data-totalsec="${totalSec}">
+      <div class="rb mb10">
+        <div style="min-width:0;flex:1">
+          <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:4px">
+            <div class="bold fs15">${p.num}</div><div class="bold fs14 t2">·</div><div class="bold fs14">${lbl}</div>
+            <span class="bdg ${p.consumo==='viagem'?'bpu':'bg'}" style="font-size:10px;display:inline-flex;align-items:center;gap:3px">${p.consumo==='viagem'?_i('bag',11)+' Viagem':_i('utensils',11)+' Local'}</span>
+            ${late?`<span class="kds-late-badge" style="display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:800;color:var(--rd);background:var(--rdbg);padding:2px 8px;border-radius:99px;border:1px solid var(--rdbr)">${_i('alertTriangle',11)} +${Math.ceil((Date.now()-prevMs)/60000)}min</span>`:'<span class="kds-late-badge" style="display:none"></span>'}
+          </div>
+          ${p.cliente_nome?`<div class="fs12 t2" style="display:flex;align-items:center;gap:4px">${_i('user',12)} ${p.cliente_nome}</div>`:''}
+        </div>
+        <div class="kds-ring-wrap">
+          <svg class="kds-ring-svg" width="64" height="64" viewBox="0 0 64 64">
+            <circle class="kds-ring-bg" cx="32" cy="32" r="${R}"/>
+            <circle class="kds-ring-fill" cx="32" cy="32" r="${R}" stroke="${ringSt}" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${totalSec?offset.toFixed(1):C.toFixed(1)}"/>
+          </svg>
+          <div class="kds-ring-timer">
+            <div class="kds-ring-time kds-live-timer" style="color:${statusCor}">${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}</div>
+            <div class="kds-ring-sub">${late?'atrasado':minsRest!==null?minsRest+'min':'preparo'}</div>
+          </div>
+        </div>
+      </div>
+      <div style="margin-bottom:10px">
+        ${itensDest.map((it,ii)=>{
+          const itIdx=p.itens.indexOf(it);
+          return`<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--br);${it.concluido?'opacity:.45':''}">
+            <div style="flex:1;min-width:0">
+              <div class="bold fs13">${it.qty}× ${it.nome}</div>
+              ${it.obs?`<div class="fs12 t3 mt2">› ${it.obs}</div>`:''}
+              ${it.obs_livre?`<div class="fs12 t3 mt1 italic" style="display:flex;align-items:center;gap:4px">${_i('edit',11)} ${it.obs_livre}</div>`:''}
+            </div>
+            ${it.concluido
+              ?`<span class="bdg bg" style="font-size:11px;display:inline-flex;align-items:center;gap:3px">${_i('check',11)} Pronto</span>`
+              :`<button class="btn bg bxs" onclick="concluirItem('${p.id}',${itIdx});renderDash()" style="flex-shrink:0">${_i('check',14)}</button>`}
+          </div>`;
+        }).join('')}
+      </div>
+      <div style="display:flex;gap:8px">
+        ${todoConcluido
+          ?`<div class="btn bg bw bsm" style="flex:1;opacity:.5;pointer-events:none;gap:5px">${_i('checkCircle',14)} Tudo pronto</div>`
+          :`<button class="btn bg bw bsm" style="flex:1;gap:5px" onclick="concluirKDS('${p.id}','${dest}');renderDash()">${_i('checkCircle',14)} Tudo pronto</button>`}
+        ${hasPermission('pdv')?`<button class="btn bp bxs" onclick="nav('pagamento','${p.id}')">${_i('credit',14)}</button>`:''}
+        <button class="btn bs bxs" onclick="showCupomPrevia('${p.id}','comanda')">${_i('printer',14)}</button>
+      </div>
+    </div>`;
+  });
+  return html;
 }
 
 function renderDash(){
@@ -2708,14 +2886,14 @@ function renderDash(){
   document.getElementById('pg-dash').innerHTML=`
   ${!ST.caixa.aberto?`<div style="background:var(--rdbg);border:1px solid var(--rdbr);border-radius:12px;padding:14px;margin-bottom:14px;text-align:center">
     <div class="bold rd fs14" style="display:flex;align-items:center;justify-content:center;gap:6px">${_i('alertTriangle',16)} Caixa Fechado</div>
-    <div class="fs12 t2 mt4">${hasPermission('pdv')?'Abra o caixa para iniciar as operações do dia':'Aguardando abertura do caixa pelo administrador'}</div>
-    ${hasPermission('pdv')?`<button class="btn bp mt8" style="gap:6px" onclick="pedirAberturaCaixa()">${_i('cash',16)} Abrir Caixa</button>`:''}
+    <div class="fs12 t2 mt4">${hasPermission('caixa_op')?'Abra o caixa para iniciar as operações do dia':'Aguardando abertura do caixa pelo administrador'}</div>
+    ${hasPermission('caixa_op')?`<button class="btn bp mt8" style="gap:6px" onclick="pedirAberturaCaixa()">${_i('cash',16)} Abrir Caixa</button>`:''}
   </div>`:`<div style="background:var(--gnbg);border:1px solid var(--gnbr);border-radius:12px;padding:10px 14px;margin-bottom:14px">
     <div class="rb"><div><div class="bold gn fs13" style="display:flex;align-items:center;gap:5px">${_i('checkCircle',14)} Caixa Aberto</div><div class="fs12 t2" style="display:flex;align-items:center;gap:4px">${_i('user',12)} ${ST.caixa.operador} · ${ST.caixa.turno||''} · desde ${fmtH(ST.caixa.abertura)}</div></div>
-    ${hasPermission('pdv')?`<div style="display:flex;gap:7px">
-      <button class="btn bs bxs" style="gap:5px" onclick="nav('dados')">${_i('chart',14)} Dados</button>
-      <button class="btn bs bxs" style="gap:5px" onclick="nav('caixa')">${_i('cash',14)} Caixa</button>
-    </div>`:''}</div>
+    <div style="display:flex;gap:7px">
+      ${hasPermission('dados')?`<button class="btn bs bxs" style="gap:5px" onclick="nav('dados')">${_i('chart',14)} Dados</button>`:''}
+      ${hasPermission('caixa_op')?`<button class="btn bs bxs" style="gap:5px" onclick="nav('caixa')">${_i('cash',14)} Caixa</button>`:''}
+    </div></div>
   </div>`}
   ${hasPermission('pdv')?`<div class="g4 mb12">
     <button class="btn bp bw" style="padding:12px 6px;flex-direction:column;gap:4px;font-size:13px" onclick="nav('mesas')">${_i('table',22)}<span>Mesas</span></button>
@@ -2723,64 +2901,8 @@ function renderDash(){
     <button class="btn bpu bw" style="padding:12px 6px;flex-direction:column;gap:4px;font-size:13px" onclick="novoDelivery()">${_i('bike',22)}<span>Delivery</span></button>
     <button class="btn bcy bw" style="padding:12px 6px;flex-direction:column;gap:4px;font-size:13px" onclick="nav('producao')">${_i('monitor',22)}<span>Produção</span></button>
   </div>`:''}
-  ${aguardando.length?`
-  <div class="sec-title" style="color:var(--gn);display:flex;align-items:center;gap:6px">${_i('checkCircle',16)} Prontos — aguardando retirada (${aguardando.length})</div>
-  ${aguardando.map(p=>{
-    const tipo=p.tipo||'balcao';
-    const lbl=tipo==='mesa'?(p.mesa_label||'Mesa'):origemLbl[tipo]||tipo;
-    return`<div class="card mb8" style="border-color:var(--gnbr);background:var(--gnbg)">
-      <div class="rb mb6">
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-          <span class="bold fs15">${p.num}</span>
-          <span class="bdg ${origemCls[tipo]||'ba'}" style="display:inline-flex;align-items:center;gap:4px">${origemIco[tipo]||_i('receipt')} ${lbl}</span>
-          ${p.cliente_nome?`<span class="fs12 t2" style="display:inline-flex;align-items:center;gap:3px">${_i('user',12)} ${p.cliente_nome}</span>`:''}
-        </div>
-        <span class="fs12 t2">${elapsed(Date.now()-new Date(p.created).getTime())}</span>
-      </div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn bg bsm" style="flex:1;gap:5px" onclick="confirmarEntrega('${p.id}')">${_i('check',14)} Confirmar entrega</button>
-        <button class="btn ba bsm" style="gap:5px" onclick="chamarPedido(ST.pedidos.find(x=>x.id==='${p.id}'))">${_i('bell',14)} Chamar</button>
-      </div>
-    </div>`;
-  }).join('')}`:''}
-  <div class="rb mb8" style="margin-top:${aguardando.length?'12px':'0'}">
-    <div class="sec-title" style="margin-bottom:0">Em produção (${ordenados.length})</div>
-    ${ordenados.length?`<span class="fs12 t3">prioridade ↑</span>`:''}
-  </div>
-  ${ordenados.length===0?`<div class="card" style="text-align:center;color:var(--t2);padding:32px">
-    <div style="margin-bottom:8px;display:flex;justify-content:center;color:var(--gn)">${_i('checkCircle',32)}</div>
-    <div class="bold fs14">Nenhum pedido em aberto</div>
-    <div class="fs12 t3 mt4">Tudo em dia!</div>
-  </div>`:''}
-  ${ordenados.map(p=>{
-    const tipo=p.tipo||'balcao';
-    const lbl=tipo==='mesa'?(p.mesa_label||'Mesa'):origemLbl[tipo]||tipo;
-    const mins=Math.floor((Date.now()-new Date(p.created).getTime())/60000);
-    const late=mins>30;
-    const urgente=mins>15&&!late;
-    const borderCor=late?'var(--rdbr)':urgente?'var(--ambr)':'var(--br)';
-    const bgCor=late?'var(--rdbg)':urgente?'var(--ambg)':'var(--sf)';
-    const itensResumo=p.itens.map(i=>`${i.qty}× ${i.nome}`).join(' · ');
-    return`<div class="card mb8" style="border-color:${borderCor};background:${bgCor}">
-      <div class="rb mb6">
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-          <span class="bold fs15">${p.num}</span>
-          <span class="bdg ${origemCls[tipo]||'ba'}" style="display:inline-flex;align-items:center;gap:4px">${origemIco[tipo]||_i('receipt')} ${lbl}</span>
-          ${p.consumo==='viagem'?`<span class="bdg bpu" style="display:inline-flex;align-items:center;gap:3px">${_i('bag',12)} Viagem</span>`:''}
-          ${p.status==='preparo'?`<span class="bdg bg" style="display:inline-flex;align-items:center;gap:3px">${_i('fire',12)} Preparo</span>`:`<span class="bdg ba" style="display:inline-flex;align-items:center;gap:3px">${_i('clock',12)} Novo</span>`}
-          ${late?`<span class="bdg" style="display:inline-flex;align-items:center;gap:3px;background:var(--rdbg);color:var(--rd);border:1px solid var(--rdbr)">${_i('alertTriangle',12)} +${mins}min</span>`:urgente?`<span class="bdg" style="display:inline-flex;align-items:center;gap:3px;background:var(--ambg);color:var(--am);border:1px solid var(--ambr)">${_i('clock',12)} ${mins}min</span>`:''}
-        </div>
-        <span class="fs12 t2">${elapsed(Date.now()-new Date(p.created).getTime())}</span>
-      </div>
-      ${p.cliente_nome?`<div class="fs12 t2 mb4" style="display:flex;align-items:center;gap:4px">${_i('user',12)} ${p.cliente_nome}</div>`:''}
-      <div class="fs12 t2 mb8" style="line-height:1.7">${itensResumo}</div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn bp bxs" style="flex:1;gap:5px" onclick="nav('pagamento','${p.id}')">${_i('credit',14)} Pagar</button>
-        <button class="btn ba bxs" style="gap:5px" onclick="chamarPedido(ST.pedidos.find(x=>x.id==='${p.id}'))">${_i('bell',14)} Chamar</button>
-        <button class="btn bs bxs" style="gap:5px" onclick="nav('fechar','${p.id}')">${_i('eye',14)} Ver</button>
-      </div>
-    </div>`;
-  }).join('')}`;
+  ${_renderSolicitacoesCancelamento(_i)}
+  ${_renderDashProducao(_i,origemIco,origemLbl,origemCls)}`;
 }
 
 function renderDados(){
@@ -3966,7 +4088,7 @@ function renderCardapio(){
 function renderCardProds(){
   const el=document.getElementById('card-content');if(!el)return;
   el.innerHTML=`<div class="rb mb10"><div class="bold">${ST.produtos.length} produtos</div>
-  <button class="btn bp bsm" onclick="editProd(null)">+ Produto</button></div>
+  ${hasPermission('cardapio_editar')?`<button class="btn bp bsm" onclick="editProd(null)">+ Produto</button>`:''}</div>
   ${ST.produtos.map(p=>`<div class="card mb8">
     <div class="rb">
       <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0">
@@ -4452,10 +4574,10 @@ function renderConfig(){
         <div class="bold fs14">${esc(_authUser.displayName||_authUser.email.split('@')[0])}</div>
         <div class="fs12 t2">${esc(_authUser.email)}</div>
       </div>
-      <span class="bdg ${_userRole==='membro'?'bb':'bg'}" style="font-size:11px">${_userRole==='membro'?'Membro':'Dono'}</span>
+      <span class="bdg ${_userRole==='membro'?'bb':'bg'}" style="font-size:11px">${_CARGO_LABELS[_userCargo]||(_userRole==='membro'?'Membro':'Dono')}</span>
     </div>
     ${_userRole==='membro'?`<div class="fs12 t3" style="display:flex;align-items:center;gap:4px;margin-top:4px">${ppIcon('store',12,1.5)} Vinculado a: ${esc(cfg.nome||'Estabelecimento')}</div>
-    <div class="fs11 t3 mt4">Permissões: ${_userPermissions.map(p=>({pdv:'PDV',cardapio:'Cardápio',relatorios:'Relatórios',config:'Config',funcionarios:'Funcionários'}[p]||p)).join(', ')}</div>`:''}
+    <div class="fs11 t3 mt4">Cargo: ${_CARGO_LABELS[_userCargo]||'Membro'}</div>`:''}
     <div style="display:flex;gap:6px;margin-top:10px">
       <button class="btn br_ bsm" onclick="trocarUsuario()" style="gap:5px">${ppIcon('xCircle',13,1.7)} Sair da conta</button>
     </div>
@@ -4688,30 +4810,32 @@ function renderConfig(){
       <div class="fs11 t3 mt6">Dispara anúncio "pedido pronto" com as configurações acima.</div>
     </div>
   </div>
-  ${_userRole==='dono'&&window.IS_HOSTED?`
+  ${hasPermission('convites')&&window.IS_HOSTED?`
   <div class="sec-title" style="display:flex;align-items:center;gap:6px">${ppIcon('users',14,1.7)} Dispositivos vinculados</div>
   <div class="card mb10">
     <div id="cfg-membros-list" class="fs12 t2" style="margin-bottom:8px">Carregando...</div>
     <div id="cfg-convite-ativo" style="margin-bottom:12px"></div>
     <div style="border-top:1px solid var(--br);padding-top:12px">
-      <div class="fs12 bold mb4">Gerar novo convite</div>
-      <div class="fs12 t3 mb6">Permissões do membro:</div>
-      <div id="cfg-convite-perms" style="display:flex;flex-wrap:wrap;gap:4px 12px;margin-bottom:10px">
-        ${_ALL_PERMS.map(p=>{
-          const labels={pdv:'PDV',cardapio:'Cardápio',relatorios:'Relatórios',config:'Config',funcionarios:'Funcionários'};
-          return`<label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:12px"><input type="checkbox" class="invite-perm-cb" value="${p}" checked> ${labels[p]||p}</label>`;
-        }).join('')}
+      <div class="fs12 bold mb6">Gerar novo convite</div>
+      <div class="fg mb10" style="margin:0">
+        <label class="fl">Cargo do membro</label>
+        <select class="inp" id="cfg-convite-cargo">
+          <option value="gerente">🔑 Gerente — operação completa, sem editar preços/config</option>
+          <option value="caixa">💳 Caixa — PDV e caixa, sem relatórios</option>
+          <option value="cozinha">🍳 Cozinha — apenas tela de produção</option>
+        </select>
       </div>
+      <div class="fs11 t3 mb10" id="cfg-cargo-desc">Operação completa: PDV, caixa, sangria, descontos, cancelamentos, relatórios. Não edita preços, configurações ou funcionários.</div>
       <button class="btn bp bsm bw" onclick="_gerarConvite()">${ppIcon('send',13,1.7)} Gerar convite</button>
       <div class="fs11 t3 mt6">O convite pode ser usado por vários dispositivos. Válido por 7 dias.</div>
     </div>
   </div>
   `:''}
-  <button class="btn bp bw mb10" onclick="requireAdmin('Salvar Configurações',()=>{save('cfg');toast('Configurações salvas!','g');renderConfig()})">${ppIcon('save',14,1.7)} Salvar configurações</button>
-  <button class="btn br_ bw" onclick="confirm2(ppIcon('alertTriangle',36,1.6),'Resetar sistema?','TODOS os dados serão apagados permanentemente!','Resetar','br_',resetarSistema)">${ppIcon('alertTriangle',14,1.7)} Resetar sistema</button>`;
+  ${hasPermission('config_editar')?`<button class="btn bp bw mb10" onclick="requireAdmin('Salvar Configurações',()=>{save('cfg');toast('Configurações salvas!','g');renderConfig()})">${ppIcon('save',14,1.7)} Salvar configurações</button>
+  <button class="btn br_ bw" onclick="confirm2(ppIcon('alertTriangle',36,1.6),'Resetar sistema?','TODOS os dados serão apagados permanentemente!','Resetar','br_',resetarSistema)">${ppIcon('alertTriangle',14,1.7)} Resetar sistema</button>`:''}`;
   document.getElementById('sb-est').textContent=cfg.nome||'PedePronto PDV';
   // Carrega membros vinculados e convites ativos (async)
-  if(_userRole==='dono'&&window.IS_HOSTED&&document.getElementById('cfg-membros-list')){
+  if(hasPermission('convites')&&window.IS_HOSTED&&document.getElementById('cfg-membros-list')){
     _carregarMembros();
     _carregarConviteAtivo();
   }
@@ -5155,6 +5279,126 @@ function limparAlertas(){
   if(list)list.innerHTML=`<div style="text-align:center;color:var(--t2);padding:30px"><div style="margin-bottom:8px">${ppIcon('bell',32,1.4)}</div><div class="fs13">Nenhum alerta no momento</div></div>`;
 }
 
+// ═══════════════════════════════════════════
+//  CANCELAMENTO HIERÁRQUICO
+// ═══════════════════════════════════════════
+
+// Dono/Gerente: cancela direto com motivo obrigatório
+function _cancelarPedidoComMotivo(pid){
+  const p=ST.pedidos.find(x=>x.id===pid);if(!p)return;
+  const sh=document.getElementById('sh-obs');
+  sh.innerHTML=`
+    <div class="sh-handle"></div>
+    <div style="text-align:center;margin-bottom:10px">${ppIcon('alertTriangle',32,1.4,'var(--rd)')}</div>
+    <div class="fs16 bold mb4" style="text-align:center">Cancelar Pedido #${p.num}</div>
+    <div class="fs12 t2 mb12" style="text-align:center">${p.itens.map(i=>i.qty+'× '+i.nome).join(', ')}</div>
+    <div class="fg mb10">
+      <label class="fl">Motivo do cancelamento *</label>
+      <textarea class="inp" id="cancel-motivo" rows="3" placeholder="Descreva o motivo do cancelamento..." style="resize:vertical"></textarea>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn br_ bw" style="flex:1" onclick="_confirmarCancelamento('${pid}')">Cancelar pedido</button>
+      <button class="btn bs bw" onclick="closeOv('ov-obs')">Voltar</button>
+    </div>`;
+  openOv('ov-obs');
+}
+
+function _confirmarCancelamento(pid){
+  const motivo=(document.getElementById('cancel-motivo')?.value||'').trim();
+  if(!motivo){toast('Informe o motivo do cancelamento','a');return;}
+  const p=ST.pedidos.find(x=>x.id===pid);
+  if(!p){closeOv('ov-obs');return;}
+  // Registrar cancelamento no alerta
+  const operador=ST.currentUser?.nome||fbAuth?.currentUser?.displayName||'Sistema';
+  const cargo=_CARGO_LABELS[_userCargo]||'Dono';
+  _addAlerta(ppIcon('xCircle',16,1.7,'var(--rd)'),'Pedido #'+p.num+' cancelado por '+cargo+' '+operador+'. Motivo: '+motivo,'cancelado');
+  // Registrar no pedido antes de remover (para histórico)
+  p.status='cancelado';
+  p.cancelado_em=now();
+  p.cancelado_por=operador;
+  p.cancelado_cargo=_userCargo||'dono';
+  p.cancel_motivo=motivo;
+  // Mover para histórico de cancelados
+  if(!ST.pedidos_cancelados)ST.pedidos_cancelados=[];
+  ST.pedidos_cancelados.unshift(p);
+  if(ST.pedidos_cancelados.length>100)ST.pedidos_cancelados.length=100;
+  DB.set('pedidos_cancelados',ST.pedidos_cancelados);
+  // Remover dos ativos
+  ST.pedidos=ST.pedidos.filter(x=>x.id!==pid);
+  save('pedidos');
+  closeOv('ov-obs');
+  nav(ST.curNav==='fechar'?'dash':'dash');
+  toast('Pedido #'+p.num+' cancelado','r');
+  anunciar('cancelamento',p);
+}
+
+// Caixa/Cozinha: solicita cancelamento → gera notificação para dono/gerente
+function _solicitarCancelamento(pid){
+  const p=ST.pedidos.find(x=>x.id===pid);if(!p)return;
+  const sh=document.getElementById('sh-obs');
+  sh.innerHTML=`
+    <div class="sh-handle"></div>
+    <div style="text-align:center;margin-bottom:10px">${ppIcon('alertTriangle',32,1.4,'var(--am)')}</div>
+    <div class="fs16 bold mb4" style="text-align:center">Solicitar Cancelamento</div>
+    <div class="fs12 t2 mb6" style="text-align:center">Pedido #${p.num} — ${p.itens.map(i=>i.qty+'× '+i.nome).join(', ')}</div>
+    <div class="fs12 t3 mb12" style="text-align:center">A solicitação será enviada ao gerente/dono para aprovação.</div>
+    <div class="fg mb10">
+      <label class="fl">Motivo da solicitação *</label>
+      <textarea class="inp" id="cancel-solic-motivo" rows="3" placeholder="Ex: Cliente desistiu, item indisponível..." style="resize:vertical"></textarea>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn ba bw" style="flex:1" onclick="_enviarSolicitacaoCancelamento('${pid}')">Enviar solicitação</button>
+      <button class="btn bs bw" onclick="closeOv('ov-obs')">Voltar</button>
+    </div>`;
+  openOv('ov-obs');
+}
+
+function _enviarSolicitacaoCancelamento(pid){
+  const motivo=(document.getElementById('cancel-solic-motivo')?.value||'').trim();
+  if(!motivo){toast('Informe o motivo da solicitação','a');return;}
+  const p=ST.pedidos.find(x=>x.id===pid);
+  if(!p){closeOv('ov-obs');return;}
+  const operador=ST.currentUser?.nome||fbAuth?.currentUser?.displayName||'Funcionário';
+  const cargo=_CARGO_LABELS[_userCargo]||'Funcionário';
+  // Marcar pedido com solicitação pendente
+  p.cancel_solicitado=true;
+  p.cancel_solic_motivo=motivo;
+  p.cancel_solic_por=operador;
+  p.cancel_solic_cargo=cargo;
+  p.cancel_solic_em=now();
+  save('pedidos');
+  // Adicionar alerta (visível para todos — dono/gerente age)
+  _addAlerta(ppIcon('alertTriangle',16,1.7,'var(--am)'),'⚠ Solicitação de cancelamento: Pedido #'+p.num+' por '+cargo+' '+operador+'. Motivo: '+motivo,'solicitacao');
+  closeOv('ov-obs');
+  toast('Solicitação enviada ao gerente/dono','g',4000);
+  playSound('alerta');
+}
+
+// Dono/Gerente: aprovar ou rejeitar solicitação de cancelamento
+function _aprovarCancelamento(pid){
+  const p=ST.pedidos.find(x=>x.id===pid);if(!p)return;
+  const operador=ST.currentUser?.nome||fbAuth?.currentUser?.displayName||'Sistema';
+  _addAlerta(ppIcon('xCircle',16,1.7,'var(--rd)'),'Cancelamento aprovado: Pedido #'+p.num+' por '+(_CARGO_LABELS[_userCargo]||'Dono')+' '+operador+'. Motivo original: '+(p.cancel_solic_motivo||''),'cancelado');
+  p.status='cancelado';p.cancelado_em=now();p.cancelado_por=operador;p.cancelado_cargo=_userCargo||'dono';p.cancel_motivo=p.cancel_solic_motivo||'Aprovado';
+  if(!ST.pedidos_cancelados)ST.pedidos_cancelados=[];
+  ST.pedidos_cancelados.unshift(p);
+  if(ST.pedidos_cancelados.length>100)ST.pedidos_cancelados.length=100;
+  DB.set('pedidos_cancelados',ST.pedidos_cancelados);
+  ST.pedidos=ST.pedidos.filter(x=>x.id!==pid);
+  save('pedidos');
+  toast('Cancelamento aprovado — Pedido #'+p.num,'r');
+  renderDash();
+}
+function _rejeitarCancelamento(pid){
+  const p=ST.pedidos.find(x=>x.id===pid);if(!p)return;
+  p.cancel_solicitado=false;
+  delete p.cancel_solic_motivo;delete p.cancel_solic_por;delete p.cancel_solic_cargo;delete p.cancel_solic_em;
+  save('pedidos');
+  _addAlerta(ppIcon('check',16,1.7,'var(--gn)'),'Cancelamento rejeitado: Pedido #'+p.num+' continua ativo','info');
+  toast('Solicitação rejeitada — pedido mantido','g');
+  renderDash();
+}
+
 // ── LOGIN ──────────────────────────────────────────────────────────────
 let _loginTarget=null, _loginBuf='';
 function showLogin(){
@@ -5242,7 +5486,7 @@ function updateUserBar(){
   const u=ST.currentUser;
   const sbop=document.getElementById('sb-op');
   if(sbop&&u){
-    const roleLabel=_userRole==='membro'?'Membro':u.cargo==='admin'?'Admin':'';
+    const roleLabel=_userCargo&&_userCargo!=='dono'?_CARGO_LABELS[_userCargo]:u.cargo==='admin'?'Admin':'';
     sbop.textContent=(roleLabel?roleLabel+' · ':'')+u.nome.split(' ')[0];
   }
   updateSbOperador();
@@ -5613,12 +5857,15 @@ function editarPedido(ped_id){
     toast('Pedido atualizado!','g');
   };
   window._cancelPed=function(pid){
-    requireAdmin('Cancelar Pedido',()=>confirm2('','Cancelar pedido?','O pedido sera removido definitivamente.','Confirmar','br_',()=>{
-      ST.pedidos=ST.pedidos.filter(p=>p.id!==pid);
-      save('pedidos');closeOv('ov-obs');
-      nav(ST.curNav==='fechar'?'mesas':'balcao');
-      toast('Pedido cancelado','r');
-    }));
+    if(hasPermission('cancelar')){
+      // Dono/Gerente: cancela direto com motivo obrigatório
+      _cancelarPedidoComMotivo(pid);
+    }else if(hasPermission('cancelar_solicitar')){
+      // Caixa/Cozinha: solicita cancelamento → gera notificação
+      _solicitarCancelamento(pid);
+    }else{
+      toast('Sem permissão para cancelar pedidos','r');
+    }
   };
   buildEditSheet();
   openOv('ov-obs');
@@ -5774,11 +6021,9 @@ let _lastInviteToken=null;
 
 async function _gerarConvite(){
   if(!fbDB||!fbAuth?.currentUser||_userRole!=='dono'){toast('Apenas o dono pode gerar convites','r');return;}
-  // Ler permissões selecionadas
-  const cbs=document.querySelectorAll('.invite-perm-cb');
-  const selectedPerms=[];
-  cbs.forEach(cb=>{if(cb.checked)selectedPerms.push(cb.value);});
-  if(!selectedPerms.length){toast('Selecione pelo menos uma permissão para o convite','a');return;}
+  const cargoSel=document.getElementById('cfg-convite-cargo');
+  const cargo=cargoSel?cargoSel.value:'caixa';
+  const selectedPerms=_CARGO_PERMS[cargo]||_CARGO_PERMS.caixa;
   const token=Math.random().toString(36).slice(2)+Date.now().toString(36);
   const url=(window.location.origin+window.location.pathname+'?invite='+token);
   try{
@@ -5787,6 +6032,7 @@ async function _gerarConvite(){
       created_by:fbAuth.currentUser.uid,
       created_at:new Date().toISOString(),
       expires_at:new Date(Date.now()+7*24*60*60*1000).toISOString(),
+      cargo:cargo,
       permissions:selectedPerms,
       status:'active',
       uses_count:0,
@@ -5837,7 +6083,7 @@ async function _carregarConviteAtivo(){
         <div id="cfg-qr-${inv.id}" style="display:none;margin-bottom:8px;text-align:center">
           <img style="width:180px;height:180px;border-radius:8px;border:1px solid var(--br2)">
         </div>
-        <div class="fs11 t3">Criado: ${criado} · Expira: ${expira} · Usos: ${usos} · Permissões: ${perms}</div>
+        <div class="fs11 t3">Cargo: ${_CARGO_LABELS[inv.cargo]||'—'} · Criado: ${criado} · Expira: ${expira} · Usos: ${usos}</div>
       </div>`;
     }).join('');
   }catch(e){
@@ -5900,7 +6146,7 @@ async function _carregarMembros(){
           <div style="flex:1;min-width:0">
             <div class="fs13 bold">${esc(m.nome||m.email)}</div>
             <div class="fs11 t3">${esc(m.email)} · ${m.active!==false?'<span style="color:var(--gn)">Ativo</span>':'<span style="color:var(--rd)">Inativo</span>'}</div>
-            <div class="fs10 t3">Permissões: ${perms}</div>
+            <div class="fs10 t3">Cargo: ${_CARGO_LABELS[m.cargo]||'Membro'}</div>
           </div>
           <div style="display:flex;gap:4px">
             <button class="btn bs bxs" onclick="_editarPermMembro('${d.id}')" title="Editar permissões">${ppIcon('settings',13,1.7)}</button>
@@ -5993,10 +6239,13 @@ async function _resgatarConvite(user){
     });
     // Escrita crítica: criar user_map como membro
     const _regNome=_pendingRegName||user.displayName||'';
+    const _invCargo=inv.cargo||'caixa';
+    const _invPerms=inv.permissions||_CARGO_PERMS[_invCargo]||_CARGO_PERMS.caixa;
     await fbDB.collection('user_map').doc(user.uid).set({
       estab_uid:inv.estab_uid,
       role:'membro',
-      permissions:inv.permissions||_ALL_PERMS,
+      cargo:_invCargo,
+      permissions:_invPerms,
       email:user.email||'',
       nome:_regNome,
       joined_at:new Date().toISOString(),
@@ -6006,14 +6255,16 @@ async function _resgatarConvite(user){
     try{await fbDB.collection('estabelecimentos').doc(inv.estab_uid).collection('membros').doc(user.uid).set({
       email:user.email||'',
       nome:_regNome,
+      cargo:_invCargo,
       role:'membro',
-      permissions:inv.permissions||_ALL_PERMS,
+      permissions:_invPerms,
       joined_at:new Date().toISOString(),
       active:true
     });}catch(e){console.warn('[PedePronto] Erro ao registrar em membros (não-crítico):',e.message);}
     _estabUid=inv.estab_uid;
     _userRole='membro';
-    _userPermissions=inv.permissions||_ALL_PERMS;
+    _userCargo=_invCargo;
+    _userPermissions=_invPerms;
     sessionStorage.removeItem('pp_pending_invite');
     toast('Vinculado com sucesso! Sincronizando dados...','g',4000);
     return true;
@@ -6042,7 +6293,7 @@ function fbLogin(){
   });
 }
 function fbLogout(){
-  _estabUid=null;_userRole='dono';_userPermissions=_ALL_PERMS.slice();
+  _estabUid=null;_userRole='dono';_userCargo='dono';_userPermissions=_ALL_PERMS.slice();
   _syncEnabled=false;
   ST.currentUser=null;
   _pendingRegName=null;
@@ -6578,12 +6829,12 @@ function _atualizarBadgeLicenca(){
           };
           _pendingRegName=null; // consumido
           updateUserBar();
-          if(!ST.caixa.aberto&&hasPermission('pdv')) setTimeout(pedirAberturaCaixa, 600);
+          if(!ST.caixa.aberto&&hasPermission('caixa_op')) setTimeout(pedirAberturaCaixa, 600);
         } else if(!ST.currentUser){
           setTimeout(showLogin, 500);
         } else {
           updateUserBar();
-          if(!ST.caixa.aberto&&hasPermission('pdv')) setTimeout(pedirAberturaCaixa, 600);
+          if(!ST.caixa.aberto&&hasPermission('caixa_op')) setTimeout(pedirAberturaCaixa, 600);
         }
       } else {
         // Usuário não logado
