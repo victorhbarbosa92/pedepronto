@@ -4919,8 +4919,8 @@ function renderConfig(){
       1. Crie um app no <strong>Meta Business Suite</strong> (developers.facebook.com)<br>
       2. Configure o produto <strong>WhatsApp</strong> no app<br>
       3. Copie o <strong>Phone Number ID</strong> e <strong>Access Token</strong><br>
-      4. Configure o webhook URL: <code style="background:var(--s3);padding:2px 6px;border-radius:4px;font-size:11px">https://southamerica-east1-pedepronto-40790.cloudfunctions.net/whatsappWebhook</code><br>
-      5. No Mercado Pago, configure webhook: <code style="background:var(--s3);padding:2px 6px;border-radius:4px;font-size:11px">https://southamerica-east1-pedepronto-40790.cloudfunctions.net/mercadoPagoWebhook</code>
+      4. Configure o webhook URL no Meta: <code style="background:var(--s3);padding:2px 6px;border-radius:4px;font-size:11px;word-break:break-all" id="wa-webhook-url">Configure apos deploy no Vercel</code><br>
+      5. No Mercado Pago, configure webhook: <code style="background:var(--s3);padding:2px 6px;border-radius:4px;font-size:11px;word-break:break-all" id="mp-webhook-url">Configure apos deploy no Vercel</code>
     </div>
     <div class="fg"><label class="fl">Nome do restaurante (aparece nas mensagens)</label>
     <input class="inp" value="${esc(cfg.whatsapp_agent?.nome_restaurante||cfg.nome||'')}" oninput="ST.cfg.whatsapp_agent.nome_restaurante=this.value"></div>
