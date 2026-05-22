@@ -47,6 +47,15 @@ service cloud.firestore {
         );
       }
 
+      // Sessoes do WhatsApp — acesso via user_map (bot)
+      match /whatsapp_sessions/{phone} {
+        allow read, write: if request.auth != null && (
+          request.auth.uid == uid ||
+          (exists(/databases/$(database)/documents/user_map/$(request.auth.uid))
+           && get(/databases/$(database)/documents/user_map/$(request.auth.uid)).data.estab_uid == uid)
+        );
+      }
+
       match /membros/{memberId} {
         allow read: if request.auth != null && (
           request.auth.uid == uid || request.auth.uid == memberId
