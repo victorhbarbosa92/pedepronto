@@ -930,8 +930,8 @@ const _PP_PUBKEY_JWK={"crv":"P-256","ext":true,"key_ops":["verify"],"kty":"EC","
     window.auth = firebase.auth();
     window.db   = firebase.firestore();
     // 3. Persistência Offline — coração do PDV
-    window.db.enablePersistence()
-      .then(function(){ window.FIREBASE_READY=true; console.log('✅ Firebase + Offline prontos'); })
+    window.db.enablePersistence({synchronizeTabs:true})
+      .then(function(){ window.FIREBASE_READY=true; console.log('✅ Firebase + Offline prontos (multi-tab)'); })
       .catch(function(err){
         window.FIREBASE_READY=true;
         if(err.code==='failed-precondition')
@@ -4943,7 +4943,7 @@ function renderConfig(){
     </div>
     <div class="rb" style="padding:8px 0">
       <div><div class="fs13 bold">Notificacoes push</div><div class="fs12 t2">Alertas nativos quando a aba estiver em segundo plano</div></div>
-      <button class="btn bp bsm" onclick="_pushPermission!=='granted'?Notification.requestPermission().then(p=>{_pushPermission=p;toast(p==='granted'?'Notificacoes ativadas!':'Notificacoes bloqueadas',p==='granted'?'g':'r');renderConfig()}):toast('Ja ativado!','g')">${_pushPermission==='granted'?ppIcon('checkCircle',13,1.7)+' Ativado':ppIcon('bell',13,1.7)+' Ativar'}</button>
+      <button class="btn bp bsm" onclick="if(typeof Notification==='undefined'){toast('Notificacoes nao suportadas neste navegador','a');return;}; _pushPermission!=='granted'?Notification.requestPermission().then(p=>{_pushPermission=p;toast(p==='granted'?'Notificacoes ativadas!':'Notificacoes bloqueadas',p==='granted'?'g':'r');renderConfig()}):toast('Ja ativado!','g')">${_pushPermission==='granted'?ppIcon('checkCircle',13,1.7)+' Ativado':ppIcon('bell',13,1.7)+' Ativar'}</button>
     </div>
   </div>
   <div class="sec-title">Impressora Bluetooth</div>
@@ -5691,7 +5691,7 @@ function _addAlerta(ico,msg,tipo='info'){
   _sendPushNotif(msg,tipo);
 }
 // ── Push Notifications ──
-let _pushPermission=Notification?.permission||'default';
+let _pushPermission=(typeof Notification!=='undefined'&&Notification.permission)||'default';
 function _initPushNotifs(){
   if(!('Notification' in window))return;
   _pushPermission=Notification.permission;
