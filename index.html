@@ -1802,9 +1802,10 @@ function saveAll(skipPush){
 async function fsPush(){
   if(!_syncEnabled||!fbAuth||!fbAuth.currentUser) return;
   if(window._noPermission) return;
-  // Proteção: membro com dados locais vazios NÃO sobrescreve dados do dono
-  if(_userRole==='membro'&&!_lastSyncAt&&ST.produtos.length===0&&ST.pedidos.length===0){
-    console.log('[PedePronto] ⚠️ Push bloqueado — membro com dados vazios, aguardando sync do dono');
+  // Proteção: NENHUM dispositivo com dados locais vazios sobrescreve a nuvem
+  // Isso impede que um dispositivo novo (localStorage vazio) apague os dados existentes
+  if(!_lastSyncAt&&ST.produtos.length===0&&ST.pedidos.length===0&&ST.categorias.length===0){
+    console.warn('[PedePronto] ⚠️ Push bloqueado — dados locais vazios, aguardando sync da nuvem (role:'+_userRole+')');
     return;
   }
   _setSyncStatus('syncing');
@@ -6791,9 +6792,16 @@ function fsListen(uid){
   if(_fsUnsubscribe){try{_fsUnsubscribe();}catch(e){} _fsUnsubscribe=null;}
   _fsFirstSnap=true;
   const ref=fbDB.collection('estabelecimentos').doc(uid).collection('dados').doc('principal');
-  _fsUnsubscribe=ref.onSnapshot(snap=>{
+  _fsUnsubscribe=ref.onSnapshot({includeMetadataChanges:true},snap=>{
     if(!snap.exists){
-      // Nuvem vazia → envia dados locais (só dono — membro não cria dados do zero)
+      // Documento não existe — mas veio do cache local ou do servidor?
+      if(snap.metadata.fromCache){
+        // Cache local vazio (dispositivo novo) — aguardar resposta do servidor
+        console.log('[PedePronto] 📦 Snapshot do cache (vazio) — aguardando servidor...');
+        return;
+      }
+      // Confirmado pelo SERVIDOR que a nuvem está vazia → envia dados locais (se tiver algo)
+      console.log('[PedePronto] ☁️ Servidor confirmou: nuvem vazia');
       if(_fsFirstSnap){_fsFirstSnap=false;if(_userRole!=='membro')fsPush();}
       return;
     }
@@ -7212,10 +7220,8 @@ function _atualizarBadgeLicenca(){
         updateSyncStatus();
         _applyPermissionUI();
         fsListen(finalEstabId);
-        // Push condicional: só envia dados locais se a nuvem estiver vazia ou local for mais novo
-        // fsListen já faz fsPush no primeiro snapshot — este timer é fallback para falha de rede
-        // IMPORTANTE: membros NUNCA fazem push de fallback — só recebem dados do dono via fsListen
-        setTimeout(function(){ if(!_lastSyncAt&&_userRole==='dono') fsPush(); }, 10000);
+        // Fallback: se após 15s o sync não recebeu nada, tenta push (mas fsPush tem proteção contra dados vazios)
+        setTimeout(function(){ if(!_lastSyncAt&&_userRole==='dono') fsPush(); }, 15000);
         // Modo online: usuário já autenticado por email/senha — pula PIN
         if(window.IS_HOSTED&&fbAuth.currentUser){
           ST.currentUser={
