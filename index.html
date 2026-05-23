@@ -6815,6 +6815,16 @@ function fsListen(uid){
     }
     const lt=new Date(ST.cfg._savedAt||0).getTime();
     const rt=new Date(r._savedAt||0).getTime();
+    // ── PROTEÇÃO ANTI-WIPE: nuvem vazia não sobrescreve local com dados ──
+    const localTemDados=ST.produtos.length>0||ST.categorias.length>0||ST.pedidos.length>0;
+    const nuvemVazia=(!r.produtos||r.produtos.length===0)&&(!r.categorias||r.categorias.length===0);
+    if(_fsFirstSnap&&localTemDados&&nuvemVazia){
+      console.warn('[PedePronto] ⚠️ Nuvem vazia mas local tem dados — enviando dados locais para restaurar');
+      _fsFirstSnap=false;
+      _lastSyncAt=Date.now();
+      fsPush(); // Restaura nuvem com dados locais
+      return;
+    }
     // No primeiro snap: aplica se nuvem tiver dado (independente de timestamp)
     // Nos seguintes: aplica só se vier de outro dispositivo
     const deveAplicar=_fsFirstSnap||(r._dev_id&&r._dev_id!==_DEV_ID)||rt>lt+3000;
