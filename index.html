@@ -6816,9 +6816,10 @@ function fsListen(uid){
     const lt=new Date(ST.cfg._savedAt||0).getTime();
     const rt=new Date(r._savedAt||0).getTime();
     // ── PROTEÇÃO ANTI-WIPE: nuvem vazia não sobrescreve local com dados ──
-    const localTemDados=ST.produtos.length>0||ST.categorias.length>0||ST.pedidos.length>0;
+    // Roda em TODOS os snapshots, não só no primeiro
+    const localTemDados=ST.produtos.length>0||ST.categorias.length>0;
     const nuvemVazia=(!r.produtos||r.produtos.length===0)&&(!r.categorias||r.categorias.length===0);
-    if(_fsFirstSnap&&localTemDados&&nuvemVazia){
+    if(localTemDados&&nuvemVazia){
       console.warn('[PedePronto] ⚠️ Nuvem vazia mas local tem dados — enviando dados locais para restaurar');
       _fsFirstSnap=false;
       _lastSyncAt=Date.now();
