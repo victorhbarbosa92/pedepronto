@@ -34,13 +34,35 @@ service cloud.firestore {
       allow delete: if request.auth != null && request.auth.uid == resource.data.estab_uid;
     }
 
+    // ── Super Admin (leitura global) ────────────────────────────────────────
+    // victordarkxd@gmail.com pode listar user_map de qualquer uid
+    match /user_map/{uid} {
+      allow read: if request.auth != null && request.auth.token.email == 'victordarkxd@gmail.com';
+    }
+
     // ── Dados do estabelecimento ──────────────────────────────────────────────
-    // Dono tem acesso direto; membros via user_map
+    // Dono tem acesso direto; membros via user_map; super admin lê tudo
     match /estabelecimentos/{uid} {
-      allow read, write: if request.auth != null && request.auth.uid == uid;
+      allow read: if request.auth != null && (
+        request.auth.uid == uid ||
+        request.auth.token.email == 'victordarkxd@gmail.com' ||
+        (exists(/databases/$(database)/documents/user_map/$(request.auth.uid))
+         && get(/databases/$(database)/documents/user_map/$(request.auth.uid)).data.estab_uid == uid)
+      );
+      allow write: if request.auth != null && (
+        request.auth.uid == uid ||
+        (exists(/databases/$(database)/documents/user_map/$(request.auth.uid))
+         && get(/databases/$(database)/documents/user_map/$(request.auth.uid)).data.estab_uid == uid)
+      );
 
       match /dados/{doc} {
-        allow read, write: if request.auth != null && (
+        allow read: if request.auth != null && (
+          request.auth.uid == uid ||
+          request.auth.token.email == 'victordarkxd@gmail.com' ||
+          (exists(/databases/$(database)/documents/user_map/$(request.auth.uid))
+           && get(/databases/$(database)/documents/user_map/$(request.auth.uid)).data.estab_uid == uid)
+        );
+        allow write: if request.auth != null && (
           request.auth.uid == uid ||
           (exists(/databases/$(database)/documents/user_map/$(request.auth.uid))
            && get(/databases/$(database)/documents/user_map/$(request.auth.uid)).data.estab_uid == uid)
