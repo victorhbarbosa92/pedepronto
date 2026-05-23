@@ -1710,7 +1710,7 @@ const _CARGO_LABELS={dono:'Dono',gerente:'Gerente',caixa:'Caixa',cozinha:'Cozinh
 const _DEV_ID=(()=>{let id=sessionStorage.getItem('pp_dev');if(!id){id=Math.random().toString(36).slice(2);sessionStorage.setItem('pp_dev',id);}return id;})();
 let _syncStatus='idle'; // 'idle'|'ok'|'error'|'syncing'
 let _lastSyncAt=null;
-let _fsFirstSnap=true; // flag: primeiro snapshot após login
+let _cloudBooted=false; // flag: true após ST ser populado do Firestore (ou fallback offline)
 let _localDirty=false; // flag: dados locais pendentes de push — impede que onSnapshot sobrescreva
 let _fsUnsubscribe=null; // referência para desinscrever listener anterior
 
@@ -1785,7 +1785,7 @@ function save(k){
   ST.cfg._savedAt=new Date().toISOString();
   DB.set(k,ST[k]);
   DB.set('cfg',ST.cfg); // persiste _savedAt para sobreviver a reload
-  if(_syncEnabled){
+  if(_syncEnabled&&_cloudBooted){
     _localDirty=true; // protege contra overwrite por onSnapshot até fsPush completar
     clearTimeout(_fsTimer);
     _fsTimer=setTimeout(fsPush,2000);
@@ -1818,6 +1818,7 @@ async function fsForcePush(){
 }
 async function fsPush(){
   if(!_syncEnabled||!fbAuth||!fbAuth.currentUser) return;
+  if(!_cloudBooted) return; // NUNCA faz push antes dos dados cloud serem carregados
   if(window._noPermission) return;
   // Proteção: NENHUM dispositivo com dados locais vazios sobrescreve a nuvem
   // Isso impede que um dispositivo novo (localStorage vazio) apague os dados existentes
@@ -1850,6 +1851,80 @@ async function fsPush(){
       },30000);
     }
   }
+}
+// ── Boot Screen (tela de loading durante sync inicial) ──
+let _bootScreenEl=null;
+function _showBootScreen(){
+  _bootScreenEl=document.createElement('div');
+  _bootScreenEl.id='pp-boot-screen';
+  _bootScreenEl.style.cssText='position:fixed;inset:0;z-index:10000;background:var(--bg,#1a1a2e);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;';
+  _bootScreenEl.innerHTML=`
+    <div style="font-size:28px;font-weight:900;color:var(--ac,#e94560);font-family:monospace">PedePronto</div>
+    <div id="pp-boot-msg" style="font-size:13px;color:var(--t2,#888)">Sincronizando dados...</div>
+    <div style="width:40px;height:40px;border:3px solid var(--br2,#333);border-top-color:var(--ac,#e94560);border-radius:50%;animation:ppSpin 0.8s linear infinite"></div>
+    <style>@keyframes ppSpin{to{transform:rotate(360deg)}}</style>
+  `;
+  document.body.appendChild(_bootScreenEl);
+}
+function _removeBootScreen(){
+  if(_bootScreenEl){
+    _bootScreenEl.style.opacity='0';
+    _bootScreenEl.style.transition='opacity 0.3s';
+    setTimeout(()=>{_bootScreenEl?.remove();_bootScreenEl=null;},300);
+  }
+}
+// ── Cloud-first boot: puxa dados do Firestore antes de renderizar ──
+async function _fsPullBoot(uid){
+  if(!fbDB) return false;
+  const ref=fbDB.collection('estabelecimentos').doc(uid).collection('dados').doc('principal');
+  try{
+    // source:'server' bypassa o cache do enablePersistence (que está vazio em dispositivos novos)
+    const snap=await ref.get({source:'server'});
+    if(!snap.exists){
+      // Cloud vazia — novo estabelecimento, ST fica com defaults
+      console.log('[PedePronto] Boot: cloud vazia — novo estabelecimento');
+      return true;
+    }
+    const r=snap.data();
+    ['cfg','caixa','produtos','categorias','clientes','obs_grupos_globais','pedidos','funcionarios','vouchers','pedidos_cancelados','alertas'].forEach(k=>{if(r[k]!=null)ST[k]=r[k];});
+    saveAll(true); // cache no localStorage, sem push
+    _lastSyncAt=Date.now();
+    _setSyncStatus('ok');
+    console.log('[PedePronto] Boot: dados carregados da nuvem ('+ST.produtos.length+' prod, '+ST.categorias.length+' cat)');
+    return true;
+  }catch(e){
+    console.warn('[PedePronto] Boot: Firestore inacessível:',e.code||e.message);
+    // Tenta cache do Firestore (enablePersistence)
+    try{
+      const snap2=await ref.get({source:'cache'});
+      if(snap2.exists){
+        const r=snap2.data();
+        ['cfg','caixa','produtos','categorias','clientes','obs_grupos_globais','pedidos','funcionarios','vouchers','pedidos_cancelados','alertas'].forEach(k=>{if(r[k]!=null)ST[k]=r[k];});
+        _lastSyncAt=Date.now();
+        console.log('[PedePronto] Boot: dados do cache Firestore');
+        return true;
+      }
+    }catch(e2){/* cache também vazio */}
+    // Sinaliza fallback para localStorage
+    const msg=document.getElementById('pp-boot-msg');
+    if(msg) msg.textContent='Modo offline — usando dados locais';
+    return false;
+  }
+}
+// ── Inicializa UI após dados estarem disponíveis ──
+function _bootWithData(){
+  initDefaults(true); // skipSave — não trigger push durante boot
+  applyTheme();
+  applyTamanho();
+  _updateSbLogo();
+  document.getElementById('page').addEventListener('scroll',()=>{_lastUserScroll=Date.now();},{passive:true});
+  BT.paper=ST.cfg.papel||58;BT.auto=ST.cfg.autoprint||false;
+  updateBtUI();updateSbOperador();
+  document.getElementById('sb-est').textContent=ST.cfg.nome||'PedePronto';
+  _atualizarBadgeLicenca();
+  _updateNotifBadge();
+  renderDash();
+  _updateBackBtn();
 }
 // Força pull: aplica dado do Firestore sobrescrevendo local
 async function fsPull(){
@@ -2587,7 +2662,7 @@ const Drive={
 // ═══════════════════════════════════════════
 //  INIT DEFAULTS
 // ═══════════════════════════════════════════
-function initDefaults(){
+function initDefaults(skipSave){
   // Migração: corrigir nome antigo FoodOS → PedePronto
   if(ST.cfg.nome==='FoodOS'||ST.cfg.nome==='GastroHub') ST.cfg.nome='PedePronto PDV';
   // Garantir que vouchers é array e PERMUTA sempre existe
@@ -2599,7 +2674,7 @@ function initDefaults(){
       tipo:'fixo',desconto_tipo:'total',desconto_valor:0,
       ativo:true,limite_usos:0,usos:0,validade:null,criado:now()
     });
-    save('vouchers');
+    if(!skipSave) save('vouchers');
   }
   if(!ST.categorias.length){
     ST.categorias=[
@@ -6807,54 +6882,27 @@ function fsListen(uid){
   if(!fbDB) return;
   // Desinscreve listener anterior (evita duplicatas ao re-autenticar)
   if(_fsUnsubscribe){try{_fsUnsubscribe();}catch(e){} _fsUnsubscribe=null;}
-  _fsFirstSnap=true;
   const ref=fbDB.collection('estabelecimentos').doc(uid).collection('dados').doc('principal');
   _fsUnsubscribe=ref.onSnapshot({includeMetadataChanges:true},snap=>{
-    if(!snap.exists){
-      // Documento não existe — mas veio do cache local ou do servidor?
-      if(snap.metadata.fromCache){
-        // Cache local vazio (dispositivo novo) — aguardar resposta do servidor
-        console.log('[PedePronto] 📦 Snapshot do cache (vazio) — aguardando servidor...');
-        return;
-      }
-      // Confirmado pelo SERVIDOR que a nuvem está vazia → envia dados locais (se tiver algo)
-      console.log('[PedePronto] ☁️ Servidor confirmou: nuvem vazia');
-      if(_fsFirstSnap){_fsFirstSnap=false;if(_userRole!=='membro')fsPush();}
-      return;
-    }
+    // Boot pull já carregou dados iniciais — listener só trata atualizações em tempo real
+    if(!snap.exists) return;
+    // Ignorar snapshots do cache local (enablePersistence) — redundante após boot pull
+    if(snap.metadata.fromCache) return;
     const r=snap.data();
     // Ignorar nossa própria escrita (loop)
-    if(r._dev_id&&r._dev_id===_DEV_ID&&!_fsFirstSnap)return;
-    // Proteger dados locais pendentes de push — não deixa snapshot sobrescrever
-    if(_localDirty&&!_fsFirstSnap){
+    if(r._dev_id&&r._dev_id===_DEV_ID) return;
+    // Proteger dados locais pendentes de push
+    if(_localDirty){
       console.log('[PedePronto] ⏳ Snapshot ignorado — dados locais pendentes de push');
       return;
     }
-    const lt=new Date(ST.cfg._savedAt||0).getTime();
-    const rt=new Date(r._savedAt||0).getTime();
-    // ── PROTEÇÃO ANTI-WIPE: nuvem vazia não sobrescreve local com dados ──
-    // Roda em TODOS os snapshots, não só no primeiro
-    const localTemDados=ST.produtos.length>0||ST.categorias.length>0;
-    const nuvemVazia=(!r.produtos||r.produtos.length===0)&&(!r.categorias||r.categorias.length===0);
-    if(localTemDados&&nuvemVazia){
-      console.warn('[PedePronto] ⚠️ Nuvem vazia mas local tem dados — enviando dados locais para restaurar');
-      _fsFirstSnap=false;
-      _lastSyncAt=Date.now();
-      fsPush(); // Restaura nuvem com dados locais
-      return;
-    }
-    // No primeiro snap: aplica se nuvem tiver dado (independente de timestamp)
-    // Nos seguintes: aplica só se vier de outro dispositivo
-    const deveAplicar=_fsFirstSnap||(r._dev_id&&r._dev_id!==_DEV_ID)||rt>lt+3000;
-    _fsFirstSnap=false;
-    if(deveAplicar){
-      ['cfg','caixa','produtos','categorias','clientes','obs_grupos_globais','pedidos','funcionarios','vouchers','pedidos_cancelados','alertas'].forEach(k=>{if(r[k]!=null)ST[k]=r[k];});
-      saveAll(true); // skipPush: dados vieram da nuvem, não precisa reenviar
-      _silentRefresh(); // não reseta scroll — dados de outro device chegaram
-      _lastSyncAt=Date.now();
-      _setSyncStatus('ok');
-      console.log('[PedePronto] ☁️ Sync recebido (dev remoto:'+r._dev_id+')');
-    }
+    // Aplicar dados remotos
+    ['cfg','caixa','produtos','categorias','clientes','obs_grupos_globais','pedidos','funcionarios','vouchers','pedidos_cancelados','alertas'].forEach(k=>{if(r[k]!=null)ST[k]=r[k];});
+    saveAll(true); // cache no localStorage, sem push
+    _silentRefresh();
+    _lastSyncAt=Date.now();
+    _setSyncStatus('ok');
+    console.log('[PedePronto] ☁️ Sync recebido (dev remoto:'+r._dev_id+')');
   },e=>{
     console.warn('[PedePronto] Firestore listen erro:',e.code||e.message);
     _setSyncStatus('error');
@@ -7123,6 +7171,7 @@ function _atualizarBadgeLicenca(){
   const _safetyTimer=setTimeout(()=>{
     if(!window._loginShown&&!window.PP_LIC&&!_loginEl&&!_licTelaEl){
       console.warn('[PedePronto] Safety net: forçando tela de login após timeout');
+      _removeBootScreen();
       showLoginScreen();
     }
   },6000);
@@ -7144,24 +7193,13 @@ function _atualizarBadgeLicenca(){
   // ── Verificação de licença (ECDSA) ──
   const _licOk=await verificarLicenca();
   console.log('[PedePronto] Licença:',_licOk);
-  if(_licOk===false){clearTimeout(_safetyTimer);return;} // licença inválida ou sem Firebase — tela de ativação exibida
+  if(_licOk===false){clearTimeout(_safetyTimer);_removeBootScreen();return;} // licença inválida ou sem Firebase — tela de ativação exibida
   // _licOk==='await_login': app carrega atrás da tela de login; onAuthStateChanged verifica licença após login
   window._pendingLicLogin=(_licOk==='await_login');
 
-  loadAll();
-  initDefaults();
-  applyTheme();
-  applyTamanho();
-  _updateSbLogo();
-  // Rastreia scroll do usuário para não interromper rolagem com refresh automático
-  document.getElementById('page').addEventListener('scroll',()=>{_lastUserScroll=Date.now();},{passive:true});
-  BT.paper=ST.cfg.papel||58;BT.auto=ST.cfg.autoprint||false;
-  updateBtUI();updateSbOperador();
-  document.getElementById('sb-est').textContent=ST.cfg.nome||'PedePronto';
-  _atualizarBadgeLicenca();
-  _updateNotifBadge();
-  renderDash();
-  _updateBackBtn();
+  // Cloud-first: NÃO carrega dados do localStorage aqui
+  // Dados serão carregados do Firestore em onAuthStateChanged via _fsPullBoot()
+  _showBootScreen();
   registerSW();
 
   // Fluxo de autenticação — detecta Firebase pelo window.auth (síncrono)
@@ -7234,6 +7272,7 @@ function _atualizarBadgeLicenca(){
               }
             }
             if(!licFound&&!window.PP_LIC){
+              _removeBootScreen();
               _mostrarTelaAtivacao('Nenhuma licença encontrada para '+user.email+'. Cole o código abaixo para ativar.');
               return;
             }
@@ -7247,9 +7286,15 @@ function _atualizarBadgeLicenca(){
         _syncEnabled = true; // agora save() pode sincronizar
         updateSyncStatus();
         _applyPermissionUI();
-        fsListen(finalEstabId);
-        // Fallback: se após 15s o sync não recebeu nada, tenta push (mas fsPush tem proteção contra dados vazios)
-        setTimeout(function(){ if(!_lastSyncAt&&_userRole==='dono') fsPush(); }, 15000);
+
+        // ── CLOUD-FIRST: puxa dados do Firestore ANTES de renderizar ──
+        const pullOk=await _fsPullBoot(finalEstabId);
+        if(!pullOk) loadAll(); // fallback offline: usa localStorage como último recurso
+        _cloudBooted=true;
+        _removeBootScreen();
+        _bootWithData();
+        fsListen(finalEstabId); // real-time listener APÓS dados carregados
+
         // Modo online: usuário já autenticado por email/senha — pula PIN
         if(window.IS_HOSTED&&fbAuth.currentUser){
           ST.currentUser={
@@ -7277,9 +7322,10 @@ function _atualizarBadgeLicenca(){
           }
         }
       } else {
-        // Usuário não logado
+        // Usuário não logado — remover boot screen e mostrar login
         console.log('[PedePronto] onAuthStateChanged: user=null → showLoginScreen');
         _syncEnabled = false;
+        _removeBootScreen();
         window._loginShown=true;
         clearTimeout(_safetyTimer);
         showLoginScreen();
@@ -7288,6 +7334,11 @@ function _atualizarBadgeLicenca(){
   } else {
     // ── MODO LOCAL ou Firebase falhou ──
     console.log('[PedePronto] Sem Firebase Auth — modo '+(window._FB_SDK_ERROR?'fallback (SDK falhou)':'local'));
+    // Sem Firebase: carrega do localStorage e renderiza localmente
+    _removeBootScreen();
+    loadAll();
+    _cloudBooted=true;
+    _bootWithData();
     updateDriveBtn();
     if(!ST.currentUser){
       // Se estamos em HTTPS mas Firebase falhou, mostra tela de email/senha (não PIN)
@@ -7308,6 +7359,7 @@ function _atualizarBadgeLicenca(){
   }catch(e){
     console.error('[PedePronto] Boot error:',e);
     // Em caso de erro no boot, garantir que tela de login apareça
+    _removeBootScreen();
     clearTimeout(_safetyTimer);
     window._loginShown=true;
     showLoginScreen();
