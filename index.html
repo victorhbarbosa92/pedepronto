@@ -1799,6 +1799,23 @@ function saveAll(skipPush){
     _fsTimer=setTimeout(fsPush,2000);
   }
 }
+async function fsForcePush(){
+  if(!fbAuth?.currentUser||!fbDB){toast('Firebase não disponível','r');return;}
+  const uid=_estabUid||fbAuth.currentUser.uid;
+  const d={_savedAt:new Date().toISOString(),_dev_id:_DEV_ID,_force:true};
+  ['cfg','caixa','produtos','categorias','clientes','obs_grupos_globais','pedidos','funcionarios','vouchers','pedidos_cancelados','alertas'].forEach(k=>{if(ST[k]!=null)d[k]=ST[k];});
+  try{
+    _setSyncStatus('syncing');
+    await fbDB.collection('estabelecimentos').doc(uid).collection('dados').doc('principal').set(d);
+    _lastSyncAt=Date.now();_localDirty=false;
+    _setSyncStatus('ok');
+    toast('Dados enviados! ('+ST.produtos.length+' produtos, '+ST.categorias.length+' categorias)','g',5000);
+    console.log('[PedePronto] ✅ Force push OK → '+uid+' ('+ST.produtos.length+' prod, '+ST.categorias.length+' cat)');
+  }catch(e){
+    _setSyncStatus('error');
+    toast('Erro: '+e.message,'r',5000);
+  }
+}
 async function fsPush(){
   if(!_syncEnabled||!fbAuth||!fbAuth.currentUser) return;
   if(window._noPermission) return;
@@ -6899,8 +6916,8 @@ function showCloudStatus(){
       ${_syncStatus==='error'?`<div class="fs12 rd mt6">Erro de sincronização (código PP-001). Tente sair e entrar novamente.</div>`:`<div class="fs12 t2 mt4">Dados sincronizados automaticamente entre PC, celular e tablet.</div>`}
     </div>
     <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px">
-      <button class="btn bg bw" onclick="closeOv('ov-obs');_setSyncStatus('syncing');fsPush()">
-        ↑ Enviar este dispositivo para a nuvem
+      <button class="btn bg bw" onclick="closeOv('ov-obs');fsForcePush()" style="font-weight:700">
+        ⬆ Forçar envio para a nuvem (${ST.produtos.length} produtos)
       </button>
       <button class="btn bb bw" onclick="closeOv('ov-obs');fsPull()">
         ↓ Puxar dados da nuvem para este dispositivo
