@@ -1020,6 +1020,7 @@ const _PP_PUBKEY_JWK={"crv":"P-256","ext":true,"key_ops":["verify"],"kty":"EC","
     <div class="sb-sec">Sistema</div>
     <button class="sb-item" id="sbm-funcionarios" title="Funcionários" onclick="nav('funcionarios')"><span class="sb-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="4"/><path d="M2 21c0-4 3-6 7-6s7 2 7 6"/></svg></span><span class="sb-lbl">Funcionários</span></button>
     <button class="sb-item" id="sbm-config" title="Configurações" onclick="nav('config')"><span class="sb-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 01-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 01-4 0v-.1a1.7 1.7 0 00-1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 01-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 010-4h.1a1.7 1.7 0 001.5-1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 012.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 014 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 012.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 010 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg></span><span class="sb-lbl">Configurações</span></button>
+    <button class="sb-item" id="sbm-admin" title="Super Admin" onclick="nav('admin')" style="display:none;color:#f59e0b"><span class="sb-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 7.2H22l-6 4.8 2.4 7.2L12 16.4 5.6 21.2 8 14 2 9.2h7.6z"/></svg></span><span class="sb-lbl">Super Admin</span></button>
     <div class="sb-foot" id="sb-foot">
       <div class="sb-foot-status">
         <div class="sb-foot-row" id="sb-foot-sync" onclick="showCloudStatus()" title="Status da sincronização">
@@ -1059,6 +1060,7 @@ const _PP_PUBKEY_JWK={"crv":"P-256","ext":true,"key_ops":["verify"],"kty":"EC","
       <div class="pg" id="pg-relatorio"></div>
       <div class="pg" id="pg-funcionarios"></div>
       <div class="pg" id="pg-config"></div>
+      <div class="pg" id="pg-admin"></div>
       <div class="pg" id="pg-pedido"></div>
       <div class="pg" id="pg-fechar"></div>
       <div class="pg" id="pg-pagamento"></div>
@@ -1616,6 +1618,8 @@ const PP_ICONS={
   store:'M3 3h18l-2 4H5zM5 7v14h14V7M9 10v4M15 10v4',
   camera:'M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2zM12 17a4 4 0 100-8 4 4 0 000 8z',
   atm:'M2 6h20v13H2zM12 12a3 3 0 100-6 3 3 0 000 6zM6 16h12',
+  book:'M4 19.5A2.5 2.5 0 016.5 17H20M4 19.5A2.5 2.5 0 016.5 17H20V3H6.5A2.5 2.5 0 004 5.5v14z',
+  info:'M12 22a10 10 0 100-20 10 10 0 000 20zM12 16v-4M12 8h.01',
 };
 function ppIcon(name,size=20,stroke=1.6,cls=''){
   const d=PP_ICONS[name]||PP_ICONS.home;
@@ -1707,6 +1711,11 @@ const _CARGO_PERMS={
   chefe_cozinha:['producao','cancelar_solicitar','cardapio_ver']
 };
 const _CARGO_LABELS={dono:'Dono',gerente:'Gerente',caixa:'Caixa',cozinha:'Cozinha',chefe_cozinha:'Chefe de Cozinha'};
+
+// ── Super Admin ──
+const _SUPER_ADMIN_EMAIL='victordarkxd@gmail.com';
+function isSuperAdmin(){return window.IS_HOSTED&&fbAuth?.currentUser?.email===_SUPER_ADMIN_EMAIL;}
+
 const _DEV_ID=(()=>{let id=sessionStorage.getItem('pp_dev');if(!id){id=Math.random().toString(36).slice(2);sessionStorage.setItem('pp_dev',id);}return id;})();
 let _syncStatus='idle'; // 'idle'|'ok'|'error'|'syncing'
 let _lastSyncAt=null;
@@ -2145,7 +2154,7 @@ function confirm2(ico,title,msg,okLbl,okCls,cb,cancelCb){
 // ═══════════════════════════════════════════
 //  NAVIGATION
 // ═══════════════════════════════════════════
-const PAGE_TTL={dash:'Início',dados:'Dados',funcionarios:'Funcionários',mesas:'Mesas',balcao:'Balcão',delivery:'Delivery',producao:'Produção',cardapio:'Cardápio',clientes:'Clientes',caixa:'Caixa',relatorio:'Relatórios',config:'Configurações',pedido:'Novo Pedido',fechar:'Fechar Conta',pagamento:'Pagamento'};
+const PAGE_TTL={dash:'Início',dados:'Dados',funcionarios:'Funcionários',mesas:'Mesas',balcao:'Balcão',delivery:'Delivery',producao:'Produção',cardapio:'Cardápio',clientes:'Clientes',caixa:'Caixa',relatorio:'Relatórios',config:'Configurações',admin:'Super Admin',pedido:'Novo Pedido',fechar:'Fechar Conta',pagamento:'Pagamento'};
 
 function applyResponsiveNav(){
   const mobile=isMobile();
@@ -2227,6 +2236,9 @@ function _applyPermissionUI(){
     const sb=document.getElementById('sbm-'+pg);if(sb)sb.style.display=show?'':'none';
     const bn=document.getElementById('bnm-'+pg);if(bn)bn.style.display=show?'':'none';
   });
+  // Super Admin button — visível APENAS para o super admin
+  const sbAdmin=document.getElementById('sbm-admin');
+  if(sbAdmin) sbAdmin.style.display=isSuperAdmin()?'':'none';
 }
 
 function nav(pg,extra){
@@ -2244,7 +2256,7 @@ function nav(pg,extra){
   const sbi=document.getElementById('sbm-'+pg);if(sbi)sbi.classList.add('on');
   document.querySelectorAll('.bn-item').forEach(b=>b.classList.remove('on'));
   const bni=document.getElementById('bnm-'+pg);if(bni)bni.classList.add('on');
-  const renders={dash:renderDash,dados:renderDados,mesas:renderMesas,balcao:renderBalcao,delivery:renderDelivery,producao:renderProducao,cardapio:renderCardapio,clientes:renderClientes,caixa:renderCaixa,relatorio:renderRelatorio,funcionarios:renderFuncionarios,config:renderConfig,pedido:()=>renderPedido(extra),fechar:()=>renderFechar(extra),pagamento:()=>renderPagamento(extra)};
+  const renders={dash:renderDash,dados:renderDados,mesas:renderMesas,balcao:renderBalcao,delivery:renderDelivery,producao:renderProducao,cardapio:renderCardapio,clientes:renderClientes,caixa:renderCaixa,relatorio:renderRelatorio,funcionarios:renderFuncionarios,config:renderConfig,admin:renderAdmin,pedido:()=>renderPedido(extra),fechar:()=>renderFechar(extra),pagamento:()=>renderPagamento(extra)};
   if(renders[pg])renders[pg]();
   // KDS tick: ligar no dash (produção inline) e producao, desligar ao sair
   if(pg==='producao'||pg==='dash')_kdsStartTick();else _kdsStopTick();
@@ -2274,7 +2286,7 @@ function _silentRefresh(){
   const renders={
     dados:renderDados,dash:renderDash,mesas:renderMesas,balcao:renderBalcao,delivery:renderDelivery,
     producao:renderProducao,cardapio:renderCardapio,clientes:renderClientes,
-    caixa:renderCaixa,relatorio:renderRelatorio,funcionarios:renderFuncionarios,config:renderConfig
+    caixa:renderCaixa,relatorio:renderRelatorio,funcionarios:renderFuncionarios,config:renderConfig,admin:renderAdmin
   };
   if(renders[ST.curNav])renders[ST.curNav]();
   updateBadges();
@@ -4859,357 +4871,592 @@ function renderRelatorio(){
 function importBackup(){const inp=document.createElement('input');inp.type='file';inp.accept='.json';inp.onchange=e=>{if(e.target.files[0])Drive.import(e.target.files[0])};inp.click()}
 
 // ═══════════════════════════════════════════
-//  CONFIGURAÇÕES
+//  CONFIGURAÇÕES — Menu-list com sub-telas
 // ═══════════════════════════════════════════
+let _cfgSection=null; // null=menu principal, string=sub-tela ativa
+
+function _cfgBack(){_cfgSection=null;renderConfig();}
+
+function _cfgMenuItems(){
+  const cfg=ST.cfg;
+  const items=[];
+  const au=window.IS_HOSTED&&fbAuth?.currentUser;
+  if(au) items.push({id:'conta',icon:'user',label:'Minha conta',desc:esc(au.email)});
+  items.push({id:'estabelecimento',icon:'store',label:'Estabelecimento',desc:esc(cfg.nome||'Configurar')});
+  items.push({id:'interface',icon:'monitor',label:'Interface',desc:['P','M','G'][(localStorage.getItem('pp_tam')||'p')==='p'?0:(localStorage.getItem('pp_tam')||'p')==='m'?1:2]});
+  items.push({id:'operacoes',icon:'settings',label:'Operacoes',desc:`${cfg.mesas_total||10} mesas · ${cfg.taxa_servico||0}%`});
+  items.push({id:'impressora',icon:'printer',label:'Impressora Bluetooth',desc:BT.device?.name||'Nenhuma'});
+  items.push({id:'seguranca',icon:'lock',label:'Seguranca',desc:'PIN do gerente'});
+  items.push({id:'firebase',icon:'cloud',label:'Firebase & Sincronizacao',desc:fbAuth?(fbAuth.currentUser?'Conectado':'Desconectado'):'Offline'});
+  items.push({id:'vouchers',icon:'ticket',label:'Vouchers e Permuta',desc:`${ST.vouchers.length} voucher${ST.vouchers.length!==1?'s':''}`});
+  items.push({id:'pix',icon:'dollarSign',label:'PIX',desc:cfg.pix_chave?'Chave configurada':'Nao configurado'});
+  items.push({id:'maquininha',icon:'credit',label:'Maquininha integrada',desc:cfg.maquininha?.provider==='mp'?'Mercado Pago':cfg.maquininha?.provider==='pagseguro'?'PagSeguro':cfg.maquininha?.provider==='infinitepay'?'InfinitePay':'Manual'});
+  items.push({id:'sons',icon:'volume',label:'Sons & Voz',desc:({mudo:'Mudo',sons:'So sons',voz:'Voz',guiado:'Guiado'})[_AUDIO.modo]||'Sons'});
+  if(hasPermission('config_editar')&&window.IS_HOSTED) items.push({id:'whatsapp',icon:'send',label:'Agente WhatsApp',desc:cfg.whatsapp_agent?.ativo?'Ativo':'Desativado'});
+  if(hasPermission('convites')&&window.IS_HOSTED) items.push({id:'dispositivos',icon:'users',label:'Dispositivos vinculados',desc:''});
+  items.push({id:'ajuda',icon:'book',label:'Ajuda',desc:'Manual do usuario'});
+  if(hasPermission('config_editar')) items.push({id:'sistema',icon:'alertTriangle',label:'Sistema',desc:'Salvar, resetar, backup'});
+  return items;
+}
+
 function renderConfig(){
   const cfg=ST.cfg;
-  const _authUser=window.IS_HOSTED&&fbAuth?.currentUser;
-  document.getElementById('pg-config').innerHTML=`
-  ${_authUser?`
-  <div class="sec-title" style="display:flex;align-items:center;gap:6px">${ppIcon('user',14,1.7)} Minha conta</div>
-  <div class="card mb10">
-    <div class="rb mb6">
-      <div style="flex:1;min-width:0">
-        <div class="bold fs14">${esc(_authUser.displayName||_authUser.email.split('@')[0])}</div>
-        <div class="fs12 t2">${esc(_authUser.email)}</div>
-      </div>
-      <span class="bdg ${_userRole==='membro'?'bb':'bg'}" style="font-size:11px">${_CARGO_LABELS[_userCargo]||(_userRole==='membro'?'Membro':'Dono')}</span>
-    </div>
-    ${_userRole==='membro'?`<div class="fs12 t3" style="display:flex;align-items:center;gap:4px;margin-top:4px">${ppIcon('store',12,1.5)} Vinculado a: ${esc(cfg.nome||'Estabelecimento')}</div>
-    <div class="fs11 t3 mt4">Cargo: ${_CARGO_LABELS[_userCargo]||'Membro'}</div>`:''}
-    <div style="display:flex;gap:6px;margin-top:10px">
-      <button class="btn br_ bsm" onclick="trocarUsuario()" style="gap:5px">${ppIcon('xCircle',13,1.7)} Sair da conta</button>
-    </div>
-  </div>
-  `:''}
-  <div class="sec-title">Estabelecimento</div>
-  <div class="card mb10">
-    <div class="fg">
-      <label class="fl">Logo do estabelecimento</label>
-      <div style="display:flex;align-items:center;gap:12px">
-        <div class="foto-pick-prev" id="cfg-logo-prev" onclick="document.getElementById('cfg-logo-inp').click()" style="width:64px;height:64px;border-radius:12px">
-          ${cfg.logo?`<img src="${cfg.logo}" style="width:100%;height:100%;object-fit:cover;border-radius:10px">`:ppIcon('store',28,1.4)}
-        </div>
-        <div style="flex:1">
-          <input type="file" id="cfg-logo-inp" accept="image/*" style="display:none" onchange="pickLogo(this)">
-          <button class="btn bs bsm bw" onclick="document.getElementById('cfg-logo-inp').click()">${ppIcon('camera',13,1.7)} Carregar logo</button>
-          ${cfg.logo?`<button class="btn bs bxs bw" style="margin-top:6px" onclick="clearLogo()">${ppIcon('trash',13,1.7)} Remover logo</button>`:''}
-        </div>
-      </div>
-    </div>
-    <div class="fg"><label class="fl">Nome do estabelecimento</label><input class="inp" value="${esc(cfg.nome)}" oninput="ST.cfg.nome=this.value"></div>
-    <div class="fg"><label class="fl">Slogan</label><input class="inp" value="${esc(cfg.slogan||'')}" oninput="ST.cfg.slogan=this.value"></div>
-    <div class="fg"><label class="fl">CNPJ</label><input class="inp" value="${esc(cfg.cnpj||'')}" oninput="ST.cfg.cnpj=this.value" style="font-family:monospace"></div>
-    <div class="fg"><label class="fl">Endereço completo</label><input class="inp" value="${esc(cfg.end||'')}" oninput="ST.cfg.end=this.value"></div>
-    <div class="fg"><label class="fl">WhatsApp</label><input class="inp" value="${esc(cfg.wa||'')}" oninput="ST.cfg.wa=this.value" type="tel"></div>
-    <div class="fg"><label class="fl">Telefone fixo</label><input class="inp" value="${esc(cfg.tel||'')}" oninput="ST.cfg.tel=this.value" type="tel"></div>
-    <div class="fg"><label class="fl">Mensagem de rodapé (cupom)</label><input class="inp" value="${esc(cfg.footer||'Obrigado pela preferência!')}" oninput="ST.cfg.footer=this.value"></div>
-  </div>
-  <div class="sec-title">Interface</div>
-  <div class="card mb10">
-    <div class="rb" style="padding:8px 0">
-      <div><div class="fs13 bold">Tamanho da interface</div><div class="fs12 t2">Botões e fontes</div></div>
-      <div style="display:flex;gap:7px">
-        ${['p','m','g'].map(t=>{const ativo=((localStorage.getItem('pp_tam')||'p')===t);return`<button class="btn bxs ${ativo?'bp':'bs'}" onclick="setTamanho('${t}');renderConfig()" style="min-width:44px">${t==='p'?'P':t==='m'?'M':'G'}</button>`;}).join('')}
-      </div>
-    </div>
-  </div>
-  <div class="sec-title">Operações</div>
-  <div class="card mb10">
-    <div class="rb" style="padding:8px 0;border-bottom:1px solid var(--br)">
-      <div><div class="fs13 bold">Total de mesas</div></div>
-      <input class="inp" style="width:72px;text-align:center" type="number" value="${cfg.mesas_total||10}" oninput="ST.cfg.mesas_total=parseInt(this.value)||10">
-    </div>
-    <div class="rb" style="padding:8px 0;border-bottom:1px solid var(--br)">
-      <div><div class="fs13 bold">Taxa de serviço</div><div class="fs12 t2">Aplicada automaticamente nos pedidos</div></div>
-      <div style="display:flex;gap:7px;flex-wrap:wrap">
-        ${[0,10,12,15].map(p=>`<button class="btn bxs ${(cfg.taxa_servico||0)===p?'bp':'bs'}" onclick="ST.cfg.taxa_servico=${p};save('cfg');renderConfig()">${p===0?'Off':p+'%'}</button>`).join('')}
-      </div>
-    </div>
-    <div class="rb" style="padding:8px 0;border-bottom:1px solid var(--br)">
-      <div><div class="fs13 bold">Largura do papel</div></div>
-      <div style="display:flex;gap:7px">
-        <button class="btn bxs ${cfg.papel===58?'bp':'bs'}" onclick="ST.cfg.papel=58;save('cfg');renderConfig()">58mm</button>
-        <button class="btn bxs ${cfg.papel===80||!cfg.papel?'bp':'bs'}" onclick="ST.cfg.papel=80;save('cfg');renderConfig()">80mm</button>
-      </div>
-    </div>
-    <div class="rb" style="padding:8px 0;border-bottom:1px solid var(--br)">
-      <div><div class="fs13 bold">Auto-imprimir ao criar pedido</div></div>
-      <button class="sw ${cfg.autoprint?'on':''}" id="sw-auto" onclick="toggleSw(this);ST.cfg.autoprint=swVal('sw-auto');save('cfg')"></button>
-    </div>
-    <div class="rb" style="padding:8px 0;border-bottom:1px solid var(--br)">
-      <div><div class="fs13 bold">Emitir cupom ao finalizar pagamento</div></div>
-      <button class="sw ${cfg.autocupom!==false?'on':''}" id="sw-autocupom2" onclick="toggleSw(this);ST.cfg.autocupom=swVal('sw-autocupom2');save('cfg')"></button>
-    </div>
-    <div class="rb" style="padding:8px 0">
-      <div><div class="fs13 bold">Notificacoes push</div><div class="fs12 t2">Alertas nativos quando a aba estiver em segundo plano</div></div>
-      <button class="btn bp bsm" onclick="if(typeof Notification==='undefined'){toast('Notificacoes nao suportadas neste navegador','a');return;}; _pushPermission!=='granted'?Notification.requestPermission().then(p=>{_pushPermission=p;toast(p==='granted'?'Notificacoes ativadas!':'Notificacoes bloqueadas',p==='granted'?'g':'r');renderConfig()}):toast('Ja ativado!','g')">${_pushPermission==='granted'?ppIcon('checkCircle',13,1.7)+' Ativado':ppIcon('bell',13,1.7)+' Ativar'}</button>
-    </div>
-  </div>
-  <div class="sec-title">Impressora Bluetooth</div>
-  <div class="card mb10">
-    <div class="rb" style="padding:8px 0;border-bottom:1px solid var(--br)">
-      <div><div class="fs13 bold">${BT.device?.name||'Nenhuma impressora'}</div>
-      <div class="fs12 ${BT.device?.gatt?.connected?'gn':'t3'}">${BT.device?.gatt?.connected?'● Conectada':'Não pareada'}</div></div>
-      <button class="btn bp bsm" onclick="BT.pair()">${ppIcon('signal',13,1.7)} Parear</button>
-    </div>
-    <button class="btn ba bw mt8" onclick="BT.testPrint()">${ppIcon('printer',14,1.7)} Imprimir teste</button>
-  </div>
-  <div class="sec-title">Segurança</div>
-  <div class="card mb10">
-    <div class="rb" style="padding:8px 0">
-      <div><div class="fs13 bold">PIN do gerente</div><div class="fs12 t2">Descontos, sangria e fechamento</div></div>
-      <button class="btn bs bsm" onclick="changePIN()">Alterar</button>
-    </div>
-  </div>
-  <div class="sec-title">Firebase & Sincronização</div>
-  <div class="card mb10">
-    <div class="rb" style="padding:10px 0;border-bottom:1px solid var(--br)">
-      <div>
-        <div class="fs13 bold">Conta</div>
-        <div class="fs12 t2">${fbAuth?(fbAuth.currentUser?fbAuth.currentUser.email:'Não conectado'):'Modo local (sem sync)'}</div>
-      </div>
-      ${fbAuth
-        ? (fbAuth.currentUser
-            ? `<div style="display:flex;gap:6px">
-                <button class="btn bg bsm" onclick="fsPush().then(()=>toast('Sincronizado!','g'))">${ppIcon('refresh',13,1.7)} Sync</button>
-                <button class="btn br_ bsm" onclick="fbLogout();renderConfig()">Sair</button>
-               </div>`
-            : `<button class="btn bp bsm" onclick="fbLogin()">${ppIcon('cloud',13,1.7)} Conectar Google</button>`)
-        : `<span class="bdg bg-s">${ppIcon('smartphone',11,1.7)} Offline</span>`}
-    </div>
-    <div style="padding:8px 0;border-bottom:1px solid var(--br)">
-      <div class="fs13 bold mb4">Status da sincronização</div>
-      <div class="fs12 t2" style="line-height:1.7">
-        ${fbAuth&&fbAuth.currentUser
-          ? ppIcon('checkCircle',13,1.7)+' Firebase ativo — dados sincronizam automaticamente em todos os dispositivos.'
-          : fbAuth
-            ? ppIcon('alertTriangle',13,1.7)+' Faça login com Google para ativar a sincronização.'
-            : ppIcon('smartphone',13,1.7)+' Modo local — dados salvos apenas neste dispositivo.'}
-      </div>
-      ${fbAuth&&fbAuth.currentUser
-        ? `<div class="fs11 t3 mt4">Projeto: pedepronto-40790 · Firestore</div>` : ''}
-    </div>
-    <div class="rb" style="padding:8px 0;border-bottom:1px solid var(--br)">
-      <div><div class="fs13 bold">Exportar backup local</div><div class="fs12 t2">Salva JSON no dispositivo</div></div>
-      <button class="btn bs bsm" onclick="Drive.exportJSON()">${ppIcon('save',13,1.7)} Exportar</button>
-    </div>
-    <div class="rb" style="padding:8px 0">
-      <div><div class="fs13 bold">Importar backup</div></div>
-      <button class="btn bb bsm" onclick="importBackup()">${ppIcon('download',13,1.7)} Importar</button>
-    </div>
-  </div>
-  <div class="sec-title" style="display:flex;align-items:center;gap:6px">${ppIcon('ticket',14,1.7)} Vouchers e Permuta</div>
-  <div class="card mb10">
-    ${ST.vouchers.map(v=>`
-    <div class="rb" style="padding:9px 0;border-bottom:1px solid var(--br)">
-      <div style="flex:1;min-width:0">
-        <div class="row gap-6">
-          <span class="bold" style="font-family:monospace">${esc(v.code)}</span>
-          ${v.tipo==='fixo'?'<span class="bdg bg-pu" style="font-size:9px">FIXO</span>':''}
-          ${!v.ativo?'<span class="bdg bg-r" style="font-size:9px">INATIVO</span>':''}
-        </div>
-        <div class="fs12 t2">${esc(v.nome)}${v.desconto_tipo==='total'?' · Grátis':v.desconto_tipo==='pct'?` · ${v.desconto_valor}% off`:` · -${fmtR(v.desconto_valor)}`}</div>
-        <div class="fs11 t3">${v.limite_usos>0?`Usos: ${v.usos}/${v.limite_usos}`:'Ilimitado'}${v.validade?' · Válido até '+fmtD(v.validade):''}</div>
-      </div>
-      <div style="display:flex;gap:5px;flex-shrink:0">
-        ${v.tipo!=='fixo'?`<button class="btn bxs ${v.ativo?'ba':'bg'}" onclick="toggleVoucher('${v.id}')">${v.ativo?'Pausar':'Ativar'}</button>
-        <button class="btn bxs bs" onclick="abrirEditarVoucher('${v.id}')">${ppIcon('edit',13,1.7)}</button>
-        <button class="btn bxs br_" onclick="excluirVoucher('${v.id}')">${ppIcon('trash',13,1.7)}</button>`
-        :`<span class="fs11 t3">Não editável</span>`}
-      </div>
-    </div>`).join('')}
-    <button class="btn bp bw mt10" onclick="abrirCriarVoucher()">+ Novo voucher de campanha</button>
-  </div>
-  <div class="sec-title">PIX</div>
-  <div class="card mb10">
-    <div class="fg"><label class="fl">Chave PIX (CPF, CNPJ, e-mail, telefone ou aleatória)</label>
-    <input class="inp" id="cfg-pix-chave" value="${esc(cfg.pix_chave||'')}" oninput="ST.cfg.pix_chave=this.value" placeholder="Ex: 11999999999 ou email@exemplo.com"></div>
-    <div class="fg"><label class="fl">Nome do recebedor (aparece no QR)</label>
-    <input class="inp" id="cfg-pix-nome" value="${esc(cfg.pix_nome||cfg.nome||'')}" oninput="ST.cfg.pix_nome=this.value"></div>
-    <div class="fg"><label class="fl">Cidade (aparece no QR)</label>
-    <input class="inp" id="cfg-pix-cidade" value="${esc(cfg.pix_cidade||'')}" oninput="ST.cfg.pix_cidade=this.value" placeholder="Ex: SAO PAULO"></div>
-    ${cfg.pix_chave?`<button class="btn bb bw mt4" onclick="mostrarPixQRTeste()">${ppIcon('search',14,1.7)} Testar QR Code PIX</button>`:''}
-  </div>
-  <div class="sec-title" style="display:flex;align-items:center;gap:6px">${ppIcon('credit',14,1.7)} Maquininha integrada</div>
-  <div class="card mb10">
-    <div class="fg">
-      <label class="fl">Provedor</label>
-      <select class="inp" id="cfg-maq-prov" onchange="ST.cfg.maquininha=ST.cfg.maquininha||{};ST.cfg.maquininha.provider=this.value;save('cfg');renderConfig()">
-        <option value="manual" ${(!cfg.maquininha?.provider||cfg.maquininha?.provider==='manual')?'selected':''}>Maquininha manual (Stone, Cielo, Rede...)</option>
-        <option value="mp" ${cfg.maquininha?.provider==='mp'?'selected':''}>Mercado Pago Point</option>
-        <option value="pagseguro" ${cfg.maquininha?.provider==='pagseguro'?'selected':''}>PagSeguro Moderninha (Android)</option>
-        <option value="infinitepay" ${cfg.maquininha?.provider==='infinitepay'?'selected':''}>InfinitePay (Android)</option>
-      </select>
-    </div>
-    ${(!cfg.maquininha?.provider||cfg.maquininha?.provider==='manual')?`
-    <div class="fs12 t2" style="line-height:1.7;padding:8px;background:var(--s2);border-radius:8px">
-      <strong>Como funciona:</strong> O valor aparece na tela de pagamento. O operador cobra na maquininha externa e confirma manualmente no sistema.<br>
-      Compatível com <strong>qualquer maquininha</strong>: Stone, Cielo, Rede, SumUp, GetNet etc.
-    </div>`:''}
-    ${cfg.maquininha?.provider==='mp'?`
-    <div class="fg"><label class="fl">Access Token do Mercado Pago</label>
-    <input class="inp" type="password" id="cfg-mp-token" value="${esc(cfg.maquininha?.mp_token||'')}" oninput="ST.cfg.maquininha=ST.cfg.maquininha||{};ST.cfg.maquininha.mp_token=this.value" placeholder="APP_USR-..."></div>
-    <div class="fg"><label class="fl">Device ID (ID da maquininha Point)</label>
-    <input class="inp" id="cfg-mp-device" value="${esc(cfg.maquininha?.mp_device_id||'')}" oninput="ST.cfg.maquininha=ST.cfg.maquininha||{};ST.cfg.maquininha.mp_device_id=this.value" placeholder="PAX_A910__SMARTPOS..."></div>
-    <div class="fs11 t2" style="line-height:1.7;padding:8px;background:var(--s2);border-radius:8px;margin-top:4px">
-      📌 Obtenha o Access Token em <strong>mercadopago.com.br/developers</strong> → Suas integrações → Credenciais de produção.<br>
-      📌 Device ID: na app <strong>Mercado Pago Point</strong> → ⚙️ → Integração → ID do dispositivo.
-    </div>`:''}
-    ${cfg.maquininha?.provider==='pagseguro'?`
-    <div class="fs12 t2" style="line-height:1.7;padding:8px;background:var(--s2);border-radius:8px">
-      📱 <strong>Só funciona em Android</strong> com o app PagSeguro instalado.<br>
-      Ao cobrar, o app PagSeguro abre automaticamente com o valor preenchido.
-    </div>`:''}
-    ${cfg.maquininha?.provider==='infinitepay'?`
-    <div class="fs12 t2" style="line-height:1.7;padding:8px;background:var(--s2);border-radius:8px">
-      📱 <strong>Só funciona em Android</strong> com o app InfinitePay instalado.<br>
-      Ao cobrar, o app InfinitePay abre automaticamente com o valor preenchido.
-    </div>`:''}
-  </div>
-  <div class="sec-title" style="display:flex;align-items:center;gap:6px">${ppIcon('volume',14,1.7)} Sons & Voz</div>
-  <div class="card mb10">
-    <div class="fs12 t2 mb10">Escolha como o sistema se comunica durante o atendimento.</div>
-    <div class="fs12 bold mb6" style="color:var(--t2);text-transform:uppercase;letter-spacing:.7px">Modo de áudio</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:14px">
-      ${[
-        ['mudo',ppIcon('volumeX',18,1.6),'Mudo','Sem sons e sem voz'],
-        ['sons',ppIcon('bell',18,1.6),'Só sons','Alertas sonoros, sem voz'],
-        ['voz',ppIcon('volume',18,1.6),'Voz','Anúncios por voz nos eventos'],
-        ['guiado',ppIcon('mic',18,1.6),'Guiado','Voz em tudo + navegação'],
-      ].map(([m,ico,label,desc])=>`
-      <button class="btn bsm" style="flex-direction:column;align-items:flex-start;gap:2px;height:auto;padding:10px 12px;text-align:left;border:2px solid ${(_AUDIO.modo===m)?'var(--ac)':'var(--br2)'};background:${(_AUDIO.modo===m)?'var(--acbg)':'var(--s2)'};color:${(_AUDIO.modo===m)?'var(--ac)':'var(--t2)'}" onclick="ST.cfg.audio=ST.cfg.audio||{};ST.cfg.audio.modo='${m}';save('cfg');renderConfig()">
-        <span style="font-size:18px">${ico}</span>
-        <span class="bold fs13" style="color:${(_AUDIO.modo===m)?'var(--ac)':'var(--tx)'}">${label}</span>
-        <span class="fs11" style="font-weight:400;line-height:1.3">${desc}</span>
+  const el=document.getElementById('pg-config');
+  // Se tem sub-tela ativa, renderiza ela
+  if(_cfgSection){_renderCfgSection(_cfgSection);return;}
+  // Menu principal — lista de itens com setas
+  const items=_cfgMenuItems();
+  el.innerHTML=`
+  <div style="max-width:520px;margin:0 auto">
+    <div class="fs11 t3 mb10" style="text-transform:uppercase;letter-spacing:.8px;font-weight:700;padding-left:4px">Configuracoes</div>
+    <div style="border-radius:14px;overflow:hidden;border:1px solid var(--br2);background:var(--card)">
+      ${items.map((it,i)=>`
+      <button onclick="_cfgSection='${it.id}';renderConfig()" style="display:flex;align-items:center;gap:12px;width:100%;padding:14px 16px;background:none;border:none;cursor:pointer;text-align:left;color:var(--tx);font-size:14px;${i<items.length-1?'border-bottom:1px solid var(--br);':''}transition:background .15s" onmouseenter="this.style.background='var(--s2)'" onmouseleave="this.style.background='none'">
+        <span style="width:32px;height:32px;border-radius:8px;background:var(--s2);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--ac)">${ppIcon(it.icon,16,1.6)}</span>
+        <span style="flex:1;min-width:0">
+          <span class="bold" style="display:block;font-size:14px">${it.label}</span>
+          ${it.desc?`<span class="fs11 t3" style="display:block;margin-top:1px">${it.desc}</span>`:''}
+        </span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
       </button>`).join('')}
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
-      <div class="fg" style="margin:0">
-        <label class="fl">Gênero da voz</label>
-        <select class="inp" onchange="ST.cfg.audio=ST.cfg.audio||{};ST.cfg.audio.genero=this.value;save('cfg')">
-          <option value="feminino" ${(_AUDIO.genero==='feminino')?'selected':''}>Feminino</option>
-          <option value="masculino" ${(_AUDIO.genero==='masculino')?'selected':''}>Masculino</option>
-        </select>
-      </div>
-      <div class="fg" style="margin:0">
-        <label class="fl">Idioma</label>
-        <select class="inp" onchange="ST.cfg.audio=ST.cfg.audio||{};ST.cfg.audio.idioma=this.value;save('cfg')">
-          ${[['pt-BR','🇧🇷 Português (BR)'],['pt-PT','🇵🇹 Português (PT)'],['en-US','🇺🇸 English (US)'],['es-ES','🇪🇸 Español'],['fr-FR','🇫🇷 Français'],['de-DE','🇩🇪 Deutsch']].map(([v,l])=>`<option value="${v}" ${(_AUDIO.idioma===v)?'selected':''}>${l}</option>`).join('')}
-        </select>
-      </div>
-    </div>
-    <div class="fg mb10" style="margin:0">
-      <label class="fl">Velocidade da voz — <span class="mono am">${_AUDIO.velocidade.toFixed(2)}×</span></label>
-      <input type="range" min="0.5" max="2" step="0.05" value="${_AUDIO.velocidade}" style="width:100%;accent-color:var(--ac)" oninput="ST.cfg.audio=ST.cfg.audio||{};ST.cfg.audio.velocidade=parseFloat(this.value);save('cfg');this.previousElementSibling.querySelector('.mono').textContent=parseFloat(this.value).toFixed(2)+'×'">
-      <div class="rb mt4"><span class="fs11 t3">Lenta (0.5×)</span><span class="fs11 t3">Normal (1×)</span><span class="fs11 t3">Rápida (2×)</span></div>
-    </div>
-    <div style="border-top:1px solid var(--br);padding-top:12px">
-      <label class="fl mb6">Testar áudio — nome do cliente</label>
-      <div style="display:flex;gap:8px">
-        <input class="inp" id="cfg-voz-nome" placeholder="Ex: Maria Silva" style="flex:1">
-        <button class="btn bp bsm" onclick="testarAudio()">▶ Testar</button>
-      </div>
-      <div class="fs11 t3 mt6">Dispara anúncio "pedido pronto" com as configurações acima.</div>
-    </div>
-  </div>
-  ${hasPermission('config_editar')&&window.IS_HOSTED?`
-  <div class="sec-title" style="display:flex;align-items:center;gap:6px">${ppIcon('send',14,1.7)} Agente WhatsApp</div>
-  <div class="card mb10">
-    <div class="rb" style="padding:8px 0;border-bottom:1px solid var(--br)">
-      <div><div class="fs13 bold">Atendente virtual WhatsApp</div><div class="fs12 t2">Recebe pedidos, envia PIX, confirma pagamento</div></div>
-      <button class="sw ${cfg.whatsapp_agent?.ativo?'on':''}" id="sw-wa-ativo" onclick="toggleSw(this);ST.cfg.whatsapp_agent=ST.cfg.whatsapp_agent||{};ST.cfg.whatsapp_agent.ativo=swVal('sw-wa-ativo');save('cfg');renderConfig()"></button>
-    </div>
-    ${cfg.whatsapp_agent?.ativo?`
-    <div class="fs12 t2 mb10" style="line-height:1.7;padding:10px;background:var(--s2);border-radius:8px;margin-top:10px">
-      <strong>Como configurar:</strong><br>
-      1. Crie um app no <strong>Meta Business Suite</strong> (developers.facebook.com)<br>
-      2. Configure o produto <strong>WhatsApp</strong> no app<br>
-      3. Copie o <strong>Phone Number ID</strong> e <strong>Access Token</strong><br>
-      4. Configure o webhook URL no Meta: <code style="background:var(--s3);padding:2px 6px;border-radius:4px;font-size:11px;word-break:break-all">https://pedepronto-whatsapp.vercel.app/api/whatsapp</code><br>
-      5. No Mercado Pago, configure webhook: <code style="background:var(--s3);padding:2px 6px;border-radius:4px;font-size:11px;word-break:break-all">https://pedepronto-whatsapp.vercel.app/api/mercadopago</code>
-    </div>
-    <div class="fg"><label class="fl">Nome do restaurante (aparece nas mensagens)</label>
-    <input class="inp" value="${esc(cfg.whatsapp_agent?.nome_restaurante||cfg.nome||'')}" oninput="ST.cfg.whatsapp_agent.nome_restaurante=this.value"></div>
-    <div class="fg"><label class="fl">Phone Number ID (Meta)</label>
-    <input class="inp" value="${esc(cfg.whatsapp_agent?.phone_number_id||'')}" oninput="ST.cfg.whatsapp_agent.phone_number_id=this.value" placeholder="Ex: 123456789012345" style="font-family:monospace"></div>
-    <div class="fg"><label class="fl">Access Token (WhatsApp Cloud API)</label>
-    <input class="inp" type="password" value="${esc(cfg.whatsapp_agent?.access_token||'')}" oninput="ST.cfg.whatsapp_agent.access_token=this.value" placeholder="EAAx..."></div>
-    <div class="fg"><label class="fl">Verify Token (webhook)</label>
-    <input class="inp" value="${esc(cfg.whatsapp_agent?.verify_token||'pedepronto_verify')}" oninput="ST.cfg.whatsapp_agent.verify_token=this.value" style="font-family:monospace"></div>
-    <div style="border-top:1px solid var(--br);padding-top:12px;margin-top:6px">
-      <div class="fs12 bold mb6">Pagamento PIX (Mercado Pago)</div>
-      <div class="fg"><label class="fl">Access Token do Mercado Pago</label>
-      <input class="inp" type="password" value="${esc(cfg.whatsapp_agent?.mp_access_token||'')}" oninput="ST.cfg.whatsapp_agent.mp_access_token=this.value" placeholder="APP_USR-..."></div>
-      <div class="fg"><label class="fl">Chave PIX (fallback sem Mercado Pago)</label>
-      <input class="inp" value="${esc(cfg.whatsapp_agent?.chave_pix||cfg.pix_chave||'')}" oninput="ST.cfg.whatsapp_agent.chave_pix=this.value"></div>
-    </div>
-    <div style="border-top:1px solid var(--br);padding-top:12px;margin-top:6px">
-      <div class="fs12 bold mb6">Delivery</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-        <div class="fg" style="margin:0"><label class="fl">Taxa de entrega (R$)</label>
-        <input class="inp" type="number" step="0.5" value="${cfg.whatsapp_agent?.taxa_entrega||0}" oninput="ST.cfg.whatsapp_agent.taxa_entrega=parseFloat(this.value)||0"></div>
-        <div class="fg" style="margin:0"><label class="fl">Tempo medio (min)</label>
-        <input class="inp" type="number" value="${cfg.whatsapp_agent?.tempo_medio||45}" oninput="ST.cfg.whatsapp_agent.tempo_medio=parseInt(this.value)||45"></div>
-      </div>
-    </div>
-    <div style="border-top:1px solid var(--br);padding-top:12px;margin-top:6px">
-      <div class="fs12 bold mb6">Horario de funcionamento</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-        <div class="fg" style="margin:0"><label class="fl">Abre</label>
-        <input class="inp" type="time" value="${cfg.whatsapp_agent?.horario_inicio||'11:00'}" oninput="ST.cfg.whatsapp_agent.horario_inicio=this.value"></div>
-        <div class="fg" style="margin:0"><label class="fl">Fecha</label>
-        <input class="inp" type="time" value="${cfg.whatsapp_agent?.horario_fim||'23:00'}" oninput="ST.cfg.whatsapp_agent.horario_fim=this.value"></div>
-      </div>
-    </div>
-    <div style="border-top:1px solid var(--br);padding-top:12px;margin-top:6px">
-      <div class="fs12 bold mb6">Mensagens</div>
-      <div class="fg"><label class="fl">Saudacao inicial</label>
-      <input class="inp" value="${esc(cfg.whatsapp_agent?.greeting||'Ola! Bem-vindo ao '+( cfg.whatsapp_agent?.nome_restaurante||cfg.nome||'Baguetalho')+'!')}" oninput="ST.cfg.whatsapp_agent.greeting=this.value"></div>
-      <div class="fg"><label class="fl">Mensagem fora do horario</label>
-      <input class="inp" value="${esc(cfg.whatsapp_agent?.mensagem_fora_horario||'Estamos fechados no momento.')}" oninput="ST.cfg.whatsapp_agent.mensagem_fora_horario=this.value"></div>
-    </div>
-    <div class="fs11 t3 mt10" style="display:flex;align-items:center;gap:6px;padding:8px;background:var(--s2);border-radius:8px">
-      ${ppIcon('info',14,1.6)} Pedidos do WhatsApp aparecem automaticamente no PDV com a origem <span class="bdg bg-gn" style="font-size:9px">WhatsApp</span>
-    </div>
-    `:''}
-  </div>
-  `:''}
-  ${hasPermission('convites')&&window.IS_HOSTED?`
-  <div class="sec-title" style="display:flex;align-items:center;gap:6px">${ppIcon('users',14,1.7)} Dispositivos vinculados</div>
-  <div class="card mb10">
-    <div id="cfg-membros-list" class="fs12 t2" style="margin-bottom:8px">Carregando...</div>
-    <div id="cfg-convite-ativo" style="margin-bottom:12px"></div>
-    <div style="border-top:1px solid var(--br);padding-top:12px">
-      <div class="fs12 bold mb6">Gerar novo convite</div>
-      <div class="fg mb10" style="margin:0">
-        <label class="fl">Cargo do membro</label>
-        <select class="inp" id="cfg-convite-cargo">
-          <option value="gerente">🔑 Gerente — operacao completa, sem editar precos/config</option>
-          <option value="caixa">💳 Caixa — PDV e caixa, sem relatorios</option>
-          <option value="chefe_cozinha">👨‍🍳 Chefe de Cozinha — producao fullscreen + cardapio</option>
-          <option value="cozinha">🍳 Cozinha — apenas tela de producao</option>
-        </select>
-      </div>
-      <div class="fs11 t3 mb10" id="cfg-cargo-desc">Operação completa: PDV, caixa, sangria, descontos, cancelamentos, relatórios. Não edita preços, configurações ou funcionários.</div>
-      <button class="btn bp bsm bw" onclick="_gerarConvite()">${ppIcon('send',13,1.7)} Gerar convite</button>
-      <div class="fs11 t3 mt6">O convite pode ser usado por vários dispositivos. Válido por 7 dias.</div>
-    </div>
-  </div>
-  `:''}
-  ${hasPermission('config_editar')?`<button class="btn bp bw mb10" onclick="requireAdmin('Salvar Configurações',()=>{save('cfg');toast('Configurações salvas!','g');renderConfig()})">${ppIcon('save',14,1.7)} Salvar configurações</button>
-  <button class="btn br_ bw" onclick="confirm2(ppIcon('alertTriangle',36,1.6),'Resetar sistema?','TODOS os dados serão apagados permanentemente!','Resetar','br_',resetarSistema)">${ppIcon('alertTriangle',14,1.7)} Resetar sistema</button>`:''}
-  <div class="sec-title mt16" style="display:flex;align-items:center;gap:6px">${ppIcon('info',14,1.7)} Ajuda</div>
-  <div class="card mb10">
-    <button class="btn bb bw" onclick="abrirManual()" style="gap:6px">${ppIcon('book',14,1.7)} Manual do Usuario</button>
-    <div class="fs11 t3 mt6">Guia completo de uso do PedePronto PDV</div>
   </div>`;
   document.getElementById('sb-est').textContent=cfg.nome||'PedePronto PDV';
-  // Carrega membros vinculados e convites ativos (async)
-  if(hasPermission('convites')&&window.IS_HOSTED&&document.getElementById('cfg-membros-list')){
-    _carregarMembros();
-    _carregarConviteAtivo();
+}
+
+function _cfgHeader(title){
+  return `<div style="max-width:520px;margin:0 auto">
+    <button onclick="_cfgBack()" style="display:flex;align-items:center;gap:8px;background:none;border:none;cursor:pointer;color:var(--ac);font-size:14px;padding:4px 0;margin-bottom:12px;font-weight:600">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      Voltar
+    </button>
+    <div class="fs16 bold mb12">${title}</div>`;
+}
+function _cfgFooter(){return `</div>`;}
+
+function _cfgSaveBtn(){
+  return hasPermission('config_editar')?`<button class="btn bp bw mt16" onclick="save('cfg');toast('Salvo!','g')">${ppIcon('save',14,1.7)} Salvar</button>`:'';
+}
+
+function _renderCfgSection(sec){
+  const cfg=ST.cfg;
+  const el=document.getElementById('pg-config');
+  const _authUser=window.IS_HOSTED&&fbAuth?.currentUser;
+  let h='';
+  switch(sec){
+
+  case 'conta':
+    h=_cfgHeader('Minha conta')+`
+    <div class="card mb10">
+      ${_authUser?`
+      <div class="rb mb6">
+        <div style="flex:1;min-width:0">
+          <div class="bold fs14">${esc(_authUser.displayName||_authUser.email.split('@')[0])}</div>
+          <div class="fs12 t2">${esc(_authUser.email)}</div>
+        </div>
+        <span class="bdg ${_userRole==='membro'?'bb':'bg'}" style="font-size:11px">${_CARGO_LABELS[_userCargo]||(_userRole==='membro'?'Membro':'Dono')}</span>
+      </div>
+      ${_userRole==='membro'?`<div class="fs12 t3" style="display:flex;align-items:center;gap:4px;margin-top:4px">${ppIcon('store',12,1.5)} Vinculado a: ${esc(cfg.nome||'Estabelecimento')}</div>
+      <div class="fs11 t3 mt4">Cargo: ${_CARGO_LABELS[_userCargo]||'Membro'}</div>`:''}
+      <div style="display:flex;gap:6px;margin-top:10px">
+        <button class="btn br_ bsm" onclick="trocarUsuario()" style="gap:5px">${ppIcon('xCircle',13,1.7)} Sair da conta</button>
+      </div>`:'<div class="fs13 t2">Nenhuma conta conectada</div>'}
+    </div>`+_cfgFooter();
+    break;
+
+  case 'estabelecimento':
+    h=_cfgHeader('Estabelecimento')+`
+    <div class="card mb10">
+      <div class="fg">
+        <label class="fl">Logo do estabelecimento</label>
+        <div style="display:flex;align-items:center;gap:12px">
+          <div class="foto-pick-prev" id="cfg-logo-prev" onclick="document.getElementById('cfg-logo-inp').click()" style="width:64px;height:64px;border-radius:12px">
+            ${cfg.logo?`<img src="${cfg.logo}" style="width:100%;height:100%;object-fit:cover;border-radius:10px">`:ppIcon('store',28,1.4)}
+          </div>
+          <div style="flex:1">
+            <input type="file" id="cfg-logo-inp" accept="image/*" style="display:none" onchange="pickLogo(this)">
+            <button class="btn bs bsm bw" onclick="document.getElementById('cfg-logo-inp').click()">${ppIcon('camera',13,1.7)} Carregar logo</button>
+            ${cfg.logo?`<button class="btn bs bxs bw" style="margin-top:6px" onclick="clearLogo()">${ppIcon('trash',13,1.7)} Remover logo</button>`:''}
+          </div>
+        </div>
+      </div>
+      <div class="fg"><label class="fl">Nome do estabelecimento</label><input class="inp" value="${esc(cfg.nome)}" oninput="ST.cfg.nome=this.value"></div>
+      <div class="fg"><label class="fl">Slogan</label><input class="inp" value="${esc(cfg.slogan||'')}" oninput="ST.cfg.slogan=this.value"></div>
+      <div class="fg"><label class="fl">CNPJ</label><input class="inp" value="${esc(cfg.cnpj||'')}" oninput="ST.cfg.cnpj=this.value" style="font-family:monospace"></div>
+      <div class="fg"><label class="fl">Endereco completo</label><input class="inp" value="${esc(cfg.end||'')}" oninput="ST.cfg.end=this.value"></div>
+      <div class="fg"><label class="fl">WhatsApp</label><input class="inp" value="${esc(cfg.wa||'')}" oninput="ST.cfg.wa=this.value" type="tel"></div>
+      <div class="fg"><label class="fl">Telefone fixo</label><input class="inp" value="${esc(cfg.tel||'')}" oninput="ST.cfg.tel=this.value" type="tel"></div>
+      <div class="fg"><label class="fl">Mensagem de rodape (cupom)</label><input class="inp" value="${esc(cfg.footer||'Obrigado pela preferência!')}" oninput="ST.cfg.footer=this.value"></div>
+    </div>${_cfgSaveBtn()}`+_cfgFooter();
+    break;
+
+  case 'interface':
+    h=_cfgHeader('Interface')+`
+    <div class="card mb10">
+      <div class="rb" style="padding:8px 0">
+        <div><div class="fs13 bold">Tamanho da interface</div><div class="fs12 t2">Botoes e fontes</div></div>
+        <div style="display:flex;gap:7px">
+          ${['p','m','g'].map(t=>{const ativo=((localStorage.getItem('pp_tam')||'p')===t);return`<button class="btn bxs ${ativo?'bp':'bs'}" onclick="setTamanho('${t}');_renderCfgSection('interface')" style="min-width:44px">${t==='p'?'P':t==='m'?'M':'G'}</button>`;}).join('')}
+        </div>
+      </div>
+    </div>`+_cfgFooter();
+    break;
+
+  case 'operacoes':
+    h=_cfgHeader('Operacoes')+`
+    <div class="card mb10">
+      <div class="rb" style="padding:8px 0;border-bottom:1px solid var(--br)">
+        <div><div class="fs13 bold">Total de mesas</div></div>
+        <input class="inp" style="width:72px;text-align:center" type="number" value="${cfg.mesas_total||10}" oninput="ST.cfg.mesas_total=parseInt(this.value)||10">
+      </div>
+      <div class="rb" style="padding:8px 0;border-bottom:1px solid var(--br)">
+        <div><div class="fs13 bold">Taxa de servico</div><div class="fs12 t2">Aplicada automaticamente nos pedidos</div></div>
+        <div style="display:flex;gap:7px;flex-wrap:wrap">
+          ${[0,10,12,15].map(p=>`<button class="btn bxs ${(cfg.taxa_servico||0)===p?'bp':'bs'}" onclick="ST.cfg.taxa_servico=${p};save('cfg');_renderCfgSection('operacoes')">${p===0?'Off':p+'%'}</button>`).join('')}
+        </div>
+      </div>
+      <div class="rb" style="padding:8px 0;border-bottom:1px solid var(--br)">
+        <div><div class="fs13 bold">Largura do papel</div></div>
+        <div style="display:flex;gap:7px">
+          <button class="btn bxs ${cfg.papel===58?'bp':'bs'}" onclick="ST.cfg.papel=58;save('cfg');_renderCfgSection('operacoes')">58mm</button>
+          <button class="btn bxs ${cfg.papel===80||!cfg.papel?'bp':'bs'}" onclick="ST.cfg.papel=80;save('cfg');_renderCfgSection('operacoes')">80mm</button>
+        </div>
+      </div>
+      <div class="rb" style="padding:8px 0;border-bottom:1px solid var(--br)">
+        <div><div class="fs13 bold">Auto-imprimir ao criar pedido</div></div>
+        <button class="sw ${cfg.autoprint?'on':''}" id="sw-auto" onclick="toggleSw(this);ST.cfg.autoprint=swVal('sw-auto');save('cfg')"></button>
+      </div>
+      <div class="rb" style="padding:8px 0;border-bottom:1px solid var(--br)">
+        <div><div class="fs13 bold">Emitir cupom ao finalizar pagamento</div></div>
+        <button class="sw ${cfg.autocupom!==false?'on':''}" id="sw-autocupom2" onclick="toggleSw(this);ST.cfg.autocupom=swVal('sw-autocupom2');save('cfg')"></button>
+      </div>
+      <div class="rb" style="padding:8px 0">
+        <div><div class="fs13 bold">Notificacoes push</div><div class="fs12 t2">Alertas nativos quando a aba estiver em segundo plano</div></div>
+        <button class="btn bp bsm" onclick="if(typeof Notification==='undefined'){toast('Notificacoes nao suportadas neste navegador','a');return;}; _pushPermission!=='granted'?Notification.requestPermission().then(p=>{_pushPermission=p;toast(p==='granted'?'Notificacoes ativadas!':'Notificacoes bloqueadas',p==='granted'?'g':'r');_renderCfgSection('operacoes')}):toast('Ja ativado!','g')">${_pushPermission==='granted'?ppIcon('checkCircle',13,1.7)+' Ativado':ppIcon('bell',13,1.7)+' Ativar'}</button>
+      </div>
+    </div>${_cfgSaveBtn()}`+_cfgFooter();
+    break;
+
+  case 'impressora':
+    h=_cfgHeader('Impressora Bluetooth')+`
+    <div class="card mb10">
+      <div class="rb" style="padding:8px 0;border-bottom:1px solid var(--br)">
+        <div><div class="fs13 bold">${BT.device?.name||'Nenhuma impressora'}</div>
+        <div class="fs12 ${BT.device?.gatt?.connected?'gn':'t3'}">${BT.device?.gatt?.connected?'● Conectada':'Nao pareada'}</div></div>
+        <button class="btn bp bsm" onclick="BT.pair()">${ppIcon('signal',13,1.7)} Parear</button>
+      </div>
+      <button class="btn ba bw mt8" onclick="BT.testPrint()">${ppIcon('printer',14,1.7)} Imprimir teste</button>
+    </div>`+_cfgFooter();
+    break;
+
+  case 'seguranca':
+    h=_cfgHeader('Seguranca')+`
+    <div class="card mb10">
+      <div class="rb" style="padding:8px 0">
+        <div><div class="fs13 bold">PIN do gerente</div><div class="fs12 t2">Descontos, sangria e fechamento</div></div>
+        <button class="btn bs bsm" onclick="changePIN()">Alterar</button>
+      </div>
+    </div>`+_cfgFooter();
+    break;
+
+  case 'firebase':
+    h=_cfgHeader('Firebase & Sincronizacao')+`
+    <div class="card mb10">
+      <div class="rb" style="padding:10px 0;border-bottom:1px solid var(--br)">
+        <div>
+          <div class="fs13 bold">Conta</div>
+          <div class="fs12 t2">${fbAuth?(fbAuth.currentUser?fbAuth.currentUser.email:'Nao conectado'):'Modo local (sem sync)'}</div>
+        </div>
+        ${fbAuth
+          ? (fbAuth.currentUser
+              ? `<div style="display:flex;gap:6px">
+                  <button class="btn bg bsm" onclick="fsPush().then(()=>toast('Sincronizado!','g'))">${ppIcon('refresh',13,1.7)} Sync</button>
+                  <button class="btn br_ bsm" onclick="fbLogout();_renderCfgSection('firebase')">Sair</button>
+                 </div>`
+              : `<button class="btn bp bsm" onclick="fbLogin()">${ppIcon('cloud',13,1.7)} Conectar Google</button>`)
+          : `<span class="bdg bg-s">${ppIcon('smartphone',11,1.7)} Offline</span>`}
+      </div>
+      <div style="padding:8px 0;border-bottom:1px solid var(--br)">
+        <div class="fs13 bold mb4">Status da sincronizacao</div>
+        <div class="fs12 t2" style="line-height:1.7">
+          ${fbAuth&&fbAuth.currentUser
+            ? ppIcon('checkCircle',13,1.7)+' Firebase ativo — dados sincronizam automaticamente em todos os dispositivos.'
+            : fbAuth
+              ? ppIcon('alertTriangle',13,1.7)+' Faca login com Google para ativar a sincronizacao.'
+              : ppIcon('smartphone',13,1.7)+' Modo local — dados salvos apenas neste dispositivo.'}
+        </div>
+        ${fbAuth&&fbAuth.currentUser
+          ? `<div class="fs11 t3 mt4">Projeto: pedepronto-40790 · Firestore</div>` : ''}
+      </div>
+      <div class="rb" style="padding:8px 0;border-bottom:1px solid var(--br)">
+        <div><div class="fs13 bold">Exportar backup local</div><div class="fs12 t2">Salva JSON no dispositivo</div></div>
+        <button class="btn bs bsm" onclick="Drive.exportJSON()">${ppIcon('save',13,1.7)} Exportar</button>
+      </div>
+      <div class="rb" style="padding:8px 0">
+        <div><div class="fs13 bold">Importar backup</div></div>
+        <button class="btn bb bsm" onclick="importBackup()">${ppIcon('download',13,1.7)} Importar</button>
+      </div>
+    </div>`+_cfgFooter();
+    break;
+
+  case 'vouchers':
+    h=_cfgHeader('Vouchers e Permuta')+`
+    <div class="card mb10">
+      ${ST.vouchers.map(v=>`
+      <div class="rb" style="padding:9px 0;border-bottom:1px solid var(--br)">
+        <div style="flex:1;min-width:0">
+          <div class="row gap-6">
+            <span class="bold" style="font-family:monospace">${esc(v.code)}</span>
+            ${v.tipo==='fixo'?'<span class="bdg bg-pu" style="font-size:9px">FIXO</span>':''}
+            ${!v.ativo?'<span class="bdg bg-r" style="font-size:9px">INATIVO</span>':''}
+          </div>
+          <div class="fs12 t2">${esc(v.nome)}${v.desconto_tipo==='total'?' · Gratis':v.desconto_tipo==='pct'?` · ${v.desconto_valor}% off`:` · -${fmtR(v.desconto_valor)}`}</div>
+          <div class="fs11 t3">${v.limite_usos>0?`Usos: ${v.usos}/${v.limite_usos}`:'Ilimitado'}${v.validade?' · Valido ate '+fmtD(v.validade):''}</div>
+        </div>
+        <div style="display:flex;gap:5px;flex-shrink:0">
+          ${v.tipo!=='fixo'?`<button class="btn bxs ${v.ativo?'ba':'bg'}" onclick="toggleVoucher('${v.id}')">${v.ativo?'Pausar':'Ativar'}</button>
+          <button class="btn bxs bs" onclick="abrirEditarVoucher('${v.id}')">${ppIcon('edit',13,1.7)}</button>
+          <button class="btn bxs br_" onclick="excluirVoucher('${v.id}')">${ppIcon('trash',13,1.7)}</button>`
+          :`<span class="fs11 t3">Nao editavel</span>`}
+        </div>
+      </div>`).join('')}
+      <button class="btn bp bw mt10" onclick="abrirCriarVoucher()">+ Novo voucher de campanha</button>
+    </div>`+_cfgFooter();
+    break;
+
+  case 'pix':
+    h=_cfgHeader('PIX')+`
+    <div class="card mb10">
+      <div class="fg"><label class="fl">Chave PIX (CPF, CNPJ, e-mail, telefone ou aleatoria)</label>
+      <input class="inp" id="cfg-pix-chave" value="${esc(cfg.pix_chave||'')}" oninput="ST.cfg.pix_chave=this.value" placeholder="Ex: 11999999999 ou email@exemplo.com"></div>
+      <div class="fg"><label class="fl">Nome do recebedor (aparece no QR)</label>
+      <input class="inp" id="cfg-pix-nome" value="${esc(cfg.pix_nome||cfg.nome||'')}" oninput="ST.cfg.pix_nome=this.value"></div>
+      <div class="fg"><label class="fl">Cidade (aparece no QR)</label>
+      <input class="inp" id="cfg-pix-cidade" value="${esc(cfg.pix_cidade||'')}" oninput="ST.cfg.pix_cidade=this.value" placeholder="Ex: SAO PAULO"></div>
+      ${cfg.pix_chave?`<button class="btn bb bw mt4" onclick="mostrarPixQRTeste()">${ppIcon('search',14,1.7)} Testar QR Code PIX</button>`:''}
+    </div>${_cfgSaveBtn()}`+_cfgFooter();
+    break;
+
+  case 'maquininha':
+    h=_cfgHeader('Maquininha integrada')+`
+    <div class="card mb10">
+      <div class="fg">
+        <label class="fl">Provedor</label>
+        <select class="inp" id="cfg-maq-prov" onchange="ST.cfg.maquininha=ST.cfg.maquininha||{};ST.cfg.maquininha.provider=this.value;save('cfg');_renderCfgSection('maquininha')">
+          <option value="manual" ${(!cfg.maquininha?.provider||cfg.maquininha?.provider==='manual')?'selected':''}>Maquininha manual (Stone, Cielo, Rede...)</option>
+          <option value="mp" ${cfg.maquininha?.provider==='mp'?'selected':''}>Mercado Pago Point</option>
+          <option value="pagseguro" ${cfg.maquininha?.provider==='pagseguro'?'selected':''}>PagSeguro Moderninha (Android)</option>
+          <option value="infinitepay" ${cfg.maquininha?.provider==='infinitepay'?'selected':''}>InfinitePay (Android)</option>
+        </select>
+      </div>
+      ${(!cfg.maquininha?.provider||cfg.maquininha?.provider==='manual')?`
+      <div class="fs12 t2" style="line-height:1.7;padding:8px;background:var(--s2);border-radius:8px">
+        <strong>Como funciona:</strong> O valor aparece na tela de pagamento. O operador cobra na maquininha externa e confirma manualmente no sistema.<br>
+        Compativel com <strong>qualquer maquininha</strong>: Stone, Cielo, Rede, SumUp, GetNet etc.
+      </div>`:''}
+      ${cfg.maquininha?.provider==='mp'?`
+      <div class="fg"><label class="fl">Access Token do Mercado Pago</label>
+      <input class="inp" type="password" id="cfg-mp-token" value="${esc(cfg.maquininha?.mp_token||'')}" oninput="ST.cfg.maquininha=ST.cfg.maquininha||{};ST.cfg.maquininha.mp_token=this.value" placeholder="APP_USR-..."></div>
+      <div class="fg"><label class="fl">Device ID (ID da maquininha Point)</label>
+      <input class="inp" id="cfg-mp-device" value="${esc(cfg.maquininha?.mp_device_id||'')}" oninput="ST.cfg.maquininha=ST.cfg.maquininha||{};ST.cfg.maquininha.mp_device_id=this.value" placeholder="PAX_A910__SMARTPOS..."></div>
+      <div class="fs11 t2" style="line-height:1.7;padding:8px;background:var(--s2);border-radius:8px;margin-top:4px">
+        Obtenha o Access Token em <strong>mercadopago.com.br/developers</strong> e o Device ID na app <strong>Mercado Pago Point</strong>.
+      </div>`:''}
+      ${cfg.maquininha?.provider==='pagseguro'?`
+      <div class="fs12 t2" style="line-height:1.7;padding:8px;background:var(--s2);border-radius:8px">
+        <strong>So funciona em Android</strong> com o app PagSeguro instalado. Ao cobrar, o app abre automaticamente.
+      </div>`:''}
+      ${cfg.maquininha?.provider==='infinitepay'?`
+      <div class="fs12 t2" style="line-height:1.7;padding:8px;background:var(--s2);border-radius:8px">
+        <strong>So funciona em Android</strong> com o app InfinitePay instalado. Ao cobrar, o app abre automaticamente.
+      </div>`:''}
+    </div>${_cfgSaveBtn()}`+_cfgFooter();
+    break;
+
+  case 'sons':
+    h=_cfgHeader('Sons & Voz')+`
+    <div class="card mb10">
+      <div class="fs12 t2 mb10">Escolha como o sistema se comunica durante o atendimento.</div>
+      <div class="fs12 bold mb6" style="color:var(--t2);text-transform:uppercase;letter-spacing:.7px">Modo de audio</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:14px">
+        ${[
+          ['mudo',ppIcon('volumeX',18,1.6),'Mudo','Sem sons e sem voz'],
+          ['sons',ppIcon('bell',18,1.6),'So sons','Alertas sonoros, sem voz'],
+          ['voz',ppIcon('volume',18,1.6),'Voz','Anuncios por voz nos eventos'],
+          ['guiado',ppIcon('mic',18,1.6),'Guiado','Voz em tudo + navegacao'],
+        ].map(([m,ico,label,desc])=>`
+        <button class="btn bsm" style="flex-direction:column;align-items:flex-start;gap:2px;height:auto;padding:10px 12px;text-align:left;border:2px solid ${(_AUDIO.modo===m)?'var(--ac)':'var(--br2)'};background:${(_AUDIO.modo===m)?'var(--acbg)':'var(--s2)'};color:${(_AUDIO.modo===m)?'var(--ac)':'var(--t2)'}" onclick="ST.cfg.audio=ST.cfg.audio||{};ST.cfg.audio.modo='${m}';save('cfg');_renderCfgSection('sons')">
+          <span style="font-size:18px">${ico}</span>
+          <span class="bold fs13" style="color:${(_AUDIO.modo===m)?'var(--ac)':'var(--tx)'}">${label}</span>
+          <span class="fs11" style="font-weight:400;line-height:1.3">${desc}</span>
+        </button>`).join('')}
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+        <div class="fg" style="margin:0">
+          <label class="fl">Genero da voz</label>
+          <select class="inp" onchange="ST.cfg.audio=ST.cfg.audio||{};ST.cfg.audio.genero=this.value;save('cfg')">
+            <option value="feminino" ${(_AUDIO.genero==='feminino')?'selected':''}>Feminino</option>
+            <option value="masculino" ${(_AUDIO.genero==='masculino')?'selected':''}>Masculino</option>
+          </select>
+        </div>
+        <div class="fg" style="margin:0">
+          <label class="fl">Idioma</label>
+          <select class="inp" onchange="ST.cfg.audio=ST.cfg.audio||{};ST.cfg.audio.idioma=this.value;save('cfg')">
+            ${[['pt-BR','Portugues (BR)'],['pt-PT','Portugues (PT)'],['en-US','English (US)'],['es-ES','Espanol'],['fr-FR','Francais'],['de-DE','Deutsch']].map(([v,l])=>`<option value="${v}" ${(_AUDIO.idioma===v)?'selected':''}>${l}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <div class="fg mb10" style="margin:0">
+        <label class="fl">Velocidade da voz — <span class="mono am">${_AUDIO.velocidade.toFixed(2)}x</span></label>
+        <input type="range" min="0.5" max="2" step="0.05" value="${_AUDIO.velocidade}" style="width:100%;accent-color:var(--ac)" oninput="ST.cfg.audio=ST.cfg.audio||{};ST.cfg.audio.velocidade=parseFloat(this.value);save('cfg');this.previousElementSibling.querySelector('.mono').textContent=parseFloat(this.value).toFixed(2)+'x'">
+        <div class="rb mt4"><span class="fs11 t3">Lenta (0.5x)</span><span class="fs11 t3">Normal (1x)</span><span class="fs11 t3">Rapida (2x)</span></div>
+      </div>
+      <div style="border-top:1px solid var(--br);padding-top:12px">
+        <label class="fl mb6">Testar audio — nome do cliente</label>
+        <div style="display:flex;gap:8px">
+          <input class="inp" id="cfg-voz-nome" placeholder="Ex: Maria Silva" style="flex:1">
+          <button class="btn bp bsm" onclick="testarAudio()">▶ Testar</button>
+        </div>
+        <div class="fs11 t3 mt6">Dispara anuncio "pedido pronto" com as configuracoes acima.</div>
+      </div>
+    </div>`+_cfgFooter();
+    break;
+
+  case 'whatsapp':
+    h=_cfgHeader('Agente WhatsApp')+`
+    <div class="card mb10">
+      <div class="rb" style="padding:8px 0;border-bottom:1px solid var(--br)">
+        <div><div class="fs13 bold">Atendente virtual WhatsApp</div><div class="fs12 t2">Recebe pedidos, envia PIX, confirma pagamento</div></div>
+        <button class="sw ${cfg.whatsapp_agent?.ativo?'on':''}" id="sw-wa-ativo" onclick="toggleSw(this);ST.cfg.whatsapp_agent=ST.cfg.whatsapp_agent||{};ST.cfg.whatsapp_agent.ativo=swVal('sw-wa-ativo');save('cfg');_renderCfgSection('whatsapp')"></button>
+      </div>
+      ${cfg.whatsapp_agent?.ativo?`
+      <div class="fs12 t2 mb10" style="line-height:1.7;padding:10px;background:var(--s2);border-radius:8px;margin-top:10px">
+        <strong>Como configurar:</strong><br>
+        1. Crie um app no <strong>Meta Business Suite</strong> (developers.facebook.com)<br>
+        2. Configure o produto <strong>WhatsApp</strong> no app<br>
+        3. Copie o <strong>Phone Number ID</strong> e <strong>Access Token</strong><br>
+        4. Configure o webhook URL no Meta<br>
+        5. No Mercado Pago, configure webhook
+      </div>
+      <div class="fg"><label class="fl">Nome do restaurante (aparece nas mensagens)</label>
+      <input class="inp" value="${esc(cfg.whatsapp_agent?.nome_restaurante||cfg.nome||'')}" oninput="ST.cfg.whatsapp_agent.nome_restaurante=this.value"></div>
+      <div class="fg"><label class="fl">Phone Number ID (Meta)</label>
+      <input class="inp" value="${esc(cfg.whatsapp_agent?.phone_number_id||'')}" oninput="ST.cfg.whatsapp_agent.phone_number_id=this.value" placeholder="Ex: 123456789012345" style="font-family:monospace"></div>
+      <div class="fg"><label class="fl">Access Token (WhatsApp Cloud API)</label>
+      <input class="inp" type="password" value="${esc(cfg.whatsapp_agent?.access_token||'')}" oninput="ST.cfg.whatsapp_agent.access_token=this.value" placeholder="EAAx..."></div>
+      <div class="fg"><label class="fl">Verify Token (webhook)</label>
+      <input class="inp" value="${esc(cfg.whatsapp_agent?.verify_token||'pedepronto_verify')}" oninput="ST.cfg.whatsapp_agent.verify_token=this.value" style="font-family:monospace"></div>
+      <div style="border-top:1px solid var(--br);padding-top:12px;margin-top:6px">
+        <div class="fs12 bold mb6">Pagamento PIX (Mercado Pago)</div>
+        <div class="fg"><label class="fl">Access Token do Mercado Pago</label>
+        <input class="inp" type="password" value="${esc(cfg.whatsapp_agent?.mp_access_token||'')}" oninput="ST.cfg.whatsapp_agent.mp_access_token=this.value" placeholder="APP_USR-..."></div>
+        <div class="fg"><label class="fl">Chave PIX (fallback sem Mercado Pago)</label>
+        <input class="inp" value="${esc(cfg.whatsapp_agent?.chave_pix||cfg.pix_chave||'')}" oninput="ST.cfg.whatsapp_agent.chave_pix=this.value"></div>
+      </div>
+      <div style="border-top:1px solid var(--br);padding-top:12px;margin-top:6px">
+        <div class="fs12 bold mb6">Delivery</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div class="fg" style="margin:0"><label class="fl">Taxa de entrega (R$)</label>
+          <input class="inp" type="number" step="0.5" value="${cfg.whatsapp_agent?.taxa_entrega||0}" oninput="ST.cfg.whatsapp_agent.taxa_entrega=parseFloat(this.value)||0"></div>
+          <div class="fg" style="margin:0"><label class="fl">Tempo medio (min)</label>
+          <input class="inp" type="number" value="${cfg.whatsapp_agent?.tempo_medio||45}" oninput="ST.cfg.whatsapp_agent.tempo_medio=parseInt(this.value)||45"></div>
+        </div>
+      </div>
+      <div style="border-top:1px solid var(--br);padding-top:12px;margin-top:6px">
+        <div class="fs12 bold mb6">Horario de funcionamento</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div class="fg" style="margin:0"><label class="fl">Abre</label>
+          <input class="inp" type="time" value="${cfg.whatsapp_agent?.horario_inicio||'11:00'}" oninput="ST.cfg.whatsapp_agent.horario_inicio=this.value"></div>
+          <div class="fg" style="margin:0"><label class="fl">Fecha</label>
+          <input class="inp" type="time" value="${cfg.whatsapp_agent?.horario_fim||'23:00'}" oninput="ST.cfg.whatsapp_agent.horario_fim=this.value"></div>
+        </div>
+      </div>
+      <div style="border-top:1px solid var(--br);padding-top:12px;margin-top:6px">
+        <div class="fs12 bold mb6">Mensagens</div>
+        <div class="fg"><label class="fl">Saudacao inicial</label>
+        <input class="inp" value="${esc(cfg.whatsapp_agent?.greeting||'Ola! Bem-vindo ao '+(cfg.whatsapp_agent?.nome_restaurante||cfg.nome||'Baguetalho')+'!')}" oninput="ST.cfg.whatsapp_agent.greeting=this.value"></div>
+        <div class="fg"><label class="fl">Mensagem fora do horario</label>
+        <input class="inp" value="${esc(cfg.whatsapp_agent?.mensagem_fora_horario||'Estamos fechados no momento.')}" oninput="ST.cfg.whatsapp_agent.mensagem_fora_horario=this.value"></div>
+      </div>
+      <div class="fs11 t3 mt10" style="display:flex;align-items:center;gap:6px;padding:8px;background:var(--s2);border-radius:8px">
+        ${ppIcon('info',14,1.6)} Pedidos do WhatsApp aparecem automaticamente no PDV com a origem <span class="bdg bg-gn" style="font-size:9px">WhatsApp</span>
+      </div>
+      `:''}
+    </div>${_cfgSaveBtn()}`+_cfgFooter();
+    break;
+
+  case 'dispositivos':
+    h=_cfgHeader('Dispositivos vinculados')+`
+    <div class="card mb10">
+      <div id="cfg-membros-list" class="fs12 t2" style="margin-bottom:8px">Carregando...</div>
+      <div id="cfg-convite-ativo" style="margin-bottom:12px"></div>
+      <div style="border-top:1px solid var(--br);padding-top:12px">
+        <div class="fs12 bold mb6">Gerar novo convite</div>
+        <div class="fg mb10" style="margin:0">
+          <label class="fl">Cargo do membro</label>
+          <select class="inp" id="cfg-convite-cargo">
+            <option value="gerente">Gerente — operacao completa, sem editar precos/config</option>
+            <option value="caixa">Caixa — PDV e caixa, sem relatorios</option>
+            <option value="chefe_cozinha">Chefe de Cozinha — producao fullscreen + cardapio</option>
+            <option value="cozinha">Cozinha — apenas tela de producao</option>
+          </select>
+        </div>
+        <div class="fs11 t3 mb10" id="cfg-cargo-desc">Operacao completa: PDV, caixa, sangria, descontos, cancelamentos, relatorios. Nao edita precos, configuracoes ou funcionarios.</div>
+        <button class="btn bp bsm bw" onclick="_gerarConvite()">${ppIcon('send',13,1.7)} Gerar convite</button>
+        <div class="fs11 t3 mt6">O convite pode ser usado por varios dispositivos. Valido por 7 dias.</div>
+      </div>
+    </div>`+_cfgFooter();
+    // load members async
+    setTimeout(()=>{
+      if(document.getElementById('cfg-membros-list')){_carregarMembros();_carregarConviteAtivo();}
+    },50);
+    break;
+
+  case 'ajuda':
+    h=_cfgHeader('Ajuda')+`
+    <div class="card mb10">
+      <button class="btn bb bw" onclick="abrirManual()" style="gap:6px">${ppIcon('book',14,1.7)} Manual do Usuario</button>
+      <div class="fs11 t3 mt6">Guia completo de uso do PedePronto PDV</div>
+    </div>`+_cfgFooter();
+    break;
+
+  case 'sistema':
+    h=_cfgHeader('Sistema')+`
+    <div class="card mb10">
+      <button class="btn bp bw mb10" onclick="requireAdmin('Salvar Configuracoes',()=>{save('cfg');toast('Configuracoes salvas!','g')})">${ppIcon('save',14,1.7)} Salvar configuracoes</button>
+      <button class="btn br_ bw" onclick="confirm2(ppIcon('alertTriangle',36,1.6),'Resetar sistema?','TODOS os dados serao apagados permanentemente!','Resetar','br_',resetarSistema)">${ppIcon('alertTriangle',14,1.7)} Resetar sistema</button>
+    </div>`+_cfgFooter();
+    break;
+
+  default:
+    _cfgSection=null;renderConfig();return;
   }
+  el.innerHTML=h;
+}
+
+// ═══════════════════════════════════════════
+//  SUPER ADMIN — Editor de estabelecimentos
+// ═══════════════════════════════════════════
+function renderAdmin(){
+  const el=document.getElementById('pg-admin');
+  if(!isSuperAdmin()){el.innerHTML=`<div class="card mt10"><div class="fs14 bold t2">Acesso negado</div><div class="fs12 t3">Apenas o Super Admin pode acessar esta pagina.</div></div>`;return;}
+  el.innerHTML=`
+  <div style="max-width:700px;margin:0 auto">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+      <span style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#f59e0b,#d97706);display:flex;align-items:center;justify-content:center">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 7.2H22l-6 4.8 2.4 7.2L12 16.4 5.6 21.2 8 14 2 9.2h7.6z"/></svg>
+      </span>
+      <div>
+        <div class="bold fs16">Super Admin</div>
+        <div class="fs12 t2">${_SUPER_ADMIN_EMAIL}</div>
+      </div>
+    </div>
+
+    <div class="sec-title" style="display:flex;align-items:center;gap:6px">${ppIcon('store',14,1.7)} Estabelecimentos</div>
+    <div class="card mb10" id="admin-estab-list">
+      <div class="fs12 t2">Carregando estabelecimentos...</div>
+    </div>
+
+    <div class="sec-title" style="display:flex;align-items:center;gap:6px">${ppIcon('users',14,1.7)} Usuarios registrados</div>
+    <div class="card mb10" id="admin-users-list">
+      <div class="fs12 t2">Carregando usuarios...</div>
+    </div>
+
+    <div class="sec-title" style="display:flex;align-items:center;gap:6px">${ppIcon('info',14,1.7)} Acoes rapidas</div>
+    <div class="card mb10">
+      <button class="btn bp bw mb8" onclick="_adminLoadEstabs()">${ppIcon('refresh',14,1.7)} Atualizar dados</button>
+      <button class="btn ba bw mb8" onclick="_adminExportAll()">${ppIcon('save',14,1.7)} Exportar todos os dados</button>
+    </div>
+  </div>`;
+  _adminLoadEstabs();
+  _adminLoadUsers();
+}
+
+async function _adminLoadEstabs(){
+  const el=document.getElementById('admin-estab-list');
+  if(!el||!fbDB)return;
+  el.innerHTML='<div class="fs12 t2">Buscando...</div>';
+  try{
+    const snap=await fbDB.collection('estabelecimentos').get();
+    if(snap.empty){el.innerHTML='<div class="fs12 t3">Nenhum estabelecimento encontrado.</div>';return;}
+    let html='';
+    snap.forEach(doc=>{
+      const id=doc.id;
+      html+=`
+      <div class="rb" style="padding:10px 0;border-bottom:1px solid var(--br)">
+        <div style="flex:1;min-width:0">
+          <div class="bold fs13">${esc(id)}</div>
+          <div class="fs11 t3" style="font-family:monospace">${esc(id)}</div>
+        </div>
+        <div style="display:flex;gap:5px">
+          <button class="btn bxs bp" onclick="_adminViewEstab('${esc(id)}')">${ppIcon('search',13,1.7)} Ver</button>
+        </div>
+      </div>`;
+    });
+    el.innerHTML=html;
+  }catch(e){el.innerHTML=`<div class="fs12 t2 br_">Erro: ${esc(e.message)}</div>`;}
+}
+
+async function _adminViewEstab(uid){
+  if(!fbDB)return;
+  try{
+    const doc=await fbDB.collection('estabelecimentos').doc(uid).collection('dados').doc('principal').get();
+    if(!doc.exists){toast('Documento principal nao encontrado','a');return;}
+    const d=doc.data();
+    const info=[
+      `Nome: ${d.cfg?.nome||'(sem nome)'}`,
+      `Produtos: ${d.produtos?.length||0}`,
+      `Categorias: ${d.categorias?.length||0}`,
+      `Pedidos: ${d.pedidos?.length||0}`,
+      `Clientes: ${d.clientes?.length||0}`,
+      `Funcionarios: ${d.funcionarios?.length||0}`,
+      `Vouchers: ${d.vouchers?.length||0}`,
+    ].join('<br>');
+    showModal('mc-admin-view','Estabelecimento: '+esc(uid),`
+      <div class="fs13" style="line-height:2">${info}</div>
+      <div style="margin-top:12px;display:flex;gap:8px">
+        <button class="btn bb bsm" onclick="navigator.clipboard.writeText(JSON.stringify(${esc(JSON.stringify(d))}));toast('JSON copiado!','g')">Copiar JSON</button>
+      </div>
+    `);
+  }catch(e){toast('Erro ao ler: '+e.message,'r');}
+}
+
+async function _adminLoadUsers(){
+  const el=document.getElementById('admin-users-list');
+  if(!el||!fbDB)return;
+  el.innerHTML='<div class="fs12 t2">Buscando...</div>';
+  try{
+    const snap=await fbDB.collection('user_map').get();
+    if(snap.empty){el.innerHTML='<div class="fs12 t3">Nenhum usuario mapeado.</div>';return;}
+    let html='';
+    snap.forEach(doc=>{
+      const d=doc.data();
+      html+=`
+      <div class="rb" style="padding:8px 0;border-bottom:1px solid var(--br)">
+        <div style="flex:1;min-width:0">
+          <div class="bold fs12">${esc(doc.id)}</div>
+          <div class="fs11 t3">Estab: ${esc(d.estab_uid||'?')} · ${esc(d.role||'?')} · ${esc(d.cargo||'?')}</div>
+        </div>
+      </div>`;
+    });
+    el.innerHTML=html;
+  }catch(e){el.innerHTML=`<div class="fs12 t2 br_">Erro: ${esc(e.message)}</div>`;}
+}
+
+async function _adminExportAll(){
+  if(!fbDB){toast('Firestore indisponivel','r');return;}
+  try{
+    const snap=await fbDB.collection('estabelecimentos').get();
+    const data={};
+    for(const doc of snap.docs){
+      const sub=await fbDB.collection('estabelecimentos').doc(doc.id).collection('dados').doc('principal').get();
+      data[doc.id]=sub.exists?sub.data():{};
+    }
+    const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+    a.download='pedepronto_admin_export_'+new Date().toISOString().slice(0,10)+'.json';
+    a.click();toast('Exportado!','g');
+  }catch(e){toast('Erro: '+e.message,'r');}
 }
 function changePIN(){askPin('Alterar PIN','Digite o PIN atual',()=>{const n=prompt('Novo PIN de 4 dígitos:');if(!n||n.length!==4||isNaN(n)){toast('PIN deve ter 4 dígitos','r');return}ST.cfg.pin=n;save('cfg');toast('PIN alterado!','g')})}
 function abrirManual(){
@@ -6307,16 +6554,16 @@ function salvarVoucherEdit(){
       limite_usos:parseInt(document.getElementById('vce-limite').value)||0,
       usos:0,validade:document.getElementById('vce-validade').value||null,criado:now()});
   }
-  save('vouchers');closeMc('mc-voucher-edit');renderConfig();toast('Voucher salvo!','g');
+  save('vouchers');closeMc('mc-voucher-edit');_cfgSection='vouchers';renderConfig();toast('Voucher salvo!','g');
 }
 function toggleVoucher(id){
   const v=ST.vouchers.find(x=>x.id===id);if(!v||v.tipo==='fixo')return;
-  v.ativo=!v.ativo;save('vouchers');renderConfig();
+  v.ativo=!v.ativo;save('vouchers');_cfgSection='vouchers';renderConfig();
 }
 function excluirVoucher(id){
   const v=ST.vouchers.find(x=>x.id===id);if(!v||v.tipo==='fixo'){toast('Voucher fixo não pode ser excluído','r');return;}
   confirm2(ppIcon('trash',36,1.4),'Excluir voucher?',`Código: ${v.code} — ${v.nome}`,'Excluir','br_',()=>{
-    ST.vouchers=ST.vouchers.filter(x=>x.id!==id);save('vouchers');renderConfig();
+    ST.vouchers=ST.vouchers.filter(x=>x.id!==id);save('vouchers');_cfgSection='vouchers';renderConfig();
     toast('Voucher excluído','a');
   });
 }
