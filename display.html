@@ -39,13 +39,11 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 /* conteúdo central */
 #vt-content{flex:1;position:relative;z-index:1;overflow:hidden;padding:0 24px 16px}
 
-/* carrossel de categorias */
+/* ── MODO GRID (legacy) ── */
 #vt-cats{display:flex;gap:10px;padding:0 0 14px;overflow-x:auto;scrollbar-width:none;flex-shrink:0;scroll-behavior:smooth}
 #vt-cats::-webkit-scrollbar{display:none}
 .vt-cat-chip{padding:8px 18px;border-radius:99px;border:1.5px solid var(--br);background:rgba(255,255,255,.04);color:var(--t2);font-size:13px;font-weight:700;cursor:pointer;transition:all .2s;white-space:nowrap;backdrop-filter:blur(10px)}
 .vt-cat-chip.on{background:var(--ac);border-color:var(--ac);color:#fff;box-shadow:0 4px 20px rgba(108,99,255,.4)}
-
-/* grid de produtos */
 #vt-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;overflow-y:auto;height:100%;scrollbar-width:none;padding-bottom:20px;align-content:start}
 #vt-grid::-webkit-scrollbar{display:none}
 .vt-prod{background:rgba(255,255,255,.04);border:1px solid var(--br);border-radius:18px;padding:0;overflow:hidden;backdrop-filter:blur(12px);transition:transform .2s;animation:fadeInUp .4s both}
@@ -56,6 +54,23 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 .vt-prod-nome{font-size:14px;font-weight:800;line-height:1.3;margin-bottom:4px;color:var(--tx)}
 .vt-prod-desc{font-size:11px;color:var(--t2);line-height:1.4;margin-bottom:8px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .vt-prod-preco{font-size:18px;font-weight:900;color:var(--ac);font-family:monospace}
+
+/* ── MODO CARROSSEL (totem) ── */
+#vt-carousel{position:absolute;inset:0;z-index:1;display:none}
+.car-slide{position:absolute;inset:0;opacity:0;transition:opacity .8s ease;display:flex;align-items:center;justify-content:center}
+.car-slide.on{opacity:1;z-index:2}
+.car-slide-img{width:100%;height:100%;object-fit:cover}
+.car-slide-video{width:100%;height:100%;object-fit:cover}
+.car-slide-placeholder{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:120px;background:linear-gradient(135deg,var(--sf),var(--sf2))}
+.car-slide-info{position:absolute;bottom:0;left:0;right:0;padding:40px 48px 48px;background:linear-gradient(0deg,rgba(0,0,0,.85) 0%,rgba(0,0,0,.4) 60%,transparent 100%)}
+.car-slide-cat{font-size:14px;font-weight:700;color:var(--ac2);text-transform:uppercase;letter-spacing:2px;margin-bottom:8px}
+.car-slide-nome{font-size:36px;font-weight:900;color:#fff;margin-bottom:6px;text-shadow:0 2px 12px rgba(0,0,0,.5)}
+.car-slide-desc{font-size:16px;color:rgba(255,255,255,.7);margin-bottom:12px;max-width:600px;line-height:1.5}
+.car-slide-preco{font-size:42px;font-weight:900;color:var(--ac);font-family:monospace;text-shadow:0 2px 20px rgba(108,99,255,.5)}
+/* dots */
+#car-dots{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);z-index:5;display:flex;gap:8px}
+.car-dot{width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,.25);transition:all .3s}
+.car-dot.on{background:var(--ac);width:28px;border-radius:5px;box-shadow:0 0 12px var(--ac)}
 
 /* estado vazio */
 #vt-empty{display:none;flex:1;align-items:center;justify-content:center;flex-direction:column;gap:12px;color:var(--t2)}
@@ -77,17 +92,40 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 #call-progress{height:4px;background:rgba(255,255,255,.1);border-radius:99px;margin-top:28px;overflow:hidden}
 #call-progress-bar{height:100%;background:linear-gradient(90deg,var(--ac),var(--ac2));border-radius:99px;width:100%;transition:width linear}
 
-/* fila de espera (próximos) */
+/* fila de espera */
 #call-queue{position:fixed;bottom:24px;right:24px;z-index:99;display:flex;flex-direction:column;gap:8px;align-items:flex-end}
 .call-q-item{background:rgba(108,99,255,.2);border:1px solid var(--ac);border-radius:12px;padding:8px 16px;font-size:14px;font-weight:800;color:var(--ac);backdrop-filter:blur(12px);animation:fadeInUp .3s both}
 
+/* ── PLAYER BAR (Spotify / Audio) ── */
+#music-bar{position:fixed;bottom:0;left:0;right:0;z-index:50;height:72px;background:linear-gradient(180deg,rgba(18,18,30,.95),rgba(10,10,18,.98));border-top:1px solid rgba(108,99,255,.15);backdrop-filter:blur(16px);display:none;align-items:center;padding:0 28px;gap:16px}
+#music-bar.on{display:flex}
+#mb-art{width:48px;height:48px;border-radius:8px;background:var(--sf2);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:24px;overflow:hidden}
+#mb-art img{width:100%;height:100%;object-fit:cover}
+#mb-info{flex:1;min-width:0}
+#mb-title{font-size:14px;font-weight:700;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#mb-artist{font-size:11px;color:var(--t2);margin-top:2px}
+#mb-controls{display:flex;align-items:center;gap:14px}
+.mb-btn{width:36px;height:36px;border-radius:50%;border:none;background:rgba(255,255,255,.08);color:var(--tx);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s}
+.mb-btn:hover{background:rgba(255,255,255,.16)}
+.mb-btn.play{width:42px;height:42px;background:var(--ac)}
+#mb-progress{flex:2;display:flex;align-items:center;gap:10px;max-width:400px}
+#mb-time-cur,#mb-time-dur{font-size:11px;color:var(--t3);font-family:monospace;min-width:36px;text-align:center}
+#mb-bar{flex:1;height:4px;background:rgba(255,255,255,.1);border-radius:99px;overflow:hidden;cursor:pointer}
+#mb-bar-fill{height:100%;background:var(--ac);border-radius:99px;width:0;transition:width .5s linear}
+#mb-vol{display:flex;align-items:center;gap:6px}
+#mb-vol-icon{color:var(--t2);font-size:16px}
+#mb-vol-slider{width:80px;accent-color:var(--ac)}
+/* ducking indicator */
+#mb-duck{display:none;padding:4px 10px;border-radius:99px;background:rgba(108,99,255,.2);border:1px solid var(--ac);font-size:10px;font-weight:800;color:var(--ac);text-transform:uppercase;letter-spacing:1px;animation:duckPulse 1s infinite}
+@keyframes duckPulse{0%,100%{opacity:1}50%{opacity:.5}}
+
+/* Spotify embed */
+#spotify-embed-wrap{position:fixed;bottom:80px;right:20px;z-index:49;width:320px;height:152px;border-radius:12px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.6);display:none}
+
 /* rodapé */
 #vt-footer{position:absolute;bottom:0;left:0;right:0;height:40px;background:linear-gradient(0deg,rgba(10,10,18,.98) 0%,transparent 100%);z-index:2;display:flex;align-items:flex-end;justify-content:center;padding-bottom:6px}
+#vt-footer.has-music{bottom:72px}
 #vt-footer-txt{font-size:11px;color:var(--t3);letter-spacing:1px}
-
-/* scrollbar auto-scroll indicator */
-#scroll-bar{position:absolute;right:8px;top:50%;transform:translateY(-50%);height:60px;width:3px;background:rgba(255,255,255,.1);border-radius:99px;z-index:3}
-#scroll-thumb{width:100%;height:30%;background:var(--ac);border-radius:99px;transition:top .3s}
 
 /* botão ativar som */
 #btn-ativar-som{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);z-index:300;background:var(--ac);color:#fff;border:none;border-radius:99px;padding:16px 32px;font-size:16px;font-weight:800;cursor:pointer;box-shadow:0 4px 30px rgba(108,99,255,.6);animation:btnPulse 2s ease-in-out infinite;letter-spacing:.5px;font-family:inherit}
@@ -108,7 +146,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
     <div id="vt-logo-wrap">
       <img id="vt-logo" src="" alt="logo">
       <div>
-        <div id="vt-brand">🍔 PedePronto</div>
+        <div id="vt-brand">PedePronto</div>
         <div id="vt-nome">Carregando...</div>
       </div>
     </div>
@@ -121,6 +159,9 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
   <div id="vt-content">
     <div id="vt-cats"></div>
     <div id="vt-grid"></div>
+    <!-- CARROSSEL TOTEM -->
+    <div id="vt-carousel"></div>
+    <div id="car-dots"></div>
     <div id="vt-empty">
       <div style="font-size:48px">🍽️</div>
       <div style="font-size:18px;font-weight:700">Cardápio em breve</div>
@@ -149,13 +190,43 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 <!-- FILA DE PRÓXIMOS -->
 <div id="call-queue"></div>
 
+<!-- PLAYER BAR -->
+<div id="music-bar">
+  <div id="mb-art">🎵</div>
+  <div id="mb-info">
+    <div id="mb-title">Nenhuma música</div>
+    <div id="mb-artist">—</div>
+  </div>
+  <div id="mb-controls">
+    <button class="mb-btn play" id="mb-play" onclick="_toggleMusic()">▶</button>
+  </div>
+  <div id="mb-progress">
+    <span id="mb-time-cur">0:00</span>
+    <div id="mb-bar" onclick="_seekMusic(event)"><div id="mb-bar-fill"></div></div>
+    <span id="mb-time-dur">0:00</span>
+  </div>
+  <div id="mb-vol">
+    <span id="mb-vol-icon">🔊</span>
+    <input type="range" id="mb-vol-slider" min="0" max="1" step="0.05" value="0.6" oninput="_setMusicVol(this.value)">
+  </div>
+  <div id="mb-duck">ANUNCIANDO</div>
+</div>
+
+<!-- SPOTIFY EMBED -->
+<div id="spotify-embed-wrap"></div>
+
 <!-- BOTÃO ATIVAR SOM -->
 <button id="btn-ativar-som" onclick="_ativarAudio()" title="Clique para ativar som e voz">
   🔊 Toque para ativar o som
 </button>
 
+<!-- AUDIO ELEMENT -->
+<audio id="bg-music" loop preload="auto"></audio>
+
 <script>
-// ── DADOS ──
+// ═══════════════════════════════════════════
+//  DADOS
+// ═══════════════════════════════════════════
 const PREFIX='pedepronto_';
 function load(k){try{return JSON.parse(localStorage.getItem(PREFIX+k))||null}catch(e){return null}}
 
@@ -167,21 +238,24 @@ let _callQueue=[];
 let _callTimer=null;
 let _autoScrollInterval=null;
 
-// ── INIT ──
+// ═══════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════
 function init(){
   _cfg=load('cfg')||{};
   _produtos=load('produtos')||[];
   _categorias=load('categorias')||[];
   renderHeader();
-  renderCats();
-  renderGrid();
+  _initDisplay(); // escolhe modo: grid ou carrossel
   startClock();
-  startAutoScroll();
   listenCalls();
   _carregarVozes();
+  _initMusic();
 }
 
-// ── HEADER ──
+// ═══════════════════════════════════════════
+//  HEADER
+// ═══════════════════════════════════════════
 function renderHeader(){
   const logo=document.getElementById('vt-logo');
   if(_cfg.logo){logo.src=_cfg.logo;logo.style.display='block';}
@@ -190,7 +264,9 @@ function renderHeader(){
   document.getElementById('vt-footer-txt').textContent='PedePronto • '+(_cfg.nome||'')+((_cfg.end)?' — '+_cfg.end:'');
 }
 
-// ── RELÓGIO ──
+// ═══════════════════════════════════════════
+//  RELÓGIO
+// ═══════════════════════════════════════════
 function startClock(){
   function tick(){
     const now=new Date();
@@ -204,7 +280,30 @@ function startClock(){
   tick();setInterval(tick,30000);
 }
 
-// ── CATEGORIAS ──
+// ═══════════════════════════════════════════
+//  DISPLAY MODE: Grid ou Carrossel
+// ═══════════════════════════════════════════
+function _initDisplay(){
+  const modo=_cfg.vitrine_modo||'grid';
+  if(modo==='carousel'){
+    document.getElementById('vt-cats').style.display='none';
+    document.getElementById('vt-grid').style.display='none';
+    document.getElementById('vt-carousel').style.display='block';
+    document.getElementById('car-dots').style.display='flex';
+    _buildCarousel();
+    _startCarousel();
+  }else{
+    document.getElementById('vt-carousel').style.display='none';
+    document.getElementById('car-dots').style.display='none';
+    renderCats();
+    renderGrid();
+    startAutoScroll();
+  }
+}
+
+// ═══════════════════════════════════════════
+//  MODO GRID (legacy)
+// ═══════════════════════════════════════════
 function renderCats(){
   const catsUsadas=[...new Set(_produtos.filter(p=>p.ativo!==false).map(p=>p.categoria||'Geral'))];
   const el=document.getElementById('vt-cats');
@@ -213,13 +312,8 @@ function renderCats(){
   const chips=[{id:'todos',nome:'Tudo'},..._categorias.filter(c=>catsUsadas.includes(c.nome)).map(c=>({id:c.nome,nome:c.nome})),...catsUsadas.filter(n=>!_categorias.find(c=>c.nome===n)).map(n=>({id:n,nome:n}))];
   el.innerHTML=chips.map(c=>`<button class="vt-cat-chip${_catAtiva===c.id?' on':''}" onclick="setCategoria('${c.id.replace(/'/g,'\\\'')}')">${c.nome}</button>`).join('');
 }
-function setCategoria(id){
-  _catAtiva=id;
-  renderCats();
-  renderGrid();
-}
+function setCategoria(id){_catAtiva=id;renderCats();renderGrid();}
 
-// ── GRID ──
 function renderGrid(){
   const prods=_produtos.filter(p=>p.ativo!==false&&(_catAtiva==='todos'||p.categoria===_catAtiva));
   const grid=document.getElementById('vt-grid');
@@ -229,9 +323,7 @@ function renderGrid(){
   function fmtR(v){return'R$ '+Number(v||0).toFixed(2).replace('.',',');}
   grid.innerHTML=prods.map((p,i)=>`
     <div class="vt-prod" style="animation-delay:${i*0.04}s">
-      ${p.foto
-        ?`<img class="vt-prod-foto" src="${p.foto}" alt="${p.nome}" loading="lazy">`
-        :`<div class="vt-prod-foto-placeholder">${p.icon||'🍽️'}</div>`}
+      ${p.foto?`<img class="vt-prod-foto" src="${p.foto}" alt="${p.nome}" loading="lazy">`:`<div class="vt-prod-foto-placeholder">${p.icon||'🍽️'}</div>`}
       <div class="vt-prod-info">
         <div class="vt-prod-nome">${p.nome}</div>
         ${p.desc?`<div class="vt-prod-desc">${p.desc}</div>`:''}
@@ -240,39 +332,119 @@ function renderGrid(){
     </div>`).join('');
 }
 
-// ── AUTO-SCROLL ──
 function startAutoScroll(){
   const grid=document.getElementById('vt-grid');
   let dir=1;let paused=false;
   _autoScrollInterval=setInterval(()=>{
     if(paused)return;
     grid.scrollTop+=dir*2;
-    if(grid.scrollTop+grid.clientHeight>=grid.scrollHeight-10){
-      paused=true;setTimeout(()=>{dir=-1;paused=false;},3000);
-    }
-    if(grid.scrollTop<=0&&dir===-1){
-      paused=true;setTimeout(()=>{dir=1;paused=false;},2000);
-    }
+    if(grid.scrollTop+grid.clientHeight>=grid.scrollHeight-10){paused=true;setTimeout(()=>{dir=-1;paused=false;},3000);}
+    if(grid.scrollTop<=0&&dir===-1){paused=true;setTimeout(()=>{dir=1;paused=false;},2000);}
   },60);
 }
 
-// ── SISTEMA DE CHAMADAS ──
-function listenCalls(){
-  // BroadcastChannel (mesmo navegador, outra aba)
-  try{
-    const bc=new BroadcastChannel('pp_display');
-    bc.onmessage=e=>{if(e.data&&e.data.type==='call')enqueueCall(e.data);};
-  }catch(err){}
-  // Storage event (outro contexto no mesmo domínio)
-  window.addEventListener('storage',e=>{
-    if(e.key==='pp_display_call'&&e.newValue){
-      try{const d=JSON.parse(e.newValue);enqueueCall(d);}catch(ex){}
+// ═══════════════════════════════════════════
+//  MODO CARROSSEL — TOTEM
+// ═══════════════════════════════════════════
+let _carSlides=[];
+let _carIdx=0;
+let _carTimer=null;
+let _carPaused=false;
+
+function fmtR(v){return'R$ '+Number(v||0).toFixed(2).replace('.',',');}
+
+function _buildCarousel(){
+  const prods=_produtos.filter(p=>p.ativo!==false);
+  const videos=(_cfg.vitrine_videos||[]);
+  _carSlides=[];
+
+  // Intercala produtos e videos
+  const vidInterval=Math.max(3,Math.floor(prods.length/(videos.length||1)));
+  let vidIdx=0;
+  prods.forEach((p,i)=>{
+    _carSlides.push({type:'product',data:p});
+    // Insere video a cada N produtos
+    if(videos.length>0&&(i+1)%vidInterval===0&&vidIdx<videos.length){
+      _carSlides.push({type:'video',data:videos[vidIdx]});
+      vidIdx++;
     }
+  });
+  // Adiciona videos restantes ao final
+  for(;vidIdx<videos.length;vidIdx++){
+    _carSlides.push({type:'video',data:videos[vidIdx]});
+  }
+
+  if(!_carSlides.length){
+    document.getElementById('vt-empty').style.display='flex';
+    return;
+  }
+
+  const container=document.getElementById('vt-carousel');
+  const dots=document.getElementById('car-dots');
+
+  container.innerHTML=_carSlides.map((s,i)=>{
+    if(s.type==='video'){
+      return `<div class="car-slide${i===0?' on':''}">
+        <video class="car-slide-video" src="${s.data.url}" autoplay muted loop playsinline></video>
+        <div class="car-slide-info">
+          <div class="car-slide-cat">PROMOÇÃO</div>
+          <div class="car-slide-nome">${_esc(s.data.titulo||'Video Promocional')}</div>
+        </div>
+      </div>`;
+    }
+    const p=s.data;
+    return `<div class="car-slide${i===0?' on':''}">
+      ${p.foto?`<img class="car-slide-img" src="${p.foto}" alt="${_esc(p.nome)}">`:`<div class="car-slide-placeholder">${p.icon||'🍽️'}</div>`}
+      <div class="car-slide-info">
+        <div class="car-slide-cat">${_esc(p.categoria||'Destaque')}</div>
+        <div class="car-slide-nome">${_esc(p.nome)}</div>
+        ${p.desc?`<div class="car-slide-desc">${_esc(p.desc)}</div>`:''}
+        <div class="car-slide-preco">${fmtR(p.preco)}</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  dots.innerHTML=_carSlides.map((_,i)=>`<div class="car-dot${i===0?' on':''}" onclick="_carGoTo(${i})"></div>`).join('');
+}
+
+function _esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+function _startCarousel(){
+  if(!_carSlides.length)return;
+  const dur=(_cfg.vitrine_duracao||6)*1000;
+  _carTimer=setInterval(()=>{
+    if(_carPaused)return;
+    _carGoTo((_carIdx+1)%_carSlides.length);
+  },dur);
+}
+
+function _carGoTo(idx){
+  _carIdx=idx;
+  const slides=document.querySelectorAll('.car-slide');
+  const dots=document.querySelectorAll('.car-dot');
+  slides.forEach((s,i)=>s.classList.toggle('on',i===idx));
+  dots.forEach((d,i)=>d.classList.toggle('on',i===idx));
+  // Pause/play videos accordingly
+  slides.forEach((s,i)=>{
+    const vid=s.querySelector('video');
+    if(vid){if(i===idx){vid.currentTime=0;vid.play();}else vid.pause();}
+  });
+}
+
+function _carouselPause(){_carPaused=true;}
+function _carouselResume(){_carPaused=false;}
+
+// ═══════════════════════════════════════════
+//  SISTEMA DE CHAMADAS
+// ═══════════════════════════════════════════
+function listenCalls(){
+  try{const bc=new BroadcastChannel('pp_display');bc.onmessage=e=>{if(e.data&&e.data.type==='call')enqueueCall(e.data);};}catch(err){}
+  window.addEventListener('storage',e=>{
+    if(e.key==='pp_display_call'&&e.newValue){try{enqueueCall(JSON.parse(e.newValue));}catch(ex){}}
   });
 }
 
 function enqueueCall(data){
-  // evita duplicata pelo ts
   if(_callQueue.find(c=>c.ts===data.ts))return;
   _callQueue.push(data);
   renderQueue();
@@ -282,47 +454,39 @@ function enqueueCall(data){
 function renderQueue(){
   const el=document.getElementById('call-queue');
   const espera=_callQueue.slice(1);
-  if(!espera.length){el.innerHTML='';return;}
-  el.innerHTML=espera.map(c=>`<div class="call-q-item">🔔 #${c.num}${c.nome?' — '+c.nome:''}</div>`).join('');
+  el.innerHTML=espera.length?espera.map(c=>`<div class="call-q-item">🔔 #${c.num}${c.nome?' — '+c.nome:''}</div>`).join(''):'';
 }
 
-// ── VOZ ──
+// ═══════════════════════════════════════════
+//  VOZ + AUDIO DUCKING
+// ═══════════════════════════════════════════
 let _audioUnlocked=false;
 let _vozes=[];
+let _musicDucked=false;
 
 function _carregarVozes(){
   if(!window.speechSynthesis)return;
   const fn=()=>{_vozes=speechSynthesis.getVoices();};
-  fn();
-  speechSynthesis.onvoiceschanged=fn;
-  // retry pois alguns browsers demoram
+  fn();speechSynthesis.onvoiceschanged=fn;
   setTimeout(fn,500);setTimeout(fn,1500);setTimeout(fn,3000);
 }
 
 function _ativarAudio(){
   _audioUnlocked=true;
-  // utterance silenciosa para desbloquear o engine
-  try{
-    const u=new SpeechSynthesisUtterance(' ');
-    u.volume=0;u.lang='pt-BR';
-    speechSynthesis.speak(u);
-  }catch(e){}
-  // AudioContext também precisa de gesto
+  try{const u=new SpeechSynthesisUtterance(' ');u.volume=0;u.lang='pt-BR';speechSynthesis.speak(u);}catch(e){}
   try{new(window.AudioContext||window.webkitAudioContext)();}catch(e){}
-  const btn=document.getElementById('btn-ativar-som');
-  if(btn)btn.classList.add('oculto');
+  document.getElementById('btn-ativar-som').classList.add('oculto');
+  // Start music if configured
+  const audio=document.getElementById('bg-music');
+  if(audio&&audio.src&&audio.paused)audio.play().catch(()=>{});
 }
 
 function _selecionarVoz(lang){
   if(!_vozes.length)_vozes=speechSynthesis.getVoices();
-  // pt-BR exato
   const exato=_vozes.filter(v=>v.lang===lang);
   if(exato.length)return exato[0];
-  // pt genérico
   const base=_vozes.filter(v=>v.lang.startsWith('pt'));
-  if(base.length)return base[0];
-  // qualquer voz disponível
-  return _vozes[0]||null;
+  return base[0]||_vozes[0]||null;
 }
 
 function _criarUtterance(txt){
@@ -333,8 +497,8 @@ function _criarUtterance(txt){
   return u;
 }
 
-function falarChamada(data){
-  if(!window.speechSynthesis||!_audioUnlocked)return;
+function falarChamada(data,onDone){
+  if(!window.speechSynthesis||!_audioUnlocked){if(onDone)onDone();return;}
   const estab=(_cfg.nome||'PedePronto').replace(/[^\w\sÀ-ÿ]/g,'').trim();
   const num='número '+String(data.num).replace('#','');
   const nome=data.nome||'';
@@ -342,71 +506,228 @@ function falarChamada(data){
   const txt=nome
     ?`Atenção! ${nome}, seu pedido ${num} está pronto no ${estab}. ${localTxt}`
     :`Atenção! Pedido ${num} está pronto no ${estab}. ${localTxt}`;
-  // cancel + pequeno delay antes de falar (evita race condition)
   speechSynthesis.cancel();
   setTimeout(()=>{
-    speechSynthesis.speak(_criarUtterance(txt));
-    // repete após 6s
-    setTimeout(()=>{
-      speechSynthesis.cancel();
-      setTimeout(()=>speechSynthesis.speak(_criarUtterance(txt)),200);
-    },6000);
+    const utt=_criarUtterance(txt);
+    utt.onend=()=>{
+      // Repete uma vez
+      setTimeout(()=>{
+        speechSynthesis.cancel();
+        const utt2=_criarUtterance(txt);
+        utt2.onend=()=>{if(onDone)onDone();};
+        setTimeout(()=>speechSynthesis.speak(utt2),200);
+      },800);
+    };
+    speechSynthesis.speak(utt);
   },250);
 }
 
+// ── Audio Ducking ──
+function _duckMusic(cb){
+  const audio=document.getElementById('bg-music');
+  const duck=document.getElementById('mb-duck');
+  if(duck)duck.style.display='inline-block';
+  _musicDucked=true;
+  if(audio&&!audio.paused){
+    const mus=_cfg.vitrine_musica||{};
+    const target=mus.duck_volume||0.05;
+    const dur=mus.fade_ms||800;
+    _fadeAudio(audio,audio.volume,target,dur,cb);
+  }else{
+    // Also mute spotify embed
+    const iframe=document.getElementById('spotify-embed-wrap');
+    if(iframe)iframe.style.opacity='0.3';
+    if(cb)setTimeout(cb,200);
+  }
+}
+
+function _unduckMusic(){
+  const audio=document.getElementById('bg-music');
+  const duck=document.getElementById('mb-duck');
+  if(duck)duck.style.display='none';
+  _musicDucked=false;
+  if(audio&&!audio.paused){
+    const mus=_cfg.vitrine_musica||{};
+    const target=mus.volume||0.6;
+    _fadeAudio(audio,audio.volume,target,1200);
+  }
+  const iframe=document.getElementById('spotify-embed-wrap');
+  if(iframe)iframe.style.opacity='1';
+}
+
+function _fadeAudio(audio,from,to,dur,cb){
+  const steps=20;
+  const stepDur=dur/steps;
+  const delta=(to-from)/steps;
+  let i=0;
+  const iv=setInterval(()=>{
+    i++;
+    audio.volume=Math.max(0,Math.min(1,from+delta*i));
+    if(i>=steps){clearInterval(iv);if(cb)cb();}
+  },stepDur);
+}
+
+// ═══════════════════════════════════════════
+//  SHOW CALL — com ducking + pause carrossel
+// ═══════════════════════════════════════════
 function showNextCall(){
   if(!_callQueue.length){renderQueue();return;}
   const data=_callQueue[0];
   renderQueue();
 
-  const overlay=document.getElementById('call-overlay');
-  document.getElementById('call-num').textContent='#'+String(data.num).padStart(3,'0');
-  document.getElementById('call-nome').textContent=data.nome||'';
-  const localMap={mesa:'🪑 '+( data.mesa||'Mesa'),balcao:'🧾 Retire no Balcão',delivery:'🛵 Delivery'};
-  document.getElementById('call-local').textContent=localMap[data.tipo]||'🧾 Retire no Balcão';
-  document.getElementById('call-icon').textContent='🔔';
+  // 1. Pause carrossel
+  _carouselPause();
 
-  const bar=document.getElementById('call-progress-bar');
-  bar.style.transition='none';bar.style.width='100%';
-  overlay.classList.add('on');
+  // 2. Duck music
+  _duckMusic(()=>{
+    // 3. Show overlay
+    const overlay=document.getElementById('call-overlay');
+    document.getElementById('call-num').textContent='#'+String(data.num).padStart(3,'0');
+    document.getElementById('call-nome').textContent=data.nome||'';
+    const localMap={mesa:'🪑 '+(data.mesa||'Mesa'),balcao:'🧾 Retire no Balcão',delivery:'🛵 Delivery'};
+    document.getElementById('call-local').textContent=localMap[data.tipo]||'🧾 Retire no Balcão';
+    document.getElementById('call-icon').textContent='🔔';
 
-  // som via AudioContext (3 bipes)
-  try{
-    const ctx=new(window.AudioContext||window.webkitAudioContext)();
-    [0,300,600].forEach(d=>{
-      setTimeout(()=>{
-        const o=ctx.createOscillator();const g=ctx.createGain();
-        o.connect(g);g.connect(ctx.destination);
-        o.frequency.value=880;g.gain.setValueAtTime(0,ctx.currentTime);
-        g.gain.linearRampToValueAtTime(.3,ctx.currentTime+.05);
-        g.gain.linearRampToValueAtTime(0,ctx.currentTime+.3);
-        o.start();o.stop(ctx.currentTime+.35);
-      },d);
-    });
-  }catch(e){}
+    const bar=document.getElementById('call-progress-bar');
+    bar.style.transition='none';bar.style.width='100%';
+    overlay.classList.add('on');
 
-  // voz após os bipes
-  setTimeout(()=>falarChamada(data),1100);
+    // Bipes
+    try{
+      const ctx=new(window.AudioContext||window.webkitAudioContext)();
+      [0,300,600].forEach(d=>{
+        setTimeout(()=>{
+          const o=ctx.createOscillator();const g=ctx.createGain();
+          o.connect(g);g.connect(ctx.destination);
+          o.frequency.value=880;g.gain.setValueAtTime(0,ctx.currentTime);
+          g.gain.linearRampToValueAtTime(.3,ctx.currentTime+.05);
+          g.gain.linearRampToValueAtTime(0,ctx.currentTime+.3);
+          o.start();o.stop(ctx.currentTime+.35);
+        },d);
+      });
+    }catch(e){}
 
-  const dur=15000;
-  setTimeout(()=>{bar.style.transition=`width ${dur}ms linear`;bar.style.width='0%';},50);
+    // 4. TTS após bipes
+    setTimeout(()=>falarChamada(data,()=>{
+      // TTS done — unduck will happen when overlay closes
+    }),1100);
 
-  _callTimer=setTimeout(()=>{
-    overlay.classList.remove('on');
-    _callQueue.shift();
-    _callTimer=null;
-    setTimeout(()=>{if(_callQueue.length)showNextCall();else renderQueue();},400);
-  },dur);
+    const dur=15000;
+    setTimeout(()=>{bar.style.transition=`width ${dur}ms linear`;bar.style.width='0%';},50);
+
+    _callTimer=setTimeout(()=>{
+      overlay.classList.remove('on');
+      _callQueue.shift();
+      _callTimer=null;
+      // 5. Unduck + resume
+      _unduckMusic();
+      _carouselResume();
+      setTimeout(()=>{if(_callQueue.length)showNextCall();else renderQueue();},400);
+    },dur);
+  });
 }
 
-// ── ATUALIZA DADOS PERIODICAMENTE ──
+// ═══════════════════════════════════════════
+//  MUSIC PLAYER
+// ═══════════════════════════════════════════
+let _musicPlaying=false;
+
+function _initMusic(){
+  const mus=_cfg.vitrine_musica||{};
+  if(!mus.tipo||mus.tipo==='off')return;
+
+  const bar=document.getElementById('music-bar');
+  const footer=document.getElementById('vt-footer');
+
+  if(mus.tipo==='url'&&mus.url){
+    const audio=document.getElementById('bg-music');
+    audio.src=mus.url;
+    audio.volume=mus.volume||0.6;
+    bar.classList.add('on');
+    footer.classList.add('has-music');
+    document.getElementById('mb-title').textContent='Música Ambiente';
+    document.getElementById('mb-artist').textContent=_cfg.nome||'PedePronto';
+
+    // Progress update
+    audio.addEventListener('timeupdate',()=>{
+      if(!audio.duration)return;
+      const pct=(audio.currentTime/audio.duration)*100;
+      document.getElementById('mb-bar-fill').style.width=pct+'%';
+      document.getElementById('mb-time-cur').textContent=_fmtTime(audio.currentTime);
+      document.getElementById('mb-time-dur').textContent=_fmtTime(audio.duration);
+    });
+
+    // Auto-play when unlocked
+    audio.addEventListener('canplay',()=>{
+      if(_audioUnlocked&&audio.paused)audio.play().catch(()=>{});
+    },{once:true});
+  }
+
+  if(mus.tipo==='spotify'&&mus.spotify_url){
+    // Extract playlist ID from URL
+    const match=mus.spotify_url.match(/playlist\/([a-zA-Z0-9]+)/);
+    if(match){
+      const playlistId=match[1];
+      const wrap=document.getElementById('spotify-embed-wrap');
+      wrap.style.display='block';
+      wrap.innerHTML=`<iframe style="border-radius:12px" src="https://open.spotify.com/embed/playlist/${playlistId}?utm_source=generator&theme=0" width="100%" height="152" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>`;
+      // Show player bar with Spotify info
+      bar.classList.add('on');
+      footer.classList.add('has-music');
+      document.getElementById('mb-title').textContent='Spotify Playlist';
+      document.getElementById('mb-artist').textContent='Reproduzindo via Spotify';
+      document.getElementById('mb-art').innerHTML='🎧';
+    }
+  }
+}
+
+function _toggleMusic(){
+  const audio=document.getElementById('bg-music');
+  if(!audio||!audio.src)return;
+  if(audio.paused){audio.play();_musicPlaying=true;document.getElementById('mb-play').textContent='⏸';}
+  else{audio.pause();_musicPlaying=false;document.getElementById('mb-play').textContent='▶';}
+}
+
+function _setMusicVol(v){
+  const audio=document.getElementById('bg-music');
+  if(audio)audio.volume=parseFloat(v);
+}
+
+function _seekMusic(e){
+  const audio=document.getElementById('bg-music');
+  if(!audio||!audio.duration)return;
+  const bar=document.getElementById('mb-bar');
+  const rect=bar.getBoundingClientRect();
+  const pct=(e.clientX-rect.left)/rect.width;
+  audio.currentTime=pct*audio.duration;
+}
+
+function _fmtTime(s){
+  const m=Math.floor(s/60);
+  const sec=Math.floor(s%60);
+  return m+':'+String(sec).padStart(2,'0');
+}
+
+// ═══════════════════════════════════════════
+//  ATUALIZA DADOS PERIODICAMENTE
+// ═══════════════════════════════════════════
 setInterval(()=>{
   _produtos=load('produtos')||[];
   _categorias=load('categorias')||[];
+  const oldModo=_cfg.vitrine_modo;
   _cfg=load('cfg')||{};
   renderHeader();
-  renderCats();
-  renderGrid();
+  if((_cfg.vitrine_modo||'grid')!==oldModo){
+    // Modo mudou — reinicializa
+    if(_carTimer){clearInterval(_carTimer);_carTimer=null;}
+    if(_autoScrollInterval){clearInterval(_autoScrollInterval);_autoScrollInterval=null;}
+    _initDisplay();
+  }else if(_cfg.vitrine_modo==='carousel'){
+    _buildCarousel();
+  }else{
+    renderCats();
+    renderGrid();
+  }
 },30000);
 
 init();

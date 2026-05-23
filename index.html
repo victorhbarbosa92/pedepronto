@@ -980,6 +980,14 @@ const _PP_PUBKEY_JWK={"crv":"P-256","ext":true,"key_ops":["verify"],"kty":"EC","
   </div>
 </div>
 
+<!-- ══════════ TRIAL BAR ══════════ -->
+<div id="trial-bar" style="display:none;height:28px;background:var(--s2);border-bottom:1px solid var(--br);padding:0 14px;align-items:center;gap:8px;font-size:11px;font-weight:600;cursor:pointer" onclick="_cfgSection='plano';nav('config')">
+  <span id="trial-icon" style="font-size:13px">🎁</span>
+  <span id="trial-label" style="flex:1;color:var(--t2)">Periodo de teste</span>
+  <div style="flex:2;max-width:200px;height:6px;background:var(--s3);border-radius:99px;overflow:hidden"><div id="trial-fill" style="height:100%;border-radius:99px;transition:width .6s,background .6s;width:0"></div></div>
+  <span id="trial-count" style="font-family:var(--mono);color:var(--t2)">0/50</span>
+</div>
+
 <!-- ══════════ SYNC BANNER ══════════ -->
 <div id="sync-banner" style="display:none;background:var(--rdbg);border-bottom:1px solid var(--rdbr);padding:8px 14px;font-size:12px;color:var(--rd);align-items:center;gap:8px;cursor:pointer" onclick="showFirestoreHelp('PP-001')">
   <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 20h20zM12 9v4M12 17h.01"/></svg></span>
@@ -1019,6 +1027,7 @@ const _PP_PUBKEY_JWK={"crv":"P-256","ext":true,"key_ops":["verify"],"kty":"EC","
     <button class="sb-item" id="sbm-relatorio" title="Relatórios" onclick="nav('relatorio')"><span class="sb-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M22 7l-9 9-4-4-7 7M16 7h6v6"/></svg></span><span class="sb-lbl">Relatórios</span></button>
     <div class="sb-sec">Sistema</div>
     <button class="sb-item" id="sbm-funcionarios" title="Funcionários" onclick="nav('funcionarios')"><span class="sb-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="4"/><path d="M2 21c0-4 3-6 7-6s7 2 7 6"/></svg></span><span class="sb-lbl">Funcionários</span></button>
+    <button class="sb-item" id="sbm-agente" title="Agente IA" onclick="nav('agente')" style="display:none"><span class="sb-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a4 4 0 014 4v2H8V6a4 4 0 014-4zM5 12h14v7a3 3 0 01-3 3H8a3 3 0 01-3-3v-7zM8 8v4M16 8v4M9 16h6"/></svg></span><span class="sb-lbl">Agente IA</span></button>
     <button class="sb-item" id="sbm-config" title="Configurações" onclick="nav('config')"><span class="sb-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 01-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 01-4 0v-.1a1.7 1.7 0 00-1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 01-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 010-4h.1a1.7 1.7 0 001.5-1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 012.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 014 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 012.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 010 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg></span><span class="sb-lbl">Configurações</span></button>
     <button class="sb-item" id="sbm-admin" title="Super Admin" onclick="nav('admin')" style="display:none;color:#f59e0b"><span class="sb-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 7.2H22l-6 4.8 2.4 7.2L12 16.4 5.6 21.2 8 14 2 9.2h7.6z"/></svg></span><span class="sb-lbl">Super Admin</span></button>
     <div class="sb-foot" id="sb-foot">
@@ -1061,6 +1070,7 @@ const _PP_PUBKEY_JWK={"crv":"P-256","ext":true,"key_ops":["verify"],"kty":"EC","
       <div class="pg" id="pg-funcionarios"></div>
       <div class="pg" id="pg-config"></div>
       <div class="pg" id="pg-admin"></div>
+      <div class="pg" id="pg-agente"></div>
       <div class="pg" id="pg-pedido"></div>
       <div class="pg" id="pg-fechar"></div>
       <div class="pg" id="pg-pagamento"></div>
@@ -1620,6 +1630,9 @@ const PP_ICONS={
   atm:'M2 6h20v13H2zM12 12a3 3 0 100-6 3 3 0 000 6zM6 16h12',
   book:'M4 19.5A2.5 2.5 0 016.5 17H20M4 19.5A2.5 2.5 0 016.5 17H20V3H6.5A2.5 2.5 0 004 5.5v14z',
   info:'M12 22a10 10 0 100-20 10 10 0 000 20zM12 16v-4M12 8h.01',
+  bot:'M12 2a4 4 0 014 4v2H8V6a4 4 0 014-4zM5 12h14v7a3 3 0 01-3 3H8a3 3 0 01-3-3v-7zM8 8v4M16 8v4M9 16h6',
+  play:'M5 3l14 9-14 9z',
+  music:'M9 18V5l12-2v13M9 18a3 3 0 11-6 0 3 3 0 016 0zM21 16a3 3 0 11-6 0 3 3 0 016 0z',
 };
 function ppIcon(name,size=20,stroke=1.6,cls=''){
   const d=PP_ICONS[name]||PP_ICONS.home;
@@ -1720,7 +1733,9 @@ const _DEV_ID=(()=>{let id=sessionStorage.getItem('pp_dev');if(!id){id=Math.rand
 let _syncStatus='idle'; // 'idle'|'ok'|'error'|'syncing'
 let _lastSyncAt=null;
 let _cloudBooted=false; // flag: true após ST ser populado do Firestore (ou fallback offline)
-let _localDirty=false; // flag: dados locais pendentes de push — impede que onSnapshot sobrescreva
+let _localDirty=false;
+// ── Trial / Monetização ──
+let _trialData={count:0,limit:50,plan:null,plan_type:null,plan_expires:null}; // flag: dados locais pendentes de push — impede que onSnapshot sobrescreva
 let _fsUnsubscribe=null; // referência para desinscrever listener anterior
 
 // ── Multi-device: helpers ──
@@ -2154,7 +2169,7 @@ function confirm2(ico,title,msg,okLbl,okCls,cb,cancelCb){
 // ═══════════════════════════════════════════
 //  NAVIGATION
 // ═══════════════════════════════════════════
-const PAGE_TTL={dash:'Início',dados:'Dados',funcionarios:'Funcionários',mesas:'Mesas',balcao:'Balcão',delivery:'Delivery',producao:'Produção',cardapio:'Cardápio',clientes:'Clientes',caixa:'Caixa',relatorio:'Relatórios',config:'Configurações',admin:'Super Admin',pedido:'Novo Pedido',fechar:'Fechar Conta',pagamento:'Pagamento'};
+const PAGE_TTL={dash:'Início',dados:'Dados',funcionarios:'Funcionários',mesas:'Mesas',balcao:'Balcão',delivery:'Delivery',producao:'Produção',cardapio:'Cardápio',clientes:'Clientes',caixa:'Caixa',relatorio:'Relatórios',config:'Configurações',admin:'Super Admin',agente:'Agente IA',pedido:'Novo Pedido',fechar:'Fechar Conta',pagamento:'Pagamento'};
 
 function applyResponsiveNav(){
   const mobile=isMobile();
@@ -2239,6 +2254,9 @@ function _applyPermissionUI(){
   // Super Admin button — visível APENAS para o super admin
   const sbAdmin=document.getElementById('sbm-admin');
   if(sbAdmin) sbAdmin.style.display=isSuperAdmin()?'':'none';
+  // Agente IA — visível para dono/gerente se configurado
+  const sbAgente=document.getElementById('sbm-agente');
+  if(sbAgente) sbAgente.style.display=(hasPermission('config_editar')||ST.cfg.ai_agent?.ativo)?'':'none';
 }
 
 function nav(pg,extra){
@@ -2256,7 +2274,7 @@ function nav(pg,extra){
   const sbi=document.getElementById('sbm-'+pg);if(sbi)sbi.classList.add('on');
   document.querySelectorAll('.bn-item').forEach(b=>b.classList.remove('on'));
   const bni=document.getElementById('bnm-'+pg);if(bni)bni.classList.add('on');
-  const renders={dash:renderDash,dados:renderDados,mesas:renderMesas,balcao:renderBalcao,delivery:renderDelivery,producao:renderProducao,cardapio:renderCardapio,clientes:renderClientes,caixa:renderCaixa,relatorio:renderRelatorio,funcionarios:renderFuncionarios,config:renderConfig,admin:renderAdmin,pedido:()=>renderPedido(extra),fechar:()=>renderFechar(extra),pagamento:()=>renderPagamento(extra)};
+  const renders={dash:renderDash,dados:renderDados,mesas:renderMesas,balcao:renderBalcao,delivery:renderDelivery,producao:renderProducao,cardapio:renderCardapio,clientes:renderClientes,caixa:renderCaixa,relatorio:renderRelatorio,funcionarios:renderFuncionarios,config:renderConfig,admin:renderAdmin,agente:renderAgente,pedido:()=>renderPedido(extra),fechar:()=>renderFechar(extra),pagamento:()=>renderPagamento(extra)};
   if(renders[pg])renders[pg]();
   // KDS tick: ligar no dash (produção inline) e producao, desligar ao sair
   if(pg==='producao'||pg==='dash')_kdsStartTick();else _kdsStopTick();
@@ -2286,7 +2304,7 @@ function _silentRefresh(){
   const renders={
     dados:renderDados,dash:renderDash,mesas:renderMesas,balcao:renderBalcao,delivery:renderDelivery,
     producao:renderProducao,cardapio:renderCardapio,clientes:renderClientes,
-    caixa:renderCaixa,relatorio:renderRelatorio,funcionarios:renderFuncionarios,config:renderConfig,admin:renderAdmin
+    caixa:renderCaixa,relatorio:renderRelatorio,funcionarios:renderFuncionarios,config:renderConfig,admin:renderAdmin,agente:renderAgente
   };
   if(renders[ST.curNav])renders[ST.curNav]();
   updateBadges();
@@ -3615,6 +3633,7 @@ function confirmarPedido(){
     ped.del_troco_para=np.del_troco_para||'';
   }
   ST.pedidos.push(ped);save('pedidos');
+  _incrementTrialCount(); // monetização: conta pedido no trial
   toast('Pedido '+num+' enviado!','g');
   anunciar('novo_pedido',ped);
   if(BT.char&&ST.cfg.autoprint)setTimeout(()=>BT.printPedido(ped),500);
@@ -7609,6 +7628,7 @@ function _atualizarBadgeLicenca(){
         _removeBootScreen();
         try{_bootWithData();}catch(e){console.error('[PedePronto] _bootWithData erro:',e);}
         _applyPermissionUI(); // APÓS dados carregados — para não esconder UI antes
+        _fetchTrialData(); // monetização: carrega dados do trial
         fsListen(finalEstabId); // real-time listener APÓS dados carregados
 
         // Modo online: usuário já autenticado por email/senha — pula PIN
@@ -7921,6 +7941,413 @@ function maqCancelar(){
   closeMc('mc-maq-status');
   toast('Cobrança na maquininha cancelada','a');
 }
+// ═══════════════════════════════════════════
+//  TRIAL / MONETIZAÇÃO
+// ═══════════════════════════════════════════
+async function _fetchTrialData(){
+  if(!fbDB||!_estabUid)return;
+  try{
+    const doc=await fbDB.collection('estabelecimentos').doc(_estabUid).get();
+    if(doc.exists){
+      const d=doc.data();
+      _trialData.count=d.trial_count||0;
+      _trialData.limit=d.trial_limit||50;
+      _trialData.plan=d.plan||null;
+      _trialData.plan_type=d.plan_type||null;
+      _trialData.plan_expires=d.plan_expires||null;
+    }
+  }catch(e){console.warn('[Trial] fetch error:',e);}
+  _renderTrialBar();
+}
+
+function _renderTrialBar(){
+  const bar=document.getElementById('trial-bar');
+  if(!bar)return;
+  // Se tem plano ativo, esconde barra
+  if(_trialData.plan){
+    if(_trialData.plan_expires){
+      const exp=new Date(_trialData.plan_expires);
+      if(exp>new Date()){bar.style.display='none';return;}
+      // plano expirado — mostra
+    }else{bar.style.display='none';return;}
+  }
+  bar.style.display='flex';
+  const pct=Math.min(100,(_trialData.count/_trialData.limit)*100);
+  const fill=document.getElementById('trial-fill');
+  const label=document.getElementById('trial-label');
+  const count=document.getElementById('trial-count');
+  const icon=document.getElementById('trial-icon');
+  if(fill){
+    fill.style.width=pct+'%';
+    // Semáforo: azul → amarelo → laranja → vermelho
+    if(pct<60){fill.style.background='var(--bl)';icon.textContent='🎁';label.style.color='var(--bl)';}
+    else if(pct<80){fill.style.background='var(--am)';icon.textContent='⚡';label.style.color='var(--am)';}
+    else if(pct<95){fill.style.background='#e67e22';icon.textContent='🔥';label.style.color='#e67e22';}
+    else{fill.style.background='var(--rd)';icon.textContent='🚨';label.style.color='var(--rd)';}
+  }
+  if(count)count.textContent=_trialData.count+'/'+_trialData.limit;
+  const restam=_trialData.limit-_trialData.count;
+  if(label){
+    if(restam>20) label.textContent='Periodo de teste gratuito';
+    else if(restam>5) label.textContent='Restam '+restam+' pedidos gratis';
+    else if(restam>0) label.textContent='Ultimos '+restam+' pedidos gratis!';
+    else label.textContent='Teste encerrado — ative um plano';
+  }
+}
+
+async function _incrementTrialCount(){
+  if(!fbDB||!_estabUid)return;
+  if(_trialData.plan)return; // plano ativo, não incrementa trial
+  _trialData.count++;
+  _renderTrialBar();
+  try{
+    await fbDB.collection('estabelecimentos').doc(_estabUid).set({
+      trial_count:firebase.firestore.FieldValue.increment(1)
+    },{merge:true});
+  }catch(e){console.warn('[Trial] increment error:',e);}
+  // Verifica bloqueio
+  if(_trialData.count>=_trialData.limit&&!_trialData.plan){
+    _showTrialBlockModal();
+  }
+}
+
+function _showTrialBlockModal(){
+  showModal('mc-trial-block','Teste encerrado',`
+    <div style="text-align:center;padding:12px">
+      <div style="font-size:52px;margin-bottom:12px">🔒</div>
+      <div class="bold fs16 mb6">Voce atingiu o limite de ${_trialData.limit} pedidos gratuitos!</div>
+      <div class="fs13 t2 mb16" style="line-height:1.7">Para continuar usando o PedePronto, ative um plano.<br>Todos os seus dados estao salvos e seguros.</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:400px;margin:0 auto 16px">
+        <div style="background:var(--s2);border:2px solid var(--bl);border-radius:14px;padding:16px;text-align:center">
+          <div class="bold fs14" style="color:var(--bl)">Mensal</div>
+          <div class="fs11 t3 mt4">Assinatura fixa</div>
+          <div class="bold fs18 mt8" style="color:var(--bl)">R$ 89,90<span class="fs11 t3">/mes</span></div>
+          <div class="fs11 t3 mt4">Pedidos ilimitados</div>
+        </div>
+        <div style="background:var(--s2);border:2px solid var(--gn);border-radius:14px;padding:16px;text-align:center">
+          <div class="bold fs14" style="color:var(--gn)">Por Pedido</div>
+          <div class="fs11 t3 mt4">Pague conforme usar</div>
+          <div class="bold fs18 mt8" style="color:var(--gn)">R$ 0,50<span class="fs11 t3">/pedido</span></div>
+          <div class="fs11 t3 mt4">Acerto diario via PIX</div>
+        </div>
+      </div>
+      <div class="fs12 t3 mb12">Entre em contato para ativar: <strong>contato@pedepronto.com</strong></div>
+      <button class="btn bs bsm" onclick="closeMc('mc-trial-block')">Fechar</button>
+    </div>
+  `);
+}
+
+// ═══════════════════════════════════════════
+//  AGENTE IA — Chat + CRM
+// ═══════════════════════════════════════════
+let _agentMsgs=[];
+let _agentLoading=false;
+
+function renderAgente(){
+  const el=document.getElementById('pg-agente');
+  const cfg=ST.cfg.ai_agent||{};
+  if(!cfg.ativo&&!hasPermission('config_editar')){
+    el.innerHTML=`<div class="card mt10" style="text-align:center;padding:24px">
+      <div style="font-size:48px;margin-bottom:8px">🤖</div>
+      <div class="bold fs16 mb4">Agente IA</div>
+      <div class="fs13 t2 mb12">Configure o Agente IA nas Configuracoes para ativar.</div>
+      <button class="btn bp bsm" onclick="_cfgSection='ia_agente';nav('config')">Configurar</button>
+    </div>`;return;
+  }
+  el.innerHTML=`
+  <div style="display:flex;flex-direction:column;height:calc(100vh - 56px);max-width:700px;margin:0 auto">
+    <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--br);flex-shrink:0">
+      <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--ac),var(--pu));display:flex;align-items:center;justify-content:center">
+        ${ppIcon('bot',18,1.6)}
+      </div>
+      <div style="flex:1">
+        <div class="bold fs14">Assistente PedePronto</div>
+        <div class="fs11 t3">Vendas · Upselling · CRM</div>
+      </div>
+      <button class="btn bxs bs" onclick="_agentMsgs=[];renderAgente()">Limpar</button>
+    </div>
+    <div id="agent-msgs" style="flex:1;overflow-y:auto;padding:12px 0;display:flex;flex-direction:column;gap:10px">
+      ${_agentMsgs.length===0?`
+      <div style="text-align:center;padding:40px 0;color:var(--t3)">
+        <div style="font-size:40px;margin-bottom:8px">🤖</div>
+        <div class="fs13 bold mb4">Assistente de vendas inteligente</div>
+        <div class="fs12" style="line-height:1.6;max-width:360px;margin:0 auto">Analisa seu cardapio, historico de clientes e sugere upsells. Pergunte sobre vendas, clientes ou peca sugestoes de marketing.</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:16px">
+          ${['Quais meus produtos mais vendidos?','Sugira um combo para o cardapio','Analise meus clientes VIP','Como aumentar o ticket medio?'].map(s=>`<button class="btn bxs bs" style="font-size:11px;padding:6px 12px" onclick="_agentQuickSend('${s}')">${s}</button>`).join('')}
+        </div>
+      </div>`:_agentMsgs.map(m=>`
+      <div style="display:flex;justify-content:${m.role==='user'?'flex-end':'flex-start'}">
+        <div style="max-width:85%;padding:10px 14px;border-radius:${m.role==='user'?'14px 14px 4px 14px':'14px 14px 14px 4px'};background:${m.role==='user'?'var(--ac)':'var(--s2)'};color:${m.role==='user'?'#fff':'var(--tx)'};font-size:13px;line-height:1.6;white-space:pre-wrap">${esc(m.content)}</div>
+      </div>`).join('')}
+      ${_agentLoading?'<div style="display:flex"><div style="padding:10px 14px;border-radius:14px 14px 14px 4px;background:var(--s2);font-size:13px;color:var(--t3)">Pensando...</div></div>':''}
+    </div>
+    <div style="display:flex;gap:8px;padding:10px 0;border-top:1px solid var(--br);flex-shrink:0">
+      <input class="inp" id="agent-input" placeholder="Pergunte ao assistente..." style="flex:1" onkeydown="if(event.key==='Enter')_agentSendFromInput()">
+      <button class="btn bp bsm" onclick="_agentSendFromInput()" ${_agentLoading?'disabled':''}>${ppIcon('send',14,1.7)}</button>
+    </div>
+  </div>`;
+  const msgs=document.getElementById('agent-msgs');
+  if(msgs)msgs.scrollTop=msgs.scrollHeight;
+}
+
+function _agentQuickSend(text){_agentSend(text);}
+function _agentSendFromInput(){
+  const inp=document.getElementById('agent-input');
+  if(!inp||!inp.value.trim())return;
+  _agentSend(inp.value.trim());
+  inp.value='';
+}
+
+async function _agentSend(text){
+  if(_agentLoading)return;
+  _agentMsgs.push({role:'user',content:text});
+  _agentLoading=true;
+  renderAgente();
+
+  const cfg=ST.cfg.ai_agent||{};
+  const endpoint=cfg.endpoint||'';
+  const apiKey=cfg.api_key||'';
+
+  if(!endpoint){
+    _agentMsgs.push({role:'assistant',content:'Endpoint da IA nao configurado. Va em Configuracoes > Agente IA para configurar.'});
+    _agentLoading=false;renderAgente();return;
+  }
+
+  // Monta contexto CRM
+  const systemPrompt=_buildAgentSystemPrompt();
+  const messages=[{role:'system',content:systemPrompt},..._agentMsgs];
+
+  try{
+    const res=await fetch(endpoint,{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey},
+      body:JSON.stringify({messages,model:cfg.model||'gpt-4o-mini',temperature:0.7,max_tokens:1000})
+    });
+    const data=await res.json();
+    const reply=data.choices?.[0]?.message?.content||data.content?.[0]?.text||data.response||'Sem resposta da IA.';
+    _agentMsgs.push({role:'assistant',content:reply});
+  }catch(e){
+    _agentMsgs.push({role:'assistant',content:'Erro ao conectar com a IA: '+e.message});
+  }
+  _agentLoading=false;
+  renderAgente();
+}
+
+function _buildAgentSystemPrompt(){
+  const cfg=ST.cfg;
+  const prods=ST.produtos.filter(p=>p.ativo!==false);
+  const cats=ST.categorias;
+  const peds=ST.pedidos||[];
+  const clis=ST.clientes||[];
+
+  // Top produtos por frequência
+  const prodCount={};
+  peds.forEach(p=>(p.itens||[]).forEach(it=>{prodCount[it.nome]=(prodCount[it.nome]||0)+it.qtd;}));
+  const topProds=Object.entries(prodCount).sort((a,b)=>b[1]-a[1]).slice(0,10).map(([n,q])=>n+' ('+q+'x)').join(', ');
+
+  // Cardápio resumido
+  const cardapio=cats.map(c=>{
+    const items=prods.filter(p=>p.categoria===c.nome).map(p=>p.nome+' R$'+Number(p.preco||0).toFixed(2)).join('; ');
+    return items?c.nome+': '+items:'';
+  }).filter(Boolean).join('\n');
+
+  // Top clientes
+  const cliStats=clis.slice(0,10).map(c=>{
+    const pedsCli=peds.filter(p=>p.cliente_nome===c.nome);
+    return c.nome+' ('+pedsCli.length+' pedidos)';
+  }).join(', ');
+
+  return `Voce e o assistente de vendas inteligente do "${cfg.nome||'PedePronto'}".
+Seu papel: ajudar o operador a vender mais, sugerir upsells, analisar dados de CRM e criar estrategias de retencao.
+
+CARDAPIO ATUAL:
+${cardapio||'Nenhum produto cadastrado'}
+
+TOP PRODUTOS VENDIDOS: ${topProds||'Sem dados ainda'}
+TOTAL DE PEDIDOS: ${peds.length}
+TOP CLIENTES: ${cliStats||'Sem clientes'}
+TICKET MEDIO: R$ ${peds.length>0?(peds.reduce((s,p)=>s+(p.total||0),0)/peds.length).toFixed(2):'0.00'}
+
+Regras:
+- Responda em portugues BR, de forma objetiva e amigavel
+- Sugira combos e upsells baseados no cardapio real
+- Use dados de CRM para personalizar sugestoes
+- Seja proativo: identifique oportunidades de venda
+- Formato: texto limpo, sem markdown complexo`;
+}
+
+// ═══════════════════════════════════════════
+//  NOVOS ITENS DE CONFIG: Plano, Vitrine, Agente IA
+// ═══════════════════════════════════════════
+// Adiciona itens ao menu de config (chamado dentro de _cfgMenuItems via hook)
+const _cfgExtraItems=[
+  {id:'plano',icon:'crown',label:'Plano & Uso',descFn:()=>_trialData.plan?'Plano '+_trialData.plan:_trialData.count+'/'+_trialData.limit+' pedidos'},
+  {id:'vitrine',icon:'monitor',label:'Vitrine Digital',descFn:()=>ST.cfg.vitrine_modo==='carousel'?'Carrossel ativo':'Grid'},
+  {id:'ia_agente',icon:'bot',label:'Agente IA',descFn:()=>ST.cfg.ai_agent?.ativo?'Ativo':'Desativado'},
+];
+
+// Injeta no menu de config via monkey-patch
+const _origCfgMenuItems=_cfgMenuItems;
+_cfgMenuItems=function(){
+  const items=_origCfgMenuItems();
+  // Insere antes de 'ajuda'
+  const ajudaIdx=items.findIndex(i=>i.id==='ajuda');
+  const insertIdx=ajudaIdx>=0?ajudaIdx:items.length;
+  _cfgExtraItems.forEach((ex,i)=>{
+    items.splice(insertIdx+i,0,{id:ex.id,icon:ex.icon,label:ex.label,desc:ex.descFn()});
+  });
+  return items;
+};
+
+// Estende _renderCfgSection para os novos casos
+const _origRenderCfgSection=_renderCfgSection;
+_renderCfgSection=function(sec){
+  const cfg=ST.cfg;
+  const el=document.getElementById('pg-config');
+
+  if(sec==='plano'){
+    const pct=Math.min(100,(_trialData.count/_trialData.limit)*100);
+    const restam=_trialData.limit-_trialData.count;
+    const barColor=pct<60?'var(--bl)':pct<80?'var(--am)':pct<95?'#e67e22':'var(--rd)';
+    el.innerHTML=_cfgHeader('Plano & Uso')+`
+    <div class="card mb10">
+      <div class="fs13 bold mb8">Status do plano</div>
+      ${_trialData.plan?`
+        <div style="display:flex;align-items:center;gap:8px;padding:12px;background:var(--gnbg);border:1px solid var(--gnbr);border-radius:10px;margin-bottom:12px">
+          ${ppIcon('checkCircle',18,1.6)}
+          <div><div class="bold fs14" style="color:var(--gn)">Plano ${_trialData.plan}</div>
+          <div class="fs11 t2">${_trialData.plan_type==='subscription'?'Assinatura mensal':'Por pedido'}${_trialData.plan_expires?' · Valido ate '+new Date(_trialData.plan_expires).toLocaleDateString('pt-BR'):''}</div></div>
+        </div>`:`
+        <div style="padding:12px;background:var(--blbg);border:1px solid var(--blbr);border-radius:10px;margin-bottom:12px">
+          <div class="bold fs14 mb4" style="color:var(--bl)">Periodo de teste</div>
+          <div class="fs12 t2 mb8">${restam>0?'Voce tem '+restam+' pedidos restantes no periodo gratuito.':'Seu periodo de teste encerrou.'}</div>
+          <div style="height:8px;background:var(--s3);border-radius:99px;overflow:hidden"><div style="height:100%;width:${pct}%;background:${barColor};border-radius:99px;transition:width .6s"></div></div>
+          <div class="rb mt6"><span class="fs11 t3">${_trialData.count} usados</span><span class="fs11 t3">${_trialData.limit} limite</span></div>
+        </div>`}
+      <div class="fs12 bold mb8">Planos disponiveis</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+        <div style="background:var(--s2);border:2px solid var(--bl);border-radius:14px;padding:16px;text-align:center">
+          <div class="bold fs14" style="color:var(--bl)">Mensal</div>
+          <div class="bold fs20 mt8" style="color:var(--bl)">R$ 89,90</div>
+          <div class="fs11 t3 mt4">Pedidos ilimitados</div>
+          <div class="fs11 t3">Suporte prioritario</div>
+        </div>
+        <div style="background:var(--s2);border:2px solid var(--gn);border-radius:14px;padding:16px;text-align:center">
+          <div class="bold fs14" style="color:var(--gn)">Por Pedido</div>
+          <div class="bold fs20 mt8" style="color:var(--gn)">R$ 0,50</div>
+          <div class="fs11 t3 mt4">Pague conforme usar</div>
+          <div class="fs11 t3">Acerto diario via PIX</div>
+        </div>
+      </div>
+      <div class="fs12 t3 mb8" style="text-align:center">Para ativar, entre em contato: <strong>contato@pedepronto.com</strong></div>
+    </div>
+    <div class="card mb10">
+      <div class="fs13 bold mb4">Estatisticas de uso</div>
+      <div class="rb" style="padding:6px 0;border-bottom:1px solid var(--br)"><span class="fs12 t2">Total de pedidos criados</span><span class="bold mono">${_trialData.count}</span></div>
+      <div class="rb" style="padding:6px 0;border-bottom:1px solid var(--br)"><span class="fs12 t2">Produtos cadastrados</span><span class="bold mono">${ST.produtos.length}</span></div>
+      <div class="rb" style="padding:6px 0"><span class="fs12 t2">Clientes registrados</span><span class="bold mono">${ST.clientes.length}</span></div>
+    </div>`+_cfgFooter();
+    return;
+  }
+
+  if(sec==='vitrine'){
+    const vm=cfg.vitrine_modo||'grid';
+    const vd=cfg.vitrine_duracao||6;
+    const vids=cfg.vitrine_videos||[];
+    const mus=cfg.vitrine_musica||{};
+    el.innerHTML=_cfgHeader('Vitrine Digital')+`
+    <div class="card mb10">
+      <div class="fs13 bold mb8">Modo de exibicao</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
+        ${[['grid','Grid','Grade de produtos'],['carousel','Carrossel','Slideshow em tela cheia']].map(([m,label,desc])=>`
+        <button class="btn bsm" style="flex-direction:column;align-items:flex-start;gap:2px;height:auto;padding:10px 12px;text-align:left;border:2px solid ${vm===m?'var(--ac)':'var(--br2)'};background:${vm===m?'var(--acbg)':'var(--s2)'}" onclick="ST.cfg.vitrine_modo='${m}';save('cfg');_renderCfgSection('vitrine')">
+          <span class="bold fs13" style="color:${vm===m?'var(--ac)':'var(--tx)'}">${label}</span>
+          <span class="fs11 t3">${desc}</span>
+        </button>`).join('')}
+      </div>
+      ${vm==='carousel'?`
+      <div class="fg"><label class="fl">Duracao por slide (segundos)</label>
+      <input class="inp" type="number" min="3" max="30" value="${vd}" oninput="ST.cfg.vitrine_duracao=parseInt(this.value)||6;save('cfg')"></div>`:''}
+    </div>
+
+    <div class="card mb10">
+      <div class="fs13 bold mb8">Videos promocionais</div>
+      <div class="fs12 t2 mb8">Videos MP4 intercalados no carrossel. Reproduzidos automaticamente sem som.</div>
+      ${vids.map((v,i)=>`
+      <div class="rb" style="padding:8px 0;border-bottom:1px solid var(--br)">
+        <div style="flex:1;min-width:0"><div class="bold fs12">${esc(v.titulo||'Video '+(i+1))}</div><div class="fs11 t3" style="word-break:break-all">${esc(v.url)}</div></div>
+        <button class="btn bxs br_" onclick="ST.cfg.vitrine_videos.splice(${i},1);save('cfg');_renderCfgSection('vitrine')">${ppIcon('trash',13,1.7)}</button>
+      </div>`).join('')}
+      <div style="display:flex;gap:6px;margin-top:8px">
+        <input class="inp" id="cfg-vid-url" placeholder="URL do video MP4" style="flex:1">
+        <button class="btn bp bsm" onclick="_addVitrineVideo()">+ Adicionar</button>
+      </div>
+    </div>
+
+    <div class="card mb10">
+      <div class="fs13 bold mb8" style="display:flex;align-items:center;gap:6px">${ppIcon('music',14,1.7)} Musica de fundo (Vitrine)</div>
+      <div class="fs12 t2 mb8">Musica ambiente para a tela de exibicao. O volume abaixa automaticamente durante anuncios de pedido (Audio Ducking).</div>
+      <div class="fg"><label class="fl">Fonte</label>
+        <select class="inp" onchange="ST.cfg.vitrine_musica=ST.cfg.vitrine_musica||{};ST.cfg.vitrine_musica.tipo=this.value;save('cfg');_renderCfgSection('vitrine')">
+          <option value="off" ${(!mus.tipo||mus.tipo==='off')?'selected':''}>Desligado</option>
+          <option value="spotify" ${mus.tipo==='spotify'?'selected':''}>Spotify (Embed)</option>
+          <option value="url" ${mus.tipo==='url'?'selected':''}>URL de audio (MP3/stream)</option>
+        </select>
+      </div>
+      ${mus.tipo==='spotify'?`
+      <div class="fg"><label class="fl">Link da playlist Spotify</label>
+      <input class="inp" value="${esc(mus.spotify_url||'')}" oninput="ST.cfg.vitrine_musica.spotify_url=this.value;save('cfg')" placeholder="https://open.spotify.com/playlist/..."></div>
+      <div class="fs11 t3">Cole o link de compartilhamento da playlist do Spotify.</div>`:''}
+      ${mus.tipo==='url'?`
+      <div class="fg"><label class="fl">URL do audio</label>
+      <input class="inp" value="${esc(mus.url||'')}" oninput="ST.cfg.vitrine_musica.url=this.value;save('cfg')" placeholder="https://.../background.mp3"></div>`:''}
+      ${mus.tipo&&mus.tipo!=='off'?`
+      <div class="fg"><label class="fl">Volume — <span class="mono am">${Math.round((mus.volume||0.6)*100)}%</span></label>
+      <input type="range" min="0" max="1" step="0.05" value="${mus.volume||0.6}" style="width:100%;accent-color:var(--ac)" oninput="ST.cfg.vitrine_musica=ST.cfg.vitrine_musica||{};ST.cfg.vitrine_musica.volume=parseFloat(this.value);save('cfg');this.previousElementSibling.querySelector('.mono').textContent=Math.round(parseFloat(this.value)*100)+'%'"></div>
+      <div class="fg"><label class="fl">Volume durante anuncio (duck) — <span class="mono am">${Math.round((mus.duck_volume||0.05)*100)}%</span></label>
+      <input type="range" min="0" max="0.3" step="0.01" value="${mus.duck_volume||0.05}" style="width:100%;accent-color:var(--ac)" oninput="ST.cfg.vitrine_musica=ST.cfg.vitrine_musica||{};ST.cfg.vitrine_musica.duck_volume=parseFloat(this.value);save('cfg');this.previousElementSibling.querySelector('.mono').textContent=Math.round(parseFloat(this.value)*100)+'%'"></div>`:''}
+    </div>
+    ${_cfgSaveBtn()}`+_cfgFooter();
+    return;
+  }
+
+  if(sec==='ia_agente'){
+    const ai=cfg.ai_agent||{};
+    el.innerHTML=_cfgHeader('Agente IA')+`
+    <div class="card mb10">
+      <div class="rb" style="padding:8px 0;border-bottom:1px solid var(--br)">
+        <div><div class="fs13 bold">Agente IA conversacional</div><div class="fs12 t2">Vendas, upselling e CRM inteligente</div></div>
+        <button class="sw ${ai.ativo?'on':''}" id="sw-ai-ativo" onclick="toggleSw(this);ST.cfg.ai_agent=ST.cfg.ai_agent||{};ST.cfg.ai_agent.ativo=swVal('sw-ai-ativo');save('cfg');_applyPermissionUI();_renderCfgSection('ia_agente')"></button>
+      </div>
+      ${ai.ativo?`
+      <div class="fg mt10"><label class="fl">Endpoint da API (OpenAI-compatible)</label>
+      <input class="inp" value="${esc(ai.endpoint||'')}" oninput="ST.cfg.ai_agent=ST.cfg.ai_agent||{};ST.cfg.ai_agent.endpoint=this.value" placeholder="https://api.openai.com/v1/chat/completions"></div>
+      <div class="fg"><label class="fl">API Key</label>
+      <input class="inp" type="password" value="${esc(ai.api_key||'')}" oninput="ST.cfg.ai_agent=ST.cfg.ai_agent||{};ST.cfg.ai_agent.api_key=this.value" placeholder="sk-..."></div>
+      <div class="fg"><label class="fl">Modelo</label>
+      <input class="inp" value="${esc(ai.model||'gpt-4o-mini')}" oninput="ST.cfg.ai_agent=ST.cfg.ai_agent||{};ST.cfg.ai_agent.model=this.value"></div>
+      <div class="fs11 t3 mt6" style="padding:8px;background:var(--s2);border-radius:8px;line-height:1.6">
+        ${ppIcon('info',14,1.6)} O agente usa qualquer API compativel com OpenAI (OpenAI, Groq, Ollama, etc). O cardapio e dados de CRM sao incluidos automaticamente no contexto.
+      </div>
+      `:''}
+    </div>
+    ${ai.ativo?_cfgSaveBtn():''}`+_cfgFooter();
+    return;
+  }
+
+  // Fallback para seções originais
+  _origRenderCfgSection(sec);
+};
+
+function _addVitrineVideo(){
+  const inp=document.getElementById('cfg-vid-url');
+  if(!inp||!inp.value.trim())return;
+  ST.cfg.vitrine_videos=ST.cfg.vitrine_videos||[];
+  ST.cfg.vitrine_videos.push({url:inp.value.trim(),titulo:'Video '+(ST.cfg.vitrine_videos.length+1),duracao:15});
+  save('cfg');
+  _renderCfgSection('vitrine');
+}
+
 </script>
 </body>
 </html>
