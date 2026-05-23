@@ -1852,6 +1852,44 @@ async function fsPush(){
     }
   }
 }
+// ── Debug Console Mobile (visível no celular) ──
+const _dbgLogs=[];
+const _origLog=console.log,_origWarn=console.warn,_origErr=console.error;
+function _dbgCapture(type,args){
+  const msg='['+type+'] '+Array.from(args).map(a=>typeof a==='object'?JSON.stringify(a):String(a)).join(' ');
+  _dbgLogs.push({t:Date.now(),msg});
+  if(_dbgLogs.length>80)_dbgLogs.shift();
+  const el=document.getElementById('pp-dbg-content');
+  if(el){el.textContent=_dbgLogs.map(l=>l.msg).join('\n');el.scrollTop=el.scrollHeight;}
+}
+console.log=function(){_origLog.apply(console,arguments);_dbgCapture('LOG',arguments);};
+console.warn=function(){_origWarn.apply(console,arguments);_dbgCapture('WARN',arguments);};
+console.error=function(){_origErr.apply(console,arguments);_dbgCapture('ERR',arguments);};
+window.addEventListener('error',e=>{_dbgCapture('ERR',[e.message,'at',e.filename+':'+e.lineno]);});
+function _toggleDbgConsole(){
+  let p=document.getElementById('pp-dbg-panel');
+  if(p){p.remove();return;}
+  p=document.createElement('div');p.id='pp-dbg-panel';
+  p.style.cssText='position:fixed;bottom:60px;left:8px;right:8px;max-height:50vh;background:#111;border:2px solid #e94560;border-radius:12px;z-index:99999;display:flex;flex-direction:column;font-family:monospace;font-size:10px;';
+  p.innerHTML=`<div style="padding:6px 10px;background:#e94560;color:#fff;font-weight:700;display:flex;justify-content:space-between;align-items:center;border-radius:10px 10px 0 0">
+    <span>Console Debug</span>
+    <span onclick="document.getElementById('pp-dbg-panel').remove()" style="cursor:pointer;font-size:16px">✕</span>
+  </div>
+  <pre id="pp-dbg-content" style="margin:0;padding:8px;color:#0f0;overflow:auto;flex:1;white-space:pre-wrap;word-break:break-all;max-height:45vh">${_dbgLogs.map(l=>l.msg).join('\n')}</pre>`;
+  document.body.appendChild(p);
+}
+// Botão flutuante — só aparece em mobile
+if(/iPhone|iPad|Android/i.test(navigator.userAgent)){
+  setTimeout(()=>{
+    const btn=document.createElement('div');
+    btn.id='pp-dbg-btn';
+    btn.onclick=_toggleDbgConsole;
+    btn.style.cssText='position:fixed;bottom:70px;right:8px;width:36px;height:36px;background:#e94560;border-radius:50%;z-index:99998;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:900;box-shadow:0 2px 8px rgba(0,0,0,0.5);cursor:pointer;opacity:0.7';
+    btn.textContent='🐛';
+    document.body.appendChild(btn);
+  },2000);
+}
+
 // ── Boot Screen (tela de loading durante sync inicial) ──
 let _bootScreenEl=null;
 function _showBootScreen(){
