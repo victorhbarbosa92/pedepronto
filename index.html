@@ -1874,57 +1874,80 @@ function _removeBootScreen(){
   }
 }
 // ── Cloud-first boot: puxa dados do Firestore antes de renderizar ──
+// Usa onSnapshot para ser resiliente a conexões lentas (mobile Safari)
 async function _fsPullBoot(uid){
   if(!fbDB) return false;
+  if(!uid){console.warn('[PedePronto] Boot: uid indefinido!');return false;}
   const ref=fbDB.collection('estabelecimentos').doc(uid).collection('dados').doc('principal');
-  try{
-    // source:'server' bypassa o cache do enablePersistence (que está vazio em dispositivos novos)
-    const snap=await ref.get({source:'server'});
-    if(!snap.exists){
-      // Cloud vazia — novo estabelecimento, ST fica com defaults
-      console.log('[PedePronto] Boot: cloud vazia — novo estabelecimento');
-      return true;
-    }
-    const r=snap.data();
-    ['cfg','caixa','produtos','categorias','clientes','obs_grupos_globais','pedidos','funcionarios','vouchers','pedidos_cancelados','alertas'].forEach(k=>{if(r[k]!=null)ST[k]=r[k];});
-    saveAll(true); // cache no localStorage, sem push
-    _lastSyncAt=Date.now();
-    _setSyncStatus('ok');
-    console.log('[PedePronto] Boot: dados carregados da nuvem ('+ST.produtos.length+' prod, '+ST.categorias.length+' cat)');
-    return true;
-  }catch(e){
-    console.warn('[PedePronto] Boot: Firestore inacessível:',e.code||e.message);
-    // Tenta cache do Firestore (enablePersistence)
-    try{
-      const snap2=await ref.get({source:'cache'});
-      if(snap2.exists){
-        const r=snap2.data();
-        ['cfg','caixa','produtos','categorias','clientes','obs_grupos_globais','pedidos','funcionarios','vouchers','pedidos_cancelados','alertas'].forEach(k=>{if(r[k]!=null)ST[k]=r[k];});
-        _lastSyncAt=Date.now();
-        console.log('[PedePronto] Boot: dados do cache Firestore');
-        return true;
+  const _KEYS=['cfg','caixa','produtos','categorias','clientes','obs_grupos_globais','pedidos','funcionarios','vouchers','pedidos_cancelados','alertas'];
+  function _apply(r){_KEYS.forEach(k=>{if(r[k]!=null)ST[k]=r[k];});saveAll(true);_lastSyncAt=Date.now();_setSyncStatus('ok');}
+  return new Promise(resolve=>{
+    let done=false;
+    let cacheApplied=false;
+    // Timeout: após 12s, desiste e usa fallback
+    const timer=setTimeout(()=>{
+      if(!done){done=true;unsub();
+        console.warn('[PedePronto] Boot: timeout 12s — usando '+(cacheApplied?'cache':'localStorage'));
+        const msg=document.getElementById('pp-boot-msg');
+        if(msg)msg.textContent='Conexão lenta — usando dados locais';
+        resolve(cacheApplied); // true se cache tinha dados, false para fallback localStorage
       }
-    }catch(e2){/* cache também vazio */}
-    // Sinaliza fallback para localStorage
-    const msg=document.getElementById('pp-boot-msg');
-    if(msg) msg.textContent='Modo offline — usando dados locais';
-    return false;
-  }
+    },12000);
+    // onSnapshot recebe CACHE primeiro, depois SERVER — funciona mesmo quando WebSocket está iniciando
+    const unsub=ref.onSnapshot({includeMetadataChanges:true},snap=>{
+      if(done)return;
+      if(!snap.exists){
+        if(snap.metadata.fromCache){
+          // Cache vazio (dispositivo novo) — aguarda servidor
+          console.log('[PedePronto] Boot: cache vazio, aguardando servidor...');
+          return;
+        }
+        // Servidor confirmou: nuvem vazia → novo estabelecimento
+        done=true;clearTimeout(timer);unsub();
+        console.log('[PedePronto] Boot: cloud vazia — novo estabelecimento');
+        resolve(true);
+        return;
+      }
+      const r=snap.data();
+      if(snap.metadata.fromCache){
+        // Cache tem dados — aplica provisoriamente, continua esperando servidor
+        if(r.produtos?.length>0||r.categorias?.length>0){
+          _apply(r);cacheApplied=true;
+          console.log('[PedePronto] Boot: dados do cache ('+ST.produtos.length+' prod) — aguardando servidor...');
+        }
+        return; // Não resolve — espera servidor para dados definitivos
+      }
+      // DADOS DO SERVIDOR — resposta definitiva
+      done=true;clearTimeout(timer);unsub();
+      _apply(r);
+      console.log('[PedePronto] Boot: dados do servidor ('+ST.produtos.length+' prod, '+ST.categorias.length+' cat)');
+      resolve(true);
+    },e=>{
+      if(!done){done=true;clearTimeout(timer);
+        console.warn('[PedePronto] Boot: erro Firestore:',e.code||e.message);
+        resolve(cacheApplied);
+      }
+    });
+  });
 }
 // ── Inicializa UI após dados estarem disponíveis ──
 function _bootWithData(){
+  console.log('[PedePronto] _bootWithData: ST.produtos='+ST.produtos.length+', ST.categorias='+ST.categorias.length);
   initDefaults(true); // skipSave — não trigger push durante boot
   applyTheme();
   applyTamanho();
   _updateSbLogo();
-  document.getElementById('page').addEventListener('scroll',()=>{_lastUserScroll=Date.now();},{passive:true});
+  const pageEl=document.getElementById('page');
+  if(pageEl) pageEl.addEventListener('scroll',()=>{_lastUserScroll=Date.now();},{passive:true});
   BT.paper=ST.cfg.papel||58;BT.auto=ST.cfg.autoprint||false;
   updateBtUI();updateSbOperador();
-  document.getElementById('sb-est').textContent=ST.cfg.nome||'PedePronto';
+  const sbEst=document.getElementById('sb-est');
+  if(sbEst) sbEst.textContent=ST.cfg.nome||'PedePronto';
   _atualizarBadgeLicenca();
   _updateNotifBadge();
   renderDash();
   _updateBackBtn();
+  console.log('[PedePronto] _bootWithData: concluído');
 }
 // Força pull: aplica dado do Firestore sobrescrevendo local
 async function fsPull(){
@@ -6883,26 +6906,33 @@ function fsListen(uid){
   // Desinscreve listener anterior (evita duplicatas ao re-autenticar)
   if(_fsUnsubscribe){try{_fsUnsubscribe();}catch(e){} _fsUnsubscribe=null;}
   const ref=fbDB.collection('estabelecimentos').doc(uid).collection('dados').doc('principal');
+  let _listenFirst=true;
   _fsUnsubscribe=ref.onSnapshot({includeMetadataChanges:true},snap=>{
-    // Boot pull já carregou dados iniciais — listener só trata atualizações em tempo real
     if(!snap.exists) return;
-    // Ignorar snapshots do cache local (enablePersistence) — redundante após boot pull
-    if(snap.metadata.fromCache) return;
     const r=snap.data();
+    // No primeiro snapshot: aceitar dados (pode ser do cache que o boot pull preencheu)
+    // Nos seguintes: ignorar cache redundante
+    if(!_listenFirst&&snap.metadata.fromCache) return;
     // Ignorar nossa própria escrita (loop)
-    if(r._dev_id&&r._dev_id===_DEV_ID) return;
+    if(r._dev_id&&r._dev_id===_DEV_ID&&!_listenFirst) return;
     // Proteger dados locais pendentes de push
-    if(_localDirty){
+    if(_localDirty&&!_listenFirst){
       console.log('[PedePronto] ⏳ Snapshot ignorado — dados locais pendentes de push');
       return;
     }
+    // Verificar se dados remotos têm conteúdo significativo
+    const remoteHasData=(r.produtos?.length>0||r.categorias?.length>0);
+    const localHasData=(ST.produtos.length>0||ST.categorias.length>0);
+    // Se local tem dados e remoto está vazio, não sobrescrever (proteção anti-wipe)
+    if(localHasData&&!remoteHasData&&!_listenFirst) return;
     // Aplicar dados remotos
     ['cfg','caixa','produtos','categorias','clientes','obs_grupos_globais','pedidos','funcionarios','vouchers','pedidos_cancelados','alertas'].forEach(k=>{if(r[k]!=null)ST[k]=r[k];});
-    saveAll(true); // cache no localStorage, sem push
+    saveAll(true);
+    if(_listenFirst){_listenFirst=false;}
     _silentRefresh();
     _lastSyncAt=Date.now();
     _setSyncStatus('ok');
-    console.log('[PedePronto] ☁️ Sync recebido (dev remoto:'+r._dev_id+')');
+    console.log('[PedePronto] ☁️ Sync '+(snap.metadata.fromCache?'(cache)':'(servidor)')+' ('+ST.produtos.length+' prod, dev:'+r._dev_id+')');
   },e=>{
     console.warn('[PedePronto] Firestore listen erro:',e.code||e.message);
     _setSyncStatus('error');
@@ -7285,14 +7315,15 @@ function _atualizarBadgeLicenca(){
         clearTimeout(window._listenRetryTimer);
         _syncEnabled = true; // agora save() pode sincronizar
         updateSyncStatus();
-        _applyPermissionUI();
 
         // ── CLOUD-FIRST: puxa dados do Firestore ANTES de renderizar ──
+        console.log('[PedePronto] Iniciando _fsPullBoot para uid:',finalEstabId,'role:',_userRole);
         const pullOk=await _fsPullBoot(finalEstabId);
         if(!pullOk) loadAll(); // fallback offline: usa localStorage como último recurso
         _cloudBooted=true;
         _removeBootScreen();
-        _bootWithData();
+        try{_bootWithData();}catch(e){console.error('[PedePronto] _bootWithData erro:',e);}
+        _applyPermissionUI(); // APÓS dados carregados — para não esconder UI antes
         fsListen(finalEstabId); // real-time listener APÓS dados carregados
 
         // Modo online: usuário já autenticado por email/senha — pula PIN
