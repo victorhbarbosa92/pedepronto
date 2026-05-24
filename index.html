@@ -6704,9 +6704,10 @@ function recalcPedido(ped){
 // ═══════════════════════════════════════════
 function registerSW(){
   if('serviceWorker' in navigator){
-    const code=`self.addEventListener('install',()=>self.skipWaiting());self.addEventListener('activate',()=>clients.claim());self.addEventListener('fetch',e=>e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).catch(()=>new Response('Offline',{status:503})))));`;
-    const blob=new Blob([code],{type:'application/javascript'});
-    navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(()=>{});
+    // Desregistrar SW antigo que cacheava tudo e causava problemas
+    navigator.serviceWorker.getRegistrations().then(regs=>{
+      regs.forEach(r=>r.unregister());
+    }).catch(()=>{});
   }
 }
 
