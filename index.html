@@ -8791,7 +8791,8 @@ Regras:
 - Sugira combos e upsells baseados no cardapio real
 - Use dados de CRM para personalizar sugestoes
 - Seja proativo: identifique oportunidades de venda
-- Formato: texto limpo, sem markdown complexo`;
+- Formato: texto limpo, sem markdown complexo
+${cfg.ai_agent?.persona?'\nINSTRUCOES EXTRAS DO DONO:\n'+cfg.ai_agent.persona:''}`;
 }
 
 // ═══════════════════════════════════════════
@@ -8931,6 +8932,13 @@ _renderCfgSection=function(sec){
 
   if(sec==='ia_agente'){
     const ai=cfg.ai_agent||{};
+    const _aiPresets={
+      groq:{label:'Groq (Gratuito)',endpoint:'https://api.groq.com/openai/v1/chat/completions',model:'llama-3.3-70b-versatile',placeholder:'gsk_...'},
+      openai:{label:'OpenAI (Pago)',endpoint:'https://api.openai.com/v1/chat/completions',model:'gpt-4o-mini',placeholder:'sk-...'},
+      openrouter:{label:'OpenRouter',endpoint:'https://openrouter.ai/api/v1/chat/completions',model:'meta-llama/llama-3.3-70b-instruct',placeholder:'sk-or-...'},
+      custom:{label:'Personalizado',endpoint:'',model:'',placeholder:''}
+    };
+    const curProvider=ai.provider||'custom';
     el.innerHTML=_cfgHeader('Agente IA')+`
     <div class="card mb10">
       <div class="rb" style="padding:8px 0;border-bottom:1px solid var(--br)">
@@ -8938,14 +8946,35 @@ _renderCfgSection=function(sec){
         <button class="sw ${ai.ativo?'on':''}" id="sw-ai-ativo" onclick="toggleSw(this);ST.cfg.ai_agent=ST.cfg.ai_agent||{};ST.cfg.ai_agent.ativo=swVal('sw-ai-ativo');save('cfg');_applyPermissionUI();_renderCfgSection('ia_agente')"></button>
       </div>
       ${ai.ativo?`
-      <div class="fg mt10"><label class="fl">Endpoint da API (OpenAI-compatible)</label>
-      <input class="inp" value="${esc(ai.endpoint||'')}" oninput="ST.cfg.ai_agent=ST.cfg.ai_agent||{};ST.cfg.ai_agent.endpoint=this.value" placeholder="https://api.openai.com/v1/chat/completions"></div>
+      <div class="fg mt10"><label class="fl">Provedor</label>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        ${Object.entries(_aiPresets).map(([k,v])=>`<button class="btn ${curProvider===k?'bp':'bxs'} bsm" onclick="_aiSetProvider('${k}')">${v.label}</button>`).join('')}
+      </div></div>
+
+      <div class="fg mt6"><label class="fl">Endpoint da API</label>
+      <input class="inp" id="cfg-ai-endpoint" value="${esc(ai.endpoint||'')}" oninput="ST.cfg.ai_agent.endpoint=this.value" placeholder="${_aiPresets[curProvider]?.endpoint||'https://...'}" ${curProvider!=='custom'?'readonly style="opacity:0.6;cursor:default"':''}></div>
+
       <div class="fg"><label class="fl">API Key</label>
-      <input class="inp" type="password" value="${esc(ai.api_key||'')}" oninput="ST.cfg.ai_agent=ST.cfg.ai_agent||{};ST.cfg.ai_agent.api_key=this.value" placeholder="sk-..."></div>
+      <div style="display:flex;gap:6px">
+        <input class="inp" id="cfg-ai-key" type="password" value="${esc(ai.api_key||'')}" oninput="ST.cfg.ai_agent.api_key=this.value" placeholder="${_aiPresets[curProvider]?.placeholder||'sua-chave-aqui'}" style="flex:1">
+        <button class="btn bxs bsm" onclick="const i=document.getElementById('cfg-ai-key');i.type=i.type==='password'?'text':'password'" title="Mostrar/ocultar">${ppIcon('eye',14,1.4)}</button>
+      </div></div>
+
       <div class="fg"><label class="fl">Modelo</label>
-      <input class="inp" value="${esc(ai.model||'gpt-4o-mini')}" oninput="ST.cfg.ai_agent=ST.cfg.ai_agent||{};ST.cfg.ai_agent.model=this.value"></div>
-      <div class="fs11 t3 mt6" style="padding:8px;background:var(--s2);border-radius:8px;line-height:1.6">
-        ${ppIcon('info',14,1.6)} O agente usa qualquer API compativel com OpenAI (OpenAI, Groq, Ollama, etc). O cardapio e dados de CRM sao incluidos automaticamente no contexto.
+      <input class="inp" id="cfg-ai-model" value="${esc(ai.model||_aiPresets[curProvider]?.model||'')}" oninput="ST.cfg.ai_agent.model=this.value" ${curProvider!=='custom'?'readonly style="opacity:0.6;cursor:default"':''}></div>
+
+      <div id="ai-test-result"></div>
+      <button class="btn bp bsm mt6" onclick="_aiTestarConexao()" style="width:100%">${ppIcon('bolt',14,1.6)} Testar Conexao</button>
+
+      <div class="fs11 t3 mt10" style="padding:10px;background:var(--s2);border-radius:8px;line-height:1.7">
+        ${ppIcon('info',14,1.6)} <b>Groq</b>: gratuito, rapido (LPU). Crie sua chave em <span style="color:var(--ac)">console.groq.com/keys</span><br>
+        ${ppIcon('info',14,1.6)} <b>Contexto automatico</b>: cardapio, top produtos, clientes e ticket medio sao injetados no agente
+      </div>
+
+      <div class="fg mt10" style="border-top:1px solid var(--br);padding-top:10px">
+        <label class="fl">Personalidade do agente (opcional)</label>
+        <textarea class="inp" rows="3" style="resize:vertical;font-size:12px" oninput="ST.cfg.ai_agent.persona=this.value" placeholder="Ex: Seja informal e use girias. Sempre sugira a cerveja artesanal como upsell...">${esc(ai.persona||'')}</textarea>
+        <div class="fs11 t3 mt4">Instrucoes extras adicionadas ao prompt do sistema. O contexto de CRM e incluido automaticamente.</div>
       </div>
       `:''}
     </div>
@@ -8956,6 +8985,52 @@ _renderCfgSection=function(sec){
   // Fallback para seções originais
   _origRenderCfgSection(sec);
 };
+
+function _aiSetProvider(prov){
+  const presets={
+    groq:{endpoint:'https://api.groq.com/openai/v1/chat/completions',model:'llama-3.3-70b-versatile'},
+    openai:{endpoint:'https://api.openai.com/v1/chat/completions',model:'gpt-4o-mini'},
+    openrouter:{endpoint:'https://openrouter.ai/api/v1/chat/completions',model:'meta-llama/llama-3.3-70b-instruct'},
+    custom:{endpoint:'',model:''}
+  };
+  const p=presets[prov]||presets.custom;
+  ST.cfg.ai_agent=ST.cfg.ai_agent||{};
+  ST.cfg.ai_agent.provider=prov;
+  ST.cfg.ai_agent.endpoint=p.endpoint;
+  ST.cfg.ai_agent.model=p.model;
+  save('cfg');
+  _renderCfgSection('ia_agente');
+}
+
+async function _aiTestarConexao(){
+  const ai=ST.cfg.ai_agent||{};
+  const el=document.getElementById('ai-test-result');
+  if(!el)return;
+  if(!ai.endpoint||!ai.api_key){
+    el.innerHTML='<div class="fs12 mt6" style="color:var(--rd);padding:8px;background:var(--s2);border-radius:8px">Preencha o endpoint e a API Key primeiro.</div>';
+    return;
+  }
+  el.innerHTML='<div class="fs12 mt6" style="color:var(--t3);padding:8px;background:var(--s2);border-radius:8px">Testando conexao...</div>';
+  try{
+    const t0=Date.now();
+    const res=await fetch(ai.endpoint,{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+ai.api_key},
+      body:JSON.stringify({messages:[{role:'user',content:'Responda apenas: OK'}],model:ai.model||'gpt-4o-mini',temperature:0,max_tokens:10})
+    });
+    const ms=Date.now()-t0;
+    const data=await res.json();
+    if(res.ok&&(data.choices||data.content)){
+      const reply=data.choices?.[0]?.message?.content||data.content?.[0]?.text||'OK';
+      el.innerHTML='<div class="fs12 mt6" style="color:var(--gn);padding:8px;background:var(--s2);border-radius:8px">✅ Conexao OK! Resposta em '+ms+'ms — Modelo: '+(data.model||ai.model)+'</div>';
+    }else{
+      const err=data.error?.message||JSON.stringify(data).substring(0,120);
+      el.innerHTML='<div class="fs12 mt6" style="color:var(--rd);padding:8px;background:var(--s2);border-radius:8px">❌ Erro: '+err+'</div>';
+    }
+  }catch(e){
+    el.innerHTML='<div class="fs12 mt6" style="color:var(--rd);padding:8px;background:var(--s2);border-radius:8px">❌ Falha na conexao: '+e.message+'</div>';
+  }
+}
 
 function _addVitrineVideo(){
   const inp=document.getElementById('cfg-vid-url');
