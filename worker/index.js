@@ -101,10 +101,13 @@ export default {
         body: fetchBody,
       });
 
-      const data = await mpResp.json();
+      const text = await mpResp.text();
+      let data;
+      try { data = text ? JSON.parse(text) : { success: true, status: mpResp.status }; }
+      catch(pe) { data = { raw: text, status: mpResp.status }; }
 
       return new Response(JSON.stringify(data), {
-        status: mpResp.status,
+        status: mpResp.status >= 200 && mpResp.status < 300 ? 200 : mpResp.status,
         headers: { ...cors(request), 'Content-Type': 'application/json' }
       });
 
