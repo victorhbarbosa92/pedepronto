@@ -224,6 +224,16 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 <audio id="bg-music" loop preload="auto"></audio>
 
 <script>
+window.PP_VERSION='2.1.0';
+// ── Auto-update: verifica nova versão a cada 5 min ──
+if(location.protocol==='https:'){
+  setInterval(function(){
+    fetch('/display.html?_t='+Date.now(),{cache:'no-store'}).then(function(r){return r.text();}).then(function(html){
+      var m=html.match(/PP_VERSION='([^']+)'/);
+      if(m&&m[1]&&m[1]!==window.PP_VERSION) location.reload(true);
+    }).catch(function(){});
+  },5*60*1000);
+}
 // ═══════════════════════════════════════════
 //  DADOS
 // ═══════════════════════════════════════════
