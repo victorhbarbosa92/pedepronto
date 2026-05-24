@@ -8391,7 +8391,7 @@ function _atualizarBadgeLicenca(){
   const planoIco={dev:ppIcon('settings',12,1.6),basico:ppIcon('star',12,1.6),pro:ppIcon('gift',12,1.6),ilimitado:ppIcon('refresh',12,1.6)}[PP_LIC.plano]||ppIcon('receipt',12,1.6);
   const planoCor={dev:'color:var(--am)',basico:'color:var(--gn)',pro:'color:var(--ac)',ilimitado:'color:var(--am)'}[PP_LIC.plano]||'';
   const exp=PP_LIC.validade&&PP_LIC.validade!=='9999-12-31'?` · até ${PP_LIC.validade}`:'';
-  bdg.innerHTML=`<span style="font-size:10px;font-weight:800;${planoCor}">${planoIco} ${PP_LIC.plano.toUpperCase()}${exp}</span>`;
+  bdg.innerHTML=`<span style="font-size:10px;font-weight:800;${planoCor}">${planoIco} ${(PP_LIC.plano||PP_LIC.type||'').toUpperCase()}${exp}</span>`;
   bdg.style.display='block';
 }
 

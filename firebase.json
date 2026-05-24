@@ -24,7 +24,10 @@
       "functions/**",
       "android-package/**",
       "worker/**",
-      "*.js",
+      "**/node_modules/**/*.js",
+      "functions/**/*.js",
+      "convert-icons.js",
+      "generate-icons.js",
       "*.keystore",
       "package.json",
       "package-lock.json"
@@ -44,12 +47,24 @@
           { "key": "Content-Type", "value": "application/json" },
           { "key": "Cache-Control", "value": "public, max-age=3600" }
         ]
+      },
+      {
+        "source": "/sw.js",
+        "headers": [
+          { "key": "Content-Type", "value": "application/javascript" },
+          { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" },
+          { "key": "Service-Worker-Allowed", "value": "/" }
+        ]
       }
     ],
     "rewrites": [
       {
         "source": "/.well-known/**",
         "destination": "/.well-known/assetlinks.json"
+      },
+      {
+        "source": "/sw.js",
+        "destination": "/sw.js"
       },
       {
         "source": "**",
