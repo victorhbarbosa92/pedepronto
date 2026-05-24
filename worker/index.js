@@ -68,8 +68,7 @@ export default {
           url = MP_BASE + '/devices/' + device_id + '/payment-intents';
           method = 'POST';
           const payType = payment_type || 'credit_card';
-          const payObj = { type: payType };
-          if (payType !== 'none') payObj.installments = installments || 1;
+          const payObj = { type: payType, installments: installments || 1 };
           fetchBody = JSON.stringify({
             amount: amount,
             description: description || 'PedePronto',
