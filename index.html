@@ -7573,6 +7573,14 @@ function _atualizarBadgeLicenca(){
         const finalEstabId=inviteAccepted?_estabUid:(_estabUid||estabId);
 
         // 4. Verificação de licença
+        // Super Admin isento de licença e trial
+        const _isSA=window.IS_HOSTED&&user.email===_SUPER_ADMIN_EMAIL;
+        if(_isSA){
+          console.log('[PedePronto] Super Admin detectado — licença e trial dispensados');
+          window.PP_LIC={id:'superadmin',type:'unlimited',valid:true};
+          if(_licTelaEl){_licTelaEl.remove();_licTelaEl=null;}
+          window._pendingLicLogin=false;
+        }
         if(window._pendingLicLogin&&!window.PP_LIC){
           window._pendingLicLogin=false;
           // Membro herda licença do estabelecimento — NÃO bloqueia
@@ -7963,6 +7971,8 @@ async function _fetchTrialData(){
 function _renderTrialBar(){
   const bar=document.getElementById('trial-bar');
   if(!bar)return;
+  // Super admin nunca vê trial bar
+  if(isSuperAdmin()){bar.style.display='none';return;}
   // Se tem plano ativo, esconde barra
   if(_trialData.plan){
     if(_trialData.plan_expires){
@@ -7997,6 +8007,7 @@ function _renderTrialBar(){
 
 async function _incrementTrialCount(){
   if(!fbDB||!_estabUid)return;
+  if(isSuperAdmin())return; // super admin isento de trial
   if(_trialData.plan)return; // plano ativo, não incrementa trial
   _trialData.count++;
   _renderTrialBar();
