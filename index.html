@@ -1727,7 +1727,7 @@ const _CARGO_LABELS={dono:'Dono',gerente:'Gerente',caixa:'Caixa',cozinha:'Cozinh
 
 // ── Super Admin ──
 const _SUPER_ADMIN_EMAIL='victordarkxd@gmail.com';
-function isSuperAdmin(){return window.IS_HOSTED&&fbAuth?.currentUser?.email===_SUPER_ADMIN_EMAIL;}
+function isSuperAdmin(){const e=fbAuth?.currentUser?.email;const ok=window.IS_HOSTED&&!!e&&e.toLowerCase()===_SUPER_ADMIN_EMAIL.toLowerCase();return ok;}
 
 const _DEV_ID=(()=>{let id=sessionStorage.getItem('pp_dev');if(!id){id=Math.random().toString(36).slice(2);sessionStorage.setItem('pp_dev',id);}return id;})();
 let _syncStatus='idle'; // 'idle'|'ok'|'error'|'syncing'
@@ -2323,8 +2323,17 @@ function openMenuSheet(){
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
     ${[['delivery','bike','Delivery'],['cardapio','menu','Cardápio'],['clientes','users','Clientes'],['caixa','cash','Caixa'],['relatorio','chart','Relatórios'],['funcionarios','users','Equipe'],['config','settings','Config']].map(([id,ico,lbl])=>`<button class="btn bs bw" style="justify-content:flex-start;gap:8px;padding:13px;align-items:center" onclick="closeOv('ov-menu');nav('${id}')">${mIco(ico)} ${lbl}</button>`).join('')}
   </div>
-  ${isSuperAdmin()||((hasPermission('config_editar')||ST.cfg.ai_agent?.ativo))?`<div class="divider mt12 mb8"></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">${isSuperAdmin()?`<button class="btn bs bw" style="justify-content:flex-start;gap:8px;padding:13px;align-items:center;color:#f59e0b;border-color:#f59e0b" onclick="closeOv('ov-menu');nav('admin')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 7.2H22l-6 4.8 2.4 7.2L12 16.4 5.6 21.2 8 14 2 9.2h7.6z"/></svg> Admin</button>`:``}${(hasPermission('config_editar')||ST.cfg.ai_agent?.ativo)?`<button class="btn bs bw" style="justify-content:flex-start;gap:8px;padding:13px;align-items:center;color:var(--bl)" onclick="closeOv('ov-menu');nav('agente')">${mIco('bot')} Agente IA</button>`:``}</div>`:``}
   <div class="divider mt12 mb12"></div>
+  ${(()=>{
+    const sa=isSuperAdmin();
+    const ag=hasPermission('config_editar')||ST.cfg?.ai_agent?.ativo;
+    if(!sa&&!ag) return '';
+    let btns='';
+    if(sa) btns+=`<button class="btn bs bw" style="justify-content:flex-start;gap:8px;padding:13px;align-items:center;color:#f59e0b;border:2px solid #f59e0b;font-weight:700" onclick="closeOv('ov-menu');nav('admin')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 7.2H22l-6 4.8 2.4 7.2L12 16.4 5.6 21.2 8 14 2 9.2h7.6z"/></svg> Super Admin</button>`;
+    if(ag) btns+=`<button class="btn bs bw" style="justify-content:flex-start;gap:8px;padding:13px;align-items:center;color:var(--bl)" onclick="closeOv('ov-menu');nav('agente')">${mIco('bot')} Agente IA</button>`;
+    return `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">${btns}</div>`;
+  })()}
+  <div class="divider mb12"></div>
   <div style="display:flex;gap:8px">
     <button class="btn ba bw" style="align-items:center;gap:6px" onclick="closeOv('ov-menu');openMc('mc-bt')">${mIco('printer')} Impressora</button>
     <button class="btn bb bw" style="align-items:center;gap:6px" onclick="closeOv('ov-menu');fbAuth?.currentUser?fbLogout():fbLogin()">${mIco('cloud')} Drive</button>
@@ -7637,6 +7646,7 @@ function _atualizarBadgeLicenca(){
         _removeBootScreen();
         try{_bootWithData();}catch(e){console.error('[PedePronto] _bootWithData erro:',e);}
         _applyPermissionUI(); // APÓS dados carregados — para não esconder UI antes
+        console.log('[PedePronto] isSuperAdmin=',isSuperAdmin(),'email=',fbAuth?.currentUser?.email,'IS_HOSTED=',window.IS_HOSTED);
         _fetchTrialData(); // monetização: carrega dados do trial
         fsListen(finalEstabId); // real-time listener APÓS dados carregados
 
