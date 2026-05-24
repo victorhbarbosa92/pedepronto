@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "com.pedepronto.pdv",
+        "sha256_cert_fingerprints": ["96:56:25:67:5E:E1:79:54:D4:43:73:18:F3:51:E1:4E:56:36:F2:CB:78:EB:5D:3B:F8:12:22:A4:8E:0D:83:A5"]
+      }
+    }]

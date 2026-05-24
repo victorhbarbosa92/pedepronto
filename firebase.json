@@ -21,7 +21,13 @@
       "design-ref/**",
       "node_modules/**",
       ".git/**",
-      "functions/**"
+      "functions/**",
+      "android-package/**",
+      "worker/**",
+      "*.js",
+      "*.keystore",
+      "package.json",
+      "package-lock.json"
     ],
     "headers": [
       {
@@ -31,9 +37,20 @@
           { "key": "Pragma", "value": "no-cache" },
           { "key": "Expires", "value": "0" }
         ]
+      },
+      {
+        "source": "/.well-known/assetlinks.json",
+        "headers": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Cache-Control", "value": "public, max-age=3600" }
+        ]
       }
     ],
     "rewrites": [
+      {
+        "source": "/.well-known/**",
+        "destination": "/.well-known/assetlinks.json"
+      },
       {
         "source": "**",
         "destination": "/index.html"

@@ -8,6 +8,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="PedePronto">
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192x192.png">
+<link rel="apple-touch-icon" sizes="192x192" href="/icons/icon-192x192.png">
 <title>PedePronto PDV</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -7126,10 +7129,9 @@ function recalcPedido(ped){
 // ═══════════════════════════════════════════
 function registerSW(){
   if('serviceWorker' in navigator){
-    // Desregistrar SW antigo que cacheava tudo e causava problemas
-    navigator.serviceWorker.getRegistrations().then(regs=>{
-      regs.forEach(r=>r.unregister());
-    }).catch(()=>{});
+    navigator.serviceWorker.register('/sw.js').then(reg=>{
+      console.log('SW registrado, scope:',reg.scope);
+    }).catch(e=>console.warn('SW falhou:',e));
   }
 }
 
