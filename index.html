@@ -7883,16 +7883,8 @@ const MAQ={
     }
     const amount=Math.round(ped.total*100);
     try{
-      const r=await fetch(
-        `https://api.mercadopago.com/point/integration-api/devices/${cfg.mp_device_id}/payment-intents`,
-        {method:'POST',
-         headers:{'Authorization':'Bearer '+cfg.mp_token,'Content-Type':'application/json',
-                  'X-Idempotency-Key':ped.id+'-'+Date.now()},
-         body:JSON.stringify({amount,description:'PedePronto '+ped.num,
-                              payment_method:{installments:1,type:'credit_card'}})}
-      );
-      const d=await r.json();
-      if(!r.ok) throw new Error(d.message||d.error||('HTTP '+r.status));
+      const d=await _mpCall({action:'create_intent',token:cfg.mp_token,device_id:cfg.mp_device_id,
+        amount:amount,description:'PedePronto '+ped.num,idempotency_key:ped.id+'-'+Date.now()});
       return d.id;
     }catch(e){
       toast('Mercado Pago: '+e.message,'r',5000);
@@ -7902,11 +7894,7 @@ const MAQ={
   async mpPoll(intentId){
     const cfg=ST.cfg.maquininha||{};
     try{
-      const r=await fetch(
-        `https://api.mercadopago.com/point/integration-api/payment-intents/${intentId}`,
-        {headers:{'Authorization':'Bearer '+cfg.mp_token}}
-      );
-      const d=await r.json();
+      const d=await _mpCall({action:'poll_intent',token:cfg.mp_token,intent_id:intentId});
       return d.state||null;
     }catch(e){return null;}
   },
@@ -7932,6 +7920,14 @@ const MAQ={
   }
 };
 
+// ── URL do proxy Mercado Pago (Cloudflare Worker) ────
+var _MP_PROXY='https://pedepronto-mp-proxy.victordarkxd.workers.dev';
+async function _mpCall(body){
+  var r=await fetch(_MP_PROXY,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  var d=await r.json();
+  if(!r.ok) throw new Error(d.message||d.error||JSON.stringify(d));
+  return d;
+}
 // ── Buscar dispositivos Mercado Pago ────────────────
 async function _mpBuscarDispositivos(){
   var token=(ST.cfg.maquininha||{}).mp_token||'';
@@ -7939,13 +7935,10 @@ async function _mpBuscarDispositivos(){
   var el=document.getElementById('mp-devices-list');
   if(el) el.innerHTML='<div class="fs12 t2" style="padding:8px">🔍 Buscando maquininhas...</div>';
   try{
-    var r=await fetch('https://api.mercadopago.com/point/integration-api/devices',{
-      headers:{'Authorization':'Bearer '+token}
-    });
-    var d=await r.json();
-    if(!r.ok) throw new Error(d.message||d.error||'HTTP '+r.status);
+    var d=await _mpCall({action:'devices',token:token});
     var devices=d.devices||d;
-    if(!Array.isArray(devices)||devices.length===0){
+    if(!Array.isArray(devices)) devices=[d];
+    if(devices.length===0||(!devices[0].id&&!devices[0].device_id)){
       if(el) el.innerHTML='<div class="fs12" style="padding:8px;background:#fff3cd;border-radius:8px;color:#856404">⚠️ Nenhuma maquininha encontrada. Verifique se a Point Pro 2 esta ligada, conectada à internet e vinculada à mesma conta do Access Token.</div>';
       return;
     }
@@ -7985,11 +7978,7 @@ async function _mpTestarConexao(){
   }
   if(el) el.innerHTML='<span class="t2">🔄 Testando conexão...</span>';
   try{
-    var r=await fetch('https://api.mercadopago.com/point/integration-api/devices/'+devId,{
-      headers:{'Authorization':'Bearer '+token}
-    });
-    var d=await r.json();
-    if(!r.ok) throw new Error(d.message||d.error||'HTTP '+r.status);
+    var d=await _mpCall({action:'device_status',token:token,device_id:devId});
     var status=d.operating_mode||d.status||'connected';
     if(el) el.innerHTML='<div style="padding:8px;background:#d4edda;border-radius:8px;color:#155724">✅ <strong>Conexão OK!</strong><br>Status: '+status+'<br>A maquininha está pronta para receber cobranças.</div>';
     toast('Maquininha conectada!','g');

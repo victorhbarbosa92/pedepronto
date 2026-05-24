@@ -1,0 +1,6 @@
+name = "pedepronto-mp-proxy"
+main = "index.js"
+compatibility_date = "2024-01-01"
+
+[vars]
+ALLOWED_ORIGIN = "https://pedepronto-40790.web.app"

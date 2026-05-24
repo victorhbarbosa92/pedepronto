@@ -154,6 +154,66 @@ exports.mercadoPagoWebhook = onRequest({ region: "southamerica-east1", cors: tru
   res.sendStatus(200);
 });
 
+// ── Mercado Pago Point Proxy (evita CORS do browser) ────────────────────────
+
+exports.mpProxy = onRequest({ region: "southamerica-east1", cors: true }, async (req, res) => {
+  if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
+
+  try {
+    const { action, token, device_id, intent_id, amount, description, idempotency_key } = req.body;
+
+    if (!token) return res.status(400).json({ error: "Token obrigatorio" });
+
+    const axios = require("axios");
+    const headers = { "Authorization": "Bearer " + token, "Content-Type": "application/json" };
+
+    if (action === "devices") {
+      // Listar dispositivos
+      const r = await axios.get("https://api.mercadopago.com/point/integration-api/devices", { headers });
+      return res.json(r.data);
+
+    } else if (action === "device_status") {
+      // Status de um dispositivo
+      if (!device_id) return res.status(400).json({ error: "device_id obrigatorio" });
+      const r = await axios.get("https://api.mercadopago.com/point/integration-api/devices/" + device_id, { headers });
+      return res.json(r.data);
+
+    } else if (action === "create_intent") {
+      // Criar payment intent
+      if (!device_id || !amount) return res.status(400).json({ error: "device_id e amount obrigatorios" });
+      const body = {
+        amount: amount,
+        description: description || "PedePronto",
+        payment: { installments: 1, type: "credit_card" }
+      };
+      if (idempotency_key) headers["X-Idempotency-Key"] = idempotency_key;
+      const r = await axios.post(
+        "https://api.mercadopago.com/point/integration-api/devices/" + device_id + "/payment-intents",
+        body, { headers }
+      );
+      return res.json(r.data);
+
+    } else if (action === "poll_intent") {
+      // Verificar status de payment intent
+      if (!intent_id) return res.status(400).json({ error: "intent_id obrigatorio" });
+      const r = await axios.get(
+        "https://api.mercadopago.com/point/integration-api/payment-intents/" + intent_id,
+        { headers }
+      );
+      return res.json(r.data);
+
+    } else {
+      return res.status(400).json({ error: "action invalida: " + action });
+    }
+
+  } catch (e) {
+    const status = e.response?.status || 500;
+    const data = e.response?.data || { error: e.message };
+    console.error("[mpProxy] Erro:", status, data);
+    return res.status(status).json(data);
+  }
+});
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 /** Cache de mapeamento phone_number_id -> estabUid */
