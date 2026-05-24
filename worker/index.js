@@ -80,6 +80,17 @@ export default {
           url = MP_BASE + '/payment-intents/' + intent_id;
           break;
 
+        case 'cancel_intent':
+          if (!device_id || !intent_id) return jsonResp({ error: 'device_id e intent_id obrigatorios' }, 400, request);
+          url = MP_BASE + '/devices/' + device_id + '/payment-intents/' + intent_id;
+          method = 'DELETE';
+          break;
+
+        case 'list_intents':
+          if (!device_id) return jsonResp({ error: 'device_id obrigatorio' }, 400, request);
+          url = MP_BASE + '/devices/' + device_id + '/payment-intents';
+          break;
+
         default:
           return jsonResp({ error: 'action invalida: ' + action }, 400, request);
       }

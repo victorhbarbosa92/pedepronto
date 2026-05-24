@@ -7890,6 +7890,29 @@ const MAQ={
         amount:amount,description:'PedePronto '+ped.num,idempotency_key:ped.id+'-'+Date.now()});
       return d.id;
     }catch(e){
+      // Se já tem intent pendente, cancelar e tentar novamente
+      if(e.message&&e.message.indexOf('queued')>=0){
+        toast('Cancelando cobrança anterior...','i',2000);
+        try{
+          // Buscar intent pendente
+          var list=await _mpCall({action:'list_intents',token:cfg.mp_token,device_id:cfg.mp_device_id});
+          var intents=list.payment_intents||list;
+          if(Array.isArray(intents)){
+            for(var i=0;i<intents.length;i++){
+              var iid=intents[i].id||intents[i].payment_intent_id;
+              if(iid){try{await _mpCall({action:'cancel_intent',token:cfg.mp_token,device_id:cfg.mp_device_id,intent_id:iid});}catch(e2){}}
+            }
+          }
+          // Tentar cobrar novamente
+          await new Promise(r=>setTimeout(r,1000));
+          var d2=await _mpCall({action:'create_intent',token:cfg.mp_token,device_id:cfg.mp_device_id,
+            amount:amount,description:'PedePronto '+ped.num,idempotency_key:ped.id+'-'+Date.now()});
+          return d2.id;
+        }catch(e3){
+          toast('Mercado Pago: '+e3.message,'r',5000);
+          return null;
+        }
+      }
       toast('Mercado Pago: '+e.message,'r',5000);
       return null;
     }
