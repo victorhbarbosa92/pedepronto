@@ -12,7 +12,7 @@ function cors(request) {
   const allowed = ALLOWED.find(a => origin.startsWith(a)) || ALLOWED[0];
   return {
     'Access-Control-Allow-Origin': allowed,
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Methods': 'POST, PATCH, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type',
     'Access-Control-Max-Age': '86400',
   };
@@ -53,7 +53,14 @@ export default {
 
         case 'device_status':
           if (!device_id) return jsonResp({ error: 'device_id obrigatorio' }, 400, request);
+          url = MP_BASE + '/devices';
+          break;
+
+        case 'set_pdv_mode':
+          if (!device_id) return jsonResp({ error: 'device_id obrigatorio' }, 400, request);
           url = MP_BASE + '/devices/' + device_id;
+          method = 'PATCH';
+          fetchBody = JSON.stringify({ operating_mode: 'PDV' });
           break;
 
         case 'create_intent':

@@ -7977,11 +7977,29 @@ async function _mpTestarConexao(){
     if(el) el.innerHTML='<span style="color:var(--rd)">❌ Preencha o Access Token e selecione uma maquininha primeiro</span>';
     return;
   }
-  if(el) el.innerHTML='<span class="t2">🔄 Testando conexão...</span>';
+  if(el) el.innerHTML='<span class="t2">🔄 Testando conexão e ativando modo integrado...</span>';
   try{
-    var d=await _mpCall({action:'device_status',token:token,device_id:devId});
-    var status=d.operating_mode||d.status||'connected';
-    if(el) el.innerHTML='<div style="padding:8px;background:#d4edda;border-radius:8px;color:#155724">✅ <strong>Conexão OK!</strong><br>Status: '+status+'<br>A maquininha está pronta para receber cobranças.</div>';
+    // 1) Buscar device na lista
+    var d=await _mpCall({action:'devices',token:token});
+    var devices=d.devices||d;
+    if(!Array.isArray(devices)) devices=[d];
+    var found=devices.find(function(dev){return (dev.id||dev.device_id)===devId;});
+    if(!found){
+      if(el) el.innerHTML='<div style="padding:8px;background:#f8d7da;border-radius:8px;color:#721c24">❌ Maquininha <strong>'+devId+'</strong> não encontrada na lista de dispositivos.<br>Verifique se está ligada e conectada à internet.</div>';
+      return;
+    }
+    // 2) Ativar modo PDV (integrado) se necessário
+    var mode=found.operating_mode||'';
+    if(mode!=='PDV'){
+      if(el) el.innerHTML='<span class="t2">🔄 Ativando modo integrado (PDV)...</span>';
+      try{
+        await _mpCall({action:'set_pdv_mode',token:token,device_id:devId});
+        mode='PDV';
+      }catch(e2){
+        console.warn('set_pdv_mode falhou:',e2.message);
+      }
+    }
+    if(el) el.innerHTML='<div style="padding:8px;background:#d4edda;border-radius:8px;color:#155724">✅ <strong>Conexão OK!</strong><br>Dispositivo: '+(found.pos_id||found.model||devId)+'<br>Modo: '+(mode||'PDV')+'<br>A maquininha está pronta para receber cobranças.</div>';
     toast('Maquininha conectada!','g');
   }catch(e){
     if(el) el.innerHTML='<div style="padding:8px;background:#f8d7da;border-radius:8px;color:#721c24">❌ Falha: '+e.message+'<br>Verifique se a maquininha está ligada e o token está correto.</div>';
