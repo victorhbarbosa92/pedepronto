@@ -33,7 +33,7 @@ export default {
 
     try {
       const body = await request.json();
-      const { action, token, device_id, intent_id, amount, description, idempotency_key } = body;
+      const { action, token, device_id, intent_id, amount, description, idempotency_key, payment_type, installments } = body;
 
       if (!token) {
         return jsonResp({ error: 'token obrigatorio' }, 400, request);
@@ -67,10 +67,13 @@ export default {
           if (!device_id || !amount) return jsonResp({ error: 'device_id e amount obrigatorios' }, 400, request);
           url = MP_BASE + '/devices/' + device_id + '/payment-intents';
           method = 'POST';
+          const payType = payment_type || 'credit_card';
+          const payObj = { type: payType };
+          if (payType !== 'none') payObj.installments = installments || 1;
           fetchBody = JSON.stringify({
             amount: amount,
             description: description || 'PedePronto',
-            payment: { installments: 1, type: 'credit_card' }
+            payment: payObj
           });
           if (idempotency_key) headers['X-Idempotency-Key'] = idempotency_key;
           break;
