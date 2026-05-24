@@ -5184,13 +5184,32 @@ function _renderCfgSection(sec){
         Compativel com <strong>qualquer maquininha</strong>: Stone, Cielo, Rede, SumUp, GetNet etc.
       </div>`:''}
       ${cfg.maquininha?.provider==='mp'?`
-      <div class="fg"><label class="fl">Access Token do Mercado Pago</label>
-      <input class="inp" type="password" id="cfg-mp-token" value="${esc(cfg.maquininha?.mp_token||'')}" oninput="ST.cfg.maquininha=ST.cfg.maquininha||{};ST.cfg.maquininha.mp_token=this.value" placeholder="APP_USR-..."></div>
-      <div class="fg"><label class="fl">Device ID (ID da maquininha Point)</label>
-      <input class="inp" id="cfg-mp-device" value="${esc(cfg.maquininha?.mp_device_id||'')}" oninput="ST.cfg.maquininha=ST.cfg.maquininha||{};ST.cfg.maquininha.mp_device_id=this.value" placeholder="PAX_A910__SMARTPOS..."></div>
-      <div class="fs11 t2" style="line-height:1.7;padding:8px;background:var(--s2);border-radius:8px;margin-top:4px">
-        Obtenha o Access Token em <strong>mercadopago.com.br/developers</strong> e o Device ID na app <strong>Mercado Pago Point</strong>.
-      </div>`:''}
+      <div class="fs12 bold mb6 mt10" style="color:var(--ac)">Passo 1 — Access Token</div>
+      <div class="fs11 t2 mb6" style="line-height:1.6;padding:8px;background:var(--s2);border-radius:8px">
+        1. Acesse <strong><a href="https://www.mercadopago.com.br/developers/panel/app" target="_blank" style="color:var(--bl)">mercadopago.com.br/developers</a></strong><br>
+        2. Logue com sua conta MP<br>
+        3. Clique em <strong>Criar aplicação</strong><br>
+        4. Nome: <strong>PedePronto</strong>, Produto: <strong>Point</strong><br>
+        5. Vá em <strong>Credenciais de produção</strong><br>
+        6. Copie o <strong>Access Token</strong> e cole abaixo:
+      </div>
+      <div class="fg"><label class="fl">Access Token</label>
+      <input class="inp" type="password" id="cfg-mp-token" value="${esc(cfg.maquininha?.mp_token||'')}" placeholder="APP_USR-..." oninput="ST.cfg.maquininha=ST.cfg.maquininha||{};ST.cfg.maquininha.mp_token=this.value;save('cfg')"></div>
+      <button class="btn bxs bw mb4" style="font-size:11px" onclick="var i=document.getElementById('cfg-mp-token');if(i)i.type=i.type==='password'?'text':'password'">👁️ Mostrar/Ocultar token</button>
+      <div class="divider mt10 mb10"></div>
+      <div class="fs12 bold mb6" style="color:var(--ac)">Passo 2 — Maquininha (Device ID)</div>
+      <div class="fs11 t2 mb6" style="line-height:1.6;padding:8px;background:var(--s2);border-radius:8px">
+        Cole o Access Token acima e clique no botão para buscar automaticamente sua maquininha:
+      </div>
+      <button class="btn bp bw mb8" onclick="_mpBuscarDispositivos()">${ppIcon('search',14,1.7)} Buscar maquininhas</button>
+      <div id="mp-devices-list"></div>
+      <div class="fg"><label class="fl">Device ID selecionado</label>
+      <input class="inp" id="cfg-mp-device" value="${esc(cfg.maquininha?.mp_device_id||'')}" placeholder="Clique em 'Buscar maquininhas' acima" oninput="ST.cfg.maquininha=ST.cfg.maquininha||{};ST.cfg.maquininha.mp_device_id=this.value" readonly style="background:var(--s2)"></div>
+      <div class="divider mt10 mb10"></div>
+      <div class="fs12 bold mb6" style="color:var(--ac)">Passo 3 — Testar</div>
+      <button class="btn bb bw mb4" onclick="_mpTestarConexao()">🔗 Testar conexão</button>
+      <div id="mp-test-result" class="fs11 mt4"></div>
+      `:''}
       ${cfg.maquininha?.provider==='pagseguro'?`
       <div class="fs12 t2" style="line-height:1.7;padding:8px;background:var(--s2);border-radius:8px">
         <strong>So funciona em Android</strong> com o app PagSeguro instalado. Ao cobrar, o app abre automaticamente.
@@ -7892,6 +7911,72 @@ const MAQ={
       `Valor: ${fmtR(ped.total)} — Cobre externamente e confirme abaixo`,true,false);
   }
 };
+
+// ── Buscar dispositivos Mercado Pago ────────────────
+async function _mpBuscarDispositivos(){
+  var token=(ST.cfg.maquininha||{}).mp_token||'';
+  if(!token){toast('Cole o Access Token acima primeiro','r');return;}
+  var el=document.getElementById('mp-devices-list');
+  if(el) el.innerHTML='<div class="fs12 t2" style="padding:8px">🔍 Buscando maquininhas...</div>';
+  try{
+    var r=await fetch('https://api.mercadopago.com/point/integration-api/devices',{
+      headers:{'Authorization':'Bearer '+token}
+    });
+    var d=await r.json();
+    if(!r.ok) throw new Error(d.message||d.error||'HTTP '+r.status);
+    var devices=d.devices||d;
+    if(!Array.isArray(devices)||devices.length===0){
+      if(el) el.innerHTML='<div class="fs12" style="padding:8px;background:#fff3cd;border-radius:8px;color:#856404">⚠️ Nenhuma maquininha encontrada. Verifique se a Point Pro 2 esta ligada, conectada à internet e vinculada à mesma conta do Access Token.</div>';
+      return;
+    }
+    var html='<div class="fs11 bold mb4" style="color:var(--gn)">✅ '+devices.length+' dispositivo(s) encontrado(s):</div>';
+    for(var i=0;i<devices.length;i++){
+      var dev=devices[i];
+      var devId=dev.id||dev.device_id||'';
+      var modelo=dev.pos_id||dev.model||dev.operating_mode||'Point';
+      html+='<button class="btn bs bw mb4" style="justify-content:flex-start;gap:8px;padding:10px;text-align:left;width:100%" onclick="_mpSelecionarDevice(\''+devId+'\')">'
+        +'<span style="font-size:20px">📱</span>'
+        +'<span style="flex:1;min-width:0"><span class="bold fs12">'+modelo+'</span><br><span class="fs10 t3 mono" style="word-break:break-all">'+devId+'</span></span>'
+        +'<span style="color:var(--gn);font-weight:700">Selecionar</span>'
+        +'</button>';
+    }
+    if(el) el.innerHTML=html;
+  }catch(e){
+    if(el) el.innerHTML='<div class="fs12" style="padding:8px;background:#f8d7da;border-radius:8px;color:#721c24">❌ Erro: '+e.message+'</div>';
+  }
+}
+function _mpSelecionarDevice(devId){
+  ST.cfg.maquininha=ST.cfg.maquininha||{};
+  ST.cfg.maquininha.mp_device_id=devId;
+  save('cfg');
+  var inp=document.getElementById('cfg-mp-device');
+  if(inp) inp.value=devId;
+  toast('Maquininha selecionada!','g');
+  var el=document.getElementById('mp-devices-list');
+  if(el) el.innerHTML='<div class="fs12" style="padding:8px;background:#d4edda;border-radius:8px;color:#155724">✅ Device selecionado: <span class="mono fs10">'+devId+'</span></div>';
+}
+async function _mpTestarConexao(){
+  var token=(ST.cfg.maquininha||{}).mp_token||'';
+  var devId=(ST.cfg.maquininha||{}).mp_device_id||'';
+  var el=document.getElementById('mp-test-result');
+  if(!token||!devId){
+    if(el) el.innerHTML='<span style="color:var(--rd)">❌ Preencha o Access Token e selecione uma maquininha primeiro</span>';
+    return;
+  }
+  if(el) el.innerHTML='<span class="t2">🔄 Testando conexão...</span>';
+  try{
+    var r=await fetch('https://api.mercadopago.com/point/integration-api/devices/'+devId,{
+      headers:{'Authorization':'Bearer '+token}
+    });
+    var d=await r.json();
+    if(!r.ok) throw new Error(d.message||d.error||'HTTP '+r.status);
+    var status=d.operating_mode||d.status||'connected';
+    if(el) el.innerHTML='<div style="padding:8px;background:#d4edda;border-radius:8px;color:#155724">✅ <strong>Conexão OK!</strong><br>Status: '+status+'<br>A maquininha está pronta para receber cobranças.</div>';
+    toast('Maquininha conectada!','g');
+  }catch(e){
+    if(el) el.innerHTML='<div style="padding:8px;background:#f8d7da;border-radius:8px;color:#721c24">❌ Falha: '+e.message+'<br>Verifique se a maquininha está ligada e o token está correto.</div>';
+  }
+}
 
 function maqCobrar(ped_id){
   const ped=ST.pedidos.find(p=>p.id===ped_id);if(!ped)return;
