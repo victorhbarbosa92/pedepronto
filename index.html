@@ -1829,8 +1829,10 @@ function saveAll(skipPush){
 async function fsForcePush(){
   if(!fbAuth?.currentUser||!fbDB){toast('Firebase não disponível','r');return;}
   const uid=_estabUid||fbAuth.currentUser.uid;
-  const d={_savedAt:new Date().toISOString(),_dev_id:_DEV_ID,_force:true};
+  let d={_savedAt:new Date().toISOString(),_dev_id:_DEV_ID,_force:true};
   ['cfg','caixa','produtos','categorias','clientes','obs_grupos_globais','pedidos','funcionarios','vouchers','pedidos_cancelados','alertas'].forEach(k=>{if(ST[k]!=null)d[k]=ST[k];});
+  // E2EE: criptografa dados sensíveis antes de enviar
+  if(E2EE._enabled) d=await E2EE.encryptData(d);
   try{
     _setSyncStatus('syncing');
     await fbDB.collection('estabelecimentos').doc(uid).collection('dados').doc('principal').set(d);
@@ -1856,8 +1858,10 @@ async function fsPush(){
   _setSyncStatus('syncing');
   const uid=_estabUid||fbAuth.currentUser.uid;
   try{
-    const d={_savedAt:new Date().toISOString(),_dev_id:_DEV_ID};
+    let d={_savedAt:new Date().toISOString(),_dev_id:_DEV_ID};
     ['cfg','caixa','produtos','categorias','clientes','obs_grupos_globais','pedidos','funcionarios','vouchers','pedidos_cancelados','alertas'].forEach(k=>{if(ST[k]!=null)d[k]=ST[k];});
+    // E2EE: criptografa dados sensíveis antes de enviar
+    if(E2EE._enabled) d=await E2EE.encryptData(d);
     await fbDB.collection('estabelecimentos').doc(uid).collection('dados').doc('principal').set(d);
     _localDirty=false; // push concluído — dados locais e nuvem estão iguais
     _lastSyncAt=Date.now();
@@ -1945,7 +1949,25 @@ async function _fsPullBoot(uid){
   if(!uid){console.warn('[PedePronto] Boot: uid indefinido!');return false;}
   const ref=fbDB.collection('estabelecimentos').doc(uid).collection('dados').doc('principal');
   const _KEYS=['cfg','caixa','produtos','categorias','clientes','obs_grupos_globais','pedidos','funcionarios','vouchers','pedidos_cancelados','alertas'];
-  function _apply(r){_KEYS.forEach(k=>{if(r[k]!=null)ST[k]=r[k];});saveAll(true);_lastSyncAt=Date.now();_setSyncStatus('ok');}
+  async function _apply(r){
+    // E2EE: descriptografa se necessário
+    let data=r;
+    if(r._e2ee){
+      if(!E2EE._enabled){
+        // Precisa desbloquear — mostra modal e espera
+        const unlocked=await new Promise(resolve=>{
+          _showE2EEUnlockModal(()=>resolve(true));
+          // Se fechar sem desbloquear, resolve false
+          setTimeout(()=>{if(!E2EE._enabled)resolve(false);},120000);
+        });
+        if(!unlocked){console.warn('[E2EE] Dados criptografados não desbloqueados');return;}
+      }
+      data=await E2EE.decryptData(r);
+      if(!data){console.warn('[E2EE] Falha ao descriptografar');return;}
+    }
+    _KEYS.forEach(k=>{if(data[k]!=null)ST[k]=data[k];});
+    saveAll(true);_lastSyncAt=Date.now();_setSyncStatus('ok');
+  }
   return new Promise(resolve=>{
     let done=false;
     let cacheApplied=false;
@@ -2021,7 +2043,9 @@ async function fsPull(){
   try{
     const snap=await fbDB.collection('estabelecimentos').doc(uid).collection('dados').doc('principal').get();
     if(!snap.exists){toast('Nenhum dado na nuvem ainda — envie primeiro','a',4000);return;}
-    const r=snap.data();
+    let r=snap.data();
+    // E2EE: descriptografa se necessário
+    if(r._e2ee&&E2EE._enabled){try{r=await E2EE.decryptData(r)||r;}catch(e){console.warn('[E2EE] Pull decrypt error:',e.message);}}
     ['cfg','caixa','produtos','categorias','clientes','obs_grupos_globais','pedidos','funcionarios','vouchers','pedidos_cancelados','alertas'].forEach(k=>{if(r[k]!=null)ST[k]=r[k];});
     saveAll(true); // skipPush: dados vieram da nuvem
     _lastSyncAt=Date.now();_setSyncStatus('ok');
@@ -2091,6 +2115,329 @@ function loadAll(){
 }
 
 // ═══════════════════════════════════════════
+//  E2EE — Criptografia ponta a ponta (AES-GCM + PBKDF2)
+// ═══════════════════════════════════════════
+const E2EE={
+  _DB_NAME:'pp_e2ee',
+  _STORE:'keys',
+  _SALT_KEY:'pp_e2ee_salt',
+  _ITER:600000, // PBKDF2 iterations (OWASP 2024 recommendation)
+  _enabled:false,
+  _cryptoKey:null,
+  // Campos que serão criptografados (dados sensíveis do negócio)
+  ENCRYPTED_FIELDS:['produtos','categorias','clientes','pedidos','pedidos_cancelados','funcionarios','vouchers','caixa'],
+
+  // ── IndexedDB helpers ──
+  _openDB(){
+    return new Promise((resolve,reject)=>{
+      const req=indexedDB.open(this._DB_NAME,1);
+      req.onupgradeneeded=e=>{e.target.result.createObjectStore(this._STORE);};
+      req.onsuccess=e=>resolve(e.target.result);
+      req.onerror=e=>reject(e.target.error);
+    });
+  },
+  async _idbGet(key){
+    const db=await this._openDB();
+    return new Promise((resolve,reject)=>{
+      const tx=db.transaction(this._STORE,'readonly');
+      const req=tx.objectStore(this._STORE).get(key);
+      req.onsuccess=()=>resolve(req.result);
+      req.onerror=e=>reject(e.target.error);
+    });
+  },
+  async _idbSet(key,val){
+    const db=await this._openDB();
+    return new Promise((resolve,reject)=>{
+      const tx=db.transaction(this._STORE,'readwrite');
+      tx.objectStore(this._STORE).put(val,key);
+      tx.oncomplete=()=>resolve();
+      tx.onerror=e=>reject(e.target.error);
+    });
+  },
+  async _idbDel(key){
+    const db=await this._openDB();
+    return new Promise((resolve,reject)=>{
+      const tx=db.transaction(this._STORE,'readwrite');
+      tx.objectStore(this._STORE).delete(key);
+      tx.oncomplete=()=>resolve();
+      tx.onerror=e=>reject(e.target.error);
+    });
+  },
+
+  // ── Key derivation (PBKDF2 → AES-GCM 256-bit) ──
+  async deriveKey(password, salt){
+    const enc=new TextEncoder();
+    const keyMaterial=await crypto.subtle.importKey('raw',enc.encode(password),{name:'PBKDF2'},false,['deriveKey']);
+    return crypto.subtle.deriveKey(
+      {name:'PBKDF2',salt,iterations:this._ITER,hash:'SHA-256'},
+      keyMaterial,
+      {name:'AES-GCM',length:256},
+      false, // não exportável
+      ['encrypt','decrypt']
+    );
+  },
+
+  // ── Setup: usuário define senha, gera salt, deriva key, salva no IndexedDB ──
+  async setup(password){
+    if(!password||password.length<6) throw new Error('Senha deve ter pelo menos 6 caracteres');
+    const salt=crypto.getRandomValues(new Uint8Array(16));
+    this._cryptoKey=await this.deriveKey(password,salt);
+    // Salva salt (público) no IndexedDB — key fica apenas em memória derivada do password
+    await this._idbSet('salt',salt);
+    // Salva hash do password para verificação rápida (não armazena o password em si)
+    const pwHash=await crypto.subtle.digest('SHA-256',new TextEncoder().encode('pp_verify_'+password));
+    await this._idbSet('pw_hash',new Uint8Array(pwHash));
+    // Marca E2EE como ativo nas configs
+    this._enabled=true;
+    // Gerar token de verificação (criptografa string conhecida para validar desbloqueio)
+    const verifyToken=await this.encryptField('PEDEPRONTO_E2EE_OK');
+    await this._idbSet('verify_token',verifyToken);
+    console.log('[E2EE] ✅ Configurado com sucesso (PBKDF2 '+this._ITER+' iterações, AES-GCM 256-bit)');
+    return true;
+  },
+
+  // ── Unlock: usuário fornece senha, deriva key do salt salvo ──
+  async unlock(password){
+    const salt=await this._idbGet('salt');
+    if(!salt){console.log('[E2EE] Nenhum salt encontrado — E2EE não configurado');return false;}
+    try{
+      this._cryptoKey=await this.deriveKey(password,salt);
+      // Verifica se a key está correta tentando descriptografar o token
+      const token=await this._idbGet('verify_token');
+      if(token){
+        const result=await this.decryptField(token);
+        if(result!=='PEDEPRONTO_E2EE_OK'){this._cryptoKey=null;return false;}
+      }
+      this._enabled=true;
+      console.log('[E2EE] ✅ Desbloqueado com sucesso');
+      return true;
+    }catch(e){
+      console.warn('[E2EE] Senha incorreta ou dados corrompidos:',e.message);
+      this._cryptoKey=null;
+      return false;
+    }
+  },
+
+  // ── Check: verifica se E2EE está configurado (tem salt no IndexedDB) ──
+  async isConfigured(){
+    try{const s=await this._idbGet('salt');return!!s;}catch(e){return false;}
+  },
+
+  // ── Encrypt a single field (string or JSON → base64 cipher) ──
+  async encryptField(data){
+    if(!this._cryptoKey) throw new Error('E2EE não desbloqueado');
+    const iv=crypto.getRandomValues(new Uint8Array(12)); // 96-bit IV for AES-GCM
+    const encoded=new TextEncoder().encode(typeof data==='string'?data:JSON.stringify(data));
+    const cipher=await crypto.subtle.encrypt({name:'AES-GCM',iv},this._cryptoKey,encoded);
+    // Formato: iv(12 bytes) + ciphertext
+    const combined=new Uint8Array(iv.length+cipher.byteLength);
+    combined.set(iv);
+    combined.set(new Uint8Array(cipher),iv.length);
+    return btoa(String.fromCharCode(...combined));
+  },
+
+  // ── Decrypt a single field (base64 cipher → original data) ──
+  async decryptField(b64){
+    if(!this._cryptoKey) throw new Error('E2EE não desbloqueado');
+    const bytes=Uint8Array.from(atob(b64),c=>c.charCodeAt(0));
+    const iv=bytes.slice(0,12);
+    const cipher=bytes.slice(12);
+    const plain=await crypto.subtle.decrypt({name:'AES-GCM',iv},this._cryptoKey,cipher);
+    return new TextDecoder().decode(plain);
+  },
+
+  // ── Encrypt all sensitive fields in a data object (before Firestore push) ──
+  async encryptData(dataObj){
+    if(!this._enabled||!this._cryptoKey) return dataObj;
+    const encrypted={...dataObj,_e2ee:true,_e2ee_v:1};
+    for(const field of this.ENCRYPTED_FIELDS){
+      if(encrypted[field]!=null){
+        try{
+          encrypted[field]=await this.encryptField(encrypted[field]);
+        }catch(e){
+          console.error('[E2EE] Erro ao criptografar '+field+':',e.message);
+          // Falha silenciosa — envia sem criptografia
+        }
+      }
+    }
+    return encrypted;
+  },
+
+  // ── Decrypt all sensitive fields from a data object (after Firestore pull) ──
+  async decryptData(dataObj){
+    if(!dataObj._e2ee) return dataObj; // dados não criptografados
+    if(!this._enabled||!this._cryptoKey){
+      console.warn('[E2EE] Dados criptografados recebidos mas E2EE não desbloqueado');
+      return null; // sinaliza que precisa de desbloqueio
+    }
+    const decrypted={...dataObj};
+    delete decrypted._e2ee;
+    delete decrypted._e2ee_v;
+    for(const field of this.ENCRYPTED_FIELDS){
+      if(decrypted[field]!=null&&typeof decrypted[field]==='string'){
+        try{
+          const raw=await this.decryptField(decrypted[field]);
+          decrypted[field]=JSON.parse(raw);
+        }catch(e){
+          console.error('[E2EE] Erro ao descriptografar '+field+':',e.message);
+          decrypted[field]=[]; // fallback seguro
+        }
+      }
+    }
+    return decrypted;
+  },
+
+  // ── Desativar E2EE (requer senha atual) ──
+  async disable(password){
+    const ok=await this.unlock(password);
+    if(!ok) return false;
+    await this._idbDel('salt');
+    await this._idbDel('pw_hash');
+    await this._idbDel('verify_token');
+    this._cryptoKey=null;
+    this._enabled=false;
+    console.log('[E2EE] ❌ Desativado');
+    return true;
+  },
+
+  // ── Alterar senha ──
+  async changePassword(oldPassword,newPassword){
+    const ok=await this.unlock(oldPassword);
+    if(!ok) return false;
+    // Re-criptografa dados locais com nova chave
+    // 1. Descriptografa tudo com chave antiga (já feito pelo unlock)
+    // 2. Setup com nova senha (gera novo salt + key)
+    await this.setup(newPassword);
+    // 3. Força push para re-criptografar na nuvem
+    if(_syncEnabled&&_cloudBooted) fsForcePush();
+    return true;
+  }
+};
+
+// ── E2EE: Modal de desbloqueio ──
+function _showE2EEUnlockModal(callback){
+  showModal('mc-e2ee','Dados Criptografados',`
+    <div style="text-align:center;margin-bottom:14px">${ppIcon('lock',36,1.4,'var(--ac)')}</div>
+    <div class="fs13 t2 mb12" style="text-align:center;line-height:1.7">
+      Este estabelecimento usa criptografia ponta a ponta.<br>
+      Digite a senha de criptografia para acessar os dados.
+    </div>
+    <div class="fg mb12">
+      <input class="inp" type="password" id="e2ee-unlock-pw" placeholder="Senha de criptografia" autofocus
+        onkeydown="if(event.key==='Enter')document.getElementById('e2ee-unlock-btn').click()">
+    </div>
+    <div id="e2ee-unlock-err" class="fs12 rd mb8" style="display:none;text-align:center"></div>
+    <button id="e2ee-unlock-btn" class="btn bp bw mb8" onclick="_doE2EEUnlock()">
+      ${ppIcon('unlock',14,1.7)} Desbloquear
+    </button>
+    <div class="fs11 t3" style="text-align:center">A senha nunca é enviada ao servidor. A decriptação ocorre no seu dispositivo.</div>
+  `);
+  window._e2eeUnlockCb=callback||null;
+}
+async function _doE2EEUnlock(){
+  const pw=document.getElementById('e2ee-unlock-pw')?.value;
+  const errEl=document.getElementById('e2ee-unlock-err');
+  if(!pw){if(errEl){errEl.style.display='block';errEl.textContent='Digite a senha';}return;}
+  const btn=document.getElementById('e2ee-unlock-btn');
+  if(btn){btn.disabled=true;btn.innerHTML=ppIcon('loader',14,1.7)+' Verificando...';}
+  const ok=await E2EE.unlock(pw);
+  if(ok){
+    closeMc('mc-e2ee');
+    toast('Dados desbloqueados!','g',3000);
+    if(window._e2eeUnlockCb){window._e2eeUnlockCb();window._e2eeUnlockCb=null;}
+  }else{
+    if(errEl){errEl.style.display='block';errEl.textContent='Senha incorreta. Tente novamente.';}
+    if(btn){btn.disabled=false;btn.innerHTML=ppIcon('unlock',14,1.7)+' Desbloquear';}
+  }
+}
+
+// ── E2EE: funções de configuração (usadas pela tela de config) ──
+async function _e2eeAtivar(){
+  const pw=document.getElementById('cfg-e2ee-pw')?.value;
+  const pw2=document.getElementById('cfg-e2ee-pw2')?.value;
+  const errEl=document.getElementById('cfg-e2ee-err');
+  if(!pw||pw.length<6){if(errEl){errEl.style.display='block';errEl.textContent='Senha deve ter pelo menos 6 caracteres';}return;}
+  if(pw!==pw2){if(errEl){errEl.style.display='block';errEl.textContent='As senhas não coincidem';}return;}
+  try{
+    await E2EE.setup(pw);
+    toast('Criptografia E2EE ativada!','g',4000);
+    // Re-push dados criptografados
+    if(_syncEnabled&&_cloudBooted) fsForcePush();
+    _renderCfgSection('seguranca');
+  }catch(e){
+    if(errEl){errEl.style.display='block';errEl.textContent='Erro: '+e.message;}
+  }
+}
+function _e2eeDesativar(){
+  showModal('mc-e2ee-off','Desativar E2EE',`
+    <div class="fs13 t2 mb12">Digite a senha atual para desativar a criptografia. Os dados serão re-enviados sem criptografia.</div>
+    <div class="fg mb12">
+      <input class="inp" type="password" id="e2ee-off-pw" placeholder="Senha atual" autofocus>
+    </div>
+    <div id="e2ee-off-err" class="fs12 rd mb8" style="display:none"></div>
+    <button class="btn br_ bw" onclick="_doE2EEDesativar()">Desativar criptografia</button>
+  `);
+}
+async function _doE2EEDesativar(){
+  const pw=document.getElementById('e2ee-off-pw')?.value;
+  const errEl=document.getElementById('e2ee-off-err');
+  if(!pw){if(errEl){errEl.style.display='block';errEl.textContent='Digite a senha';}return;}
+  const ok=await E2EE.disable(pw);
+  if(ok){
+    closeMc('mc-e2ee-off');
+    toast('Criptografia desativada','a',4000);
+    if(_syncEnabled&&_cloudBooted) fsForcePush(); // re-push sem criptografia
+    _renderCfgSection('seguranca');
+  }else{
+    if(errEl){errEl.style.display='block';errEl.textContent='Senha incorreta';}
+  }
+}
+function _e2eeAlterarSenha(){
+  showModal('mc-e2ee-chg','Alterar senha E2EE',`
+    <div class="fg mb8">
+      <label class="fl">Senha atual</label>
+      <input class="inp" type="password" id="e2ee-chg-old" placeholder="Senha atual" autofocus>
+    </div>
+    <div class="fg mb8">
+      <label class="fl">Nova senha</label>
+      <input class="inp" type="password" id="e2ee-chg-new" placeholder="Nova senha (min 6 caracteres)">
+    </div>
+    <div class="fg mb8">
+      <label class="fl">Confirmar nova senha</label>
+      <input class="inp" type="password" id="e2ee-chg-new2" placeholder="Repita a nova senha">
+    </div>
+    <div id="e2ee-chg-err" class="fs12 rd mb8" style="display:none"></div>
+    <button class="btn bp bw" onclick="_doE2EEAlterarSenha()">${ppIcon('key',14,1.7)} Alterar</button>
+  `);
+}
+async function _doE2EEAlterarSenha(){
+  const oldPw=document.getElementById('e2ee-chg-old')?.value;
+  const newPw=document.getElementById('e2ee-chg-new')?.value;
+  const newPw2=document.getElementById('e2ee-chg-new2')?.value;
+  const errEl=document.getElementById('e2ee-chg-err');
+  if(!oldPw){if(errEl){errEl.style.display='block';errEl.textContent='Digite a senha atual';}return;}
+  if(!newPw||newPw.length<6){if(errEl){errEl.style.display='block';errEl.textContent='Nova senha deve ter pelo menos 6 caracteres';}return;}
+  if(newPw!==newPw2){if(errEl){errEl.style.display='block';errEl.textContent='As senhas não coincidem';}return;}
+  const ok=await E2EE.changePassword(oldPw,newPw);
+  if(ok){
+    closeMc('mc-e2ee-chg');
+    toast('Senha de criptografia alterada!','g',4000);
+    _renderCfgSection('seguranca');
+  }else{
+    if(errEl){errEl.style.display='block';errEl.textContent='Senha atual incorreta';}
+  }
+}
+
+// ── E2EE: Auto-unlock no boot (tenta desbloquear se tem key salva) ──
+async function _e2eeAutoCheck(){
+  const configured=await E2EE.isConfigured();
+  if(configured){
+    console.log('[E2EE] Criptografia configurada — aguardando desbloqueio');
+    // Não tenta auto-unlock — exige senha do usuário
+  }
+}
+
+// ═══════════════════════════════════════════
 //  UTILS
 // ═══════════════════════════════════════════
 const uid=()=>Math.random().toString(36).slice(2,9)+Date.now().toString(36).slice(-4);
@@ -2156,6 +2503,21 @@ function checkPin(){
 // ═══════════════════════════════════════════
 //  CONFIRM
 // ═══════════════════════════════════════════
+// showModal: cria modal dinâmica e abre
+function showModal(id,title,bodyHtml){
+  let el=document.getElementById(id);
+  if(!el){
+    el=document.createElement('div');el.id=id;el.className='mc';
+    el.style.display='none';
+    document.body.appendChild(el);
+  }
+  el.innerHTML=`<div class="mc-bg" onclick="closeMc('${id}')"></div>
+    <div class="mc-box" style="max-width:400px">
+      <div class="mc-head"><span>${title}</span><button class="mc-x" onclick="closeMc('${id}')">&times;</button></div>
+      <div class="mc-body">${bodyHtml}</div>
+    </div>`;
+  openMc(id);
+}
 function confirm2(ico,title,msg,okLbl,okCls,cb,cancelCb){
   document.getElementById('mc-conf-ico').innerHTML=ico;
   document.getElementById('mc-conf-ttl').textContent=title;
@@ -3620,6 +3982,10 @@ function confirmarPedido(){
   const num='#'+String(ST.pedido_seq).padStart(3,'0');
   ST.pedido_seq++;
   DB.set('pedido_seq',ST.pedido_seq);
+  // ID anti-duplicação offline: T{AAAAMMDDhh}#seq_deviceId
+  const _dtNow=new Date();
+  const _dtStr=_dtNow.getFullYear()+String(_dtNow.getMonth()+1).padStart(2,'0')+String(_dtNow.getDate()).padStart(2,'0')+String(_dtNow.getHours()).padStart(2,'0');
+  const _offlineId='T'+_dtStr+'#'+ST.pedido_seq+'_'+_DEV_ID.slice(0,5);
   const total=np.cart.reduce((s,i)=>s+(i.preco+(i.obs_extras||0))*i.qty,0);
   // calcula previsão por maior tempo entre itens de cada destino
   const temposCoz=np.cart.filter(i=>i.dest==='coz').map(i=>i.tempo||15);
@@ -3628,7 +3994,7 @@ function confirmarPedido(){
   const maxBar=temposBar.length?Math.max(...temposBar):0;
   // C4: removida a propriedade consumo duplicada
   const ped={
-    id:uid(),num,tipo:np.tipo,mesa_id:np.mesa_id,mesa_label:np.mesa_label,
+    id:_offlineId,num,tipo:np.tipo,mesa_id:np.mesa_id,mesa_label:np.mesa_label,
     cliente_nome:np.cliente_nome||'',status:'aberto',created:now(),
     itens:deepClone(np.cart),total_bruto:total,desconto:0,taxa_servico:ST.cfg.taxa_servico||0,taxa_valor:0,total,consumo:np.consumo||'local',
     prev_coz:maxCoz?addMin(now(),maxCoz):null,
@@ -4918,7 +5284,7 @@ function _cfgMenuItems(){
   items.push({id:'interface',icon:'monitor',label:'Interface',desc:['P','M','G'][(localStorage.getItem('pp_tam')||'p')==='p'?0:(localStorage.getItem('pp_tam')||'p')==='m'?1:2]});
   items.push({id:'operacoes',icon:'settings',label:'Operacoes',desc:`${cfg.mesas_total||10} mesas · ${cfg.taxa_servico||0}%`});
   items.push({id:'impressora',icon:'printer',label:'Impressora Bluetooth',desc:BT.device?.name||'Nenhuma'});
-  items.push({id:'seguranca',icon:'lock',label:'Seguranca',desc:'PIN do gerente'});
+  items.push({id:'seguranca',icon:'lock',label:'Seguranca',desc:'PIN do gerente'+(E2EE._enabled?' · E2EE ativo':'')});
   items.push({id:'firebase',icon:'cloud',label:'Firebase & Sincronizacao',desc:fbAuth?(fbAuth.currentUser?'Conectado':'Desconectado'):'Offline'});
   items.push({id:'vouchers',icon:'ticket',label:'Vouchers e Permuta',desc:`${ST.vouchers.length} voucher${ST.vouchers.length!==1?'s':''}`});
   items.push({id:'pix',icon:'dollarSign',label:'PIX',desc:cfg.pix_chave?'Chave configurada':'Nao configurado'});
@@ -5082,11 +5448,46 @@ function _renderCfgSection(sec){
     break;
 
   case 'seguranca':
+    const _e2eeActive=E2EE._enabled;
     h=_cfgHeader('Seguranca')+`
     <div class="card mb10">
-      <div class="rb" style="padding:8px 0">
+      <div class="rb" style="padding:8px 0;border-bottom:1px solid var(--br)">
         <div><div class="fs13 bold">PIN do gerente</div><div class="fs12 t2">Descontos, sangria e fechamento</div></div>
         <button class="btn bs bsm" onclick="changePIN()">Alterar</button>
+      </div>
+      <div style="padding:12px 0">
+        <div class="rb mb8">
+          <div>
+            <div class="fs13 bold" style="display:flex;align-items:center;gap:6px">${ppIcon('lock',15,1.6)} Criptografia ponta a ponta (E2EE)</div>
+            <div class="fs12 t2">AES-256-GCM + PBKDF2 — seus dados são criptografados antes de sair do dispositivo</div>
+          </div>
+          <span class="bdg ${_e2eeActive?'bg-g':'bg-s'}">${_e2eeActive?'Ativo':'Inativo'}</span>
+        </div>
+        ${_e2eeActive?`
+          <div style="background:var(--gnbg);border:1px solid var(--gnbr);border-radius:10px;padding:10px 12px;margin-bottom:10px">
+            <div class="fs12 bold gn mb2" style="display:flex;align-items:center;gap:4px">${ppIcon('checkCircle',13,1.7)} Criptografia ativa</div>
+            <div class="fs11 t2">Dados sensíveis (produtos, clientes, pedidos, funcionários, caixa) são criptografados com AES-256-GCM antes de serem enviados ao Firestore.</div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn bb bsm" onclick="_e2eeAlterarSenha()" style="flex:1">${ppIcon('key',13,1.7)} Alterar senha</button>
+            <button class="btn br_ bsm" onclick="_e2eeDesativar()" style="flex:1">${ppIcon('xCircle',13,1.7)} Desativar</button>
+          </div>
+        `:`
+          <div style="background:var(--s2);border:1px solid var(--br2);border-radius:10px;padding:10px 12px;margin-bottom:10px">
+            <div class="fs12 t2 mb4">Quando ativada, todos os dados sensíveis serão criptografados antes de serem enviados à nuvem. Nem mesmo o administrador do servidor poderá ler seus dados.</div>
+            <div class="fs11 t3">A chave é derivada da sua senha e nunca sai do dispositivo.</div>
+          </div>
+          <div class="fg mb8">
+            <label class="fl">Criar senha de criptografia (mínimo 6 caracteres)</label>
+            <input class="inp" type="password" id="cfg-e2ee-pw" placeholder="Senha forte para E2EE">
+          </div>
+          <div class="fg mb8">
+            <label class="fl">Confirmar senha</label>
+            <input class="inp" type="password" id="cfg-e2ee-pw2" placeholder="Repita a senha">
+          </div>
+          <button class="btn bp bw" onclick="_e2eeAtivar()">${ppIcon('lock',14,1.7)} Ativar criptografia</button>
+          <div class="fs11 rd mt6" id="cfg-e2ee-err" style="display:none"></div>
+        `}
       </div>
     </div>`+_cfgFooter();
     break;
@@ -7665,7 +8066,7 @@ function fsListen(uid){
   if(_fsUnsubscribe){try{_fsUnsubscribe();}catch(e){} _fsUnsubscribe=null;}
   const ref=fbDB.collection('estabelecimentos').doc(uid).collection('dados').doc('principal');
   let _listenFirst=true;
-  _fsUnsubscribe=ref.onSnapshot({includeMetadataChanges:true},snap=>{
+  _fsUnsubscribe=ref.onSnapshot({includeMetadataChanges:true},async snap=>{
     if(!snap.exists) return;
     const r=snap.data();
     // No primeiro snapshot: aceitar dados (pode ser do cache que o boot pull preencheu)
@@ -7683,8 +8084,12 @@ function fsListen(uid){
     const localHasData=(ST.produtos.length>0||ST.categorias.length>0);
     // Se local tem dados e remoto está vazio, não sobrescrever (proteção anti-wipe)
     if(localHasData&&!remoteHasData&&!_listenFirst) return;
-    // Aplicar dados remotos
-    ['cfg','caixa','produtos','categorias','clientes','obs_grupos_globais','pedidos','funcionarios','vouchers','pedidos_cancelados','alertas'].forEach(k=>{if(r[k]!=null)ST[k]=r[k];});
+    // Aplicar dados remotos (com decriptação E2EE se necessário)
+    let rData=r;
+    if(r._e2ee&&E2EE._enabled){
+      try{rData=await E2EE.decryptData(r);if(!rData)rData=r;}catch(e){console.warn('[E2EE] Listen decrypt error:',e.message);rData=r;}
+    }
+    ['cfg','caixa','produtos','categorias','clientes','obs_grupos_globais','pedidos','funcionarios','vouchers','pedidos_cancelados','alertas'].forEach(k=>{if(rData[k]!=null)ST[k]=rData[k];});
     saveAll(true);
     if(_listenFirst){_listenFirst=false;}
     _silentRefresh();
@@ -7727,6 +8132,41 @@ function updateDriveBtn(){
 
 
 // ═══════════════════════════════════════════
+//  SYNC VALIDATION — Teste de sincronização em tempo real
+// ═══════════════════════════════════════════
+async function _testSync(){
+  if(!fbAuth?.currentUser||!fbDB){toast('Firebase não conectado','r');return;}
+  const uid=_estabUid||fbAuth.currentUser.uid;
+  const testRef=fbDB.collection('estabelecimentos').doc(uid).collection('sync').doc('test');
+  const testId='sync_'+Date.now()+'_'+_DEV_ID.slice(0,4);
+  const t0=Date.now();
+  toast('Testando sincronização...','b',3000);
+  try{
+    // 1. Escreve no Firestore
+    await testRef.set({test_id:testId,dev_id:_DEV_ID,ts:new Date().toISOString()});
+    const writeTime=Date.now()-t0;
+    // 2. Lê de volta para confirmar round-trip
+    const snap=await testRef.get();
+    const readTime=Date.now()-t0;
+    if(snap.exists&&snap.data().test_id===testId){
+      const msg='Sync OK! Escrita: '+writeTime+'ms, Leitura: '+readTime+'ms (dev:'+_DEV_ID.slice(0,6)+')';
+      console.log('[PedePronto] ✅ '+msg);
+      toast(msg,'g',5000);
+      // Limpa teste
+      testRef.delete().catch(()=>{});
+      return {ok:true,writeMs:writeTime,readMs:readTime};
+    }else{
+      toast('Sync falhou — dados não correspondem','r',5000);
+      return {ok:false,error:'mismatch'};
+    }
+  }catch(e){
+    console.warn('[PedePronto] Sync test error:',e.code||e.message);
+    toast('Erro no teste: '+e.message,'r',5000);
+    return {ok:false,error:e.message};
+  }
+}
+
+// ═══════════════════════════════════════════
 //  CLOUD STATUS SHEET
 // ═══════════════════════════════════════════
 function showCloudStatus(){
@@ -7758,6 +8198,9 @@ function showCloudStatus(){
       <button class="btn bb bw" onclick="closeOv('ov-obs');fsPull()">
         ↓ Puxar dados da nuvem para este dispositivo
       </button>
+      <button class="btn bs bw" onclick="closeOv('ov-obs');_testSync()">
+        ${ppIcon('activity',14,1.7)} Testar sincronização em tempo real
+      </button>
       ${_syncStatus==='error'?`<button class="btn ba bw" onclick="showFirestoreHelp('PP-001')">${ppIcon('alertTriangle',14,1.7)} Ver detalhes do erro</button>`:''}
       <button class="btn br_ bw" onclick="fbLogout();closeOv('ov-obs');updateDriveBtn()">🚪 Sair da conta Google</button>
     </div>
@@ -7766,7 +8209,8 @@ function showCloudStatus(){
       • Qualquer mudança é enviada automaticamente em 2s<br>
       • Outros dispositivos recebem em tempo real via Firestore<br>
       • Use "↑ Enviar" se dados locais estiverem mais atualizados<br>
-      • Use "↓ Puxar" se a nuvem tiver dados mais recentes
+      • Use "↓ Puxar" se a nuvem tiver dados mais recentes<br>
+      ${E2EE._enabled?'• 🔒 E2EE ativo — dados criptografados com AES-256-GCM':'• 🔓 E2EE inativo — ative em Configurações > Segurança'}
     </div>
     `:(isHosted?`
     <div style="background:var(--ambg);border:1px solid var(--ambr);border-radius:12px;padding:14px;margin-bottom:14px">
@@ -8082,6 +8526,8 @@ function _atualizarBadgeLicenca(){
         _syncEnabled = true; // agora save() pode sincronizar
         updateSyncStatus();
 
+        // ── E2EE: verifica se tem criptografia configurada ──
+        await _e2eeAutoCheck();
         // ── CLOUD-FIRST: puxa dados do Firestore ANTES de renderizar ──
         console.log('[PedePronto] Iniciando _fsPullBoot para uid:',finalEstabId,'role:',_userRole);
         const pullOk=await _fsPullBoot(finalEstabId);

@@ -2,6 +2,15 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // ── Helper: verifica se é membro do estabelecimento via user_map ──
+    function isMember(uid, estabUid) {
+      return exists(/databases/$(database)/documents/user_map/$(uid))
+        && get(/databases/$(database)/documents/user_map/$(uid)).data.estab_uid == estabUid;
+    }
+    function isSuperAdmin() {
+      return request.auth.token.email == 'victordarkxd@gmail.com';
+    }
+
     // ── Licenças ──────────────────────────────────────────────────────────────
     match /licenses/{licId} {
       allow read: if true;
@@ -14,79 +23,94 @@ service cloud.firestore {
       allow write: if request.auth != null;
     }
 
-    // ── Mapa de usuário → estabelecimento ────────────────────────────────────
-    // Cada usuário lê/cria o próprio; dono pode atualizar membros
+    // ── Mapa de usuário → estabelecimento (multi-tenant) ─────────────────────
+    // tenantId é o estab_uid — define a qual estabelecimento o usuário pertence
     match /user_map/{uid} {
-      allow read: if request.auth != null && request.auth.uid == uid;
+      // Leitura: próprio usuário ou Super Admin
+      allow read: if request.auth != null && (
+        request.auth.uid == uid || isSuperAdmin()
+      );
+      // Criação: apenas o próprio usuário
       allow create: if request.auth != null && request.auth.uid == uid;
+      // Atualização: próprio usuário OU dono do estabelecimento (para gerenciar membros)
       allow update: if request.auth != null && (
         request.auth.uid == uid ||
         request.auth.uid == resource.data.estab_uid
       );
     }
 
-    // ── Convites ─────────────────────────────────────────────────────────────
-    // Qualquer autenticado lê (para resgatar); dono cria/revoga
+    // ── Super Admin: leitura global de user_map ──
+    match /user_map/{uid} {
+      allow read: if request.auth != null && isSuperAdmin();
+    }
+
+    // ── Convites (multi-uso com controle de acesso) ──────────────────────────
     match /invites/{token} {
+      // Qualquer autenticado lê (para resgatar convite)
       allow read: if request.auth != null;
+      // Criação: qualquer autenticado (dono cria convite)
       allow create: if request.auth != null;
+      // Atualização: qualquer autenticado (para aceitar convite — incrementar uses_count)
       allow update: if request.auth != null;
+      // Exclusão: apenas dono do estabelecimento
       allow delete: if request.auth != null && request.auth.uid == resource.data.estab_uid;
     }
 
-    // ── Super Admin (leitura global) ────────────────────────────────────────
-    // victordarkxd@gmail.com pode listar user_map de qualquer uid
-    match /user_map/{uid} {
-      allow read: if request.auth != null && request.auth.token.email == 'victordarkxd@gmail.com';
-    }
-
-    // ── Dados do estabelecimento ──────────────────────────────────────────────
-    // Dono tem acesso direto; membros via user_map; super admin lê tudo
-    match /estabelecimentos/{uid} {
+    // ── Dados do estabelecimento (multi-tenant via user_map) ─────────────────
+    // tenantId = uid do documento = UID do dono
+    // Acesso: dono direto || membro vinculado via user_map || super admin (leitura)
+    match /estabelecimentos/{tenantId} {
       allow read: if request.auth != null && (
-        request.auth.uid == uid ||
-        request.auth.token.email == 'victordarkxd@gmail.com' ||
-        (exists(/databases/$(database)/documents/user_map/$(request.auth.uid))
-         && get(/databases/$(database)/documents/user_map/$(request.auth.uid)).data.estab_uid == uid)
+        request.auth.uid == tenantId ||
+        isSuperAdmin() ||
+        isMember(request.auth.uid, tenantId)
       );
       allow write: if request.auth != null && (
-        request.auth.uid == uid ||
-        (exists(/databases/$(database)/documents/user_map/$(request.auth.uid))
-         && get(/databases/$(database)/documents/user_map/$(request.auth.uid)).data.estab_uid == uid)
+        request.auth.uid == tenantId ||
+        isMember(request.auth.uid, tenantId)
       );
 
+      // Sub-documento de dados (produtos, pedidos, clientes, etc.)
       match /dados/{doc} {
         allow read: if request.auth != null && (
-          request.auth.uid == uid ||
-          request.auth.token.email == 'victordarkxd@gmail.com' ||
-          (exists(/databases/$(database)/documents/user_map/$(request.auth.uid))
-           && get(/databases/$(database)/documents/user_map/$(request.auth.uid)).data.estab_uid == uid)
+          request.auth.uid == tenantId ||
+          isSuperAdmin() ||
+          isMember(request.auth.uid, tenantId)
         );
         allow write: if request.auth != null && (
-          request.auth.uid == uid ||
-          (exists(/databases/$(database)/documents/user_map/$(request.auth.uid))
-           && get(/databases/$(database)/documents/user_map/$(request.auth.uid)).data.estab_uid == uid)
+          request.auth.uid == tenantId ||
+          isMember(request.auth.uid, tenantId)
         );
       }
 
-      // Sessoes do WhatsApp — acesso via user_map (bot)
+      // Sessões WhatsApp
       match /whatsapp_sessions/{phone} {
         allow read, write: if request.auth != null && (
-          request.auth.uid == uid ||
-          (exists(/databases/$(database)/documents/user_map/$(request.auth.uid))
-           && get(/databases/$(database)/documents/user_map/$(request.auth.uid)).data.estab_uid == uid)
+          request.auth.uid == tenantId ||
+          isMember(request.auth.uid, tenantId)
         );
       }
 
+      // Membros do estabelecimento
       match /membros/{memberId} {
         allow read: if request.auth != null && (
-          request.auth.uid == uid || request.auth.uid == memberId
+          request.auth.uid == tenantId ||
+          request.auth.uid == memberId ||
+          isSuperAdmin()
         );
-        // Dono pode tudo; membro pode criar seu próprio doc (ao aceitar convite)
         allow create: if request.auth != null && (
-          request.auth.uid == uid || request.auth.uid == memberId
+          request.auth.uid == tenantId ||
+          request.auth.uid == memberId
         );
-        allow update, delete: if request.auth != null && request.auth.uid == uid;
+        allow update, delete: if request.auth != null && request.auth.uid == tenantId;
+      }
+
+      // Sync metadata (para validação de sync entre dispositivos)
+      match /sync/{syncDoc} {
+        allow read, write: if request.auth != null && (
+          request.auth.uid == tenantId ||
+          isMember(request.auth.uid, tenantId)
+        );
       }
     }
   }
