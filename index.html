@@ -7884,6 +7884,8 @@ const MAQ={
     }
     const amount=Math.round(ped.total*100);
     try{
+      // Ativar modo PDV antes de cobrar
+      try{await _mpCall({action:'set_pdv_mode',token:cfg.mp_token,device_id:cfg.mp_device_id});}catch(e){}
       const d=await _mpCall({action:'create_intent',token:cfg.mp_token,device_id:cfg.mp_device_id,
         amount:amount,description:'PedePronto '+ped.num,idempotency_key:ped.id+'-'+Date.now()});
       return d.id;
@@ -8055,7 +8057,7 @@ function _maqDoPoll(){
 }
 function maqSetStatus(ico,ttl,sub,showBtns,showFechar){
   const s=id=>document.getElementById(id);
-  if(s('maq-status-ico'))s('maq-status-ico').textContent=ico;
+  if(s('maq-status-ico'))s('maq-status-ico').innerHTML=ico;
   if(s('maq-status-ttl'))s('maq-status-ttl').textContent=ttl;
   if(s('maq-status-sub'))s('maq-status-sub').textContent=sub;
   const showSpin=!showBtns&&!showFechar;
