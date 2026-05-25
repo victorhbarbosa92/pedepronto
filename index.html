@@ -5799,13 +5799,22 @@ function _renderCfgSection(sec){
 // ═══════════════════════════════════════════
 //  SUPER ADMIN — Painel de controle
 // ═══════════════════════════════════════════
-let _adminTab='estabs';
+let _adminTab='dashboard';
 let _adminEstabCache=[];
+let _adminLicCloud=[];
+let _adminLicLoaded=false;
 function renderAdmin(){
   const el=document.getElementById('pg-admin');
   if(!isSuperAdmin()){el.innerHTML=`<div class="card mt10"><div class="fs14 bold t2">Acesso negado</div><div class="fs12 t3">Apenas o Super Admin pode acessar esta pagina.</div></div>`;return;}
+  const tabs=[
+    {id:'dashboard',icon:'chart',label:'Dashboard'},
+    {id:'estabs',icon:'store',label:'Estabelecimentos'},
+    {id:'licencas',icon:'ticket',label:'Licencas'},
+    {id:'users',icon:'users',label:'Usuarios'},
+    {id:'acoes',icon:'settings',label:'Acoes'}
+  ];
   el.innerHTML=`
-  <div style="max-width:750px;margin:0 auto">
+  <div style="max-width:850px;margin:0 auto">
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
       <span style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#f59e0b,#d97706);display:flex;align-items:center;justify-content:center">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 7.2H22l-6 4.8 2.4 7.2L12 16.4 5.6 21.2 8 14 2 9.2h7.6z"/></svg>
@@ -5815,22 +5824,189 @@ function renderAdmin(){
         <div class="fs12 t2">${_SUPER_ADMIN_EMAIL}</div>
       </div>
     </div>
-    <!-- Tabs -->
     <div style="display:flex;gap:4px;margin-bottom:14px;overflow-x:auto">
-      <button class="btn ${_adminTab==='estabs'?'bp':'bs'}" style="font-size:13px;padding:8px 14px" onclick="_adminTab='estabs';renderAdmin()">${ppIcon('store',13,1.7)} Estabelecimentos</button>
-      <button class="btn ${_adminTab==='licencas'?'bp':'bs'}" style="font-size:13px;padding:8px 14px" onclick="_adminTab='licencas';renderAdmin()">${ppIcon('ticket',13,1.7)} Licencas</button>
-      <button class="btn ${_adminTab==='users'?'bp':'bs'}" style="font-size:13px;padding:8px 14px" onclick="_adminTab='users';renderAdmin()">${ppIcon('users',13,1.7)} Usuarios</button>
-      <button class="btn ${_adminTab==='acoes'?'bp':'bs'}" style="font-size:13px;padding:8px 14px" onclick="_adminTab='acoes';renderAdmin()">${ppIcon('settings',13,1.7)} Acoes</button>
+      ${tabs.map(t=>`<button class="btn ${_adminTab===t.id?'bp':'bs'}" style="font-size:13px;padding:8px 14px;white-space:nowrap" onclick="_adminTab='${t.id}';renderAdmin()">${ppIcon(t.icon,13,1.7)} ${t.label}</button>`).join('')}
     </div>
     <div id="admin-tab-content"></div>
   </div>`;
   const tc=document.getElementById('admin-tab-content');
   switch(_adminTab){
+    case 'dashboard':_adminRenderDashboard(tc);break;
     case 'estabs':_adminRenderEstabs(tc);break;
     case 'licencas':_adminRenderLicencas(tc);break;
     case 'users':_adminRenderUsers(tc);break;
     case 'acoes':_adminRenderAcoes(tc);break;
   }
+}
+// ── Dashboard ──
+async function _adminRenderDashboard(tc){
+  tc.innerHTML='<div class="fs12 t2">Carregando dados...</div>';
+  if(!fbDB)return;
+  try{
+    // Load licenses from Firestore
+    if(!_adminLicLoaded) await _adminLoadLicCloud();
+    // Load establishments
+    const estSnap=await fbDB.collection('estabelecimentos').get();
+    const userSnap=await fbDB.collection('user_map').get();
+    _adminEstabCache=[];
+    let totalPedidos=0,totalProdutos=0,totalClientes=0,totalFat=0;
+    for(const doc of estSnap.docs){
+      try{
+        const sub=await fbDB.collection('estabelecimentos').doc(doc.id).collection('dados').doc('principal').get();
+        if(sub.exists){
+          const d=sub.data();
+          const nome=d.cfg?.nome||'(sem nome)';
+          const peds=d.pedidos||[];
+          const prods=d.produtos||[];
+          const clis=d.clientes||[];
+          let fat=0;
+          peds.forEach(p=>{if(p.pago)fat+=(p.total||0);});
+          totalPedidos+=peds.length;totalProdutos+=prods.length;totalClientes+=clis.length;totalFat+=fat;
+          _adminEstabCache.push({uid:doc.id,nome,data:d,pedidos:peds.length,produtos:prods.length,clientes:clis.length,faturamento:fat});
+        }
+      }catch(e){}
+    }
+    // License stats
+    const now=new Date();
+    const licAtivas=_adminLicCloud.filter(l=>!l.revogada&&(!l.validade||new Date(l.validade)>=now));
+    const licExpiradas=_adminLicCloud.filter(l=>!l.revogada&&l.validade&&new Date(l.validade)<now);
+    const licRevogadas=_adminLicCloud.filter(l=>l.revogada);
+    const licTotal=_adminLicCloud.length;
+    // Revenue estimate per plan
+    const precos={basico:49.90,pro:99.90,ilimitado:199.90};
+    const mrrEstimado=licAtivas.reduce((s,l)=>s+(precos[l.plano]||0),0);
+    // Top establishments by revenue
+    const topEstabs=[..._adminEstabCache].sort((a,b)=>b.faturamento-a.faturamento).slice(0,5);
+    // Establishments expiring soon (30 days)
+    const soon=new Date();soon.setDate(soon.getDate()+30);
+    const expSoon=_adminLicCloud.filter(l=>!l.revogada&&l.validade&&new Date(l.validade)>=now&&new Date(l.validade)<=soon);
+
+    tc.innerHTML=`
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:16px">
+      ${[
+        {v:estSnap.size,l:'Estabelecimentos',c:'var(--ac)',i:'store'},
+        {v:licAtivas.length,l:'Licencas Ativas',c:'var(--gn)',i:'ticket'},
+        {v:userSnap.size,l:'Usuarios',c:'var(--bl)',i:'users'},
+        {v:totalPedidos,l:'Pedidos Total',c:'#e67e22',i:'receipt'},
+        {v:totalClientes,l:'Clientes Total',c:'#9b59b6',i:'user'},
+        {v:fmtR(totalFat),l:'Faturamento Total',c:'var(--gn)',i:'dollarSign'}
+      ].map(k=>`<div class="card" style="text-align:center;padding:14px">
+        <div style="margin-bottom:6px;color:${k.c}">${ppIcon(k.i,22,1.5)}</div>
+        <div style="font-size:20px;font-weight:900;color:${k.c}">${k.v}</div>
+        <div class="fs11 t3">${k.l}</div>
+      </div>`).join('')}
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+      <div class="card" style="padding:16px">
+        <div class="bold fs13 mb8">${ppIcon('dollarSign',14,1.7)} Receita Estimada (MRR)</div>
+        <div style="font-size:28px;font-weight:900;color:var(--gn)">${fmtR(mrrEstimado)}</div>
+        <div class="fs11 t3">por mes · ${licAtivas.length} licencas ativas</div>
+        <div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap">
+          ${['basico','pro','ilimitado'].map(p=>{
+            const ct=licAtivas.filter(l=>l.plano===p).length;
+            const cor=p==='basico'?'var(--gn)':p==='pro'?'var(--ac)':'#f59e0b';
+            return ct?`<span class="fs11" style="background:${cor}18;color:${cor};padding:3px 10px;border-radius:99px;font-weight:600">${ct} ${p}</span>`:'';
+          }).join('')}
+        </div>
+      </div>
+      <div class="card" style="padding:16px">
+        <div class="bold fs13 mb8">${ppIcon('ticket',14,1.7)} Licencas</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div style="text-align:center;padding:8px;background:var(--gnbg);border-radius:8px">
+            <div class="bold fs16" style="color:var(--gn)">${licAtivas.length}</div><div class="fs10 t2">Ativas</div>
+          </div>
+          <div style="text-align:center;padding:8px;background:${licExpiradas.length?'var(--rdbg)':'var(--s2)'};border-radius:8px">
+            <div class="bold fs16" style="color:${licExpiradas.length?'var(--rd)':'var(--t3)'}">${licExpiradas.length}</div><div class="fs10 t2">Expiradas</div>
+          </div>
+          <div style="text-align:center;padding:8px;background:var(--s2);border-radius:8px">
+            <div class="bold fs16 t3">${licRevogadas.length}</div><div class="fs10 t2">Revogadas</div>
+          </div>
+          <div style="text-align:center;padding:8px;background:${expSoon.length?'#f59e0b18':'var(--s2)'};border-radius:8px">
+            <div class="bold fs16" style="color:${expSoon.length?'#f59e0b':'var(--t3)'}">${expSoon.length}</div><div class="fs10 t2">Vencem 30d</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    ${expSoon.length?`<div class="card mb12" style="padding:14px;border:1px solid #f59e0b40">
+      <div class="bold fs13 mb8" style="color:#f59e0b">${ppIcon('alertTriangle',14,1.7)} Licencas vencendo em 30 dias</div>
+      ${expSoon.map(l=>`<div class="fs12" style="padding:4px 0;display:flex;justify-content:space-between">
+        <span>${esc(l.nome)} <span class="t3">(${esc(l.plano)})</span></span>
+        <span class="bold" style="color:#f59e0b">${esc(l.validade)}</span>
+      </div>`).join('')}
+    </div>`:''}
+
+    ${topEstabs.length?`<div class="card mb12" style="padding:16px">
+      <div class="bold fs13 mb10">${ppIcon('trend',14,1.7)} Top Estabelecimentos por Faturamento</div>
+      ${topEstabs.map((e,i)=>{
+        const maxFat=topEstabs[0].faturamento||1;
+        const pct=Math.round((e.faturamento/maxFat)*100);
+        return `<div style="margin-bottom:8px">
+          <div class="fs12" style="display:flex;justify-content:space-between;margin-bottom:3px">
+            <span>${i+1}. <b>${esc(e.nome)}</b> <span class="t3">(${e.pedidos} ped)</span></span>
+            <span class="bold" style="color:var(--gn)">${fmtR(e.faturamento)}</span>
+          </div>
+          <div style="height:6px;background:var(--s3);border-radius:3px;overflow:hidden">
+            <div style="height:100%;width:${pct}%;background:var(--gn);border-radius:3px"></div>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`:''}
+
+    <div class="card" style="padding:16px">
+      <div class="bold fs13 mb8">${ppIcon('signal',14,1.7)} Visao Geral dos Estabelecimentos</div>
+      <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:12px">
+          <thead><tr style="border-bottom:2px solid var(--br);text-align:left">
+            <th style="padding:8px 6px">Nome</th>
+            <th style="padding:8px 6px;text-align:right">Produtos</th>
+            <th style="padding:8px 6px;text-align:right">Pedidos</th>
+            <th style="padding:8px 6px;text-align:right">Clientes</th>
+            <th style="padding:8px 6px;text-align:right">Faturamento</th>
+          </tr></thead>
+          <tbody>${_adminEstabCache.map(e=>`<tr style="border-bottom:1px solid var(--br)">
+            <td style="padding:6px" class="bold">${esc(e.nome)}</td>
+            <td style="padding:6px;text-align:right">${e.produtos}</td>
+            <td style="padding:6px;text-align:right">${e.pedidos}</td>
+            <td style="padding:6px;text-align:right">${e.clientes}</td>
+            <td style="padding:6px;text-align:right;color:var(--gn);font-weight:700">${fmtR(e.faturamento)}</td>
+          </tr>`).join('')}</tbody>
+        </table>
+      </div>
+    </div>`;
+  }catch(e){tc.innerHTML=`<div class="fs12" style="color:var(--rd)">Erro: ${esc(e.message)}</div>`;}
+}
+// ── Firestore License Sync ──
+async function _adminLoadLicCloud(){
+  if(!fbDB)return;
+  try{
+    const snap=await fbDB.collection('licenses').get();
+    _adminLicCloud=[];
+    snap.forEach(doc=>{_adminLicCloud.push({id:doc.id,...doc.data()});});
+    _adminLicLoaded=true;
+    // Merge with localStorage (migrate old local-only licenses)
+    const local=JSON.parse(localStorage.getItem('pp_admin_lics')||'[]');
+    let migrated=0;
+    for(const ll of local){
+      if(!_adminLicCloud.find(c=>c.id===ll.id)){
+        try{
+          await fbDB.collection('licenses').doc(ll.id).set({
+            nome:ll.nome||'',email:ll.email||'',cnpj:ll.cnpj||'',plano:ll.plano||'',
+            validade:ll.validade||'',mesas_max:ll.mesas_max||20,features:ll.features||[],
+            emitida:ll.emitida||ll.created||'',code:ll.code||'',revogada:!!ll.revogada,
+            versao:ll.versao||1
+          });
+          _adminLicCloud.push({id:ll.id,...ll});
+          migrated++;
+        }catch(e){}
+      }
+    }
+    if(migrated) toast(migrated+' licenca(s) migrada(s) para o Firestore','g',3000);
+    // Update _adminLicList from cloud
+    _adminLicList=_adminLicCloud.sort((a,b)=>(b.emitida||'').localeCompare(a.emitida||''));
+    localStorage.setItem('pp_admin_lics',JSON.stringify(_adminLicList));
+  }catch(e){console.warn('[SA] Erro ao carregar licencas:',e);}
 }
 // ── Tab: Estabelecimentos ──
 function _adminRenderEstabs(tc){
@@ -5994,7 +6170,13 @@ async function _adminGerarConvite(uid,nome){
 // ── Tab: Licencas ──
 let _adminLicPrivKey=null,_adminLicPubJwk=null,_adminLicPrivJwk=null;
 let _adminLicList=JSON.parse(localStorage.getItem('pp_admin_lics')||'[]');
-function _adminRenderLicencas(tc){
+async function _adminRenderLicencas(tc){
+  tc.innerHTML='<div class="fs12 t2">Carregando licencas do Firestore...</div>';
+  if(!_adminLicLoaded) await _adminLoadLicCloud();
+  const now=new Date();
+  const ativas=_adminLicList.filter(l=>!l.revogada&&(!l.validade||new Date(l.validade)>=now));
+  const expiradas=_adminLicList.filter(l=>!l.revogada&&l.validade&&new Date(l.validade)<now);
+  const revogadas=_adminLicList.filter(l=>l.revogada);
   tc.innerHTML=`
     <div class="card mb10">
       <div class="bold fs13 mb8">${ppIcon('ticket',14,1.7)} Emitir Nova Licenca</div>
@@ -6016,13 +6198,69 @@ function _adminRenderLicencas(tc){
       <button class="btn bp bw mt8" id="sa-lic-btn" onclick="_saEmitirLicenca()">Gerar Licenca</button>
     </div>
     <div class="card mb10" id="sa-lic-resultado" style="display:none"></div>
-    <div class="bold fs13 mb8">Licencas emitidas (${_adminLicList.length})</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <div class="bold fs13">Licencas (${_adminLicList.length}) <span class="fs11 t3" style="font-weight:400">· ${ativas.length} ativas · ${expiradas.length} expiradas · ${revogadas.length} revogadas</span></div>
+      <div style="display:flex;gap:4px">
+        <input class="inp" id="sa-lic-search" placeholder="Buscar..." oninput="_saFilterLicList()" style="width:160px;padding:6px 10px;font-size:12px">
+        <select class="inp" id="sa-lic-filter" onchange="_saFilterLicList()" style="width:100px;padding:6px;font-size:12px">
+          <option value="todas">Todas</option>
+          <option value="ativas">Ativas</option>
+          <option value="expiradas">Expiradas</option>
+          <option value="revogadas">Revogadas</option>
+        </select>
+      </div>
+    </div>
     <div id="sa-lic-lista"></div>`;
-  // Default date +1 year
   const d=new Date();d.setFullYear(d.getFullYear()+1);
   const vi=document.getElementById('sa-lic-validade');if(vi)vi.value=d.toISOString().slice(0,10);
   _saLoadLicKey();
   _saRenderLicList();
+}
+function _saFilterLicList(){
+  const q=(document.getElementById('sa-lic-search')?.value||'').toLowerCase();
+  const f=document.getElementById('sa-lic-filter')?.value||'todas';
+  const now=new Date();
+  let list=[..._adminLicList];
+  if(f==='ativas') list=list.filter(l=>!l.revogada&&(!l.validade||new Date(l.validade)>=now));
+  else if(f==='expiradas') list=list.filter(l=>!l.revogada&&l.validade&&new Date(l.validade)<now);
+  else if(f==='revogadas') list=list.filter(l=>l.revogada);
+  if(q) list=list.filter(l=>(l.nome||'').toLowerCase().includes(q)||(l.email||'').toLowerCase().includes(q)||(l.cnpj||'').includes(q));
+  _saRenderLicListFiltered(list);
+}
+function _saRenderLicListFiltered(list){
+  const el=document.getElementById('sa-lic-lista');
+  if(!el)return;
+  if(!list.length){el.innerHTML='<div class="fs12 t3" style="text-align:center;padding:16px">Nenhuma licenca encontrada.</div>';return;}
+  const now=new Date();
+  el.innerHTML=list.map((l,_i)=>{
+    const idx=_adminLicList.indexOf(l);
+    const planoCor=l.plano==='ilimitado'?'#f59e0b':l.plano==='pro'?'var(--ac)':'var(--gn)';
+    const expirada=!l.revogada&&l.validade&&new Date(l.validade)<now;
+    const diasRest=l.validade?Math.ceil((new Date(l.validade)-now)/(1000*60*60*24)):999;
+    return `<div class="card mb8" style="padding:12px${l.revogada?';opacity:.5':''}${expirada?';border:1px solid var(--rd)40':''}">
+      <div style="display:flex;align-items:center;gap:8px;justify-content:space-between">
+        <div style="flex:1;min-width:0">
+          <div class="bold fs13">${esc(l.nome)} ${l.revogada?'<span class="fs11" style="color:var(--rd)">(Revogada)</span>':expirada?'<span class="fs11" style="color:var(--rd)">(Expirada)</span>':''}</div>
+          <div class="fs11 t3">${esc(l.email||'')} ${l.cnpj?'· '+esc(l.cnpj):''}</div>
+        </div>
+        <span class="fs11 bold" style="color:${planoCor};background:${planoCor}15;padding:3px 10px;border-radius:99px">${esc(l.plano||'?')}</span>
+      </div>
+      <div class="fs11 t2 mt4">Val: <b${diasRest<=30&&diasRest>0?' style="color:#f59e0b"':diasRest<=0?' style="color:var(--rd)"':''}>${esc(l.validade||'?')}</b>${diasRest<=30&&diasRest>0?' ('+diasRest+' dias)':''} · ${l.mesas_max||'?'} mesas · Emitida: ${esc((l.emitida||l.created||'?').slice(0,10))}</div>
+      <div style="display:flex;gap:6px;margin-top:6px">
+        <button class="btn bs" style="font-size:11px;padding:4px 10px" onclick="navigator.clipboard.writeText(_adminLicList[${idx}].code||'');toast('Copiado!','g')">📋 Codigo</button>
+        <button class="btn bs" style="font-size:11px;padding:4px 10px" onclick="_saReenviarLic(${idx})">💬 Reenviar</button>
+        ${!l.revogada?`<button class="btn br_" style="font-size:11px;padding:4px 10px" onclick="_saRevogarLic(${idx})">Revogar</button>`
+        :`<button class="btn bs" style="font-size:11px;padding:4px 10px" onclick="_saRestaurarLic(${idx})">Restaurar</button>`}
+      </div>
+    </div>`;
+  }).join('');
+}
+function _saReenviarLic(i){
+  const l=_adminLicList[i];
+  if(!l)return;
+  const tel=l.telefone||'';
+  const msg='PedePronto - Licenca para '+l.nome+':\n\n'+l.code;
+  window.open('https://wa.me/'+(tel?'55'+tel.replace(/\D/g,''):'')+'?text='+encodeURIComponent(msg),'_blank');
 }
 function _saLicPlanoChange(){
   const p=document.getElementById('sa-lic-plano').value;
@@ -6095,16 +6333,23 @@ async function _saEmitirLicenca(){
   const sig=btoa(String.fromCharCode(...new Uint8Array(sigBytes)));
   const licObj={...payload,sig};
   const code='PP-'+btoa(unescape(encodeURIComponent(JSON.stringify(licObj))));
-  // Salvar localmente
+  // Salvar no Firestore (fonte unica de verdade)
   const registro={...payload,code,revogada:false,created:new Date().toISOString()};
-  _adminLicList.unshift(registro);
-  localStorage.setItem('pp_admin_lics',JSON.stringify(_adminLicList));
-  // Salvar no Firestore vinculado ao e-mail
-  if(payload.email&&fbDB){
-    try{await fbDB.collection('licencas_clientes').doc(payload.email).set({
-      code,plano:payload.plano,nome:payload.nome,validade:payload.validade,id:payload.id,emitida:payload.emitida
-    },{merge:true});}catch(e){}
+  if(fbDB){
+    try{
+      await fbDB.collection('licenses').doc(payload.id).set(registro);
+      // Vincular ao e-mail para auto-ativacao
+      if(payload.email){
+        await fbDB.collection('licencas_clientes').doc(payload.email).set({
+          code,plano:payload.plano,nome:payload.nome,validade:payload.validade,id:payload.id,emitida:payload.emitida
+        },{merge:true});
+      }
+    }catch(e){console.warn('Erro ao salvar licenca no Firestore:',e);}
   }
+  // Cache local (backup)
+  _adminLicList.unshift(registro);
+  _adminLicCloud.unshift(registro);
+  localStorage.setItem('pp_admin_lics',JSON.stringify(_adminLicList));
   // Mostrar resultado
   const el=document.getElementById('sa-lic-resultado');
   if(el){
@@ -6122,39 +6367,19 @@ async function _saEmitirLicenca(){
   toast('Licenca gerada para '+nome,'g');
 }
 function _saRenderLicList(){
-  const el=document.getElementById('sa-lic-lista');
-  if(!el)return;
-  if(!_adminLicList.length){el.innerHTML='<div class="fs12 t3" style="text-align:center;padding:16px">Nenhuma licenca emitida.</div>';return;}
-  el.innerHTML=_adminLicList.map((l,i)=>{
-    const planoCor=l.plano==='ilimitado'?'#f59e0b':l.plano==='pro'?'var(--ac)':'var(--gn)';
-    return `<div class="card mb8" style="padding:12px${l.revogada?';opacity:.5':''}">
-      <div style="display:flex;align-items:center;gap:8px;justify-content:space-between">
-        <div style="flex:1;min-width:0">
-          <div class="bold fs13">${esc(l.nome)} ${l.revogada?'<span class="fs11" style="color:var(--rd)">(Revogada)</span>':''}</div>
-          <div class="fs11 t3">${esc(l.email||'')} ${l.cnpj?'· '+esc(l.cnpj):''}</div>
-        </div>
-        <span class="fs11 bold" style="color:${planoCor};background:${planoCor}15;padding:3px 10px;border-radius:99px">${esc(l.plano)}</span>
-      </div>
-      <div class="fs11 t2 mt4">Val: <b>${esc(l.validade)}</b> · ${l.mesas_max} mesas · ID: <span class="mono">${esc(l.id)}</span></div>
-      <div style="display:flex;gap:6px;margin-top:6px">
-        <button class="btn bs" style="font-size:11px;padding:4px 10px" onclick="navigator.clipboard.writeText(_adminLicList[${i}].code);toast('Copiado!','g')">📋 Codigo</button>
-        ${!l.revogada?`<button class="btn br_" style="font-size:11px;padding:4px 10px" onclick="_saRevogarLic(${i})">Revogar</button>`
-        :`<button class="btn bs" style="font-size:11px;padding:4px 10px" onclick="_saRestaurarLic(${i})">Restaurar</button>`}
-      </div>
-    </div>`;
-  }).join('');
+  _saRenderLicListFiltered(_adminLicList);
 }
-function _saRevogarLic(i){
+async function _saRevogarLic(i){
   if(!confirm('Revogar licenca de '+_adminLicList[i].nome+'?'))return;
   _adminLicList[i].revogada=true;
   localStorage.setItem('pp_admin_lics',JSON.stringify(_adminLicList));
-  if(fbDB){try{fbDB.collection('licenses').doc(_adminLicList[i].id).set({revogada:true},{merge:true});}catch(e){}}
+  if(fbDB){try{await fbDB.collection('licenses').doc(_adminLicList[i].id).set({revogada:true,revogada_em:new Date().toISOString()},{merge:true});}catch(e){}}
   _saRenderLicList();toast('Licenca revogada','a');
 }
-function _saRestaurarLic(i){
+async function _saRestaurarLic(i){
   _adminLicList[i].revogada=false;
   localStorage.setItem('pp_admin_lics',JSON.stringify(_adminLicList));
-  if(fbDB){try{fbDB.collection('licenses').doc(_adminLicList[i].id).set({revogada:false},{merge:true});}catch(e){}}
+  if(fbDB){try{await fbDB.collection('licenses').doc(_adminLicList[i].id).set({revogada:false,revogada_em:null},{merge:true});}catch(e){}}
   _saRenderLicList();toast('Licenca restaurada','g');
 }
 // ── Tab: Usuarios ──
