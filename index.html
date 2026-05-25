@@ -50,6 +50,76 @@ html.light{
   --pubg:rgba(140,75,170,.08);--pubr:rgba(140,75,170,.22);
   --cybg:rgba(26,170,140,.08);--cybr:rgba(26,170,140,.22);
 }
+/* ── TEMA METRO (Windows 8 Tiles) ── */
+html.theme-metro{
+  --bg:#1d1d1d;--sf:#252526;--s2:#2d2d2d;--s3:#383838;--s4:#454545;
+  --ac:#0078D4;--acd:#005a9e;--acbg:rgba(0,120,212,.14);--acg:rgba(0,120,212,.3);
+  --ac-text:#4da3e8;--ac-soft:rgba(0,120,212,.16);--ac-ink:#fff;
+  --tx:#f0f0f0;--t2:#a0a0a0;--t3:#707070;--t4:#505050;
+  --br:rgba(255,255,255,.06);--br2:rgba(255,255,255,.08);--br3:rgba(255,255,255,.14);
+  --r:0px;--sh:none;
+  --font:'Segoe UI','Inter',system-ui,sans-serif;
+  --metro-tile:1;
+}
+html.theme-metro.light{
+  --bg:#e8e8e8;--sf:#f0f0f0;--s2:#f5f5f5;--s3:#e0e0e0;--s4:#d0d0d0;
+  --ac:#0078D4;--acd:#005a9e;--acbg:rgba(0,120,212,.10);--acg:rgba(0,120,212,.20);
+  --ac-text:#005a9e;--ac-soft:rgba(0,120,212,.08);--ac-ink:#fff;
+  --tx:#1a1a1a;--t2:#666;--t3:#999;--t4:#bbb;
+  --br:rgba(0,0,0,.05);--br2:rgba(0,0,0,.08);--br3:rgba(0,0,0,.12);
+  --sh:none;
+}
+html.theme-metro .card,html.theme-metro .kpi,html.theme-metro .btn,html.theme-metro .inp,html.theme-metro .bdg,
+html.theme-metro .sheet,html.theme-metro .mb,html.theme-metro .mesa-c,html.theme-metro .tbtn,html.theme-metro .tbtn-ico,
+html.theme-metro #btn-theme,html.theme-metro #topbar,html.theme-metro .sb-item,html.theme-metro .sw{border-radius:0!important}
+html.theme-metro .sheet{border-radius:0!important}
+html.theme-metro .bp{box-shadow:none;background:var(--ac);color:#fff}
+html.theme-metro .bp:hover{box-shadow:none;filter:brightness(1.15)}
+html.theme-metro .mesa-c{border-width:2px;aspect-ratio:auto}
+
+/* Metro tiles no dashboard */
+html.theme-metro .metro-tile{
+  min-height:100px;font-size:15px;font-weight:600;border-radius:0!important;
+  padding:16px 14px;flex-direction:column;align-items:flex-start;justify-content:flex-end;gap:8px;
+  position:relative;overflow:hidden;border:none!important;box-shadow:none!important;
+}
+html.theme-metro .metro-tile svg{position:absolute;top:12px;right:12px;opacity:.4;width:32px;height:32px}
+html.theme-metro .metro-tile span{font-size:16px;font-weight:600;letter-spacing:-.01em}
+html.theme-metro .metro-tile.tile-orange{background:#D35400;color:#fff}
+html.theme-metro .metro-tile.tile-blue{background:#0078D4;color:#fff}
+html.theme-metro .metro-tile.tile-purple{background:#7B1FA2;color:#fff}
+html.theme-metro .metro-tile.tile-teal{background:#00897B;color:#fff}
+html.theme-metro .metro-tile.tile-green{background:#388E3C;color:#fff}
+html.theme-metro .metro-tile.tile-red{background:#C62828;color:#fff}
+html.theme-metro .metro-tile.tile-amber{background:#F57F17;color:#fff}
+html.theme-metro .metro-tile.tile-indigo{background:#283593;color:#fff}
+html.theme-metro .metro-tile:hover{filter:brightness(1.08)}
+html.theme-metro .metro-tile:active{filter:brightness(.92);transform:scale(.98)}
+
+/* ── TEMA NEON (Cyberpunk) ── */
+html.theme-neon{
+  --bg:#0a0a14;--sf:#0f0f20;--s2:#151530;--s3:#1c1c40;--s4:#252550;
+  --ac:#00f0ff;--acd:#00c8d4;--acbg:rgba(0,240,255,.10);--acg:rgba(0,240,255,.25);
+  --ac-text:#00f0ff;--ac-soft:rgba(0,240,255,.08);--ac-ink:#0a0a14;
+  --gn:#39ff14;--gnbg:rgba(57,255,20,.10);--gnbr:rgba(57,255,20,.25);
+  --am:#ffe600;--ambg:rgba(255,230,0,.10);--ambr:rgba(255,230,0,.25);
+  --rd:#ff073a;--rdbg:rgba(255,7,58,.10);--rdbr:rgba(255,7,58,.25);
+  --bl:#4d4dff;--blbg:rgba(77,77,255,.10);--blbr:rgba(77,77,255,.25);
+  --pu:#e040fb;--pubg:rgba(224,64,251,.10);--pubr:rgba(224,64,251,.25);
+  --cy:#00f0ff;--cybg:rgba(0,240,255,.10);--cybr:rgba(0,240,255,.25);
+  --tx:#e0e0ff;--t2:#8888bb;--t3:#555580;--t4:#333355;
+  --br:rgba(0,240,255,.06);--br2:rgba(0,240,255,.10);--br3:rgba(0,240,255,.18);
+  --r:4px;--sh:0 0 20px rgba(0,240,255,.12);
+  --font:'Geist','Inter',system-ui,sans-serif;
+}
+html.theme-neon .card,html.theme-neon .kpi{border-color:rgba(0,240,255,.12);box-shadow:0 0 12px rgba(0,240,255,.05)}
+html.theme-neon .bp{background:linear-gradient(135deg,#00f0ff,#e040fb);color:#0a0a14;box-shadow:0 0 18px rgba(0,240,255,.3)}
+html.theme-neon .logo{color:#00f0ff;text-shadow:0 0 8px rgba(0,240,255,.5)}
+html.theme-neon #topbar{border-bottom-color:rgba(0,240,255,.12);box-shadow:0 1px 12px rgba(0,240,255,.08)}
+html.theme-neon .mesa-c{border-color:rgba(0,240,255,.15)}
+html.theme-neon .mesa-c.ocupada{border-color:rgba(0,240,255,.4);box-shadow:0 0 10px rgba(0,240,255,.12)}
+html.theme-neon .kpi-v{text-shadow:0 0 6px currentColor}
+
 html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);font-family:var(--font);line-height:1.5;font-size:16px;-webkit-font-smoothing:antialiased}
 ::-webkit-scrollbar{width:3px;height:3px}::-webkit-scrollbar-thumb{background:var(--br2);border-radius:99px}
 #app{position:fixed;inset:0;display:flex;flex-direction:column}
@@ -2554,8 +2624,19 @@ function applyResponsiveNav(){
   document.body.classList.toggle('is-tablet',!mobile&&window.innerWidth<=1100);
 }
 
-// ── TEMA CLARO / ESCURO ──
-function _syncThemeUI(isLight){
+// ── SISTEMA DE TEMAS ──
+const PP_THEMES=[
+  {id:'dark',label:'Escuro',icon:'moon',desc:'Tema escuro padrao',cls:'',preview:'#121318'},
+  {id:'light',label:'Claro',icon:'sun',desc:'Tema claro suave',cls:'light',preview:'#F7F7F8'},
+  {id:'metro',label:'Metro',icon:'grid',desc:'Tiles estilo Windows 8',cls:'theme-metro',preview:'#1d1d1d'},
+  {id:'metro-light',label:'Metro Claro',icon:'grid',desc:'Tiles claro',cls:'theme-metro light',preview:'#e8e8e8'},
+  {id:'neon',label:'Neon',icon:'zap',desc:'Cyberpunk neon vibes',cls:'theme-neon',preview:'#0a0a14'}
+];
+function _getCurrentThemeId(){return localStorage.getItem('pp_tema')||'dark';}
+function _isMetroTheme(){const t=_getCurrentThemeId();return t==='metro'||t==='metro-light';}
+function _syncThemeUI(){
+  const tid=_getCurrentThemeId();
+  const isLight=(tid==='light'||tid==='metro-light');
   const sunSvg='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>';
   const moonSvg='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>';
   const sunSm='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>';
@@ -2565,18 +2646,41 @@ function _syncThemeUI(isLight){
   const sbIco=document.getElementById('sb-theme-ico');
   if(sbIco)sbIco.innerHTML=isLight?sunSm:moonSm;
   const sbLbl=document.getElementById('sb-theme-lbl');
-  if(sbLbl)sbLbl.textContent=isLight?'Claro':'Escuro';
+  const thObj=PP_THEMES.find(t=>t.id===tid);
+  if(sbLbl)sbLbl.textContent=thObj?thObj.label:(isLight?'Claro':'Escuro');
+}
+function setTheme(themeId){
+  const th=PP_THEMES.find(t=>t.id===themeId);
+  if(!th)return;
+  // Remove todas as classes de tema
+  document.documentElement.classList.remove('light','theme-metro','theme-neon');
+  // Aplica as classes do tema selecionado
+  if(th.cls){th.cls.split(' ').forEach(c=>c&&document.documentElement.classList.add(c));}
+  localStorage.setItem('pp_tema',themeId);
+  _syncThemeUI();
+  // Re-render dashboard se estiver nele (para tiles)
+  if(document.getElementById('pg-dash')?.classList.contains('on')){renderDash();}
 }
 function toggleTheme(){
-  const isLight=document.documentElement.classList.toggle('light');
-  localStorage.setItem('pp_tema',isLight?'light':'dark');
-  _syncThemeUI(isLight);
+  // Cicla entre os temas disponíveis
+  const cur=_getCurrentThemeId();
+  const idx=PP_THEMES.findIndex(t=>t.id===cur);
+  const next=PP_THEMES[(idx+1)%PP_THEMES.length];
+  setTheme(next.id);
 }
 function applyTheme(){
   const saved=localStorage.getItem('pp_tema')||'dark';
-  const isLight=saved==='light';
-  document.documentElement.classList.toggle('light',isLight);
-  _syncThemeUI(isLight);
+  // Backward compat: 'light'/'dark' still work
+  if(saved==='dark'){document.documentElement.classList.remove('light','theme-metro','theme-neon');_syncThemeUI();return;}
+  const th=PP_THEMES.find(t=>t.id===saved);
+  if(th){
+    document.documentElement.classList.remove('light','theme-metro','theme-neon');
+    if(th.cls){th.cls.split(' ').forEach(c=>c&&document.documentElement.classList.add(c));}
+  } else {
+    // fallback: old 'light' value
+    document.documentElement.classList.toggle('light',saved==='light');
+  }
+  _syncThemeUI();
 }
 function setTamanho(tam){
   document.documentElement.classList.remove('tam-m','tam-g');
@@ -3571,13 +3675,22 @@ function renderDash(){
       ${hasPermission('caixa_op')?`<button class="btn bs bxs" style="gap:5px" onclick="nav('caixa')">${_i('cash',14)} Caixa</button>`:''}
     </div></div>
   </div>`}
-  ${hasPermission('pdv')?`<div class="g4 mb12">
+  ${hasPermission('pdv')?(_isMetroTheme()?`<div class="g2 mb12" style="gap:4px">
+    <button class="btn metro-tile tile-orange bw" onclick="nav('mesas')">${_i('table',32)}<span>Mesas</span></button>
+    <button class="btn metro-tile tile-blue bw" onclick="novoBalcao()">${_i('counter',32)}<span>Balcao</span></button>
+    <button class="btn metro-tile tile-purple bw" onclick="novoDelivery()">${_i('bike',32)}<span>Delivery</span></button>
+    <button class="btn metro-tile tile-teal bw" onclick="nav('producao')">${_i('monitor',32)}<span>Producao</span></button>
+  </div>`:`<div class="g4 mb12">
     <button class="btn bp bw" style="padding:12px 6px;flex-direction:column;gap:4px;font-size:13px" onclick="nav('mesas')">${_i('table',22)}<span>Mesas</span></button>
     <button class="btn bb bw" style="padding:12px 6px;flex-direction:column;gap:4px;font-size:13px" onclick="novoBalcao()">${_i('counter',22)}<span>Balcão</span></button>
     <button class="btn bpu bw" style="padding:12px 6px;flex-direction:column;gap:4px;font-size:13px" onclick="novoDelivery()">${_i('bike',22)}<span>Delivery</span></button>
     <button class="btn bcy bw" style="padding:12px 6px;flex-direction:column;gap:4px;font-size:13px" onclick="nav('producao')">${_i('monitor',22)}<span>Produção</span></button>
-  </div>`:''}
-  ${(_userRole==='dono'||_userCargo==='dono')&&ST.cfg.ai_agent?.api_key?`<div class="card mb12" style="padding:12px;background:linear-gradient(135deg,var(--s2),var(--s3));border:1px solid var(--acg);cursor:pointer" onclick="_openCoachPanel()">
+  </div>`):''}
+  ${(_userRole==='dono'||_userCargo==='dono')&&ST.cfg.ai_agent?.api_key?(_isMetroTheme()?`<div class="metro-tile tile-indigo mb12" style="min-height:70px;cursor:pointer;padding:14px 16px" onclick="_openCoachPanel()">
+    ${_i('bot',32)}
+    <span style="font-size:15px;font-weight:600">Coach IA</span>
+    <span style="font-size:11px;opacity:.7;margin-top:-4px">Briefing, combos, campanhas</span>
+  </div>`:`<div class="card mb12" style="padding:12px;background:linear-gradient(135deg,var(--s2),var(--s3));border:1px solid var(--acg);cursor:pointer" onclick="_openCoachPanel()">
     <div style="display:flex;align-items:center;gap:12px">
       <div style="width:42px;height:42px;border-radius:11px;background:linear-gradient(135deg,var(--ac),var(--pu));display:flex;align-items:center;justify-content:center;flex-shrink:0">${_i('bot',22)}</div>
       <div style="flex:1;min-width:0">
@@ -3586,6 +3699,12 @@ function renderDash(){
       </div>
       <div style="color:var(--ac)">${_i('arrowRight',18)}</div>
     </div>
+  </div>`):''}
+  ${_isMetroTheme()&&hasPermission('pdv')?`<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:4px;margin-bottom:12px">
+    ${hasPermission('dados')?`<button class="btn metro-tile tile-green bw" style="min-height:60px" onclick="nav('dados')">${_i('chart',24)}<span style="font-size:12px">Dados</span></button>`:''}
+    ${hasPermission('cardapio_ver')?`<button class="btn metro-tile tile-amber bw" style="min-height:60px" onclick="nav('cardapio')">${_i('menu',24)}<span style="font-size:12px">Cardapio</span></button>`:''}
+    ${hasPermission('clientes_ver')?`<button class="btn metro-tile tile-red bw" style="min-height:60px" onclick="nav('clientes')">${_i('users',24)}<span style="font-size:12px">Clientes</span></button>`:''}
+    ${hasPermission('caixa_op')?`<button class="btn metro-tile tile-blue bw" style="min-height:60px" onclick="nav('caixa')">${_i('cash',24)}<span style="font-size:12px">Caixa</span></button>`:''}
   </div>`:''}
   ${_renderDashStatusBar(_i)}
   ${_renderSolicitacoesCancelamento(_i)}
@@ -5297,7 +5416,8 @@ function _cfgMenuItems(){
   const au=window.IS_HOSTED&&fbAuth?.currentUser;
   if(au) items.push({id:'conta',icon:'user',label:'Minha conta',desc:esc(au.email)});
   items.push({id:'estabelecimento',icon:'store',label:'Estabelecimento',desc:esc(cfg.nome||'Configurar')});
-  items.push({id:'interface',icon:'monitor',label:'Interface',desc:['P','M','G'][(localStorage.getItem('pp_tam')||'p')==='p'?0:(localStorage.getItem('pp_tam')||'p')==='m'?1:2]});
+  const _thLbl=(PP_THEMES.find(t=>t.id===_getCurrentThemeId())||{}).label||'Escuro';
+  items.push({id:'interface',icon:'monitor',label:'Interface',desc:_thLbl+' · Tam '+['P','M','G'][(localStorage.getItem('pp_tam')||'p')==='p'?0:(localStorage.getItem('pp_tam')||'p')==='m'?1:2]});
   items.push({id:'operacoes',icon:'settings',label:'Operacoes',desc:`${cfg.mesas_total||10} mesas · ${cfg.taxa_servico||0}%`});
   items.push({id:'impressora',icon:'printer',label:'Impressora Bluetooth',desc:BT.device?.name||'Nenhuma'});
   items.push({id:'seguranca',icon:'lock',label:'Seguranca',desc:'PIN do gerente'+(E2EE._enabled?' · E2EE ativo':'')});
@@ -5405,8 +5525,25 @@ function _renderCfgSection(sec){
     break;
 
   case 'interface':
+    const _curTheme=_getCurrentThemeId();
     h=_cfgHeader('Interface')+`
     <div class="card mb10">
+      <div style="padding:8px 0;border-bottom:1px solid var(--br)">
+        <div class="fs13 bold mb8">Tema visual</div>
+        <div class="fs12 t2 mb8">Escolha a aparencia do sistema</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:8px">
+          ${PP_THEMES.map(t=>{
+            const ativo=_curTheme===t.id;
+            return`<button onclick="setTheme('${t.id}');_renderCfgSection('interface')" style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 8px;border-radius:${_isMetroTheme()?'0':'10'}px;border:2px solid ${ativo?'var(--ac)':'var(--br2)'};background:${ativo?'var(--acbg)':'var(--s2)'};cursor:pointer;transition:all .15s;color:var(--tx)" onmouseenter="this.style.background='var(--s3)'" onmouseleave="this.style.background='${ativo?'var(--acbg)':'var(--s2)'}'">
+              <div style="width:42px;height:30px;border-radius:4px;background:${t.preview};border:1px solid var(--br3);position:relative;overflow:hidden">
+                ${t.id.includes('metro')?'<div style="position:absolute;inset:3px;display:grid;grid-template-columns:1fr 1fr;gap:2px"><div style="background:#0078D4"></div><div style="background:#D35400"></div><div style="background:#7B1FA2"></div><div style="background:#00897B"></div></div>':''}
+                ${t.id==='neon'?'<div style="position:absolute;inset:0;background:linear-gradient(135deg,rgba(0,240,255,.3),rgba(224,64,251,.3))"></div>':''}
+              </div>
+              <span class="fs11 bold" style="color:${ativo?'var(--ac)':'var(--tx)'}">${t.label}</span>
+            </button>`;
+          }).join('')}
+        </div>
+      </div>
       <div class="rb" style="padding:8px 0">
         <div><div class="fs13 bold">Tamanho da interface</div><div class="fs12 t2">Botoes e fontes</div></div>
         <div style="display:flex;gap:7px">
