@@ -1,6 +1,6 @@
 {
   "sistema": "PedePronto PDV",
-  "versao": "2.0",
+  "versao": "2.1",
   "tipo": "PWA - Progressive Web App",
   "plataformas": ["Web (Chrome, Safari, Firefox)", "Android (TWA/APK)", "iOS (PWA)"],
   "tecnologias": {

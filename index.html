@@ -10066,7 +10066,7 @@ async function _coachBriefing(tipo){
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+cfg.api_key},
       body:JSON.stringify({
         model:cfg.model||'llama-3.3-70b-versatile',
-        messages:[{role:'system',content:_getCoachSystemPrompt()},{role:'user',content:_buildCoachPrompt(tipo||'diario')}],
+        messages:[{role:'system',content:_getAgentSystemPrompt()},{role:'user',content:_buildCoachPrompt(tipo||'diario')}],
         temperature:0.7,max_tokens:1500
       })
     });
@@ -10192,8 +10192,18 @@ async function _coachAction(tipo){
   if(!el) return;
   el.innerHTML='<div style="text-align:center;padding:12px"><div class="fs12 t3">Gerando '+tipo+'...</div></div>';
   const result=await _coachBriefing(tipo);
-  if(result) _coachHistory.push({role:'assistant',content:result});
-  el.textContent=result||'Erro ao gerar';
+  if(!result){el.textContent='Erro ao gerar';return;}
+  _coachHistory.push({role:'assistant',content:result});
+  const actions=_parseAgentActions(result);
+  let cleanResult=result;
+  actions.forEach(a=>{cleanResult=cleanResult.replace(a.raw,'');});
+  el.textContent=cleanResult.trim();
+  if(actions.length>0){
+    let actResults='\n\n━━━ Ações executadas ━━━';
+    for(const a of actions){actResults+='\n'+await _executeAgentAction(a.id,a.params);}
+    el.textContent+=actResults;
+    renderDash();try{renderCardapio();}catch(e){}
+  }
 }
 
 async function _coachChat(){
@@ -10203,24 +10213,42 @@ async function _coachChat(){
   const pergunta=inp.value.trim();
   inp.value='';
   _coachHistory.push({role:'user',content:pergunta});
-  el.innerHTML+=`\n\n━━━ Você ━━━\n${esc(pergunta)}\n\n━━━ Coach ━━━\n<span class="t3">Pensando...</span>`;
+  el.innerHTML+=`\n\n━━━ Você ━━━\n${esc(pergunta)}\n\n━━━ Agente IA ━━━\n<span class="t3">Pensando...</span>`;
   const scroll=document.getElementById('coach-scroll');
   if(scroll) scroll.scrollTop=scroll.scrollHeight;
   const cfg=ST.cfg.ai_agent||{};
   if(!cfg.endpoint||!cfg.api_key){el.innerHTML+='Configure o Agente IA primeiro.';return;}
   try{
-    const sysMsg={role:'system',content:_getCoachSystemPrompt()};
+    const hub=await _loadKnowledgeHub();
+    const sysMsg={role:'system',content:_getAgentSystemPrompt()+hub};
     const msgs=[sysMsg,..._coachHistory.slice(-10)];
     const res=await fetch(cfg.endpoint,{
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+cfg.api_key},
-      body:JSON.stringify({model:cfg.model||'llama-3.3-70b-versatile',messages:msgs,temperature:0.7,max_tokens:1500})
+      body:JSON.stringify({model:cfg.model||'llama-3.3-70b-versatile',messages:msgs,temperature:0.7,max_tokens:2000})
     });
     const data=await res.json();
     const resp=data.choices?.[0]?.message?.content||'Sem resposta';
     _coachHistory.push({role:'assistant',content:resp});
+
+    const actions=_parseAgentActions(resp);
+    let cleanResp=resp;
+    actions.forEach(a=>{cleanResp=cleanResp.replace(a.raw,'');});
+    cleanResp=cleanResp.trim();
+
     const parts=el.innerHTML.split('<span class="t3">Pensando...</span>');
-    el.innerHTML=parts[0]+esc(resp);
+    el.innerHTML=parts[0]+esc(cleanResp);
+
+    if(actions.length>0){
+      let actResults='\n\n━━━ Ações executadas ━━━';
+      for(const a of actions){
+        const result=await _executeAgentAction(a.id,a.params);
+        actResults+='\n'+result;
+      }
+      el.innerHTML+=actResults;
+      renderDash();
+      try{renderCardapio();}catch(e){}
+    }
     if(scroll) scroll.scrollTop=scroll.scrollHeight;
     _coachSaveMemory(pergunta,resp);
   }catch(e){el.innerHTML+='Erro: '+esc(e.message);}
@@ -10276,6 +10304,385 @@ async function _coachSaveMemory(pergunta,resposta){
       tipo:'chat'
     });
   }catch(e){}
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  AI AGENT — Execução de funções via IA com controle de permissão
+// ═══════════════════════════════════════════════════════════════
+
+const _AGENT_ACTIONS={
+  add_product:{
+    label:'Adicionar produto',
+    perm:'cardapio_editar',
+    params:['nome','preco','categoria','descricao','emoji','tempo','destino'],
+    exec(p){
+      const catId=_findOrCreateCat(p.categoria||'Geral');
+      const dest=[];
+      if(p.destino){
+        const d=p.destino.toLowerCase();
+        if(d.includes('coz'))dest.push('coz');
+        if(d.includes('bar'))dest.push('bar');
+      }
+      if(!dest.length)dest.push('coz');
+      ST.produtos.push({id:uid(),nome:p.nome,preco:parseFloat(p.preco)||0,cat_id:catId,ico:p.emoji||'🍽️',desc:p.descricao||'',tempo:parseInt(p.tempo)||15,dest,ativo:true,obs_grupos:[],foto:null});
+      save('produtos');
+      return '✅ Produto "'+p.nome+'" adicionado (R$'+Number(p.preco||0).toFixed(2)+')';
+    }
+  },
+  edit_product:{
+    label:'Editar produto',
+    perm:'cardapio_editar',
+    params:['nome_atual','nome','preco','categoria','descricao'],
+    exec(p){
+      const prod=ST.produtos.find(x=>x.nome.toLowerCase()===p.nome_atual.toLowerCase());
+      if(!prod) return '❌ Produto "'+p.nome_atual+'" não encontrado';
+      if(p.nome)prod.nome=p.nome;
+      if(p.preco)prod.preco=parseFloat(p.preco)||prod.preco;
+      if(p.categoria)prod.cat_id=_findOrCreateCat(p.categoria);
+      if(p.descricao)prod.desc=p.descricao;
+      save('produtos');
+      return '✅ Produto "'+prod.nome+'" atualizado';
+    }
+  },
+  toggle_product:{
+    label:'Ativar/desativar produto',
+    perm:'cardapio_editar',
+    params:['nome','ativo'],
+    exec(p){
+      const prod=ST.produtos.find(x=>x.nome.toLowerCase()===p.nome.toLowerCase());
+      if(!prod) return '❌ Produto "'+p.nome+'" não encontrado';
+      prod.ativo=p.ativo==='true'||p.ativo===true;
+      save('produtos');
+      return '✅ Produto "'+prod.nome+'" '+(prod.ativo?'ativado':'desativado');
+    }
+  },
+  delete_product:{
+    label:'Excluir produto',
+    perm:'cardapio_editar',
+    params:['nome'],
+    exec(p){
+      const idx=ST.produtos.findIndex(x=>x.nome.toLowerCase()===p.nome.toLowerCase());
+      if(idx<0) return '❌ Produto "'+p.nome+'" não encontrado';
+      const nome=ST.produtos[idx].nome;
+      ST.produtos.splice(idx,1);
+      save('produtos');
+      return '✅ Produto "'+nome+'" excluído';
+    }
+  },
+  add_category:{
+    label:'Criar categoria',
+    perm:'cardapio_editar',
+    params:['nome','emoji'],
+    exec(p){
+      if(ST.categorias.find(c=>c.nome.toLowerCase()===p.nome.toLowerCase())) return '⚠️ Categoria "'+p.nome+'" já existe';
+      ST.categorias.push({id:uid(),nome:p.nome,emoji:p.emoji||'📂'});
+      save('categorias');
+      return '✅ Categoria "'+p.nome+'" criada';
+    }
+  },
+  edit_category:{
+    label:'Editar categoria',
+    perm:'cardapio_editar',
+    params:['nome_atual','nome','emoji'],
+    exec(p){
+      const cat=ST.categorias.find(c=>c.nome.toLowerCase()===p.nome_atual.toLowerCase());
+      if(!cat) return '❌ Categoria "'+p.nome_atual+'" não encontrada';
+      if(p.nome)cat.nome=p.nome;
+      if(p.emoji)cat.emoji=p.emoji;
+      save('categorias');
+      return '✅ Categoria atualizada para "'+cat.nome+'"';
+    }
+  },
+  open_register:{
+    label:'Abrir caixa',
+    perm:'caixa_op',
+    params:['operador','valor_inicial','turno'],
+    exec(p){
+      if(ST.caixa.aberto) return '⚠️ Caixa já está aberto (operador: '+ST.caixa.operador+')';
+      const op=p.operador||ST.currentUser?.nome||'Operador';
+      const val=parseFloat(p.valor_inicial)||200;
+      const turno=p.turno||'noite';
+      ST.caixa={aberto:true,abertura:now(),operador:op,turno,obs_turno:'',saldo_inicial:val,movs:[{id:uid(),tipo:'abertura',valor:val,desc:'Abertura via IA: '+op+' ('+turno+')',created:now()}],historico:ST.caixa.historico||[]};
+      save('caixa');
+      return '✅ Caixa aberto! Operador: '+op+', Troco: R$'+val.toFixed(2)+', Turno: '+turno;
+    }
+  },
+  close_register:{
+    label:'Fechar caixa',
+    perm:'caixa_op',
+    params:[],
+    exec(){
+      if(!ST.caixa.aberto) return '⚠️ Caixa já está fechado';
+      const movs=ST.caixa.movs||[];
+      const saldo=movs.reduce((s,m)=>s+(['entrada','abertura','suprimento'].includes(m.tipo)?m.valor:-m.valor),0);
+      const pedsPagos=ST.pedidos.filter(p=>p.status==='pago'&&p.pago_em&&new Date(p.pago_em)>=new Date(ST.caixa.abertura||0));
+      const hist={...deepClone(ST.caixa),fechamento:now(),saldo_final:saldo,pedidos_ct:pedsPagos.length};
+      ST.caixa.historico=(ST.caixa.historico||[]);
+      ST.caixa.historico.push(hist);
+      ST.caixa.aberto=false;ST.caixa.fechamento=now();ST.caixa.saldo_final=saldo;
+      ST.caixa.movs.push({id:uid(),tipo:'fechamento',valor:saldo,desc:'Fechamento via IA',created:now()});
+      save('caixa');
+      return '✅ Caixa fechado! Pedidos: '+pedsPagos.length+', Saldo: R$'+saldo.toFixed(2);
+    }
+  },
+  add_sangria:{
+    label:'Registrar sangria',
+    perm:'sangria',
+    params:['valor','descricao'],
+    exec(p){
+      if(!ST.caixa.aberto) return '⚠️ Caixa está fechado';
+      const val=parseFloat(p.valor)||0;
+      if(val<=0) return '❌ Valor inválido';
+      ST.caixa.movs.push({id:uid(),tipo:'sangria',valor:val,desc:p.descricao||'Sangria via IA',created:now()});
+      save('caixa');
+      return '✅ Sangria de R$'+val.toFixed(2)+' registrada';
+    }
+  },
+  add_suprimento:{
+    label:'Registrar suprimento',
+    perm:'caixa_op',
+    params:['valor','descricao'],
+    exec(p){
+      if(!ST.caixa.aberto) return '⚠️ Caixa está fechado';
+      const val=parseFloat(p.valor)||0;
+      if(val<=0) return '❌ Valor inválido';
+      ST.caixa.movs.push({id:uid(),tipo:'suprimento',valor:val,desc:p.descricao||'Suprimento via IA',created:now()});
+      save('caixa');
+      return '✅ Suprimento de R$'+val.toFixed(2)+' registrado';
+    }
+  },
+  list_products:{
+    label:'Listar produtos',
+    perm:'cardapio_ver',
+    params:['categoria'],
+    exec(p){
+      let prods=ST.produtos.filter(x=>x.ativo!==false);
+      if(p.categoria){
+        const cat=ST.categorias.find(c=>c.nome.toLowerCase()===p.categoria.toLowerCase());
+        if(cat) prods=prods.filter(x=>x.cat_id===cat.id);
+      }
+      if(!prods.length) return 'Nenhum produto encontrado.';
+      return '📋 '+prods.length+' produtos:\n'+prods.map(x=>x.ico+' '+x.nome+' — R$'+Number(x.preco||0).toFixed(2)+' ('+(_getCatName(x.cat_id))+')').join('\n');
+    }
+  },
+  list_categories:{
+    label:'Listar categorias',
+    perm:'cardapio_ver',
+    params:[],
+    exec(){
+      if(!ST.categorias.length) return 'Nenhuma categoria cadastrada.';
+      return '📂 '+ST.categorias.length+' categorias:\n'+ST.categorias.map(c=>(c.emoji||'📂')+' '+c.nome+' ('+ST.produtos.filter(p=>p.cat_id===c.id).length+' produtos)').join('\n');
+    }
+  },
+  report_today:{
+    label:'Relatório do dia',
+    perm:'dados',
+    params:[],
+    exec(){
+      const hoje=new Date().toDateString();
+      const pedsPagos=ST.pedidos.filter(p=>p.status==='pago'&&new Date(p.pago_em||p.created).toDateString()===hoje);
+      const receita=pedsPagos.reduce((s,p)=>s+(p.total||0),0);
+      const abertos=ST.pedidos.filter(p=>p.status==='aberto'||p.status==='preparo');
+      const ticket=pedsPagos.length?receita/pedsPagos.length:0;
+      const formas={};
+      pedsPagos.forEach(p=>{formas[p.forma_pag||'?']=(formas[p.forma_pag||'?']||0)+1;});
+      return '📊 Relatório de hoje:\n💰 Faturamento: R$'+receita.toFixed(2)+'\n🎫 Ticket médio: R$'+ticket.toFixed(2)+'\n📦 Pedidos pagos: '+pedsPagos.length+'\n⏳ Em aberto: '+abertos.length+'\n💳 Formas: '+Object.entries(formas).map(([k,v])=>k+': '+v).join(', ');
+    }
+  },
+  report_clients:{
+    label:'Relatório de clientes',
+    perm:'clientes_ver',
+    params:[],
+    exec(){
+      const clis=ST.clientes||[];
+      const vip=clis.filter(c=>_crmScore(c)>=200).length;
+      const freq=clis.filter(c=>{const s=_crmScore(c);return s>=100&&s<200;}).length;
+      const inat=clis.filter(c=>{if(!c.ultimo_pedido)return false;return(Date.now()-new Date(c.ultimo_pedido).getTime())>(30*24*60*60*1000);}).length;
+      const contact=clis.filter(c=>c.telefone).length;
+      return '👥 '+clis.length+' clientes:\n⭐ VIP: '+vip+'\n🔄 Frequentes: '+freq+'\n📱 Contactáveis: '+contact+'\n😴 Inativos (30d+): '+inat;
+    }
+  },
+  navigate:{
+    label:'Navegar para página',
+    perm:'pdv',
+    params:['pagina'],
+    exec(p){
+      const pages={inicio:'dash',mesas:'mesas',balcao:'balcao',delivery:'delivery',producao:'producao',dados:'dados',cardapio:'cardapio',clientes:'clientes',caixa:'caixa',relatorios:'dados',configuracoes:'config',funcionarios:'funcionarios'};
+      const pg=pages[(p.pagina||'').toLowerCase()];
+      if(!pg) return '❌ Página "'+p.pagina+'" não encontrada. Opções: '+Object.keys(pages).join(', ');
+      setTimeout(()=>{closeMc('mc-coach');nav(pg);},300);
+      return '🔀 Navegando para '+p.pagina+'...';
+    }
+  },
+  update_price:{
+    label:'Atualizar preço',
+    perm:'cardapio_editar',
+    params:['nome','preco'],
+    exec(p){
+      const prod=ST.produtos.find(x=>x.nome.toLowerCase()===p.nome.toLowerCase());
+      if(!prod) return '❌ Produto "'+p.nome+'" não encontrado';
+      const old=prod.preco;
+      prod.preco=parseFloat(p.preco)||prod.preco;
+      save('produtos');
+      return '✅ "'+prod.nome+'": R$'+old.toFixed(2)+' → R$'+prod.preco.toFixed(2);
+    }
+  },
+  bulk_add_products:{
+    label:'Adicionar vários produtos',
+    perm:'cardapio_editar',
+    params:['produtos_json'],
+    exec(p){
+      let items;
+      try{items=JSON.parse(p.produtos_json);}catch(e){return '❌ JSON inválido';}
+      if(!Array.isArray(items)) return '❌ Esperado array de produtos';
+      let ct=0;
+      items.forEach(it=>{
+        if(!it.nome) return;
+        const catId=_findOrCreateCat(it.categoria||'Geral');
+        ST.produtos.push({id:uid(),nome:it.nome,preco:parseFloat(it.preco)||0,cat_id:catId,ico:it.emoji||'🍽️',desc:it.descricao||'',tempo:parseInt(it.tempo)||15,dest:['coz'],ativo:true,obs_grupos:[],foto:null});
+        ct++;
+      });
+      save('produtos');
+      return '✅ '+ct+' produtos adicionados ao cardápio!';
+    }
+  }
+};
+
+function _findOrCreateCat(nome){
+  const existing=ST.categorias.find(c=>c.nome.toLowerCase()===nome.toLowerCase());
+  if(existing) return existing.id;
+  const id=uid();
+  ST.categorias.push({id,nome,emoji:'📂'});
+  save('categorias');
+  return id;
+}
+function _getCatName(catId){return ST.categorias.find(c=>c.id===catId)?.nome||'Sem categoria';}
+
+function _agentCanExecute(actionId){
+  const action=_AGENT_ACTIONS[actionId];
+  if(!action) return false;
+  if(isSuperAdmin()) return true;
+  return hasPermission(action.perm);
+}
+
+function _buildAgentActionList(){
+  const available=[];
+  for(const [id,a] of Object.entries(_AGENT_ACTIONS)){
+    if(_agentCanExecute(id)) available.push({id,label:a.label,params:a.params});
+  }
+  return available;
+}
+
+function _parseAgentActions(text){
+  const actions=[];
+  const regex=/<<ACTION:(\w+)\|([^>]+)>>/g;
+  let m;
+  while((m=regex.exec(text))!==null){
+    const id=m[1];
+    const paramsStr=m[2];
+    const params={};
+    paramsStr.split('|').forEach(pair=>{
+      const [k,...v]=pair.split('=');
+      if(k) params[k.trim()]=v.join('=').trim();
+    });
+    actions.push({id,params,raw:m[0]});
+  }
+  return actions;
+}
+
+async function _executeAgentAction(actionId,params){
+  const action=_AGENT_ACTIONS[actionId];
+  if(!action) return '❌ Ação desconhecida: '+actionId;
+  if(!_agentCanExecute(actionId)) return '🔒 Sem permissão para: '+action.label+' (requer: '+action.perm+')';
+  try{
+    const result=action.exec(params);
+    _coachSaveMemory('ACTION:'+actionId+' '+JSON.stringify(params),result);
+    if(fbDB&&_estabUid){
+      try{await fbDB.collection('coach_insights').add({
+        estab_uid:_estabUid,action:actionId,params,result,timestamp:new Date().toISOString()
+      });}catch(e){}
+    }
+    return result;
+  }catch(e){return '❌ Erro ao executar: '+e.message;}
+}
+
+async function _loadKnowledgeHub(){
+  if(!fbDB) return '';
+  try{
+    const snap=await fbDB.collection('coach_insights').orderBy('timestamp','desc').limit(50).get();
+    if(snap.empty) return '';
+    const insights={};
+    snap.forEach(doc=>{
+      const d=doc.data();
+      const a=d.action;
+      if(!insights[a])insights[a]=[];
+      if(insights[a].length<5) insights[a].push({result:d.result,estab:d.estab_uid?.slice(0,8),time:d.timestamp?.slice(0,10)});
+    });
+    let hub='\n\nHUB DE CONHECIMENTO (acoes recentes de todos os estabelecimentos):\n';
+    for(const [action,items] of Object.entries(insights)){
+      hub+=action+': '+items.map(i=>i.result).join(' | ')+'\n';
+    }
+    return hub;
+  }catch(e){return '';}
+}
+
+function _getAgentSystemPrompt(){
+  const base=_getCoachSystemPrompt();
+  const actions=_buildAgentActionList();
+  const role=_userCargo||_userRole||'dono';
+  const isSA=isSuperAdmin();
+
+  let actionsDoc='';
+  actions.forEach(a=>{
+    actionsDoc+=`- ${a.id}: ${a.label} (params: ${a.params.join(', ')||'nenhum'})\n`;
+  });
+
+  return base+`
+
+VOCE E UM AGENTE IA COM PODERES DE EXECUCAO NO SISTEMA.
+Usuario atual: ${ST.currentUser?.nome||'Desconhecido'} (cargo: ${role}${isSA?' + Super Admin':''})
+${isSA?'SUPER ADMIN: voce tem acesso a TODOS os estabelecimentos e pode ver dados globais.':''}
+
+ACOES DISPONIVEIS (voce pode executar estas funcoes):
+${actionsDoc}
+COMO EXECUTAR ACOES:
+Quando o usuario pedir para voce FAZER algo (criar produto, abrir caixa, etc), inclua no final da sua resposta um ou mais comandos no formato:
+<<ACTION:nome_da_acao|param1=valor1|param2=valor2>>
+
+EXEMPLOS:
+- "Crie um produto hamburguer por 25 reais" → responda explicando e adicione:
+<<ACTION:add_product|nome=Hambúrguer|preco=25.00|categoria=Lanches|emoji=🍔|tempo=20|destino=cozinha>>
+
+- "Adicione a categoria Sobremesas" →
+<<ACTION:add_category|nome=Sobremesas|emoji=🍰>>
+
+- "Feche o caixa" →
+<<ACTION:close_register>>
+
+- "Atualize o preco da coca para 8 reais" →
+<<ACTION:update_price|nome=Coca-Cola|preco=8.00>>
+
+- "Adicione 3 produtos de uma vez" →
+<<ACTION:bulk_add_products|produtos_json=[{"nome":"X-Burger","preco":28,"categoria":"Lanches","emoji":"🍔"},{"nome":"Batata Frita","preco":15,"categoria":"Porções","emoji":"🍟"},{"nome":"Suco Natural","preco":10,"categoria":"Bebidas","emoji":"🥤"}]>>
+
+REGRAS IMPORTANTES:
+1. SEMPRE confirme com o usuario antes de executar acoes destrutivas (excluir, fechar caixa)
+2. Se o usuario nao tem permissao, explique o que ele precisa (ex: "Voce precisa de permissao cardapio_editar")
+3. Para acoes de LEITURA (listar, relatorio), execute sem pedir confirmacao
+4. Para acoes de ESCRITA (criar, editar, excluir), descreva o que vai fazer e execute
+5. NUNCA invente dados — use apenas o que o usuario informou
+6. Se faltar informacao, PERGUNTE antes de executar
+7. Voce pode executar MULTIPLAS acoes em uma resposta
+8. Use emojis para tornar as respostas visuais
+
+DADOS ATUAIS:
+- Produtos: ${ST.produtos?.length||0} (${ST.produtos?.filter(p=>p.ativo!==false).length||0} ativos)
+- Categorias: ${ST.categorias?.length||0}
+- Clientes: ${(ST.clientes||[]).length}
+- Pedidos: ${ST.pedidos?.length||0}
+- Caixa: ${ST.caixa?.aberto?'ABERTO ('+ST.caixa.operador+')':'FECHADO'}
+- Cardapio: ${ST.produtos?.filter(p=>p.ativo!==false).map(p=>p.nome+' R$'+Number(p.preco||0).toFixed(2)).join(', ')||'vazio'}
+- Categorias: ${ST.categorias?.map(c=>c.emoji+' '+c.nome).join(', ')||'nenhuma'}`;
 }
 
 // ═══════════════════════════════════════════════════════════════
