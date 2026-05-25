@@ -1,0 +1,257 @@
+{
+  "sistema": "PedePronto PDV",
+  "versao": "2.0",
+  "tipo": "PWA - Progressive Web App",
+  "plataformas": ["Web (Chrome, Safari, Firefox)", "Android (TWA/APK)", "iOS (PWA)"],
+  "tecnologias": {
+    "frontend": "HTML/CSS/JS vanilla (single-file)",
+    "backend": "Firebase (Auth, Firestore, Hosting)",
+    "ia": "Groq LPU (LLaMA 3.3 70B)",
+    "pagamentos": "Stone, PagSeguro, Rede (via deeplink)",
+    "impressao": "Bluetooth/USB termica (58mm/80mm)"
+  },
+  "modulos": [
+    {
+      "id": "inicio",
+      "nome": "Inicio / Dashboard",
+      "descricao": "Visao geral do dia com KPIs, pedidos ativos e acesso rapido",
+      "como_acessar": "Menu lateral > Inicio",
+      "funcoes": [
+        "Ver faturamento, ticket medio, pedidos do dia",
+        "Botoes rapidos: Mesas, Balcao, Delivery, Producao",
+        "Status do caixa (aberto/fechado)",
+        "Coach IA com briefing diario",
+        "Lista de pedidos em producao e prontos para entrega"
+      ]
+    },
+    {
+      "id": "mesas",
+      "nome": "Mesas",
+      "descricao": "Gerenciamento de mesas com comandas",
+      "como_acessar": "Menu lateral > Mesas ou Dashboard > botao Mesas",
+      "funcoes": [
+        "Mapa visual de mesas",
+        "Abrir comanda em mesa",
+        "Adicionar itens do cardapio",
+        "Transferir mesa",
+        "Fechar mesa com pagamento"
+      ],
+      "passo_a_passo": {
+        "abrir_mesa": "Clique na mesa desejada > 'Novo Pedido' > adicione itens > confirme",
+        "fechar_mesa": "Clique na mesa > 'Pagar' > selecione forma de pagamento > confirme"
+      }
+    },
+    {
+      "id": "balcao",
+      "nome": "Balcao",
+      "descricao": "Pedidos rapidos sem mesa",
+      "como_acessar": "Menu lateral > Balcao ou Dashboard > botao Balcao",
+      "funcoes": [
+        "Criar pedido rapido com numeracao automatica",
+        "Buscar cliente existente ou cadastrar novo",
+        "Adicionar itens e confirmar"
+      ]
+    },
+    {
+      "id": "delivery",
+      "nome": "Delivery",
+      "descricao": "Pedidos para entrega com endereco",
+      "como_acessar": "Menu lateral > Delivery ou Dashboard > botao Delivery",
+      "funcoes": [
+        "Cadastrar pedido com nome, telefone, endereco",
+        "Taxa de entrega configuravel",
+        "Enviar via/comprovante por WhatsApp"
+      ]
+    },
+    {
+      "id": "producao",
+      "nome": "Producao (KDS)",
+      "descricao": "Tela da cozinha/bar para acompanhar pedidos",
+      "como_acessar": "Menu lateral > Producao ou Dashboard > botao Producao",
+      "funcoes": [
+        "Ver pedidos em tempo real separados por Cozinha e Bar",
+        "Marcar itens como prontos (clique no item)",
+        "Pedido completo vai para fila de entrega",
+        "Alerta visual para pedidos atrasados (30+ min)"
+      ]
+    },
+    {
+      "id": "cardapio",
+      "nome": "Cardapio",
+      "descricao": "Gerenciar produtos e categorias",
+      "como_acessar": "Menu lateral > Cardapio",
+      "funcoes": [
+        "Cadastrar produto: nome, preco, categoria, descricao",
+        "Adicionar foto do produto",
+        "Criar/editar categorias",
+        "Ativar/desativar produtos",
+        "Reordenar produtos"
+      ],
+      "passo_a_passo": {
+        "novo_produto": "Cardapio > '+ Produto' > preencha nome e preco > selecione categoria > salve",
+        "nova_categoria": "Cardapio > aba 'Categorias' > '+ Categoria' > digite o nome > salve"
+      }
+    },
+    {
+      "id": "clientes",
+      "nome": "Clientes (CRM)",
+      "descricao": "Gestao de clientes com auto-capture e scoring",
+      "como_acessar": "Menu lateral > Clientes",
+      "funcoes": [
+        "Lista de todos os clientes com score e segmento",
+        "Auto-capture: cliente cadastrado ao fazer pedido",
+        "Scoring: frequencia + valor gasto + recencia",
+        "Segmentos: VIP, Frequente, Regular, Novo",
+        "Historico de pedidos por cliente",
+        "Filtrar e buscar clientes"
+      ],
+      "segmentos": {
+        "VIP": "Score 200+ pontos - clientes mais valiosos",
+        "Frequente": "Score 100-199 - clientes recorrentes",
+        "Regular": "Score 50-99 - clientes ocasionais",
+        "Novo": "Score 0-49 - clientes recentes"
+      }
+    },
+    {
+      "id": "caixa",
+      "nome": "Caixa",
+      "descricao": "Controle financeiro do turno",
+      "como_acessar": "Menu lateral > Caixa",
+      "funcoes": [
+        "Abertura com valor inicial de troco",
+        "Registro de sangrias e suprimentos",
+        "Fechamento com resumo completo",
+        "Historico de caixas anteriores"
+      ],
+      "formas_pagamento": ["Dinheiro", "PIX", "Debito", "Credito", "VR/VA"],
+      "passo_a_passo": {
+        "abrir": "Inicio > 'Abrir Caixa' > informe o valor de troco > confirme",
+        "fechar": "Caixa > 'Fechar Caixa' > confira os valores > confirme"
+      }
+    },
+    {
+      "id": "dados",
+      "nome": "Dados / Relatorios",
+      "descricao": "KPIs e metricas do dia",
+      "como_acessar": "Menu lateral > Dados",
+      "funcoes": [
+        "Faturamento, ticket medio, pedidos pagos",
+        "Vendas por categoria",
+        "Formas de pagamento mais usadas",
+        "Pedidos por tipo (mesa/balcao/delivery)"
+      ]
+    },
+    {
+      "id": "funcionarios",
+      "nome": "Funcionarios",
+      "descricao": "Gerenciar equipe e permissoes",
+      "como_acessar": "Menu lateral > Funcionarios",
+      "funcoes": [
+        "Convidar por link (WhatsApp)",
+        "Definir cargo e permissoes",
+        "Ver funcionarios ativos"
+      ],
+      "cargos": {
+        "dono": "Acesso total a tudo",
+        "gerente": "PDV + caixa + cardapio + dados",
+        "caixa": "PDV + caixa",
+        "garcom": "PDV apenas (mesas e pedidos)",
+        "cozinheiro": "Producao apenas (tela KDS)"
+      }
+    },
+    {
+      "id": "agente_ia",
+      "nome": "Agente IA / Coach",
+      "descricao": "Assistente de marketing com IA",
+      "como_acessar": "Dashboard > botao Coach IA, ou Menu > Agente IA",
+      "funcoes": [
+        "Briefing diario automatico",
+        "Sugestao de combos lucrativos",
+        "Campanhas prontas para WhatsApp",
+        "Analise de tendencias do mercado",
+        "Chat livre para perguntas",
+        "Ajuda sobre como usar o sistema"
+      ]
+    },
+    {
+      "id": "configuracoes",
+      "nome": "Configuracoes",
+      "descricao": "Personalizar o sistema",
+      "como_acessar": "Menu lateral > Configuracoes",
+      "funcoes": [
+        "Nome e dados do estabelecimento",
+        "Tema claro/escuro",
+        "Impressora termica (modelo, conexao)",
+        "Maquininha (Stone/PagSeguro/Rede)",
+        "CRM & Fidelidade (cashback, recompensas)",
+        "Quantidade de mesas",
+        "Totem digital"
+      ]
+    }
+  ],
+  "perguntas_frequentes": [
+    {
+      "pergunta": "Como abrir o caixa?",
+      "resposta": "Na pagina Inicio, clique no botao 'Abrir Caixa'. Informe o valor de troco inicial e confirme."
+    },
+    {
+      "pergunta": "Como cadastrar um produto?",
+      "resposta": "Va em Cardapio no menu lateral, clique em '+ Produto', preencha nome e preco, selecione a categoria e salve."
+    },
+    {
+      "pergunta": "Como criar uma categoria?",
+      "resposta": "Em Cardapio, clique na aba 'Categorias', depois em '+ Categoria', digite o nome e salve."
+    },
+    {
+      "pergunta": "Como fazer um pedido de balcao?",
+      "resposta": "Clique em 'Balcao' no Dashboard ou menu lateral. Preencha o nome do cliente, adicione itens do cardapio e confirme."
+    },
+    {
+      "pergunta": "Como convidar um funcionario?",
+      "resposta": "Va em Funcionarios no menu, clique em 'Convidar', defina cargo e permissoes, copie o link e envie por WhatsApp."
+    },
+    {
+      "pergunta": "Como fechar uma mesa?",
+      "resposta": "Clique na mesa, depois em 'Pagar'. Selecione a forma de pagamento e confirme."
+    },
+    {
+      "pergunta": "Como ver os relatorios do dia?",
+      "resposta": "Clique em 'Dados' no menu lateral. La voce ve faturamento, ticket medio, vendas por categoria e formas de pagamento."
+    },
+    {
+      "pergunta": "Como configurar a impressora?",
+      "resposta": "Va em Configuracoes > Impressora. Selecione o modelo (58mm ou 80mm), tipo de conexao e faca o teste de impressao."
+    },
+    {
+      "pergunta": "Como usar o programa de fidelidade?",
+      "resposta": "Va em Configuracoes > CRM & Fidelidade. Ative o programa, defina meta de pedidos e valor de cashback."
+    },
+    {
+      "pergunta": "O sistema funciona offline?",
+      "resposta": "Sim! O PedePronto e um PWA e funciona offline. Quando a internet voltar, os dados sincronizam automaticamente."
+    }
+  ],
+  "dicas_marketing": {
+    "upsell": [
+      "Sugira sobremesa apos prato principal",
+      "Crie combos: prato + bebida com 15-20% desconto",
+      "Ofereca adicionais (queijo, bacon, molho especial)"
+    ],
+    "retencao": [
+      "Envie mensagem para inativos (30+ dias sem pedir)",
+      "Campanha de aniversario com desconto especial",
+      "Happy hour em dias de baixo movimento"
+    ],
+    "ticket_medio": [
+      "Combos bem precificados (economia de 20-30%)",
+      "Programa de pontos com recompensas atrativas",
+      "Sugestao automatica de itens complementares"
+    ],
+    "datas_comemorativas": [
+      "Dia das Maes - menu especial + sobremesa gratis",
+      "Dia dos Namorados - combo para 2 com vinho",
+      "Black Friday - desconto progressivo",
+      "Natal - cesta de produtos / kit presente"
+    ]
+  }
+}
