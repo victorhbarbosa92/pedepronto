@@ -1636,6 +1636,10 @@ const PP_ICONS={
   bot:'M12 2a4 4 0 014 4v2H8V6a4 4 0 014-4zM5 12h14v7a3 3 0 01-3 3H8a3 3 0 01-3-3v-7zM8 8v4M16 8v4M9 16h6',
   play:'M5 3l14 9-14 9z',
   music:'M9 18V5l12-2v13M9 18a3 3 0 11-6 0 3 3 0 016 0zM21 16a3 3 0 11-6 0 3 3 0 016 0z',
+  heart:'M20.8 4.6a5.5 5.5 0 00-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 00-7.8 7.8l1 1.1L12 21.3l7.8-7.8 1-1.1a5.5 5.5 0 000-7.8z',
+  userPlus:'M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M8.5 11a4 4 0 100-8 4 4 0 000 8zM20 8v6M23 11h-6',
+  trophy:'M6 9H2V4h4M18 9h4V4h-4M4 22h16M10 22s-1-4-1-8l3-4 3 4c0 4-1 8-1 8M12 2l-2 8h4l-2-8',
+  target:'M12 22a10 10 0 100-20 10 10 0 000 20zM12 18a6 6 0 100-12 6 6 0 000 12zM12 14a2 2 0 100-4 2 2 0 000 4z',
 };
 function ppIcon(name,size=20,stroke=1.6,cls=''){
   const d=PP_ICONS[name]||PP_ICONS.home;
@@ -9488,6 +9492,558 @@ function _addVitrineVideo(){
   save('cfg');
   _renderCfgSection('vitrine');
 }
+
+// ═══════════════════════════════════════════════════════════════
+//  CRM ENGINE — Captura, histórico, scoring, campanhas
+// ═══════════════════════════════════════════════════════════════
+
+// ── CRM: Captura automática de cliente ao criar pedido ──
+function _crmCapture(ped){
+  if(!ped.cliente_nome&&!ped.telefone) return;
+  const existing=ST.clientes.find(c=>
+    (ped.telefone&&c.telefone===ped.telefone)||
+    (ped.cliente_nome&&c.nome===ped.cliente_nome&&!ped.telefone)
+  );
+  if(existing){
+    // Atualiza dados existentes
+    existing.ultimo_pedido=ped.created;
+    existing.total_pedidos=(existing.total_pedidos||0)+1;
+    existing.total_gasto=(existing.total_gasto||0)+(ped.total||0);
+    existing.ticket_medio=existing.total_gasto/existing.total_pedidos;
+    if(ped.telefone&&!existing.telefone) existing.telefone=ped.telefone;
+    if(ped.endereco&&!existing.endereco) existing.endereco=ped.endereco;
+    // Loyalty: pontos
+    existing.pontos_fidelidade=(existing.pontos_fidelidade||0)+Math.floor(ped.total||0);
+    // Check milestones
+    _crmCheckRewards(existing);
+    save('clientes');
+  }else if(ped.cliente_nome){
+    // Novo cliente
+    const cli={
+      id:uid(),
+      nome:ped.cliente_nome,
+      telefone:ped.telefone||'',
+      endereco:ped.endereco||'',
+      email:'',
+      aniversario:'',
+      notas:'',
+      created:now(),
+      ultimo_pedido:ped.created,
+      total_pedidos:1,
+      total_gasto:ped.total||0,
+      ticket_medio:ped.total||0,
+      pontos_fidelidade:Math.floor(ped.total||0),
+      opt_in_marketing:!!ped.telefone, // se deu telefone, aceita marketing
+      tags:[],
+      origem:ped.tipo // mesa, balcao, delivery
+    };
+    ST.clientes.push(cli);
+    save('clientes');
+    console.log('[CRM] Novo cliente capturado:',cli.nome,cli.telefone?'📱':'');
+  }
+}
+
+// ── CRM: Scoring e segmentação ──
+function _crmScore(cli){
+  if(!cli) return 0;
+  let score=0;
+  score+=(cli.total_pedidos||0)*10; // frequência
+  score+=(cli.total_gasto||0)*0.5; // valor
+  // Recência: pedidos recentes valem mais
+  if(cli.ultimo_pedido){
+    const dias=(Date.now()-new Date(cli.ultimo_pedido).getTime())/(1000*60*60*24);
+    if(dias<7) score+=50;
+    else if(dias<30) score+=30;
+    else if(dias<90) score+=10;
+  }
+  if(cli.telefone) score+=20; // contactável
+  if(cli.aniversario) score+=10; // dados completos
+  return Math.round(score);
+}
+
+function _crmSegment(cli){
+  const score=_crmScore(cli);
+  if(score>=200) return {label:'VIP',color:'var(--ac)',icon:'crown'};
+  if(score>=100) return {label:'Frequente',color:'var(--gn)',icon:'star'};
+  if(score>=50) return {label:'Regular',color:'var(--bl)',icon:'user'};
+  return {label:'Novo',color:'var(--t3)',icon:'userPlus'};
+}
+
+// ── CRM: Sistema de recompensas ──
+function _crmCheckRewards(cli){
+  const rewards=ST.cfg.crm_rewards||{};
+  if(!rewards.ativo) return;
+  const msgs=[];
+  // Recompensa por quantidade de pedidos
+  if(rewards.pedidos_meta&&cli.total_pedidos>0&&cli.total_pedidos%rewards.pedidos_meta===0){
+    msgs.push('🎉 '+cli.nome+' atingiu '+cli.total_pedidos+' pedidos! Recompensa: '+(rewards.pedidos_premio||'desconto especial'));
+    cli.tags=cli.tags||[];
+    if(!cli.tags.includes('reward_'+cli.total_pedidos)) cli.tags.push('reward_'+cli.total_pedidos);
+  }
+  // Cashback
+  if(rewards.cashback_pct&&cli.total_gasto>0){
+    const cashback=Math.floor(cli.total_gasto*(rewards.cashback_pct/100)*100)/100;
+    cli.cashback_acumulado=cashback;
+  }
+  // Notificar operador
+  msgs.forEach(m=>toast(m,'g',6000));
+}
+
+// ── Via do Cliente (comprovante digital) ──
+function _gerarViaCliente(ped){
+  const cfg=ST.cfg;
+  const itensStr=ped.itens.map(i=>i.qty+'x '+i.nome+' '+fmtR(i.preco*i.qty)).join('\n');
+  const via=`
+🧾 *${cfg.nome||'PedePronto'}*
+━━━━━━━━━━━━━━━━
+Pedido: ${ped.num}
+Data: ${fmtDH(ped.created)}
+Cliente: ${ped.cliente_nome||'—'}
+${ped.tipo==='delivery'?'📍 '+ped.endereco:'🍽️ '+(ped.mesa_label||ped.tipo)}
+━━━━━━━━━━━━━━━━
+${itensStr}
+━━━━━━━━━━━━━━━━
+${ped.desconto?'Desconto: -'+fmtR(ped.desconto)+'\n':''}*TOTAL: ${fmtR(ped.total)}*
+${ped.del_pagamento?'Pagamento: '+(ped.del_pagamento==='pix'?'PIX':ped.del_pagamento==='cartao'?'Cartão':'Dinheiro'):''}
+${cfg.pix_chave?'\n💳 PIX: '+cfg.pix_chave:''}
+━━━━━━━━━━━━━━━━
+Obrigado pela preferência! 🙏
+${cfg.wa?'📱 WhatsApp: '+cfg.wa:''}`.trim();
+  return via;
+}
+
+function _enviarViaCliente(ped){
+  const tel=ped.telefone||'';
+  if(!tel){toast('Sem telefone do cliente','a',3000);return;}
+  const via=_gerarViaCliente(ped);
+  const num=tel.replace(/\D/g,'');
+  const waNum=num.length<=11?'55'+num:num;
+  const url='https://wa.me/'+waNum+'?text='+encodeURIComponent(via);
+  window.open(url,'_blank');
+  toast('Via enviada por WhatsApp!','g',3000);
+}
+
+function _copiarViaCliente(ped){
+  const via=_gerarViaCliente(ped);
+  navigator.clipboard?.writeText(via).then(()=>toast('Via copiada!','g'));
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  COACH IA — Marketing proativo, tendências, dicas diárias
+// ═══════════════════════════════════════════════════════════════
+
+function _buildCoachPrompt(tipo){
+  const cfg=ST.cfg;
+  const peds=ST.pedidos||[];
+  const clis=ST.clientes||[];
+  const prods=ST.produtos.filter(p=>p.ativo!==false);
+
+  // Métricas do negócio
+  const hoje=new Date().toISOString().slice(0,10);
+  const pedHoje=peds.filter(p=>p.created?.startsWith(hoje));
+  const faturHoje=pedHoje.reduce((s,p)=>s+(p.total||0),0);
+  const ticketMedio=peds.length>0?(peds.reduce((s,p)=>s+(p.total||0),0)/peds.length):0;
+
+  // Clientes com telefone (contactáveis)
+  const cliContactaveis=clis.filter(c=>c.telefone);
+  const cliVIP=clis.filter(c=>_crmScore(c)>=200);
+  const cliInativos=clis.filter(c=>{
+    if(!c.ultimo_pedido) return false;
+    return(Date.now()-new Date(c.ultimo_pedido).getTime())>(30*24*60*60*1000);
+  });
+
+  // Datas comemorativas próximas
+  const proxDatas=_getProximasDatasComem();
+
+  // Aniversariantes da semana
+  const aniverSemana=clis.filter(c=>{
+    if(!c.aniversario) return false;
+    const [m,d]=c.aniversario.split('-').slice(1).map(Number);
+    const agora=new Date();
+    const diff=new Date(agora.getFullYear(),m-1,d)-agora;
+    return diff>=0&&diff<7*24*60*60*1000;
+  });
+
+  // Top/bottom produtos
+  const prodCount={};
+  peds.forEach(p=>(p.itens||[]).forEach(it=>{prodCount[it.nome]=(prodCount[it.nome]||0)+(it.qty||1);}));
+  const topProds=Object.entries(prodCount).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const bottomProds=Object.entries(prodCount).sort((a,b)=>a[1]-b[1]).slice(0,3);
+
+  const cardapio=prods.map(p=>p.nome+' R$'+Number(p.preco||0).toFixed(2)).join(', ');
+
+  const prompts={
+    diario:`Voce e o Coach de Marketing do "${cfg.nome||'PedePronto'}". Gere um BRIEFING DIARIO conciso com:
+
+METRICAS HOJE:
+- Pedidos hoje: ${pedHoje.length}
+- Faturamento hoje: R$${faturHoje.toFixed(2)}
+- Ticket medio geral: R$${ticketMedio.toFixed(2)}
+- Clientes cadastrados: ${clis.length} (${cliContactaveis.length} contactaveis)
+- Clientes VIP: ${cliVIP.length}
+- Clientes inativos (30+ dias): ${cliInativos.length}
+
+CARDAPIO: ${cardapio}
+
+TOP VENDAS: ${topProds.map(([n,q])=>n+' ('+q+'x)').join(', ')||'sem dados'}
+MENOS VENDIDOS: ${bottomProds.map(([n,q])=>n+' ('+q+'x)').join(', ')||'sem dados'}
+
+DATAS COMEMORATIVAS PROXIMAS: ${proxDatas}
+ANIVERSARIANTES DA SEMANA: ${aniverSemana.map(c=>c.nome).join(', ')||'nenhum'}
+
+Gere:
+1. ACAO DO DIA (1 acao concreta para aumentar vendas hoje)
+2. COMBO SUGERIDO (baseado nos top sellers, com preco sugerido)
+3. CAMPANHA RAPIDA (para enviar aos ${cliContactaveis.length} clientes contactaveis)
+4. ALERTA (oportunidades ou riscos identificados)
+5. DICA DE FOTO (qual prato fotografar e como)
+
+Formato: texto limpo, direto, sem enrolacao. Use emojis para destaque.`,
+
+    combo:`Analise o cardapio e historico de vendas e sugira 3 COMBOS lucrativos:
+CARDAPIO: ${cardapio}
+TOP VENDAS: ${topProds.map(([n,q])=>n+' ('+q+'x)').join(', ')}
+TICKET MEDIO: R$${ticketMedio.toFixed(2)}
+Cada combo deve ter: nome criativo, itens, preco original vs combo, margem de desconto, apelo de marketing.`,
+
+    campanha:`Crie 3 CAMPANHAS de marketing para o "${cfg.nome||'PedePronto'}":
+- ${cliContactaveis.length} clientes contactaveis por WhatsApp
+- ${cliInativos.length} inativos (30+ dias)
+- ${cliVIP.length} VIPs
+- Ticket medio: R$${ticketMedio.toFixed(2)}
+DATAS PROXIMAS: ${proxDatas}
+Cada campanha: titulo, mensagem pronta para WhatsApp (curta), publico-alvo, meta.`,
+
+    tendencias:`Analise o negocio "${cfg.nome||'PedePronto'}" e identifique TENDENCIAS e OPORTUNIDADES:
+TIPO: Bar/Restaurante/Lanchonete
+CARDAPIO: ${cardapio}
+PEDIDOS TOTAIS: ${peds.length}
+CLIENTES: ${clis.length}
+Analise: sazonalidade, tendencias de mercado food-service, oportunidades de delivery, inovacoes de cardapio, estrategias de preco.`
+  };
+
+  return prompts[tipo]||prompts.diario;
+}
+
+function _getProximasDatasComem(){
+  const datas=[
+    [1,1,'Ano Novo'],[2,14,'Dia dos Namorados (EUA)'],[3,8,'Dia da Mulher'],
+    [3,15,'Dia do Consumidor'],[4,21,'Tiradentes'],[5,1,'Dia do Trabalho'],
+    [5,12,'Dia das Maes'],[6,12,'Dia dos Namorados'],[6,24,'São João'],
+    [7,20,'Dia do Amigo'],[8,11,'Dia dos Pais'],[9,7,'Independência'],
+    [9,21,'Dia da Árvore'],[10,12,'Dia das Crianças'],[10,15,'Dia do Professor'],
+    [10,31,'Halloween'],[11,20,'Dia da Consciência Negra'],[11,25,'Black Friday (aprox)'],
+    [12,25,'Natal'],[12,31,'Réveillon']
+  ];
+  const agora=new Date();
+  const prox=datas.filter(([m,d,n])=>{
+    const dt=new Date(agora.getFullYear(),m-1,d);
+    const diff=(dt-agora)/(1000*60*60*24);
+    return diff>=0&&diff<=30;
+  }).map(([m,d,n])=>n+' ('+d+'/'+m+')');
+  return prox.join(', ')||'nenhuma nos proximos 30 dias';
+}
+
+// ── Coach: Briefing diário automático ──
+async function _coachBriefing(tipo){
+  const cfg=ST.cfg.ai_agent||{};
+  if(!cfg.endpoint||!cfg.api_key){toast('Configure o Agente IA primeiro','r');return null;}
+  try{
+    const res=await fetch(cfg.endpoint,{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+cfg.api_key},
+      body:JSON.stringify({
+        model:cfg.model||'llama-3.3-70b-versatile',
+        messages:[{role:'system',content:'Voce e um coach de marketing especializado em food-service brasileiro. Seja direto e acionavel.'},{role:'user',content:_buildCoachPrompt(tipo||'diario')}],
+        temperature:0.8,max_tokens:1500
+      })
+    });
+    const data=await res.json();
+    return data.choices?.[0]?.message?.content||'Sem resposta';
+  }catch(e){
+    console.warn('[Coach] Erro:',e.message);
+    return null;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  LOYALTY — Cashback, recompensas, aniversário
+// ═══════════════════════════════════════════════════════════════
+
+function _loyaltyStatus(cli){
+  if(!cli) return null;
+  const rewards=ST.cfg.crm_rewards||{};
+  const pontos=cli.pontos_fidelidade||0;
+  const pedidos=cli.total_pedidos||0;
+  const cashback=cli.cashback_acumulado||0;
+  const nivel=pontos>=500?'Ouro':pontos>=200?'Prata':'Bronze';
+  const nivelCor={Ouro:'var(--am)',Prata:'var(--t2)',Bronze:'var(--ac)'}[nivel];
+  const proxReward=rewards.pedidos_meta?rewards.pedidos_meta-(pedidos%rewards.pedidos_meta):0;
+  return {pontos,nivel,nivelCor,cashback,proxReward,pedidos};
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  NOTIFICAÇÕES — Daily coach reminder para o dono
+// ═══════════════════════════════════════════════════════════════
+
+function _checkDailyCoach(){
+  if(_userRole!=='dono'&&_userCargo!=='dono') return;
+  const lastCoach=localStorage.getItem('pp_last_coach');
+  const hoje=new Date().toISOString().slice(0,10);
+  if(lastCoach===hoje) return; // já mostrou hoje
+  // Mostra após 5s do boot para não atrapalhar
+  setTimeout(()=>{
+    _showCoachNotif();
+    localStorage.setItem('pp_last_coach',hoje);
+  },5000);
+}
+
+function _showCoachNotif(){
+  const clis=ST.clientes||[];
+  const cliContactaveis=clis.filter(c=>c.telefone).length;
+  const cliInativos=clis.filter(c=>{
+    if(!c.ultimo_pedido)return false;
+    return(Date.now()-new Date(c.ultimo_pedido).getTime())>(30*24*60*60*1000);
+  }).length;
+  const proxDatas=_getProximasDatasComem();
+
+  // Alerta não-intrusivo no topo
+  const el=document.createElement('div');
+  el.id='pp-coach-notif';
+  el.style.cssText='position:fixed;top:56px;left:50%;transform:translateX(-50%);z-index:9999;max-width:480px;width:calc(100% - 32px);background:linear-gradient(135deg,var(--s2),var(--s3));border:1px solid var(--acg);border-radius:14px;padding:16px;box-shadow:0 8px 32px rgba(0,0,0,.4);animation:ppSlideDown .3s ease';
+  el.innerHTML=`
+    <div style="display:flex;align-items:flex-start;gap:12px">
+      <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,var(--ac),var(--pu));display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        ${ppIcon('bot',20,1.6)}
+      </div>
+      <div style="flex:1;min-width:0">
+        <div class="bold fs14 mb2">Coach PedePronto</div>
+        <div class="fs12 t2 mb8" style="line-height:1.6">
+          ${cliContactaveis>0?'📱 <b>'+cliContactaveis+'</b> clientes prontos para campanha. ':''}
+          ${cliInativos>0?'⚠️ <b>'+cliInativos+'</b> inativos (30+ dias). ':''}
+          ${proxDatas!=='nenhuma nos proximos 30 dias'?'📅 Próximas datas: '+proxDatas:''}
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="btn bp bxs" onclick="_openCoachPanel();document.getElementById('pp-coach-notif')?.remove()" style="font-size:11px;padding:6px 12px">${ppIcon('bot',12,1.7)} Ver briefing</button>
+          <button class="btn bs bxs" onclick="document.getElementById('pp-coach-notif')?.remove()" style="font-size:11px;padding:6px 12px">Depois</button>
+        </div>
+      </div>
+      <button onclick="document.getElementById('pp-coach-notif')?.remove()" style="background:none;border:none;color:var(--t3);cursor:pointer;font-size:16px;padding:2px">✕</button>
+    </div>`;
+  document.body.appendChild(el);
+  // Auto-remove após 15s
+  setTimeout(()=>el.remove(),15000);
+}
+
+// ── Coach Panel (modal completa com briefing) ──
+async function _openCoachPanel(){
+  showModal('mc-coach','Coach de Marketing IA',`
+    <div style="text-align:center;padding:20px">
+      <div style="width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,var(--ac),var(--pu));display:flex;align-items:center;justify-content:center;margin:0 auto 12px">
+        ${ppIcon('bot',24,1.6)}
+      </div>
+      <div class="fs13 t2 mb12">Gerando seu briefing personalizado...</div>
+      <div style="width:32px;height:32px;border:3px solid var(--br2);border-top-color:var(--ac);border-radius:50%;animation:ppSpin 0.8s linear infinite;margin:0 auto"></div>
+    </div>
+  `);
+
+  const briefing=await _coachBriefing('diario');
+  if(!briefing){closeMc('mc-coach');toast('Erro ao gerar briefing','r');return;}
+
+  const el=document.getElementById('mc-coach');
+  if(!el) return;
+  const box=el.querySelector('.mc-body');
+  if(box){
+    box.innerHTML=`
+      <div style="max-height:60vh;overflow-y:auto;padding:4px">
+        <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+          <button class="btn bp bxs" onclick="_coachAction('combo')" style="font-size:11px">${ppIcon('gift',12,1.7)} Criar combos</button>
+          <button class="btn bb bxs" onclick="_coachAction('campanha')" style="font-size:11px">${ppIcon('send',12,1.7)} Criar campanha</button>
+          <button class="btn bg bxs" onclick="_coachAction('tendencias')" style="font-size:11px">${ppIcon('activity',12,1.7)} Tendências</button>
+        </div>
+        <div id="coach-content" style="font-size:13px;line-height:1.7;color:var(--tx);white-space:pre-wrap;background:var(--s2);border-radius:10px;padding:14px">${esc(briefing)}</div>
+      </div>
+    `;
+  }
+}
+
+async function _coachAction(tipo){
+  const el=document.getElementById('coach-content');
+  if(!el) return;
+  el.innerHTML='<div style="text-align:center;padding:12px"><div class="fs12 t3">Gerando '+tipo+'...</div></div>';
+  const result=await _coachBriefing(tipo);
+  el.textContent=result||'Erro ao gerar';
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  CRM CONFIG — Seção de configuração de CRM e Rewards
+// ═══════════════════════════════════════════════════════════════
+
+// Hook: inject CRM items into config menu
+const _origCfgMenuItems2=_cfgMenuItems;
+_cfgMenuItems=function(){
+  const items=_origCfgMenuItems2();
+  // Inserir antes de 'ajuda'
+  const ajudaIdx=items.findIndex(i=>i.id==='ajuda');
+  const crmItem={id:'crm',icon:'heart',label:'CRM & Fidelidade',desc:(ST.cfg.crm_rewards?.ativo?'Ativo':'Configurar')};
+  if(ajudaIdx>=0) items.splice(ajudaIdx,0,crmItem);
+  else items.push(crmItem);
+  return items;
+};
+
+// ═══════════════════════════════════════════════════════════════
+//  INTEGRAÇÃO: Via do Cliente no Pedido
+// ═══════════════════════════════════════════════════════════════
+
+// Patch confirmarPedido to auto-capture CRM and offer via
+const _origConfirmarPedido=confirmarPedido;
+confirmarPedido=function(){
+  _origConfirmarPedido.apply(this,arguments);
+  // Após confirmar, captura CRM do último pedido
+  const lastPed=ST.pedidos[ST.pedidos.length-1];
+  if(lastPed){
+    _crmCapture(lastPed);
+    // Se tem telefone, oferece enviar via
+    if(lastPed.telefone&&ST.cfg.crm_via_auto){
+      setTimeout(()=>{
+        confirm2(
+          ppIcon('send',36,1.4),
+          'Enviar via ao cliente?',
+          'Deseja enviar o comprovante do pedido '+lastPed.num+' por WhatsApp para '+lastPed.cliente_nome+'?',
+          'Enviar via WhatsApp','bp',
+          ()=>_enviarViaCliente(lastPed),
+          null
+        );
+      },800);
+    }
+  }
+};
+
+// ── Delivery form: add checkbox for "quer via do pedido?" ──
+// Patch renderPedido to add via checkbox in delivery form
+const _origFormDelivery=`placeholder="Complemento / referência (opcional)"`;
+
+// ── Ativar coach diário no boot ──
+const _origBootWithData=_bootWithData;
+_bootWithData=function(){
+  _origBootWithData.apply(this,arguments);
+  // Coach diário para donos
+  setTimeout(()=>_checkDailyCoach(),3000);
+};
+
+// ═══════════════════════════════════════════════════════════════
+//  CRM CONFIG RENDER
+// ═══════════════════════════════════════════════════════════════
+// Hook into _renderCfgSection
+const _origRenderCfg=_renderCfgSection;
+_renderCfgSection=function(sec){
+  if(sec==='crm'){
+    const cfg=ST.cfg;
+    const rewards=cfg.crm_rewards||{};
+    const clis=ST.clientes||[];
+    const contactaveis=clis.filter(c=>c.telefone).length;
+    const el=document.getElementById('pg-config');
+    el.innerHTML=_cfgHeader('CRM & Fidelidade')+`
+    <div class="card mb10">
+      <div class="rb" style="padding:8px 0;border-bottom:1px solid var(--br)">
+        <div>
+          <div class="fs13 bold">Base de clientes</div>
+          <div class="fs12 t2">${clis.length} clientes · ${contactaveis} contactáveis por WhatsApp</div>
+        </div>
+        <span class="bdg bg-g">${contactaveis} 📱</span>
+      </div>
+
+      <div style="padding:12px 0;border-bottom:1px solid var(--br)">
+        <div class="fs13 bold mb8" style="display:flex;align-items:center;gap:6px">${ppIcon('heart',15,1.6)} Sistema de Fidelidade</div>
+        <div class="rb mb8">
+          <div class="fs12 t2">Ativar cashback e recompensas</div>
+          <label style="position:relative;width:44px;height:24px;cursor:pointer">
+            <input type="checkbox" ${rewards.ativo?'checked':''} onchange="ST.cfg.crm_rewards=ST.cfg.crm_rewards||{};ST.cfg.crm_rewards.ativo=this.checked;save('cfg');_renderCfgSection('crm')" style="opacity:0;width:0;height:0">
+            <span style="position:absolute;inset:0;background:${rewards.ativo?'var(--gn)':'var(--s4)'};border-radius:99px;transition:.3s"></span>
+            <span style="position:absolute;top:2px;left:${rewards.ativo?'22px':'2px'};width:20px;height:20px;background:#fff;border-radius:50%;transition:.3s"></span>
+          </label>
+        </div>
+        ${rewards.ativo?`
+        <div class="fg mb8">
+          <label class="fl">Recompensa a cada X pedidos</label>
+          <input class="inp" type="number" min="1" value="${rewards.pedidos_meta||10}" oninput="ST.cfg.crm_rewards.pedidos_meta=+this.value;save('cfg')" placeholder="Ex: 10">
+        </div>
+        <div class="fg mb8">
+          <label class="fl">Prêmio (o que o cliente ganha)</label>
+          <input class="inp" value="${esc(rewards.pedidos_premio||'')}" oninput="ST.cfg.crm_rewards.pedidos_premio=this.value;save('cfg')" placeholder="Ex: 1 chopp grátis, 10% off">
+        </div>
+        <div class="fg mb8">
+          <label class="fl">Cashback (% do valor do pedido em pontos)</label>
+          <input class="inp" type="number" min="0" max="20" step="0.5" value="${rewards.cashback_pct||0}" oninput="ST.cfg.crm_rewards.cashback_pct=+this.value;save('cfg')" placeholder="Ex: 5">
+        </div>
+        `:''}
+      </div>
+
+      <div style="padding:12px 0;border-bottom:1px solid var(--br)">
+        <div class="fs13 bold mb8" style="display:flex;align-items:center;gap:6px">${ppIcon('send',15,1.6)} Via do cliente</div>
+        <div class="rb">
+          <div class="fs12 t2">Oferecer comprovante por WhatsApp após pedido</div>
+          <label style="position:relative;width:44px;height:24px;cursor:pointer">
+            <input type="checkbox" ${cfg.crm_via_auto?'checked':''} onchange="ST.cfg.crm_via_auto=this.checked;save('cfg')" style="opacity:0;width:0;height:0">
+            <span style="position:absolute;inset:0;background:${cfg.crm_via_auto?'var(--gn)':'var(--s4)'};border-radius:99px;transition:.3s"></span>
+            <span style="position:absolute;top:2px;left:${cfg.crm_via_auto?'22px':'2px'};width:20px;height:20px;background:#fff;border-radius:50%;transition:.3s"></span>
+          </label>
+        </div>
+      </div>
+
+      <div style="padding:12px 0">
+        <div class="fs13 bold mb8" style="display:flex;align-items:center;gap:6px">${ppIcon('bot',15,1.6)} Coach IA diário</div>
+        <div class="fs12 t2 mb8">Receba um briefing de marketing todos os dias com dicas personalizadas baseadas nos seus dados.</div>
+        <button class="btn bp bw" onclick="_openCoachPanel()">${ppIcon('bot',14,1.7)} Ver briefing agora</button>
+      </div>
+    </div>
+
+    <div class="card mb10">
+      <div class="fs13 bold mb8">Segmentação de clientes</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        ${[
+          {seg:'VIP',count:clis.filter(c=>_crmScore(c)>=200).length,color:'var(--ac)'},
+          {seg:'Frequente',count:clis.filter(c=>{const s=_crmScore(c);return s>=100&&s<200;}).length,color:'var(--gn)'},
+          {seg:'Regular',count:clis.filter(c=>{const s=_crmScore(c);return s>=50&&s<100;}).length,color:'var(--bl)'},
+          {seg:'Novo',count:clis.filter(c=>_crmScore(c)<50).length,color:'var(--t3)'}
+        ].map(s=>`<div style="background:var(--s2);border-radius:10px;padding:12px;text-align:center">
+          <div style="font-size:20px;font-weight:900;color:${s.color}">${s.count}</div>
+          <div class="fs11 t2">${s.seg}</div>
+        </div>`).join('')}
+      </div>
+    </div>
+    `+_cfgFooter();
+    return;
+  }
+  _origRenderCfg.apply(this,arguments);
+};
+
+// ── Atualizar system prompt do agente para incluir CRM avançado ──
+const _origBuildPrompt=_buildAgentSystemPrompt;
+_buildAgentSystemPrompt=function(){
+  let prompt=_origBuildPrompt();
+  const clis=ST.clientes||[];
+  const contactaveis=clis.filter(c=>c.telefone).length;
+  const vips=clis.filter(c=>_crmScore(c)>=200);
+  const rewards=ST.cfg.crm_rewards||{};
+
+  prompt+=`\n\nCRM AVANCADO:
+- Clientes cadastrados: ${clis.length} (${contactaveis} contactaveis)
+- VIPs: ${vips.map(c=>c.nome).join(', ')||'nenhum'}
+- Fidelidade: ${rewards.ativo?'ativa ('+rewards.cashback_pct+'% cashback, premio a cada '+rewards.pedidos_meta+' pedidos)':'inativa'}
+- Datas proximas: ${_getProximasDatasComem()}
+
+Voce tambem e um COACH DE MARKETING. Alem de vender, ajude o dono com:
+- Sugestoes de combos e promocoes
+- Dicas de fotos de pratos
+- Campanhas de WhatsApp para clientes
+- Previsao de datas comemorativas
+- Tendencias do mercado food-service
+- Estrategias de reativacao de clientes inativos
+- Ideias de cashback e fidelidade`;
+
+  return prompt;
+};
 
 </script>
 </body>
