@@ -3847,7 +3847,7 @@ function _renderDashPedidosAtivos(_i){
   return html;
 }
 
-function renderDash(){
+function renderDash(){try{
   const _i=(n,s=14)=>ppIcon(n,s,1.7);
   const origemIco={mesa:_i('table'),balcao:_i('counter'),delivery:_i('bike')};
   const origemLbl={mesa:'Mesa',balcao:'Balcão',delivery:'Delivery'};
@@ -3924,7 +3924,7 @@ function renderDash(){
   ${_renderSolicitacoesCancelamento(_i)}
   ${_renderDashProducao(_i,origemIco,origemLbl,origemCls)}
   ${_renderDashPedidosAtivos(_i)}`;
-}
+}catch(e){console.error('[renderDash] ERRO:',e);document.getElementById('pg-dash').innerHTML=`<div style="padding:20px;color:var(--rd)"><b>Erro no dashboard:</b><br><pre style="font-size:12px;margin-top:8px;white-space:pre-wrap;color:var(--t2)">${e.message}\n${e.stack||''}</pre><button class="btn bp mt12" onclick="renderDash()">Tentar novamente</button></div>`;}}
 
 function renderDados(){
   const hoje=new Date().toDateString();
