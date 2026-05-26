@@ -2167,27 +2167,34 @@ async function _fsPullBoot(uid){
 }
 // ── Inicializa UI após dados estarem disponíveis ──
 function _bootWithData(){
-  console.log('[PedePronto] _bootWithData: ST.produtos='+ST.produtos.length+', ST.categorias='+ST.categorias.length);
-  initDefaults(true); // skipSave — não trigger push durante boot
-  applyTheme();
-  applyTamanho();
-  _updateSbLogo();
-  const pageEl=document.getElementById('page');
-  if(pageEl) pageEl.addEventListener('scroll',()=>{_lastUserScroll=Date.now();},{passive:true});
-  BT.paper=ST.cfg.papel||58;BT.auto=ST.cfg.autoprint||false;
-  updateBtUI();updateSbOperador();
-  // Auto-reconectar impressora Bluetooth salva
-  if(ST.cfg.bt_device_id||ST.cfg.bt_name)setTimeout(()=>BT.autoReconnect(),1500);
-  const sbEst=document.getElementById('sb-est');
-  if(sbEst) sbEst.textContent=ST.cfg.nome||'PedePronto';
-  _atualizarBadgeLicenca();
-  _updateNotifBadge();
-  renderDash();
-  _updateBackBtn();
-  console.log('[PedePronto] _bootWithData: concluído');
-  // Inicia health monitor de sync + atualiza status bar
-  _startSyncHealthMonitor();
-  setInterval(updateSyncStatus,5000); // atualiza "Sync há Xs" na sidebar
+  try{
+    console.log('[PedePronto] _bootWithData: ST.produtos='+ST.produtos.length+', ST.categorias='+ST.categorias.length);
+    initDefaults(true); // skipSave — não trigger push durante boot
+    applyTheme();
+    applyTamanho();
+    _updateSbLogo();
+    const pageEl=document.getElementById('page');
+    if(pageEl) pageEl.addEventListener('scroll',()=>{_lastUserScroll=Date.now();},{passive:true});
+    BT.paper=ST.cfg.papel||58;BT.auto=ST.cfg.autoprint||false;
+    try{updateBtUI();}catch(e){console.warn('[boot] updateBtUI erro:',e);}
+    updateSbOperador();
+    // Auto-reconectar impressora Bluetooth salva
+    if(ST.cfg.bt_device_id||ST.cfg.bt_name)setTimeout(()=>{try{BT.autoReconnect();}catch(e){console.warn('[BT] autoReconnect erro:',e);}},1500);
+    const sbEst=document.getElementById('sb-est');
+    if(sbEst) sbEst.textContent=ST.cfg.nome||'PedePronto';
+    try{_atualizarBadgeLicenca();}catch(e){console.warn('[boot] badgeLicenca erro:',e);}
+    try{_updateNotifBadge();}catch(e){console.warn('[boot] notifBadge erro:',e);}
+    renderDash();
+    _updateBackBtn();
+    console.log('[PedePronto] _bootWithData: concluído');
+    // Inicia health monitor de sync + atualiza status bar
+    _startSyncHealthMonitor();
+    setInterval(updateSyncStatus,5000); // atualiza "Sync há Xs" na sidebar
+  }catch(e){
+    console.error('[PedePronto] _bootWithData ERRO FATAL:',e);
+    const d=document.getElementById('pg-dash');
+    if(d)d.innerHTML='<div style="padding:20px;color:var(--rd)"><b>Erro ao iniciar:</b><pre style="font-size:11px;margin-top:8px;color:var(--t2);white-space:pre-wrap">'+e.message+'\n'+(e.stack||'')+'</pre><button class="btn bp mt12" onclick="location.reload()">Recarregar</button></div>';
+  }
 }
 // ── SYNC HEALTH MONITOR ──
 // Detecta sync travado e força re-pull periódico
