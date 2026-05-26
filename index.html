@@ -1884,14 +1884,19 @@ function _setSyncStatus(s){
   if(banner)banner.style.display=(s==='error')?'flex':'none';
   updateSyncStatus();
 }
+let _dirtyKeys=new Set(); // chaves modificadas localmente pendentes de push
+let _pushInFlight=false; // true enquanto fsPush está em andamento
 function save(k){
   ST.cfg._savedAt=new Date().toISOString();
   DB.set(k,ST[k]);
   DB.set('cfg',ST.cfg); // persiste _savedAt para sobreviver a reload
   if(_syncEnabled&&_cloudBooted){
-    _localDirty=true; // protege contra overwrite por onSnapshot até fsPush completar
+    _dirtyKeys.add(k);
+    _dirtyKeys.add('cfg');
+    _localDirty=true;
     clearTimeout(_fsTimer);
-    _fsTimer=setTimeout(fsPush,2000);
+    // Em alto fluxo: push rápido (800ms) para não acumular
+    _fsTimer=setTimeout(fsPush,800);
   }
 }
 function saveAll(skipPush){
@@ -1899,7 +1904,7 @@ function saveAll(skipPush){
   Object.keys(ST).filter(k=>!['editProd','editCli'].includes(k)).forEach(k=>DB.set(k,ST[k]));
   if(!skipPush){
     clearTimeout(_fsTimer);
-    _fsTimer=setTimeout(fsPush,2000);
+    _fsTimer=setTimeout(fsPush,800);
   }
 }
 async function fsForcePush(){
@@ -1911,8 +1916,9 @@ async function fsForcePush(){
   if(E2EE._enabled) d=await E2EE.encryptData(d);
   try{
     _setSyncStatus('syncing');
-    await fbDB.collection('estabelecimentos').doc(uid).collection('dados').doc('principal').set(d);
-    _lastSyncAt=Date.now();_localDirty=false;
+    d._ts=firebase.firestore.FieldValue.serverTimestamp();
+    await fbDB.collection('estabelecimentos').doc(uid).collection('dados').doc('principal').set(d,{merge:true});
+    _lastSyncAt=Date.now();_localDirty=false;_dirtyKeys.clear();
     _setSyncStatus('ok');
     toast('Dados enviados! ('+ST.produtos.length+' produtos, '+ST.categorias.length+' categorias)','g',5000);
     console.log('[PedePronto] ✅ Force push OK → '+uid+' ('+ST.produtos.length+' prod, '+ST.categorias.length+' cat)');
@@ -1923,28 +1929,33 @@ async function fsForcePush(){
 }
 async function fsPush(){
   if(!_syncEnabled||!fbAuth||!fbAuth.currentUser) return;
-  if(!_cloudBooted) return; // NUNCA faz push antes dos dados cloud serem carregados
+  if(!_cloudBooted) return;
   if(window._noPermission) return;
-  // Proteção: NENHUM dispositivo com dados locais vazios sobrescreve a nuvem
-  // Isso impede que um dispositivo novo (localStorage vazio) apague os dados existentes
+  if(_pushInFlight) return; // já tem push em andamento — save() vai agendar outro
+  // Proteção: dispositivo novo vazio não apaga dados
   if(!_lastSyncAt&&ST.produtos.length===0&&ST.pedidos.length===0&&ST.categorias.length===0){
-    console.warn('[PedePronto] ⚠️ Push bloqueado — dados locais vazios, aguardando sync da nuvem (role:'+_userRole+')');
+    console.warn('[PedePronto] ⚠️ Push bloqueado — dados locais vazios (role:'+_userRole+')');
     return;
   }
+  _pushInFlight=true;
   _setSyncStatus('syncing');
   const uid=_estabUid||fbAuth.currentUser.uid;
+  // Captura as chaves sujas ANTES do push — se novas mudanças chegarem durante o push, elas ficarão na fila
+  const keysToSync=new Set(_dirtyKeys);
   try{
-    let d={_savedAt:new Date().toISOString(),_dev_id:_DEV_ID};
+    let d={_savedAt:new Date().toISOString(),_dev_id:_DEV_ID,_ts:firebase.firestore.FieldValue.serverTimestamp()};
+    // Envia TODOS os campos (para manter consistência), mas usa merge
     ['cfg','caixa','produtos','categorias','clientes','obs_grupos_globais','pedidos','funcionarios','vouchers','pedidos_cancelados','alertas'].forEach(k=>{if(ST[k]!=null)d[k]=ST[k];});
-    // E2EE: criptografa dados sensíveis antes de enviar
     if(E2EE._enabled) d=await E2EE.encryptData(d);
-    await fbDB.collection('estabelecimentos').doc(uid).collection('dados').doc('principal').set(d);
-    _localDirty=false; // push concluído — dados locais e nuvem estão iguais
+    await fbDB.collection('estabelecimentos').doc(uid).collection('dados').doc('principal').set(d,{merge:true});
+    // Limpa apenas as chaves que foram sincronizadas
+    keysToSync.forEach(k=>_dirtyKeys.delete(k));
+    if(_dirtyKeys.size===0) _localDirty=false;
     _lastSyncAt=Date.now();
     _setSyncStatus('ok');
-    console.log('[PedePronto] ☁️ Sync enviado (dev:'+_DEV_ID+')');
+    console.log('[PedePronto] ☁️ Sync OK (dev:'+_DEV_ID.slice(0,6)+', dirty:'+_dirtyKeys.size+')');
   }catch(e){
-    console.warn('[PedePronto] Firestore push erro:',e.code||e.message);
+    console.warn('[PedePronto] Push erro:',e.code||e.message);
     _setSyncStatus('error');
     if(e.code==='permission-denied'){
       window._noPermission=true;
@@ -1953,9 +1964,15 @@ async function fsPush(){
       clearTimeout(window._permRetryTimer);
       window._permRetryTimer=setTimeout(()=>{
         window._noPermission=false;
-        console.log('[PedePronto] Tentando Firestore novamente...');
         fsPush();
       },30000);
+    }
+  }finally{
+    _pushInFlight=false;
+    // Se acumularam novas mudanças durante o push, agenda outro
+    if(_dirtyKeys.size>0){
+      clearTimeout(_fsTimer);
+      _fsTimer=setTimeout(fsPush,500);
     }
   }
 }
@@ -2111,6 +2128,28 @@ function _bootWithData(){
   renderDash();
   _updateBackBtn();
   console.log('[PedePronto] _bootWithData: concluído');
+  // Inicia health monitor de sync + atualiza status bar
+  _startSyncHealthMonitor();
+  setInterval(updateSyncStatus,5000); // atualiza "Sync há Xs" na sidebar
+}
+// ── SYNC HEALTH MONITOR ──
+// Detecta sync travado e força re-pull periódico
+let _syncHealthTimer=null;
+function _startSyncHealthMonitor(){
+  clearInterval(_syncHealthTimer);
+  _syncHealthTimer=setInterval(()=>{
+    if(!_syncEnabled||!fbAuth?.currentUser) return;
+    // Se _localDirty ficou true por mais de 15s, algo travou — força push
+    if(_localDirty&&_dirtyKeys.size>0&&!_pushInFlight){
+      console.warn('[PedePronto] 🔧 Health: _localDirty stuck por >15s — forçando push');
+      fsPush();
+    }
+    // Se não recebeu sync do servidor por >90s, faz pull preventivo
+    if(_lastSyncAt&&(Date.now()-_lastSyncAt>90000)&&!_pushInFlight&&!_localDirty){
+      console.log('[PedePronto] 🔧 Health: sem sync por >90s — pull preventivo');
+      fsPull();
+    }
+  },15000); // verifica a cada 15s
 }
 // Força pull: aplica dado do Firestore sobrescrevendo local
 async function fsPull(){
@@ -2124,6 +2163,7 @@ async function fsPull(){
     if(r._e2ee&&E2EE._enabled){try{r=await E2EE.decryptData(r)||r;}catch(e){console.warn('[E2EE] Pull decrypt error:',e.message);}}
     ['cfg','caixa','produtos','categorias','clientes','obs_grupos_globais','pedidos','funcionarios','vouchers','pedidos_cancelados','alertas'].forEach(k=>{if(r[k]!=null)ST[k]=r[k];});
     saveAll(true); // skipPush: dados vieram da nuvem
+    _localDirty=false;_dirtyKeys.clear();
     _lastSyncAt=Date.now();_setSyncStatus('ok');
     _silentRefresh(); // não reseta scroll — pull manual de dados
     toast('Dados da nuvem aplicados!','g',4000);
@@ -3390,7 +3430,13 @@ function updateSyncStatus(){
   if(!window.IS_HOSTED){sLbl.textContent='Local only';sDot.className='sb-foot-dot off';return}
   if(window._noPermission){sLbl.textContent='Sem permissão';sDot.className='sb-foot-dot err';return}
   if(_syncEnabled&&fbAuth?.currentUser){
-    sLbl.textContent='Sincronizado';sDot.className='sb-foot-dot';
+    const ago=_lastSyncAt?Math.round((Date.now()-_lastSyncAt)/1000):null;
+    const dirty=_dirtyKeys.size>0;
+    if(_pushInFlight){sLbl.textContent='Enviando...';sDot.className='sb-foot-dot warn';}
+    else if(dirty){sLbl.textContent='Pendente ('+_dirtyKeys.size+')';sDot.className='sb-foot-dot warn';}
+    else if(ago!==null&&ago<10){sLbl.textContent='Sincronizado';sDot.className='sb-foot-dot';}
+    else if(ago!==null){sLbl.textContent='Sync há '+ago+'s';sDot.className='sb-foot-dot';}
+    else{sLbl.textContent='Conectado';sDot.className='sb-foot-dot';}
   }else if(fbAuth?.currentUser){
     sLbl.textContent='Conectado';sDot.className='sb-foot-dot warn';
   }else{
@@ -8493,42 +8539,82 @@ async function _doRegister(){
 
 function fsListen(uid){
   if(!fbDB) return;
-  // Desinscreve listener anterior (evita duplicatas ao re-autenticar)
   if(_fsUnsubscribe){try{_fsUnsubscribe();}catch(e){} _fsUnsubscribe=null;}
   const ref=fbDB.collection('estabelecimentos').doc(uid).collection('dados').doc('principal');
   let _listenFirst=true;
+  let _lastRemoteTs=null; // timestamp do último snapshot aceito (para evitar dados mais antigos)
   _fsUnsubscribe=ref.onSnapshot({includeMetadataChanges:true},async snap=>{
     if(!snap.exists) return;
     const r=snap.data();
-    // No primeiro snapshot: aceitar dados (pode ser do cache que o boot pull preencheu)
-    // Nos seguintes: ignorar cache redundante
+    // Cache redundante (após boot, cache só repete o que já temos)
     if(!_listenFirst&&snap.metadata.fromCache) return;
-    // Ignorar nossa própria escrita (loop)
-    if(r._dev_id&&r._dev_id===_DEV_ID&&!_listenFirst) return;
-    // Proteger dados locais pendentes de push
-    if(_localDirty&&!_listenFirst){
-      console.log('[PedePronto] ⏳ Snapshot ignorado — dados locais pendentes de push');
+    // ── ESCRITA PRÓPRIA ──
+    // Ignorar eco da nossa escrita apenas se `_localDirty` (acabamos de enviar)
+    // MAS aceitar se o _savedAt remoto for MAIS NOVO que o nosso (outro device escreveu depois)
+    if(r._dev_id&&r._dev_id===_DEV_ID&&!_listenFirst){
+      // Eco do nosso push — ignorar apenas para resetar _localDirty
+      if(_localDirty){_localDirty=false;_dirtyKeys.clear();}
       return;
     }
-    // Verificar se dados remotos têm conteúdo significativo
-    const remoteHasData=(r.produtos?.length>0||r.categorias?.length>0);
-    const localHasData=(ST.produtos.length>0||ST.categorias.length>0);
-    // Se local tem dados e remoto está vazio, não sobrescrever (proteção anti-wipe)
-    if(localHasData&&!remoteHasData&&!_listenFirst) return;
-    // Aplicar dados remotos (com decriptação E2EE se necessário)
+    // ── PUSH EM ANDAMENTO ──
+    // Se temos push em voo, NÃO bloqueia — aplica dados de OUTROS dispositivos
+    // A flag _localDirty agora só bloqueia ecos do próprio _DEV_ID (acima)
+    // Se outro device escreveu, DEVEMOS aceitar para não perder dados
+    if(_pushInFlight&&!_listenFirst){
+      // Adia aplicação para depois do push terminar (evita race condition)
+      console.log('[PedePronto] 🔄 Snapshot durante push — agendando merge');
+      setTimeout(()=>{
+        // Re-verifica: se nosso push já completou, faz pull fresco
+        if(!_pushInFlight) fsPull();
+      },3000);
+      return;
+    }
+    // ── PROTEÇÃO ANTI-WIPE ──
+    // Só bloqueia se remote REALMENTE está vazio E local tem dados significativos
+    const remoteHasData=(r.produtos?.length>0||r.categorias?.length>0||r.pedidos?.length>0);
+    const localHasData=(ST.produtos.length>0||ST.categorias.length>0||ST.pedidos.length>0);
+    if(localHasData&&!remoteHasData&&!_listenFirst){
+      console.warn('[PedePronto] ⚠️ Anti-wipe: remoto vazio, local com dados — ignorando');
+      return;
+    }
+    // ── TIMESTAMP GUARD ──
+    // Aceita dados mais novos que nosso _savedAt (evita dados antigos do cache sobrescreverem novos)
+    const remoteTs=r._savedAt?new Date(r._savedAt).getTime():0;
+    const localTs=ST.cfg._savedAt?new Date(ST.cfg._savedAt).getTime():0;
+    if(!_listenFirst&&remoteTs>0&&localTs>0&&remoteTs<localTs-2000){
+      // Dados remotos são mais ANTIGOS que locais — ignora (com 2s tolerância)
+      console.log('[PedePronto] ⏭️ Snapshot mais antigo que local — ignorado (remote:'+new Date(remoteTs).toLocaleTimeString()+' < local:'+new Date(localTs).toLocaleTimeString()+')');
+      return;
+    }
+    // ── APLICAR DADOS REMOTOS ──
     let rData=r;
     if(r._e2ee&&E2EE._enabled){
       try{rData=await E2EE.decryptData(r);if(!rData)rData=r;}catch(e){console.warn('[E2EE] Listen decrypt error:',e.message);rData=r;}
     }
-    ['cfg','caixa','produtos','categorias','clientes','obs_grupos_globais','pedidos','funcionarios','vouchers','pedidos_cancelados','alertas'].forEach(k=>{if(rData[k]!=null)ST[k]=rData[k];});
+    // Merge inteligente: para pedidos, fazer merge ao invés de sobrescrever
+    const _KEYS=['cfg','caixa','produtos','categorias','clientes','obs_grupos_globais','pedidos','funcionarios','vouchers','pedidos_cancelados','alertas'];
+    if(!_listenFirst&&rData.pedidos&&ST.pedidos.length>0){
+      // Merge de pedidos: aceita todos do remoto + pedidos locais que não existem no remoto
+      const remotePedIds=new Set((rData.pedidos||[]).map(p=>p.id));
+      const localOnly=ST.pedidos.filter(p=>p.id&&!remotePedIds.has(p.id)&&(Date.now()-new Date(p.created||0).getTime()<60000));
+      // Pedidos locais criados há menos de 60s e que não estão no remoto = provavelmente ainda não sincronizaram
+      if(localOnly.length>0){
+        rData.pedidos=[...rData.pedidos,...localOnly];
+        console.log('[PedePronto] 🔀 Merge: '+localOnly.length+' pedidos locais preservados');
+      }
+    }
+    _KEYS.forEach(k=>{if(rData[k]!=null)ST[k]=rData[k];});
     saveAll(true);
     if(_listenFirst){_listenFirst=false;}
+    _localDirty=false;
+    _dirtyKeys.clear();
     _silentRefresh();
     _lastSyncAt=Date.now();
+    _lastRemoteTs=remoteTs;
     _setSyncStatus('ok');
-    console.log('[PedePronto] ☁️ Sync '+(snap.metadata.fromCache?'(cache)':'(servidor)')+' ('+ST.produtos.length+' prod, dev:'+r._dev_id+')');
+    console.log('[PedePronto] ☁️ Sync '+(snap.metadata.fromCache?'(cache)':'(server)')+' ('+ST.produtos.length+' prod, '+ST.pedidos.length+' ped, dev:'+r._dev_id+')');
   },e=>{
-    console.warn('[PedePronto] Firestore listen erro:',e.code||e.message);
+    console.warn('[PedePronto] Listen erro:',e.code||e.message);
     _setSyncStatus('error');
     if(e.code==='permission-denied'){
       const errCode=_ppErrorCode(e.code);
