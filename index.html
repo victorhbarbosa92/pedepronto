@@ -1767,6 +1767,7 @@ const PP_ICONS={
   userPlus:'M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M8.5 11a4 4 0 100-8 4 4 0 000 8zM20 8v6M23 11h-6',
   trophy:'M6 9H2V4h4M18 9h4V4h-4M4 22h16M10 22s-1-4-1-8l3-4 3 4c0 4-1 8-1 8M12 2l-2 8h4l-2-8',
   target:'M12 22a10 10 0 100-20 10 10 0 000 20zM12 18a6 6 0 100-12 6 6 0 000 12zM12 14a2 2 0 100-4 2 2 0 000 4z',
+  zap:'M13 2L3 14h9l-1 8 10-12h-9l1-8',
 };
 function ppIcon(name,size=20,stroke=1.6,cls=''){
   const d=PP_ICONS[name]||PP_ICONS.home;
@@ -6257,7 +6258,7 @@ function _renderCfgSection(sec){
         const on=cfg.modulos[m.id]!==false;
         return`<div class="rb" style="padding:10px 0;${m!==_MODS[_MODS.length-1]?'border-bottom:1px solid var(--br);':''}">
           <div style="display:flex;align-items:center;gap:10px">
-            <span style="width:30px;height:30px;border-radius:7px;background:${on?'var(--acbg)':'var(--s2)'};display:flex;align-items:center;justify-content:center;color:${on?'var(--ac)':'var(--t3)';};flex-shrink:0">${ppIcon(m.icon,15,1.6)}</span>
+            <span style="width:30px;height:30px;border-radius:7px;background:${on?'var(--acbg)':'var(--s2)'};display:flex;align-items:center;justify-content:center;color:${on?'var(--ac)':'var(--t3)'};flex-shrink:0">${ppIcon(m.icon,15,1.6)}</span>
             <div>
               <div class="fs13 bold" style="color:${on?'var(--tx)':'var(--t3)'}">${m.label}</div>
               <div class="fs11 t3">${m.desc}</div>
