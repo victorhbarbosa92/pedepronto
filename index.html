@@ -1682,6 +1682,7 @@ const PP_ICONS={
   credit:'M2 6h20v13H2zM2 11h20',
   timer:'M12 12a8 8 0 100-16 8 8 0 000 16zM12 6v6l4 2M10 2h4',
   package:'M16.5 9.4l-9-5.2M21 16V8l-9-5-9 5v8l9 5 9-5zM3.3 7L12 12l8.7-5M12 22V12',
+  grid:'M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z',
   key:'M21 2l-2 2m-7.6 7.6a5.5 5.5 0 11-7.8 7.8 5.5 5.5 0 017.8-7.8zm0 0L15.1 7.4M19 4l-1.5 1.5M17 6l2 2',
   signal:'M2 20h.01M7 20v-4M12 20v-8M17 20V8M22 20V4',
   microscope:'M6 18h8M14 10V4a2 2 0 00-4 0v6M6 12l6.4 6.4M14 6l2.3 2.3M10 22h4M12 18v4',
@@ -2759,25 +2760,38 @@ const _PAGE_PERMS={
   funcionarios:'funcionarios',config:'config_ver'
 };
 
+// ── MÓDULOS: verifica se módulo está ativo
+function _modAtivo(modId){
+  const m=ST.cfg.modulos;
+  if(!m) return true; // sem config = tudo ativo (backward compat)
+  return m[modId]!==false; // undefined = ativo
+}
+// Mapeia página → módulo
+const _PAGE_MOD={mesas:'mesas',balcao:'balcao',delivery:'delivery',producao:'producao',cardapio:'cardapio',clientes:'clientes',dados:'dados',relatorio:'relatorios',caixa:'caixa',funcionarios:'funcionarios',agente:'agente'};
+
 function _applyPermissionUI(){
-  // Sidebar + bottom nav: esconde itens sem permissão
+  // Sidebar + bottom nav: esconde itens sem permissão OU módulo desativado
   Object.entries(_PAGE_PERMS).forEach(([pg,perm])=>{
-    const show=hasPermission(perm);
+    const mod=_PAGE_MOD[pg];
+    const show=hasPermission(perm)&&(!mod||_modAtivo(mod));
     const sb=document.getElementById('sbm-'+pg);if(sb)sb.style.display=show?'':'none';
     const bn=document.getElementById('bnm-'+pg);if(bn)bn.style.display=show?'':'none';
   });
-  // Super Admin button — visível APENAS para o super admin
+  // Super Admin button
   const sbAdmin=document.getElementById('sbm-admin');
   if(sbAdmin) sbAdmin.style.display=isSuperAdmin()?'':'none';
-  // Agente IA — visível para dono/gerente se configurado
+  // Agente IA
   const sbAgente=document.getElementById('sbm-agente');
-  if(sbAgente) sbAgente.style.display=(hasPermission('config_editar')||ST.cfg.ai_agent?.ativo)?'':'none';
+  if(sbAgente) sbAgente.style.display=(_modAtivo('agente')&&(hasPermission('config_editar')||ST.cfg.ai_agent?.ativo))?'':'none';
 }
 
 function nav(pg,extra){
   // Bloqueia navegação sem permissão
   const neededPerm=_PAGE_PERMS[pg];
   if(neededPerm&&!hasPermission(neededPerm)){toast('Sem permissão para acessar esta seção','r',3000);return;}
+  // Bloqueia navegação para módulo desativado
+  const mod=_PAGE_MOD[pg];
+  if(mod&&!_modAtivo(mod)){toast('Módulo desativado pelo administrador','a',3000);return;}
   const prevPg=ST.curNav;
   const isPageChange=pg!==prevPg;
   if(!['pedido','fechar','pagamento'].includes(pg))ST.backNav=prevPg;
@@ -3281,6 +3295,8 @@ const Drive={
 function initDefaults(skipSave){
   // Migração: corrigir nome antigo FoodOS → PedePronto
   if(ST.cfg.nome==='FoodOS'||ST.cfg.nome==='GastroHub') ST.cfg.nome='PedePronto PDV';
+  // ── Módulos: default all ON (backward compat)
+  if(!ST.cfg.modulos) ST.cfg.modulos={mesas:true,balcao:true,delivery:true,producao:true,cardapio:true,clientes:true,dados:true,relatorios:true,caixa:true,funcionarios:true,agente:true};
   // Garantir que vouchers é array e PERMUTA sempre existe
   if(!Array.isArray(ST.vouchers)) ST.vouchers=[];
   if(!ST.vouchers.find(v=>v.code==='PERMUTA')){
@@ -3721,18 +3737,20 @@ function renderDash(){
       ${hasPermission('caixa_op')?`<button class="btn bs bxs" style="gap:5px" onclick="nav('caixa')">${_i('cash',14)} Caixa</button>`:''}
     </div></div>
   </div>`}
-  ${hasPermission('pdv')?(_isMetroTheme()?`<div class="g2 mb12" style="gap:4px">
-    <button class="btn metro-tile tile-orange bw" onclick="nav('mesas')">${_i('table',32)}<span>Mesas</span></button>
-    <button class="btn metro-tile tile-blue bw" onclick="novoBalcao()">${_i('counter',32)}<span>Balcao</span></button>
-    <button class="btn metro-tile tile-purple bw" onclick="novoDelivery()">${_i('bike',32)}<span>Delivery</span></button>
-    <button class="btn metro-tile tile-teal bw" onclick="nav('producao')">${_i('monitor',32)}<span>Producao</span></button>
-  </div>`:`<div class="g4 mb12">
-    <button class="btn bp bw" style="padding:12px 6px;flex-direction:column;gap:4px;font-size:13px" onclick="nav('mesas')">${_i('table',22)}<span>Mesas</span></button>
-    <button class="btn bb bw" style="padding:12px 6px;flex-direction:column;gap:4px;font-size:13px" onclick="novoBalcao()">${_i('counter',22)}<span>Balcão</span></button>
-    <button class="btn bpu bw" style="padding:12px 6px;flex-direction:column;gap:4px;font-size:13px" onclick="novoDelivery()">${_i('bike',22)}<span>Delivery</span></button>
-    <button class="btn bcy bw" style="padding:12px 6px;flex-direction:column;gap:4px;font-size:13px" onclick="nav('producao')">${_i('monitor',22)}<span>Produção</span></button>
-  </div>`):''}
-  ${(_userRole==='dono'||_userCargo==='dono')&&ST.cfg.ai_agent?.api_key?(_isMetroTheme()?`<div class="metro-tile tile-indigo mb12" style="min-height:70px;cursor:pointer;padding:14px 16px" onclick="_openCoachPanel()">
+  ${hasPermission('pdv')?(()=>{
+    const _mb=_modAtivo('mesas'),_bb=_modAtivo('balcao'),_db=_modAtivo('delivery'),_pb=_modAtivo('producao');
+    const _btns=[
+      _mb?{ico:'table',lbl:'Mesas',act:"nav('mesas')",cls:'tile-orange',c:'bp'}:null,
+      _bb?{ico:'counter',lbl:'Balcao',act:'novoBalcao()',cls:'tile-blue',c:'bb'}:null,
+      _db?{ico:'bike',lbl:'Delivery',act:'novoDelivery()',cls:'tile-purple',c:'bpu'}:null,
+      _pb?{ico:'monitor',lbl:'Producao',act:"nav('producao')",cls:'tile-teal',c:'bcy'}:null
+    ].filter(Boolean);
+    if(!_btns.length)return'';
+    const cols=_btns.length;
+    return _isMetroTheme()?`<div class="g${Math.min(cols,4)} mb12" style="gap:4px">${_btns.map(b=>`<button class="btn metro-tile ${b.cls} bw" onclick="${b.act}">${_i(b.ico,32)}<span>${b.lbl}</span></button>`).join('')}</div>`
+    :`<div class="g${Math.min(cols,4)} mb12">${_btns.map(b=>`<button class="btn ${b.c} bw" style="padding:12px 6px;flex-direction:column;gap:4px;font-size:13px" onclick="${b.act}">${_i(b.ico,22)}<span>${b.lbl}</span></button>`).join('')}</div>`;
+  })():''}
+  ${(_userRole==='dono'||_userCargo==='dono')&&ST.cfg.ai_agent?.api_key&&_modAtivo('agente')?(_isMetroTheme()?`<div class="metro-tile tile-indigo mb12" style="min-height:70px;cursor:pointer;padding:14px 16px" onclick="_openCoachPanel()">
     ${_i('bot',32)}
     <span style="font-size:15px;font-weight:600">Coach IA</span>
     <span style="font-size:11px;opacity:.7;margin-top:-4px">Briefing, combos, campanhas</span>
@@ -3746,12 +3764,15 @@ function renderDash(){
       <div style="color:var(--ac)">${_i('arrowRight',18)}</div>
     </div>
   </div>`):''}
-  ${_isMetroTheme()&&hasPermission('pdv')?`<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:4px;margin-bottom:12px">
-    ${hasPermission('dados')?`<button class="btn metro-tile tile-green bw" style="min-height:60px" onclick="nav('dados')">${_i('chart',24)}<span style="font-size:12px">Dados</span></button>`:''}
-    ${hasPermission('cardapio_ver')?`<button class="btn metro-tile tile-amber bw" style="min-height:60px" onclick="nav('cardapio')">${_i('menu',24)}<span style="font-size:12px">Cardapio</span></button>`:''}
-    ${hasPermission('clientes_ver')?`<button class="btn metro-tile tile-red bw" style="min-height:60px" onclick="nav('clientes')">${_i('users',24)}<span style="font-size:12px">Clientes</span></button>`:''}
-    ${hasPermission('caixa_op')?`<button class="btn metro-tile tile-blue bw" style="min-height:60px" onclick="nav('caixa')">${_i('cash',24)}<span style="font-size:12px">Caixa</span></button>`:''}
-  </div>`:''}
+  ${_isMetroTheme()&&hasPermission('pdv')?(()=>{
+    const _tiles=[
+      _modAtivo('dados')&&hasPermission('dados')?`<button class="btn metro-tile tile-green bw" style="min-height:60px" onclick="nav('dados')">${_i('chart',24)}<span style="font-size:12px">Dados</span></button>`:'',
+      _modAtivo('cardapio')&&hasPermission('cardapio_ver')?`<button class="btn metro-tile tile-amber bw" style="min-height:60px" onclick="nav('cardapio')">${_i('menu',24)}<span style="font-size:12px">Cardapio</span></button>`:'',
+      _modAtivo('clientes')&&hasPermission('clientes_ver')?`<button class="btn metro-tile tile-red bw" style="min-height:60px" onclick="nav('clientes')">${_i('users',24)}<span style="font-size:12px">Clientes</span></button>`:'',
+      _modAtivo('caixa')&&hasPermission('caixa_op')?`<button class="btn metro-tile tile-blue bw" style="min-height:60px" onclick="nav('caixa')">${_i('cash',24)}<span style="font-size:12px">Caixa</span></button>`:''
+    ].filter(Boolean);
+    return _tiles.length?`<div style="display:grid;grid-template-columns:repeat(${_tiles.length},1fr);gap:4px;margin-bottom:12px">${_tiles.join('')}</div>`:'';
+  })():''}
   ${_renderDashStatusBar(_i)}
   ${_renderSolicitacoesCancelamento(_i)}
   ${_renderDashProducao(_i,origemIco,origemLbl,origemCls)}
@@ -3875,9 +3896,15 @@ function renderPedido(){
   // ── Build form header (client name / delivery data) ──
   let formHtml='';
   if(np.tipo==='balcao'){
+    const _addPed=np._addingTo?ST.pedidos.find(p=>p.id===np._addingTo):null;
     formHtml=`<div class="pos-form-area">
+      ${np._addingTo&&_addPed?`<div style="background:var(--blbg);border:1px solid var(--blbr);border-radius:8px;padding:8px 12px;margin-bottom:8px;display:flex;align-items:center;gap:8px">
+        <span style="color:var(--bl)">${ppIcon('plus',16,1.8)}</span>
+        <div style="flex:1"><div class="fs12 bold" style="color:var(--bl)">Adicionando itens ao ${esc(_addPed.num)}</div>
+        <div class="fs11 t2">${esc(_addPed.cliente_nome||'')} · ${_addPed.itens.length} item(ns) · ${fmtR(_addPed.total)}</div></div>
+      </div>`:''}
       <input class="pos-inp-sm" id="inp-cli-nome" value="${esc(np.cliente_nome)}"
-        placeholder="Nome do cliente (obrigatório)"
+        placeholder="Nome do cliente (obrigatório)" ${np._addingTo?'readonly style="opacity:.6"':''}
         oninput="ST.novoPedido.cliente_nome=this.value" autocomplete="off">
     </div>`;
   } else if(np.tipo==='delivery'){
@@ -3988,7 +4015,7 @@ function renderPedido(){
           <span class="cart-total-val">${fmtR(total)}</span>
         </div>
         <button class="btn-pay" ${np.cart.length===0?'disabled':''} onclick="confirmarPedido()">
-          ${np.tipo==='delivery'?ppIcon('bike',16,1.7)+' Confirmar Delivery':ppIcon('send',16,1.7)+' Enviar Pedido'}
+          ${np._addingTo?ppIcon('plus',16,1.7)+' Adicionar ao Pedido':np.tipo==='delivery'?ppIcon('bike',16,1.7)+' Confirmar Delivery':ppIcon('send',16,1.7)+' Enviar Pedido'}
         </button>
         <button class="btn-cancel-order" onclick="nav(ST.backNav||'mesas')">✕ Cancelar pedido</button>
       </div>
@@ -4683,6 +4710,16 @@ function novoBalcao(){
   ST.novoPedido={tipo:'balcao',mesa_id:null,mesa_label:'Balcão',cliente_nome:'',cart:[],obs:{},endereco:'',consumo:'local'};
   ST._prodFilter='todos';nav('pedido');
 }
+function _addItensBalcao(pedId){
+  const ped=ST.pedidos.find(p=>p.id===pedId);
+  if(!ped){toast('Pedido não encontrado','r');return;}
+  ST.novoPedido={
+    tipo:'balcao',mesa_id:null,mesa_label:'Balcão '+ped.num,
+    cliente_nome:ped.cliente_nome||'',cart:[],obs:{},endereco:'',
+    consumo:ped.consumo||'local',_addingTo:pedId
+  };
+  ST._prodFilter='todos';nav('pedido');
+}
 function novoDelivery(){
   ST.novoPedido={tipo:'delivery',mesa_id:null,mesa_label:'Delivery',
     cliente_nome:'',telefone:'',rua:'',numero:'',bairro:'',complemento:'',endereco:'',
@@ -4721,8 +4758,9 @@ function renderBalcao(){
       </div>
     </div>
     <div class="rb"><div class="bold am mono">${fmtR(p.total)}</div>
-    <div style="display:flex;gap:6px">
+    <div style="display:flex;gap:6px;flex-wrap:wrap">
       <button class="btn bb bxs" onclick="showCupomPrevia('${p.id}','comanda')">${ppIcon('printer',14,1.7)}</button>
+      <button class="btn bg bxs" style="gap:4px" onclick="_addItensBalcao('${p.id}')">${ppIcon('plus',14,1.7)} Itens</button>
       <button class="btn ba bxs" style="gap:4px" onclick="editarPedido('${p.id}')">${ppIcon('edit',14,1.7)} Editar</button>
       <button class="btn bp bxs" style="gap:4px" onclick="nav('pagamento','${p.id}')">${ppIcon('credit',14,1.7)} Pagar</button>
     </div></div>
@@ -5464,6 +5502,8 @@ function _cfgMenuItems(){
   items.push({id:'estabelecimento',icon:'store',label:'Estabelecimento',desc:esc(cfg.nome||'Configurar')});
   const _thLbl=(PP_THEMES.find(t=>t.id===_getCurrentThemeId())||{}).label||'Escuro';
   items.push({id:'interface',icon:'monitor',label:'Interface',desc:_thLbl+' · Tam '+['P','M','G'][(localStorage.getItem('pp_tam')||'p')==='p'?0:(localStorage.getItem('pp_tam')||'p')==='m'?1:2]});
+  const _modCount=Object.values(cfg.modulos||{}).filter(v=>v!==false).length;
+  items.push({id:'modulos',icon:'grid',label:'Modulos',desc:_modCount+' ativos'});
   items.push({id:'operacoes',icon:'settings',label:'Operacoes',desc:`${cfg.mesas_total||10} mesas · ${cfg.taxa_servico||0}%`});
   items.push({id:'impressora',icon:'printer',label:'Impressora Bluetooth',desc:BT.device?.name||'Nenhuma'});
   items.push({id:'seguranca',icon:'lock',label:'Seguranca',desc:'PIN do gerente'+(E2EE._enabled?' · E2EE ativo':'')});
@@ -5597,6 +5637,43 @@ function _renderCfgSection(sec){
         </div>
       </div>
     </div>`+_cfgFooter();
+    break;
+
+  case 'modulos':
+    if(!cfg.modulos) cfg.modulos={mesas:true,balcao:true,delivery:true,producao:true,cardapio:true,clientes:true,dados:true,relatorios:true,caixa:true,funcionarios:true,agente:true};
+    const _MODS=[
+      {id:'mesas',label:'Mesas',desc:'Mapa de mesas com comandas',icon:'table',essential:false},
+      {id:'balcao',label:'Balcao',desc:'Pedidos rapidos sem mesa',icon:'counter',essential:false},
+      {id:'delivery',label:'Delivery',desc:'Pedidos para entrega',icon:'bike',essential:false},
+      {id:'producao',label:'Producao (KDS)',desc:'Tela da cozinha/bar',icon:'monitor',essential:false},
+      {id:'cardapio',label:'Cardapio',desc:'Gerenciar produtos e categorias',icon:'menu',essential:true},
+      {id:'clientes',label:'Clientes (CRM)',desc:'Gestao de clientes',icon:'users',essential:false},
+      {id:'dados',label:'Dados / Relatorios',desc:'KPIs e metricas',icon:'chart',essential:false},
+      {id:'relatorios',label:'Relatorios Avancados',desc:'Relatorios detalhados',icon:'chart',essential:false},
+      {id:'caixa',label:'Caixa',desc:'Controle financeiro',icon:'cash',essential:true},
+      {id:'funcionarios',label:'Funcionarios',desc:'Gerenciar equipe',icon:'users',essential:false},
+      {id:'agente',label:'Agente IA / Coach',desc:'Assistente de marketing com IA',icon:'bot',essential:false}
+    ];
+    h=_cfgHeader('Modulos')+`
+    <div class="fs12 t2 mb12">Ative ou desative funcionalidades do sistema. Modulos desativados ficam ocultos para todos os usuarios.</div>
+    <div class="card mb10">
+      ${_MODS.map(m=>{
+        const on=cfg.modulos[m.id]!==false;
+        return`<div class="rb" style="padding:10px 0;${m!==_MODS[_MODS.length-1]?'border-bottom:1px solid var(--br);':''}">
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="width:30px;height:30px;border-radius:7px;background:${on?'var(--acbg)':'var(--s2)'};display:flex;align-items:center;justify-content:center;color:${on?'var(--ac)':'var(--t3)';};flex-shrink:0">${ppIcon(m.icon,15,1.6)}</span>
+            <div>
+              <div class="fs13 bold" style="color:${on?'var(--tx)':'var(--t3)'}">${m.label}</div>
+              <div class="fs11 t3">${m.desc}</div>
+            </div>
+          </div>
+          ${m.essential?`<span class="bdg bg-s" style="font-size:10px">Essencial</span>`
+          :`<button class="sw ${on?'on':''}" onclick="ST.cfg.modulos.${m.id}=${!on};save('cfg');_applyPermissionUI();_renderCfgSection('modulos')"></button>`}
+        </div>`;
+      }).join('')}
+    </div>
+    <div class="fs11 t3" style="display:flex;align-items:center;gap:6px">${ppIcon('alertTriangle',13,1.6)} Modulos essenciais nao podem ser desativados</div>
+    `+_cfgFooter();
     break;
 
   case 'operacoes':
