@@ -2176,6 +2176,8 @@ function _bootWithData(){
   if(pageEl) pageEl.addEventListener('scroll',()=>{_lastUserScroll=Date.now();},{passive:true});
   BT.paper=ST.cfg.papel||58;BT.auto=ST.cfg.autoprint||false;
   updateBtUI();updateSbOperador();
+  // Auto-reconectar impressora Bluetooth salva
+  if(ST.cfg.bt_device_id||ST.cfg.bt_name)setTimeout(()=>BT.autoReconnect(),1500);
   const sbEst=document.getElementById('sb-est');
   if(sbEst) sbEst.textContent=ST.cfg.nome||'PedePronto';
   _atualizarBadgeLicenca();
@@ -2951,8 +2953,84 @@ function updateBadges(){
 const BT={
   SVCS:['000018f0-0000-1000-8000-00805f9b34fb','e7810a71-73ae-499d-8c15-faa9aef0c3f2','49535343-fe7d-4ae5-8fa9-9fafd205e455'],
   CHARS:['000002af-0000-1000-8000-00805f9b34fb','bef8d6c9-9c21-4c9e-b632-bd58c1009f9f','49535343-8841-43f4-a8d4-ecbe34729bb3'],
-  device:null,char:null,paper:58,auto:false,
+  device:null,char:null,paper:58,auto:false,_reconTimer:null,_reconAttempts:0,
   setPaper(mm){this.paper=mm;['58','80'].forEach(v=>{const b=document.getElementById('btp-'+v);if(b)b.className='btn bw '+(v==mm?'bp':'bs')});ST.cfg.papel=mm;save('cfg')},
+  // Conecta a um device já obtido (sem picker)
+  async _connectDevice(dev){
+    try{
+      const srv=await dev.gatt.connect();
+      let chr=null;
+      for(const s of this.SVCS){try{const ss=await srv.getPrimaryService(s);for(const c of this.CHARS){try{chr=await ss.getCharacteristic(c);break}catch{}}if(chr)break}catch{}}
+      if(!chr){const svs=await srv.getPrimaryServices();for(const s of svs){try{const cs=await s.getCharacteristics();if(cs.length){chr=cs[0];break}}catch{}}}
+      if(!chr)return false;
+      this.device=dev;this.char=chr;this._reconAttempts=0;
+      ST.cfg.bt_name=dev.name||ST.cfg.bt_name;ST.cfg.bt_device_id=dev.id;save('cfg');
+      updateBtUI();
+      dev.addEventListener('gattserverdisconnected',()=>this._onDisconnect());
+      return true;
+    }catch(e){console.warn('[BT] _connectDevice error:',e.message);return false;}
+  },
+  _onDisconnect(){
+    this.char=null;updateBtUI();
+    // Auto-reconexão: tenta reconectar ao mesmo device
+    if(this.device&&this.device.gatt){
+      this._reconAttempts=0;
+      this._scheduleReconnect();
+    } else {
+      toast('Impressora desconectada','a');
+    }
+  },
+  _scheduleReconnect(){
+    clearTimeout(this._reconTimer);
+    if(this._reconAttempts>=10){toast('Impressora não responde — reconecte manualmente','a',5000);return;}
+    const delay=Math.min(2000*(this._reconAttempts+1),15000); // 2s, 4s, 6s... max 15s
+    console.log('[BT] Reconectando em '+delay+'ms (tentativa '+(this._reconAttempts+1)+')');
+    this._reconTimer=setTimeout(async()=>{
+      this._reconAttempts++;
+      if(!this.device||!this.device.gatt){toast('Impressora desconectada','a');return;}
+      try{
+        const ok=await this._connectDevice(this.device);
+        if(ok){toast('Impressora reconectada!','g');}
+        else{this._scheduleReconnect();}
+      }catch(e){console.warn('[BT] Reconexão falhou:',e.message);this._scheduleReconnect();}
+    },delay);
+  },
+  // Boot: tenta reconectar ao último device pareado (sem picker)
+  async autoReconnect(){
+    if(!navigator.bluetooth||!navigator.bluetooth.getDevices)return;
+    try{
+      const devices=await navigator.bluetooth.getDevices();
+      const savedId=ST.cfg.bt_device_id;
+      const savedName=ST.cfg.bt_name;
+      // Procura o device salvo
+      let target=null;
+      if(savedId)target=devices.find(d=>d.id===savedId);
+      if(!target&&savedName)target=devices.find(d=>d.name===savedName);
+      if(!target&&devices.length===1)target=devices[0]; // só 1 pareado
+      if(!target)return;
+      console.log('[BT] Auto-reconectando a:',target.name||target.id);
+      // Escuta pelo advertisment do device
+      const abortCtrl=new AbortController();
+      target.addEventListener('advertisementreceived',async()=>{
+        abortCtrl.abort();
+        const ok=await this._connectDevice(target);
+        if(ok)toast('Impressora conectada: '+(target.name||'BT'),'g');
+      },{once:true});
+      // Tenta watchAdvertisements (Chrome 91+)
+      if(target.watchAdvertisements){
+        try{await target.watchAdvertisements({signal:abortCtrl.signal});}catch{}
+      }
+      // Fallback: tenta conectar direto (funciona se device estiver no range)
+      setTimeout(async()=>{
+        if(this.char)return; // já conectou via advertisement
+        abortCtrl.abort();
+        try{
+          const ok=await this._connectDevice(target);
+          if(ok)console.log('[BT] Auto-reconexão direta OK');
+        }catch(e){console.log('[BT] Auto-reconexão: device não alcançável agora');}
+      },3000);
+    }catch(e){console.warn('[BT] autoReconnect error:',e.message);}
+  },
   async pair(){
     if(!navigator.bluetooth){toast('Use Chrome ou Edge para Bluetooth','r',5000);return}
     try{
@@ -2963,14 +3041,9 @@ const BT={
       }).catch(async()=>navigator.bluetooth.requestDevice({acceptAllDevices:true,optionalServices:this.SVCS}));
       if(!dev)return;
       toast('🔗 Conectando...','b',8000);
-      const srv=await dev.gatt.connect();
-      let chr=null;
-      for(const s of this.SVCS){try{const ss=await srv.getPrimaryService(s);for(const c of this.CHARS){try{chr=await ss.getCharacteristic(c);break}catch{}}if(chr)break}catch{}}
-      if(!chr){const svs=await srv.getPrimaryServices();for(const s of svs){try{const cs=await s.getCharacteristics();if(cs.length){chr=cs[0];break}}catch{}}}
-      if(!chr){toast('Impressora não compatível (ESC/POS)','r',5000);return}
-      this.device=dev;this.char=chr;ST.cfg.bt_name=dev.name;save('cfg');
-      updateBtUI();toast('Pareado: '+dev.name,'g');
-      dev.addEventListener('gattserverdisconnected',()=>{this.device=null;this.char=null;updateBtUI();toast('Impressora desconectada','a')});
+      const ok=await this._connectDevice(dev);
+      if(ok)toast('Pareado: '+dev.name,'g');
+      else toast('Impressora não compatível (ESC/POS)','r',5000);
     }catch(e){if(e.name!=='NotFoundError')toast(''+e.message,'r',5000)}
   },
   async write(bytes){
