@@ -162,7 +162,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);font-
 /* ── SIDEBAR ── */
 .sb-sec{padding:4px 8px;font-size:10px;font-weight:700;color:var(--t3);letter-spacing:1.2px;text-transform:uppercase;margin-top:10px;font-family:var(--mono);display:flex;align-items:center;gap:8px}
 .sb-sec::after{content:'';flex:1;height:1px;background:var(--br2)}
-.sb-item{display:flex;align-items:center;gap:9px;padding:9px 12px;border-radius:10px;margin:2px 7px;cursor:pointer;font-size:14px;font-weight:600;color:var(--t2);transition:all .15s;position:relative;border:none;background:transparent;width:calc(100% - 14px);font-family:inherit;text-align:left}
+.sb-item{display:flex;align-items:center;gap:9px;padding:11px 12px;border-radius:10px;margin:2px 7px;cursor:pointer;font-size:14px;font-weight:600;color:var(--t2);transition:all .15s;position:relative;border:none;background:transparent;width:calc(100% - 14px);font-family:inherit;text-align:left}
 .sb-item:hover{background:var(--s2);color:var(--tx)}
 .sb-item.on{background:var(--acbg);color:var(--ac)}
 .sb-item.on::before{content:'';position:absolute;left:-7px;top:25%;height:50%;width:3px;background:var(--ac);border-radius:99px}
@@ -214,11 +214,11 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);font-
 /* ── CARDS ── */
 .card{background:var(--sf);border:1px solid var(--br2);border-radius:var(--r);padding:16px}
 .kpi{background:var(--sf);border:1px solid var(--br2);border-radius:var(--r);padding:16px;text-align:center}
-.kpi-v{font-size:26px;font-weight:700;font-family:var(--mono);letter-spacing:-.02em}
+.kpi-v{font-size:28px;font-weight:700;font-family:var(--mono);letter-spacing:-.02em}
 .kpi-l{font-size:10px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:1px;margin-top:4px;font-family:var(--mono)}
 
 /* ── BUTTONS ── */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:11px 18px;border-radius:11px;font-size:15px;font-weight:700;cursor:pointer;border:none;font-family:inherit;transition:all .15s;white-space:nowrap;line-height:1;min-height:46px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:13px 20px;border-radius:11px;font-size:16px;font-weight:700;cursor:pointer;border:none;font-family:inherit;transition:all .15s;white-space:nowrap;line-height:1;min-height:54px}
 .btn:hover{filter:brightness(1.08)}
 .btn:active{transform:scale(.96);filter:brightness(.95)}
 .btn:disabled{opacity:.38;pointer-events:none}
@@ -233,8 +233,8 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);font-
 .bpu{background:var(--pubg);color:var(--pu);border:1px solid var(--pubr)}
 .bcy{background:var(--cybg);color:var(--cy);border:1px solid var(--cybr)}
 .bw{width:100%}
-.bsm{padding:8px 14px;font-size:13px;border-radius:10px;min-height:38px}
-.bxs{padding:5px 11px;font-size:12px;border-radius:8px;min-height:32px}
+.bsm{padding:10px 16px;font-size:14px;border-radius:10px;min-height:44px}
+.bxs{padding:7px 13px;font-size:13px;border-radius:8px;min-height:36px}
 
 /* ── BADGES ── */
 .bdg{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:99px;font-size:12px;font-weight:700;border:1px solid transparent;white-space:nowrap}
@@ -250,7 +250,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);font-
 /* ── FORM ── */
 .fg{margin-bottom:14px}
 .fl{font-size:12px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.8px;display:block;margin-bottom:6px}
-.inp{width:100%;background:var(--s2);border:1.5px solid var(--br2);border-radius:11px;padding:11px 13px;font-size:16px;color:var(--tx);font-family:inherit;outline:none;transition:border-color .15s,box-shadow .15s;-webkit-appearance:none}
+.inp{width:100%;background:var(--s2);border:1.5px solid var(--br2);border-radius:11px;padding:13px 15px;font-size:17px;color:var(--tx);font-family:inherit;outline:none;transition:border-color .15s,box-shadow .15s;-webkit-appearance:none}
 .inp:focus{border-color:var(--ac);box-shadow:0 0 0 3px rgba(255,92,26,.15)}
 .inp::placeholder{color:var(--t3)}
 textarea.inp{resize:vertical;min-height:64px}
@@ -585,13 +585,13 @@ select.inp{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns=
   .bn-ico svg{width:26px;height:26px}
   .bn-bdg{font-size:9px;top:4px;right:calc(50% - 18px)}
 
-  /* botões: mínimo 52px de altura */
-  .btn{min-height:52px;font-size:15px;padding:12px 14px;border-radius:12px}
-  .btn.bsm{min-height:44px;font-size:13px}
-  .btn.bxs{min-height:36px;font-size:12px}
+  /* botões: mínimo 58px de altura em telas pequenas */
+  .btn{min-height:58px;font-size:16px;padding:14px 16px;border-radius:12px}
+  .btn.bsm{min-height:48px;font-size:14px}
+  .btn.bxs{min-height:38px;font-size:13px}
 
   /* inputs grandes */
-  .inp{padding:13px 14px;font-size:16px;border-radius:12px}
+  .inp{padding:14px 16px;font-size:17px;border-radius:12px}
   textarea.inp{min-height:72px}
 
   /* qty buttons maiores */
@@ -774,7 +774,7 @@ html.tam-g .tbtn,html.tam-g .tbtn-ico{font-size:17px;min-height:44px}
 }
 .pos-cat-bar::-webkit-scrollbar{display:none}
 .pos-cat-chip{
-  padding:7px 16px;border-radius:99px;font-size:13px;font-weight:600;
+  padding:10px 18px;border-radius:99px;font-size:14px;font-weight:600;
   cursor:pointer;white-space:nowrap;flex-shrink:0;
   border:1.5px solid var(--pos-border);
   background:var(--pos-bg-card);color:var(--pos-text-muted);
@@ -786,6 +786,56 @@ html.tam-g .tbtn,html.tam-g .tbtn-ico{font-size:17px;min-height:44px}
   background:var(--pos-primary);border-color:var(--pos-primary);
   color:#fff;box-shadow:0 3px 10px var(--pos-primary-glow)
 }
+
+/* ── WIZARD (fluxo guiado de pedido) ── */
+.wiz-container{display:flex;flex-direction:column;height:100%;min-height:0;background:var(--bg);padding:0}
+.wiz-progress{display:flex;align-items:center;gap:0;padding:10px 16px 6px;flex-shrink:0}
+.wiz-progress-step{flex:1;height:4px;border-radius:4px;background:var(--s3);transition:background .3s}
+.wiz-progress-step.done{background:var(--ac)}
+.wiz-progress-step.cur{background:var(--ac);opacity:.6}
+.wiz-progress-step+.wiz-progress-step{margin-left:4px}
+.wiz-header{padding:12px 16px 4px;flex-shrink:0}
+.wiz-step-title{font-size:22px;font-weight:800;color:var(--tx);line-height:1.2}
+.wiz-step-sub{font-size:14px;color:var(--t2);margin-top:4px}
+.wiz-body{flex:1;overflow-y:auto;padding:12px 16px;overscroll-behavior-y:contain}
+.wiz-nav-bar{display:flex;gap:8px;padding:10px 16px;flex-shrink:0;border-top:1px solid var(--br)}
+.wiz-nav-bar .btn{flex:1}
+.wiz-input{width:100%;padding:16px 18px;font-size:20px;border-radius:14px;border:2px solid var(--br2);background:var(--s2);color:var(--tx);font-family:inherit;outline:none;transition:border-color .2s}
+.wiz-input:focus{border-color:var(--ac)}
+.wiz-input::placeholder{color:var(--t3)}
+.wiz-option-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px}
+.wiz-option-card{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:28px 16px;border-radius:16px;border:2px solid var(--br2);background:var(--sf);cursor:pointer;transition:all .2s;min-height:120px}
+.wiz-option-card:hover{border-color:var(--ac);background:var(--acbg)}
+.wiz-option-card:active{transform:scale(.96)}
+.wiz-option-card .wiz-opt-ico{font-size:36px}
+.wiz-option-card .wiz-opt-label{font-size:16px;font-weight:700;color:var(--tx)}
+.wiz-product-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+@media(max-width:360px){.wiz-product-grid{grid-template-columns:1fr}}
+.wiz-prod-card{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:14px;border:1.5px solid var(--br2);background:var(--sf);cursor:pointer;transition:all .18s;min-height:64px;position:relative}
+.wiz-prod-card:hover{border-color:var(--ac)}
+.wiz-prod-card:active{transform:scale(.97)}
+.wiz-prod-card .wiz-prod-ico{font-size:26px;flex-shrink:0;width:36px;text-align:center}
+.wiz-prod-card .wiz-prod-info{flex:1;min-width:0}
+.wiz-prod-card .wiz-prod-name{font-size:14px;font-weight:700;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wiz-prod-card .wiz-prod-price{font-size:13px;font-weight:600;color:var(--ac);font-family:var(--mono)}
+.wiz-prod-card .wiz-prod-badge{position:absolute;top:-6px;right:-6px;width:24px;height:24px;border-radius:50%;background:var(--ac);color:#fff;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px var(--acg)}
+.wiz-mini-cart{display:flex;align-items:center;gap:8px;padding:8px 16px;background:var(--sf);border-bottom:1px solid var(--br);flex-shrink:0}
+.wiz-mini-cart-info{flex:1;font-size:13px;font-weight:600;color:var(--t2)}
+.wiz-mini-cart-total{font-size:16px;font-weight:800;color:var(--ac);font-family:var(--mono)}
+.wiz-mini-cart-count{background:var(--ac);color:#fff;border-radius:99px;padding:2px 8px;font-size:12px;font-weight:800}
+.wiz-review-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--br)}
+.wiz-review-item:last-child{border-bottom:none}
+.wiz-review-qty{font-size:15px;font-weight:800;color:var(--ac);min-width:28px;text-align:center;font-family:var(--mono)}
+.wiz-review-name{flex:1;font-size:15px;font-weight:600;color:var(--tx)}
+.wiz-review-price{font-size:14px;font-weight:700;color:var(--tx);font-family:var(--mono)}
+.wiz-review-total{display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-top:2px solid var(--ac);margin-top:8px}
+.wiz-review-total-label{font-size:18px;font-weight:800;color:var(--tx)}
+.wiz-review-total-val{font-size:22px;font-weight:800;color:var(--ac);font-family:var(--mono)}
+.wiz-cat-title{font-size:16px;font-weight:700;color:var(--t2);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.wiz-phone-result{padding:14px;border-radius:14px;border:2px solid var(--gnbr);background:var(--gnbg);margin-top:12px}
+.wiz-phone-result.warn{border-color:var(--ambr);background:var(--ambg)}
+.wiz-phone-name{font-size:16px;font-weight:700;color:var(--tx)}
+.wiz-phone-detail{font-size:13px;color:var(--t2);margin-top:2px}
 
 /* ── PRODUCT GRID ── */
 .pos-prod-scroll{
@@ -899,31 +949,31 @@ html.tam-g .tbtn,html.tam-g .tbtn-ico{font-size:17px;min-height:44px}
 .cart-item-v2:last-child{border-bottom:none}
 .cart-item-v2-info{flex:1;min-width:0}
 .cart-item-v2-name{
-  font-size:14px;font-weight:700;color:var(--pos-text-main);
+  font-size:15px;font-weight:700;color:var(--pos-text-main);
   line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis
 }
 .cart-item-v2-extras{font-size:11px;color:var(--pos-primary);font-weight:600;margin-top:1px}
 .cart-item-v2-obs{font-size:11px;color:var(--pos-text-muted);margin-top:1px;line-height:1.4}
 .cart-item-v2-edit{
-  font-size:11px;font-weight:600;color:var(--pos-text-muted);
+  font-size:12px;font-weight:600;color:var(--pos-text-muted);
   background:none;border:1px solid var(--pos-border);border-radius:6px;
-  padding:2px 7px;cursor:pointer;font-family:inherit;margin-top:4px;
+  padding:4px 9px;cursor:pointer;font-family:inherit;margin-top:4px;
   transition:all .12s
 }
 .cart-item-v2-edit:hover{border-color:var(--pos-primary);color:var(--pos-primary)}
 .cart-qty-v2{display:flex;align-items:center;gap:5px;flex-shrink:0;margin-top:2px}
 .qbtn-v2{
-  width:26px;height:26px;border-radius:7px;border:1.5px solid var(--pos-border);
+  width:32px;height:32px;border-radius:7px;border:1.5px solid var(--pos-border);
   background:var(--pos-bg-app);color:var(--pos-text-main);
-  font-size:15px;font-weight:700;cursor:pointer;
+  font-size:17px;font-weight:700;cursor:pointer;
   display:flex;align-items:center;justify-content:center;
   transition:all .12s;font-family:monospace
 }
 .qbtn-v2:hover{border-color:var(--pos-primary);color:var(--pos-primary)}
 .qbtn-v2:active{transform:scale(.88)}
-.qn-v2{font-size:14px;font-weight:800;min-width:22px;text-align:center;color:var(--pos-text-main)}
+.qn-v2{font-size:15px;font-weight:800;min-width:24px;text-align:center;color:var(--pos-text-main)}
 .cart-item-v2-price{
-  font-size:13px;font-weight:800;color:var(--pos-primary);
+  font-size:14px;font-weight:800;color:var(--pos-primary);
   font-family:monospace;flex-shrink:0;min-width:56px;text-align:right;margin-top:3px
 }
 
@@ -1335,6 +1385,10 @@ const _PP_PUBKEY_JWK={"crv":"P-256","ext":true,"key_ops":["verify"],"kty":"EC","
       <div style="font-size:11px;color:var(--t3);margin-top:6px;line-height:1.5">Ex: "Ponto da carne" → Mal passado / Ao ponto / Bem passado</div>
     </div>
 
+    <div class="rb mb12">
+      <div><div class="fs13 bold">Venda Direta</div><div class="fs11 t3">Aparece no modo venda rápida</div></div>
+      <button class="sw" id="sw-prod-vd" onclick="toggleSw(this)"></button>
+    </div>
     <div class="rb mb12">
       <div class="fs13 bold">Disponível para venda</div>
       <button class="sw on" id="sw-prod-ativo" onclick="toggleSw(this)"></button>
@@ -2617,6 +2671,14 @@ function checkPin(){
   }
 }
 
+// ── Wrapper: requer PIN do dono para operações sensíveis ──
+function requireOwnerPin(title,callback){
+  // Dono, gerente e super admin executam direto
+  if(_userRole==='dono'||_userCargo==='dono'||_userCargo==='gerente'){callback();return;}
+  // Demais: pedem PIN
+  askPin(title,'Autorização necessária — PIN do dono',callback);
+}
+
 // ═══════════════════════════════════════════
 //  CONFIRM
 // ═══════════════════════════════════════════
@@ -2803,12 +2865,12 @@ function nav(pg,extra){
   const sbi=document.getElementById('sbm-'+pg);if(sbi)sbi.classList.add('on');
   document.querySelectorAll('.bn-item').forEach(b=>b.classList.remove('on'));
   const bni=document.getElementById('bnm-'+pg);if(bni)bni.classList.add('on');
-  const renders={dash:renderDash,dados:renderDados,mesas:renderMesas,balcao:renderBalcao,delivery:renderDelivery,producao:renderProducao,cardapio:renderCardapio,clientes:renderClientes,caixa:renderCaixa,relatorio:renderRelatorio,funcionarios:renderFuncionarios,config:renderConfig,admin:renderAdmin,agente:renderAgente,pedido:()=>renderPedido(extra),fechar:()=>renderFechar(extra),pagamento:()=>renderPagamento(extra)};
+  const renders={dash:renderDash,dados:renderDados,mesas:renderMesas,balcao:renderBalcao,delivery:renderDelivery,producao:renderProducao,cardapio:renderCardapio,clientes:renderClientes,caixa:renderCaixa,relatorio:renderRelatorio,funcionarios:renderFuncionarios,config:renderConfig,admin:renderAdmin,agente:renderAgente,pedido:()=>{const np=ST.novoPedido;if(np&&np._vendaDireta&&np._wizStep!==undefined)renderVendaDiretaWizard();else if(np&&np._wizStep!==undefined&&!np._addingTo&&np.tipo==='balcao')renderPedidoWizard();else renderPedido(extra);},fechar:()=>renderFechar(extra),pagamento:()=>renderPagamento(extra)};
   if(renders[pg])renders[pg]();
   // KDS tick: ligar no dash (produção inline) e producao, desligar ao sair
   if(pg==='producao'||pg==='dash')_kdsStartTick();else _kdsStopTick();
-  // init consumo buttons after render
-  if(pg==='pedido') setConsumo(ST.novoPedido.consumo||'local');
+  // init consumo buttons after render (skip for wizard mode)
+  if(pg==='pedido'&&!(ST.novoPedido&&ST.novoPedido._wizStep!==undefined&&!ST.novoPedido._addingTo&&ST.novoPedido.tipo==='balcao')) setConsumo(ST.novoPedido.consumo||'local');
   // ── SCROLL: só volta ao topo quando o usuário navega para uma página diferente
   if(isPageChange) document.getElementById('page').scrollTo(0,0);
   updateBadges();
@@ -3098,6 +3160,11 @@ const BT={
       center:[0x1B,0x61,0x01],left:[0x1B,0x61,0x00],
       cut:[0x1D,0x56,0x01],feed:[0x1B,0x64,0x04],
       cp850:[0x1B,0x74,0x02],
+      dbl:[0x1B,0x21,0x30],       // double height + width
+      dblH:[0x1B,0x21,0x10],      // double height only
+      normal:[0x1B,0x21,0x00],    // normal size
+      uline1:[0x1B,0x2D,0x01],    // underline ON
+      uline0:[0x1B,0x2D,0x00],    // underline OFF
     };
     const cfg=ST.cfg;
     const lbl={cli:'VIA CLIENTE',coz:'COZINHA',bar:'BAR',bal:'BALCAO'};
@@ -3120,10 +3187,12 @@ const BT={
       // Via
       all.push(...CMD.center,...CMD.bold1,...txt('** '+lbl[b]+' **'),...CMD.bold0,...CMD.lf);
       all.push(...CMD.left,...txt(dst()),...CMD.lf);
-      // Dados
-      all.push(...txt(row2('Pedido:',ped.num)),...CMD.lf);
+      // Dados — Número do pedido em TAMANHO DUPLO
+      all.push(...CMD.center,...CMD.dbl,...txt(ped.num),...CMD.normal,...CMD.lf,...CMD.lf);
+      // Nome do cliente em BOLD + SUBLINHADO
+      if(ped.cliente_nome)all.push(...CMD.center,...CMD.bold1,...CMD.uline1,...txt(this.norm(ped.cliente_nome)),...CMD.uline0,...CMD.bold0,...CMD.lf,...CMD.lf);
+      all.push(...CMD.left);
       if(ped.mesa_label)all.push(...txt(row2('Mesa:',this.norm(ped.mesa_label))),...CMD.lf);
-      if(ped.cliente_nome)all.push(...txt(row2('Cliente:',this.norm(ped.cliente_nome))),...CMD.lf);
       all.push(...txt(row2('Data:',fmtDH(ped.created))),...CMD.lf);
       all.push(...txt(row2('Atendente:',this.norm(ST.caixa.operador||'---'))),...CMD.lf);
       all.push(...CMD.bold1,...txt(row2('Modalidade:',ped.consumo==='viagem'?'PARA VIAGEM':'CONSUMO LOCAL')),...CMD.bold0,...CMD.lf);
@@ -3144,14 +3213,16 @@ const BT={
           this.wrapText(nomeN.substring(Math.max(1,maxNome)),W-4).forEach(l=>all.push(...txt('    '+l),...CMD.lf));
         }
         if(it.obs){
-          this.wrapText(this.norm(it.obs),W-4).forEach((ln,li)=>all.push(...txt((li===0?'  * ':'    ')+ln),...CMD.lf));
+          all.push(...CMD.uline1);
+          this.wrapText(this.norm(it.obs),W-4).forEach((ln,li)=>all.push(...txt((li===0?'  > ':'    ')+ln),...CMD.lf));
+          all.push(...CMD.uline0);
         }
         if(it.obs_extras&&it.obs_extras>0)all.push(...txt('    +R$'+it.obs_extras.toFixed(2)+' (extras)'),...CMD.lf);
       });
       all.push(...txt(dsh()),...CMD.lf);
       if(b==='cli'){
         if(ped.desconto>0)all.push(...txt(row2('Desconto:','-R$'+ped.desconto.toFixed(2))),...CMD.lf);
-        all.push(...CMD.bold1,...txt(row2('TOTAL:','R$'+ped.total.toFixed(2))),...CMD.bold0,...CMD.lf);
+        all.push(...CMD.center,...CMD.dblH,...CMD.bold1,...txt('TOTAL: R$'+ped.total.toFixed(2)),...CMD.bold0,...CMD.normal,...CMD.lf,...CMD.left);
         const prevCli=ped.prev_coz||ped.prev_bar;
         if(prevCli)all.push(...CMD.center,...CMD.bold1,...txt('Previsao: '+fmtH(prevCli)),...CMD.bold0,...CMD.lf);
       }
@@ -3407,21 +3478,23 @@ function confirmarAberturaCaixa(){
   anunciar('caixa_aberto',{operador:opNome});
 }
 function fecharCaixa(){
-  const movs=ST.caixa.movs||[];
-  const saldo=movs.reduce((s,m)=>s+(['entrada','abertura','suprimento'].includes(m.tipo)?m.valor:-m.valor),0);
-  const pedsPagos=ST.pedidos.filter(p=>p.status==='pago'&&p.pago_em&&new Date(p.pago_em)>=new Date(ST.caixa.abertura||0));
-  const hist={...deepClone(ST.caixa),fechamento:now(),saldo_final:saldo,pedidos_ct:pedsPagos.length};
-  ST.caixa.historico=(ST.caixa.historico||[]);
-  ST.caixa.historico.push(hist);
-  ST.caixa.aberto=false;ST.caixa.fechamento=now();ST.caixa.saldo_final=saldo;
-  ST.caixa.movs.push({id:uid(),tipo:'fechamento',valor:saldo,desc:'Fechamento: '+ST.caixa.operador,created:now()});
-  ST.pedido_seq=1; DB.set('pedido_seq',1); // reinicia contagem a cada fechamento
-  save('caixa');
-  anunciar('caixa_fechado',{pedidos:pedsPagos.length,total:saldo});
-  if(BT.char)setTimeout(()=>BT.printFechamento(),500);
-  renderCaixa();updateSbOperador();
-  _addAlerta(ppIcon('lock',16,1.7,'var(--am)'),'Caixa fechado · '+pedsPagos.length+' pedidos · Saldo: '+fmtR(saldo),'info');
-  toast('Caixa fechado. Saldo: '+fmtR(saldo),'a',5000);
+  requireOwnerPin('Fechar Caixa',()=>{
+    const movs=ST.caixa.movs||[];
+    const saldo=movs.reduce((s,m)=>s+(['entrada','abertura','suprimento'].includes(m.tipo)?m.valor:-m.valor),0);
+    const pedsPagos=ST.pedidos.filter(p=>p.status==='pago'&&p.pago_em&&new Date(p.pago_em)>=new Date(ST.caixa.abertura||0));
+    const hist={...deepClone(ST.caixa),fechamento:now(),saldo_final:saldo,pedidos_ct:pedsPagos.length};
+    ST.caixa.historico=(ST.caixa.historico||[]);
+    ST.caixa.historico.push(hist);
+    ST.caixa.aberto=false;ST.caixa.fechamento=now();ST.caixa.saldo_final=saldo;
+    ST.caixa.movs.push({id:uid(),tipo:'fechamento',valor:saldo,desc:'Fechamento: '+ST.caixa.operador,created:now()});
+    ST.pedido_seq=1; DB.set('pedido_seq',1);
+    save('caixa');
+    anunciar('caixa_fechado',{pedidos:pedsPagos.length,total:saldo});
+    if(BT.char)setTimeout(()=>BT.printFechamento(),500);
+    renderCaixa();updateSbOperador();
+    _addAlerta(ppIcon('lock',16,1.7,'var(--am)'),'Caixa fechado · '+pedsPagos.length+' pedidos · Saldo: '+fmtR(saldo),'info');
+    toast('Caixa fechado. Saldo: '+fmtR(saldo),'a',5000);
+  });
 }
 function updateSbOperador(){
   const el=document.getElementById('sb-op');
@@ -3742,6 +3815,7 @@ function renderDash(){
     const _btns=[
       _mb?{ico:'table',lbl:'Mesas',act:"nav('mesas')",cls:'tile-orange',c:'bp'}:null,
       _bb?{ico:'counter',lbl:'Balcao',act:'novoBalcao()',cls:'tile-blue',c:'bb'}:null,
+      _bb?{ico:'zap',lbl:'Venda Direta',act:'novoVendaDireta()',cls:'tile-green',c:'bg'}:null,
       _db?{ico:'bike',lbl:'Delivery',act:'novoDelivery()',cls:'tile-purple',c:'bpu'}:null,
       _pb?{ico:'monitor',lbl:'Producao',act:"nav('producao')",cls:'tile-teal',c:'bcy'}:null
     ].filter(Boolean);
@@ -4219,6 +4293,9 @@ function confirmarPedido(){
     ped.del_pagamento=np.del_pagamento||'dinheiro';
     ped.del_troco_para=np.del_troco_para||'';
   }
+  // Fidelidade: salvar dados do wizard para CRM capture
+  if(np._loyaltyClientId)ped._loyaltyClientId=np._loyaltyClientId;
+  if(np._loyaltyPhone)ped._loyaltyPhone=np._loyaltyPhone;
   ST.pedidos.push(ped);save('pedidos');
   _incrementTrialCount(); // monetização: conta pedido no trial
   toast('Pedido '+num+' enviado!','g');
@@ -4299,8 +4376,8 @@ function aplicarDescPct(ped_id){
   const inp=document.getElementById('desc-pct-'+ped_id);
   const pct=parseFloat(inp?.value||'0');
   if(!pct||pct<=0||pct>100){toast('Informe % valido (1-100)','r');return}
-  // 1.4 desconto com PIN — usa askPin para autorização rápida
-  askPin('Desconto '+pct+'%','Digite o PIN para autorizar o desconto',()=>{
+  // desconto com PIN — dono/gerente pula
+  requireOwnerPin('Desconto '+pct+'%',()=>{
     const ped=ST.pedidos.find(p=>p.id===ped_id);if(!ped)return;
     const v=+(ped.total_bruto*(pct/100)).toFixed(2);
     ped.desconto=v;ped.total=+(ped.total_bruto-v).toFixed(2);
@@ -4313,8 +4390,7 @@ function aplicarDescVal(ped_id){
   const inp=document.getElementById('desc-val-'+ped_id);
   const val=parseFloat(inp?.value||'0');
   if(!val||val<=0){toast('Informe valor valido','r');return}
-  // 1.4 desconto com PIN
-  askPin('💸 Desconto R$ '+val.toFixed(2),'Digite o PIN para autorizar o desconto',()=>{
+  requireOwnerPin('Desconto R$ '+val.toFixed(2),()=>{
     const ped=ST.pedidos.find(p=>p.id===ped_id);if(!ped)return;
     const v=Math.min(val,ped.total_bruto);
     ped.desconto=+v.toFixed(2);ped.total=+(ped.total_bruto-v).toFixed(2);
@@ -4324,7 +4400,7 @@ function aplicarDescVal(ped_id){
   });
 }
 function aplicarDescPctDireto(ped_id,pct){
-  askPin('💸 Desconto '+pct+'%','PIN para autorizar',()=>{
+  requireOwnerPin('Desconto '+pct+'%',()=>{
     const ped=ST.pedidos.find(p=>p.id===ped_id);if(!ped)return;
     const v=+(ped.total_bruto*(pct/100)).toFixed(2);
     ped.desconto=v;recalcPedido(ped);save('pedidos');renderFechar(ped_id);
@@ -4706,10 +4782,426 @@ function _finalizarPagamento(ped_id,forma,valorOverride){
 // ═══════════════════════════════════════════
 //  BALCÃO / DELIVERY
 // ═══════════════════════════════════════════
+
+// ── WIZARD: fluxo guiado de pedido (balcão novo) ──
+function _getWizardCategories(){
+  return ST.categorias.filter(c=>ST.produtos.some(p=>p.cat_id===c.id&&p.ativo)).sort((a,b)=>(a.ordem||0)-(b.ordem||0));
+}
 function novoBalcao(){
-  ST.novoPedido={tipo:'balcao',mesa_id:null,mesa_label:'Balcão',cliente_nome:'',cart:[],obs:{},endereco:'',consumo:'local'};
+  const wizCats=_getWizardCategories();
+  ST.novoPedido={tipo:'balcao',mesa_id:null,mesa_label:'Balcão',cliente_nome:'',cart:[],obs:{},endereco:'',consumo:'local',
+    _wizStep:0,_wizCatIdx:0,_wizCats:wizCats,_loyaltyPhone:'',_loyaltyClientId:null,_loyaltyClientName:''};
   ST._prodFilter='todos';nav('pedido');
 }
+
+// ── Wizard render ──
+function renderPedidoWizard(){
+  const np=ST.novoPedido;
+  const step=np._wizStep||0;
+  const totalSteps=5; // 0-4: Nome, Telefone, Local/Viagem, Cardápio, Revisão
+  const total=np.cart.reduce((s,i)=>s+(i.preco+(i.obs_extras||0))*i.qty,0);
+  const cartCount=np.cart.reduce((s,i)=>s+i.qty,0);
+
+  // Progress bar
+  let progressHtml='<div class="wiz-progress">';
+  for(let i=0;i<totalSteps;i++){
+    const cls=i<step?'done':i===step?'cur':'';
+    progressHtml+=`<div class="wiz-progress-step ${cls}"></div>`;
+  }
+  progressHtml+='</div>';
+
+  // Mini cart (shown from step 3 onward)
+  let miniCartHtml='';
+  if(step>=3&&cartCount>0){
+    miniCartHtml=`<div class="wiz-mini-cart">
+      <div class="wiz-mini-cart-count">${cartCount}</div>
+      <div class="wiz-mini-cart-info">${cartCount} ite${cartCount===1?'m':'ns'} no pedido</div>
+      <div class="wiz-mini-cart-total">${fmtR(total)}</div>
+    </div>`;
+  }
+
+  let bodyHtml='';
+  let headerHtml='';
+  let navHtml='';
+
+  // ── STEP 0: Nome do cliente ──
+  if(step===0){
+    headerHtml=`<div class="wiz-header"><div class="wiz-step-title">Nome do cliente</div><div class="wiz-step-sub">Quem está fazendo o pedido?</div></div>`;
+    bodyHtml=`<div class="wiz-body" style="display:flex;flex-direction:column;justify-content:center">
+      <input class="wiz-input" id="wiz-nome" value="${esc(np.cliente_nome)}" placeholder="Digite o nome..." autofocus
+        oninput="ST.novoPedido.cliente_nome=this.value" autocomplete="off">
+    </div>`;
+    navHtml=`<div class="wiz-nav-bar">
+      <button class="btn bs" onclick="_wizCancel()">✕ Cancelar</button>
+      <button class="btn bp" onclick="_wizNext()" id="wiz-next-btn">Próximo →</button>
+    </div>`;
+  }
+  // ── STEP 1: Telefone (fidelidade) ──
+  else if(step===1){
+    headerHtml=`<div class="wiz-header"><div class="wiz-step-title">Telefone para fidelidade</div><div class="wiz-step-sub">Opcional — pontua no programa de fidelidade</div></div>`;
+    let phoneResultHtml='';
+    if(np._loyaltyClientName){
+      phoneResultHtml=`<div class="wiz-phone-result">
+        <div class="wiz-phone-name">${ppIcon('user',16,1.7)} ${esc(np._loyaltyClientName)}</div>
+        <div class="wiz-phone-detail">Cliente encontrado — pontos serão vinculados</div>
+        <div style="display:flex;gap:8px;margin-top:10px">
+          <button class="btn bg bsm" onclick="_wizLoyaltyConfirm(true)">✓ Correto</button>
+          <button class="btn br_ bsm" onclick="_wizLoyaltyConfirm(false)">✕ Não é esse</button>
+        </div>
+      </div>`;
+    }
+    bodyHtml=`<div class="wiz-body">
+      <input class="wiz-input" id="wiz-phone" value="${esc(np._loyaltyPhone)}" placeholder="(00) 00000-0000" type="tel"
+        oninput="_wizPhoneInput(this.value)" autocomplete="off">
+      <div id="wiz-phone-result">${phoneResultHtml}</div>
+    </div>`;
+    navHtml=`<div class="wiz-nav-bar">
+      <button class="btn bs" onclick="_wizBack()">← Voltar</button>
+      <button class="btn bs" onclick="_wizSkipPhone()">Pular</button>
+      <button class="btn bp" onclick="_wizNext()">Próximo →</button>
+    </div>`;
+  }
+  // ── STEP 2: Local ou Viagem ──
+  else if(step===2){
+    headerHtml=`<div class="wiz-header"><div class="wiz-step-title">Consumo</div><div class="wiz-step-sub">O pedido é para consumir aqui ou levar?</div></div>`;
+    bodyHtml=`<div class="wiz-body" style="display:flex;align-items:center">
+      <div class="wiz-option-grid" style="width:100%">
+        <div class="wiz-option-card ${np.consumo==='local'?'on':''}" onclick="ST.novoPedido.consumo='local';renderPedidoWizard()" style="${np.consumo==='local'?'border-color:var(--ac);background:var(--acbg)':''}">
+          <div class="wiz-opt-ico">${ppIcon('home',36,1.5)}</div>
+          <div class="wiz-opt-label">Consumo Local</div>
+        </div>
+        <div class="wiz-option-card ${np.consumo==='viagem'?'on':''}" onclick="ST.novoPedido.consumo='viagem';renderPedidoWizard()" style="${np.consumo==='viagem'?'border-color:var(--ac);background:var(--acbg)':''}">
+          <div class="wiz-opt-ico">${ppIcon('bag',36,1.5)}</div>
+          <div class="wiz-opt-label">Para Viagem</div>
+        </div>
+      </div>
+    </div>`;
+    navHtml=`<div class="wiz-nav-bar">
+      <button class="btn bs" onclick="_wizBack()">← Voltar</button>
+      <button class="btn bp" onclick="_wizNext()">Próximo →</button>
+    </div>`;
+  }
+  // ── STEP 3: Cardápio por categoria ──
+  else if(step===3){
+    const cats=np._wizCats||[];
+    const catIdx=np._wizCatIdx||0;
+    const cat=cats[catIdx];
+    if(!cat){_wizNext();return;}
+    const prods=ST.produtos.filter(p=>p.cat_id===cat.id&&p.ativo);
+    if(prods.length===0){np._wizCatIdx++;renderPedidoWizard();return;}
+    const cartQtyMap={};np.cart.forEach(i=>{cartQtyMap[i.prod_id]=(cartQtyMap[i.prod_id]||0)+i.qty;});
+
+    headerHtml=`<div class="wiz-header"><div class="wiz-step-title">${cat.emoji||'📦'} ${esc(cat.nome)}</div><div class="wiz-step-sub">Categoria ${catIdx+1} de ${cats.length}</div></div>`;
+    bodyHtml=`<div class="wiz-body">
+      <div class="wiz-product-grid">
+        ${prods.map(p=>{
+          const inCart=cartQtyMap[p.id]||0;
+          return`<div class="wiz-prod-card" onclick="_wizAddItem('${p.id}')">
+            ${inCart?`<div class="wiz-prod-badge">${inCart}</div>`:''}
+            <div class="wiz-prod-ico">${p.ico||'🍽️'}</div>
+            <div class="wiz-prod-info">
+              <div class="wiz-prod-name">${esc(p.nome)}</div>
+              <div class="wiz-prod-price">${fmtR(p.preco)}</div>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+    navHtml=`<div class="wiz-nav-bar">
+      <button class="btn bs" onclick="_wizBack()">← Voltar</button>
+      <button class="btn bs" onclick="_wizSkipCat()">Pular →</button>
+      <button class="btn bp" onclick="_wizNextCat()">Próxima categoria →</button>
+    </div>`;
+  }
+  // ── STEP 4: Revisão ──
+  else if(step===4){
+    headerHtml=`<div class="wiz-header"><div class="wiz-step-title">Revisão do Pedido</div><div class="wiz-step-sub">${esc(np.cliente_nome||'—')} · ${np.consumo==='viagem'?'Para viagem':'Consumo local'}</div></div>`;
+    bodyHtml=`<div class="wiz-body">
+      ${np.cart.length===0?'<div style="text-align:center;padding:40px 0;color:var(--t2)">Nenhum item adicionado</div>':
+        np.cart.map((item,idx)=>{
+          const unitTotal=(item.preco+(item.obs_extras||0))*item.qty;
+          return`<div class="wiz-review-item">
+            <div class="wiz-review-qty">${item.qty}x</div>
+            <div class="wiz-review-name">${item.ico?item.ico+' ':''}${esc(item.nome)}${item.obs?'<div style="font-size:12px;color:var(--t2);font-weight:400;margin-top:2px">'+esc(item.obs)+'</div>':''}</div>
+            <div class="wiz-review-price">${fmtR(unitTotal)}</div>
+            <div style="display:flex;gap:4px;margin-left:4px">
+              <button class="qbtn-v2" onclick="cartQty(${idx},-1);renderPedidoWizard()">−</button>
+              <button class="qbtn-v2" onclick="cartQty(${idx},1);renderPedidoWizard()">+</button>
+            </div>
+          </div>`;
+        }).join('')}
+      <div class="wiz-review-total">
+        <div class="wiz-review-total-label">Total</div>
+        <div class="wiz-review-total-val">${fmtR(total)}</div>
+      </div>
+    </div>`;
+    navHtml=`<div class="wiz-nav-bar">
+      <button class="btn bs" onclick="_wizBack()">← Voltar</button>
+      <button class="btn bp" ${np.cart.length===0?'disabled':''} onclick="_wizFinish()">${ppIcon('send',16,1.7)} Confirmar Pedido</button>
+    </div>`;
+  }
+
+  document.getElementById('pg-pedido').innerHTML=`
+  <div class="wiz-container">
+    ${progressHtml}
+    ${headerHtml}
+    ${miniCartHtml}
+    ${bodyHtml}
+    ${navHtml}
+  </div>`;
+
+  // Auto-focus inputs
+  if(step===0){const el=document.getElementById('wiz-nome');if(el)setTimeout(()=>el.focus(),100);}
+  if(step===1){const el=document.getElementById('wiz-phone');if(el)setTimeout(()=>el.focus(),100);}
+}
+
+// ── Wizard navigation ──
+function _wizNext(){
+  const np=ST.novoPedido;
+  const step=np._wizStep||0;
+  // Validations per step
+  if(step===0&&!(np.cliente_nome||'').trim()){toast('Informe o nome do cliente','r');document.getElementById('wiz-nome')?.focus();return;}
+  if(step===3){
+    // Move to next category or to review
+    const cats=np._wizCats||[];
+    const nextIdx=(np._wizCatIdx||0)+1;
+    if(nextIdx<cats.length){np._wizCatIdx=nextIdx;renderPedidoWizard();return;}
+    np._wizStep=4;renderPedidoWizard();return;
+  }
+  np._wizStep=Math.min(step+1,4);
+  renderPedidoWizard();
+}
+function _wizBack(){
+  const np=ST.novoPedido;
+  const step=np._wizStep||0;
+  if(step===3&&(np._wizCatIdx||0)>0){np._wizCatIdx--;renderPedidoWizard();return;}
+  if(step===4){
+    // Go back to last category
+    np._wizStep=3;
+    const cats=np._wizCats||[];
+    np._wizCatIdx=Math.max(cats.length-1,0);
+    renderPedidoWizard();return;
+  }
+  if(step<=0){_wizCancel();return;}
+  np._wizStep=step-1;renderPedidoWizard();
+}
+function _wizCancel(){nav(ST.backNav||'dash');}
+function _wizSkipCat(){
+  const np=ST.novoPedido;
+  _wizNextCat();
+}
+function _wizNextCat(){
+  const np=ST.novoPedido;
+  const cats=np._wizCats||[];
+  const nextIdx=(np._wizCatIdx||0)+1;
+  if(nextIdx>=cats.length){np._wizStep=4;renderPedidoWizard();return;}
+  np._wizCatIdx=nextIdx;renderPedidoWizard();
+}
+function _wizSkipPhone(){
+  const np=ST.novoPedido;
+  np._loyaltyPhone='';np._loyaltyClientId=null;np._loyaltyClientName='';
+  np._wizStep=2;renderPedidoWizard();
+}
+function _wizAddItem(prodId){
+  const prod=ST.produtos.find(p=>p.id===prodId);if(!prod)return;
+  const np=ST.novoPedido;
+  // Check if already in cart
+  const existing=np.cart.find(c=>c.prod_id===prodId&&!c.obs);
+  if(existing){existing.qty++;} else {
+    np.cart.push({
+      prod_id:prodId,nome:prod.nome,preco:prod.preco,qty:1,
+      ico:prod.ico||'',dest:prod.destino||'coz',tempo:prod.tempo||0,
+      obs:'',obs_extras:0,obs_livre:''
+    });
+  }
+  // Visual feedback
+  toast(prod.ico+' '+prod.nome+' adicionado','g',1200);
+  renderPedidoWizard();
+}
+function _wizFinish(){
+  const np=ST.novoPedido;
+  // Remove wizard props before confirming (confirmarPedido reads standard fields)
+  delete np._wizStep;delete np._wizCatIdx;delete np._wizCats;
+  // Keep loyalty data for confirmarPedido to use
+  confirmarPedido();
+}
+
+// ── Phone lookup for loyalty ──
+let _wizPhoneTimer=null;
+function _wizPhoneInput(val){
+  const np=ST.novoPedido;
+  np._loyaltyPhone=val;
+  clearTimeout(_wizPhoneTimer);
+  if(val.replace(/\D/g,'').length<10){
+    np._loyaltyClientId=null;np._loyaltyClientName='';
+    const el=document.getElementById('wiz-phone-result');if(el)el.innerHTML='';
+    return;
+  }
+  _wizPhoneTimer=setTimeout(()=>{
+    const digits=val.replace(/\D/g,'');
+    const cliente=(ST.clientes||[]).find(c=>{
+      const ctel=(c.telefone||c.wa||'').replace(/\D/g,'');
+      return ctel&&(ctel===digits||ctel.endsWith(digits)||digits.endsWith(ctel));
+    });
+    if(cliente){
+      np._loyaltyClientId=cliente.id;
+      np._loyaltyClientName=cliente.nome||'Cliente';
+      const tier=_getLoyaltyTier?_getLoyaltyTier(cliente):{nome:'',emoji:''};
+      const pts=cliente.pontos||0;
+      document.getElementById('wiz-phone-result').innerHTML=`<div class="wiz-phone-result">
+        <div class="wiz-phone-name">${ppIcon('user',16,1.7)} ${esc(cliente.nome||'')}</div>
+        <div class="wiz-phone-detail">${pts} pontos ${tier.emoji||''} ${tier.nome||''}</div>
+        <div style="display:flex;gap:8px;margin-top:10px">
+          <button class="btn bg bsm" onclick="_wizLoyaltyConfirm(true)">✓ Correto</button>
+          <button class="btn br_ bsm" onclick="_wizLoyaltyConfirm(false)">✕ Não é esse</button>
+        </div>
+      </div>`;
+    } else {
+      np._loyaltyClientId=null;np._loyaltyClientName='';
+      document.getElementById('wiz-phone-result').innerHTML=`<div style="margin-top:12px;color:var(--t2);font-size:13px">Nenhum cliente encontrado — será cadastrado automaticamente</div>`;
+    }
+  },500);
+}
+function _wizLoyaltyConfirm(correct){
+  const np=ST.novoPedido;
+  if(correct){
+    toast('Cliente vinculado!','g');
+    _wizNext();
+  } else {
+    // Nome doesn't match — need owner PIN
+    np._loyaltyClientId=null;np._loyaltyClientName='';
+    toast('Número já cadastrado com outro nome','a');
+    document.getElementById('wiz-phone-result').innerHTML=`<div class="wiz-phone-result warn">
+      <div class="wiz-phone-name">${ppIcon('lock',16,1.7)} Número vinculado a outro cliente</div>
+      <div class="wiz-phone-detail">Para usar este número, é necessário o PIN do dono</div>
+      <div style="margin-top:10px"><button class="btn ba bsm" onclick="_wizPinOverride()">🔑 Autorizar com PIN</button></div>
+    </div>`;
+  }
+}
+function _wizPinOverride(){
+  askPin('Autorizar fidelidade','PIN do dono para vincular número',()=>{
+    toast('Autorizado!','g');
+    _wizNext();
+  });
+}
+
+// ── Venda Direta: fluxo rápido ──
+function _getVendaDiretaProds(){
+  const catIds=ST.categorias.filter(c=>c.venda_direta).map(c=>c.id);
+  return ST.produtos.filter(p=>p.ativo&&(p.venda_direta||catIds.includes(p.cat_id)));
+}
+function novoVendaDireta(){
+  ST.novoPedido={tipo:'balcao',mesa_id:null,mesa_label:'Venda Direta',cliente_nome:'',cart:[],obs:{},endereco:'',consumo:'local',
+    _vendaDireta:true,_wizStep:0,_wizCatIdx:0,_wizCats:[],_loyaltyPhone:'',_loyaltyClientId:null,_loyaltyClientName:''};
+  ST._prodFilter='todos';nav('pedido');
+}
+
+// ── Venda Direta Wizard (3 steps: Nome → Produtos → Confirmar) ──
+function renderVendaDiretaWizard(){
+  const np=ST.novoPedido;
+  const step=np._wizStep||0;
+  const totalSteps=3;
+  const total=np.cart.reduce((s,i)=>s+(i.preco+(i.obs_extras||0))*i.qty,0);
+  const cartCount=np.cart.reduce((s,i)=>s+i.qty,0);
+
+  let progressHtml='<div class="wiz-progress">';
+  for(let i=0;i<totalSteps;i++){
+    const cls=i<step?'done':i===step?'cur':'';
+    progressHtml+=`<div class="wiz-progress-step ${cls}"></div>`;
+  }
+  progressHtml+='</div>';
+
+  let miniCartHtml='';
+  if(step>=1&&cartCount>0){
+    miniCartHtml=`<div class="wiz-mini-cart">
+      <div class="wiz-mini-cart-count">${cartCount}</div>
+      <div class="wiz-mini-cart-info">${cartCount} ite${cartCount===1?'m':'ns'}</div>
+      <div class="wiz-mini-cart-total">${fmtR(total)}</div>
+    </div>`;
+  }
+
+  let bodyHtml='',headerHtml='',navHtml='';
+
+  if(step===0){
+    headerHtml=`<div class="wiz-header"><div class="wiz-step-title">⚡ Venda Direta</div><div class="wiz-step-sub">Nome do cliente</div></div>`;
+    bodyHtml=`<div class="wiz-body" style="display:flex;flex-direction:column;justify-content:center">
+      <input class="wiz-input" id="wiz-nome" value="${esc(np.cliente_nome)}" placeholder="Nome..." autofocus
+        oninput="ST.novoPedido.cliente_nome=this.value" autocomplete="off">
+    </div>`;
+    navHtml=`<div class="wiz-nav-bar">
+      <button class="btn bs" onclick="_wizCancel()">✕ Cancelar</button>
+      <button class="btn bp" onclick="_vdNext()">Próximo →</button>
+    </div>`;
+  } else if(step===1){
+    const prods=_getVendaDiretaProds();
+    const cartQtyMap={};np.cart.forEach(i=>{cartQtyMap[i.prod_id]=(cartQtyMap[i.prod_id]||0)+i.qty;});
+    headerHtml=`<div class="wiz-header"><div class="wiz-step-title">Escolha os itens</div><div class="wiz-step-sub">${prods.length} produto${prods.length!==1?'s':''} disponíve${prods.length!==1?'is':'l'}</div></div>`;
+    bodyHtml=`<div class="wiz-body">
+      ${prods.length===0?'<div style="text-align:center;padding:40px;color:var(--t2)">Nenhum produto marcado para venda direta.<br><span style="font-size:12px">Ative em Cardápio > Editar produto > "Venda Direta"</span></div>':
+      `<div class="wiz-product-grid">
+        ${prods.map(p=>{
+          const inCart=cartQtyMap[p.id]||0;
+          return`<div class="wiz-prod-card" onclick="_wizAddItem('${p.id}')">
+            ${inCart?`<div class="wiz-prod-badge">${inCart}</div>`:''}
+            <div class="wiz-prod-ico">${p.ico||'🍽️'}</div>
+            <div class="wiz-prod-info">
+              <div class="wiz-prod-name">${esc(p.nome)}</div>
+              <div class="wiz-prod-price">${fmtR(p.preco)}</div>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>`}
+    </div>`;
+    navHtml=`<div class="wiz-nav-bar">
+      <button class="btn bs" onclick="_vdBack()">← Voltar</button>
+      <button class="btn bp" ${cartCount===0?'disabled':''} onclick="_vdNext()">Revisar →</button>
+    </div>`;
+  } else if(step===2){
+    headerHtml=`<div class="wiz-header"><div class="wiz-step-title">Confirmar Venda</div><div class="wiz-step-sub">${esc(np.cliente_nome||'—')}</div></div>`;
+    bodyHtml=`<div class="wiz-body">
+      ${np.cart.map((item,idx)=>{
+        const unitTotal=(item.preco+(item.obs_extras||0))*item.qty;
+        return`<div class="wiz-review-item">
+          <div class="wiz-review-qty">${item.qty}x</div>
+          <div class="wiz-review-name">${item.ico?item.ico+' ':''}${esc(item.nome)}</div>
+          <div class="wiz-review-price">${fmtR(unitTotal)}</div>
+          <div style="display:flex;gap:4px;margin-left:4px">
+            <button class="qbtn-v2" onclick="cartQty(${idx},-1);renderVendaDiretaWizard()">−</button>
+            <button class="qbtn-v2" onclick="cartQty(${idx},1);renderVendaDiretaWizard()">+</button>
+          </div>
+        </div>`;
+      }).join('')}
+      <div class="wiz-review-total">
+        <div class="wiz-review-total-label">Total</div>
+        <div class="wiz-review-total-val">${fmtR(total)}</div>
+      </div>
+    </div>`;
+    navHtml=`<div class="wiz-nav-bar">
+      <button class="btn bs" onclick="_vdBack()">← Voltar</button>
+      <button class="btn bp" ${np.cart.length===0?'disabled':''} onclick="_vdFinish()">${ppIcon('send',16,1.7)} Confirmar</button>
+    </div>`;
+  }
+
+  document.getElementById('pg-pedido').innerHTML=`<div class="wiz-container">${progressHtml}${headerHtml}${miniCartHtml}${bodyHtml}${navHtml}</div>`;
+  if(step===0){const el=document.getElementById('wiz-nome');if(el)setTimeout(()=>el.focus(),100);}
+}
+function _vdNext(){
+  const np=ST.novoPedido;
+  if(np._wizStep===0&&!(np.cliente_nome||'').trim()){toast('Informe o nome','r');return;}
+  np._wizStep=Math.min((np._wizStep||0)+1,2);
+  renderVendaDiretaWizard();
+}
+function _vdBack(){
+  const np=ST.novoPedido;
+  if((np._wizStep||0)<=0){_wizCancel();return;}
+  np._wizStep--;renderVendaDiretaWizard();
+}
+function _vdFinish(){
+  const np=ST.novoPedido;
+  delete np._wizStep;delete np._wizCatIdx;delete np._wizCats;delete np._vendaDireta;
+  confirmarPedido();
+}
+
 function _addItensBalcao(pedId){
   const ped=ST.pedidos.find(p=>p.id===pedId);
   if(!ped){toast('Pedido não encontrado','r');return;}
@@ -5091,6 +5583,8 @@ function editProd(id){
   updateDestBtns();renderProdObsGrupos();
   const sw=document.getElementById('sw-prod-ativo');
   if(sw){sw.className='sw'+(p?.ativo!==false?' on':'');}
+  const swVd=document.getElementById('sw-prod-vd');
+  if(swVd){swVd.className='sw'+(p?.venda_direta?' on':'');}
   _syncProdFotoPrev();
   openMc('mc-prod');
 }
@@ -5168,7 +5662,7 @@ function saveProd(){
   const nome=document.getElementById('ep-nome').value.trim();
   if(!nome){toast('Nome obrigatório','r');return}
   const _parsePreco=v=>parseFloat((v||'').replace(',','.'))||0;
-  const data={nome,preco:_parsePreco(document.getElementById('ep-preco').value),ico:document.getElementById('ep-ico').value||'🍽️',desc:document.getElementById('ep-desc').value||'',cat_id:document.getElementById('ep-cat').value,tempo:parseInt(document.getElementById('ep-tempo').value)||15,dest:[..._prodDests],obs_grupos:[..._editObsGrupos],ativo:swVal('sw-prod-ativo'),foto:_epFoto||null};
+  const data={nome,preco:_parsePreco(document.getElementById('ep-preco').value),ico:document.getElementById('ep-ico').value||'🍽️',desc:document.getElementById('ep-desc').value||'',cat_id:document.getElementById('ep-cat').value,tempo:parseInt(document.getElementById('ep-tempo').value)||15,dest:[..._prodDests],obs_grupos:[..._editObsGrupos],ativo:swVal('sw-prod-ativo'),venda_direta:swVal('sw-prod-vd'),foto:_epFoto||null};
   if(ST.editProd){
     // Busca pelo ID no array atual — sync pode ter substituído ST.produtos enquanto o modal estava aberto
     const idx=ST.produtos.findIndex(p=>p.id===ST.editProd.id);
@@ -5184,7 +5678,8 @@ function editCat(id){
   const c=id?ST.categorias.find(x=>x.id===id):null;
   const nome=prompt('Nome da categoria:',c?.nome||'');if(!nome)return;
   const emoji=prompt('Emoji:',c?.emoji||'📂')||'📂';
-  if(c){c.nome=nome;c.emoji=emoji;}else ST.categorias.push({id:uid(),nome,emoji});
+  const vd=confirm('Disponível para Venda Direta?\n(Todos os produtos desta categoria aparecerão no modo venda rápida)\n\nAtual: '+(c?.venda_direta?'SIM':'NÃO'));
+  if(c){c.nome=nome;c.emoji=emoji;c.venda_direta=vd;}else ST.categorias.push({id:uid(),nome,emoji,venda_direta:vd});
   save('categorias');renderCardapio();toast('Categoria salva!','g');
 }
 function delCat(id){
@@ -10089,11 +10584,19 @@ function _addVitrineVideo(){
 
 // ── CRM: Captura automática de cliente ao criar pedido ──
 function _crmCapture(ped){
-  if(!ped.cliente_nome&&!ped.telefone) return;
-  const existing=ST.clientes.find(c=>
-    (ped.telefone&&c.telefone===ped.telefone)||
-    (ped.cliente_nome&&c.nome===ped.cliente_nome&&!ped.telefone)
-  );
+  if(!ped.cliente_nome&&!ped.telefone&&!ped._loyaltyClientId) return;
+  // Prioridade: cliente vinculado pelo wizard (por ID), depois telefone, depois nome
+  let existing=null;
+  if(ped._loyaltyClientId){
+    existing=ST.clientes.find(c=>c.id===ped._loyaltyClientId);
+  }
+  if(!existing){
+    existing=ST.clientes.find(c=>
+      (ped.telefone&&c.telefone===ped.telefone)||
+      (ped._loyaltyPhone&&(c.telefone||c.wa||'').replace(/\D/g,'')===ped._loyaltyPhone.replace(/\D/g,''))||
+      (ped.cliente_nome&&c.nome===ped.cliente_nome&&!ped.telefone)
+    );
+  }
   if(existing){
     // Atualiza dados existentes
     existing.ultimo_pedido=ped.created;
@@ -10112,7 +10615,7 @@ function _crmCapture(ped){
     const cli={
       id:uid(),
       nome:ped.cliente_nome,
-      telefone:ped.telefone||'',
+      telefone:ped.telefone||ped._loyaltyPhone||'',
       endereco:ped.endereco||'',
       email:'',
       aniversario:'',
@@ -10392,6 +10895,12 @@ function _loyaltyStatus(cli){
   const nivelCor={Ouro:'var(--am)',Prata:'var(--t2)',Bronze:'var(--ac)'}[nivel];
   const proxReward=rewards.pedidos_meta?rewards.pedidos_meta-(pedidos%rewards.pedidos_meta):0;
   return {pontos,nivel,nivelCor,cashback,proxReward,pedidos};
+}
+function _getLoyaltyTier(cliente){
+  const pontos=cliente.pontos_fidelidade||cliente.pontos||0;
+  if(pontos>=500)return{nome:'Ouro',emoji:'🥇'};
+  if(pontos>=200)return{nome:'Prata',emoji:'🥈'};
+  return{nome:'Bronze',emoji:'🥉'};
 }
 
 // ═══════════════════════════════════════════════════════════════
