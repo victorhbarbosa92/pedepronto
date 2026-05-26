@@ -4088,6 +4088,11 @@ function renderPedido(){
           <span class="cart-total-lbl">Total</span>
           <span class="cart-total-val">${fmtR(total)}</span>
         </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;padding:8px 10px;border-radius:10px;background:var(--pos-bg-app);border:1px solid var(--pos-border)">
+          <button class="sw${np._printViaCli?' on':''}" id="sw-via-cli-pos" onclick="toggleSw(this);ST.novoPedido._printViaCli=this.classList.contains('on')" style="flex-shrink:0"></button>
+          <div style="flex:1;font-size:12px;font-weight:600;color:var(--pos-text-muted)">Via do cliente</div>
+          <span style="color:var(--pos-text-muted)">${ppIcon('printer',14,1.5)}</span>
+        </div>
         <button class="btn-pay" ${np.cart.length===0?'disabled':''} onclick="confirmarPedido()">
           ${np._addingTo?ppIcon('plus',16,1.7)+' Adicionar ao Pedido':np.tipo==='delivery'?ppIcon('bike',16,1.7)+' Confirmar Delivery':ppIcon('send',16,1.7)+' Enviar Pedido'}
         </button>
@@ -4256,7 +4261,10 @@ function confirmarPedido(){
     save('pedidos');
     toast(''+novosItens.length+' item(ns) adicionado(s) ao '+pedExist.num,'g');
     anunciar('novo_pedido',pedExist);
-    if(BT.char&&ST.cfg.autoprint)setTimeout(()=>BT.printPedido(pedExist),500);
+    if(BT.char&&ST.cfg.autoprint){
+      const _blocos=np._printViaCli?['cli','coz','bar']:['coz','bar'];
+      setTimeout(()=>BT.printPedido(pedExist,_blocos),500);
+    }
     nav(pedExist.tipo==='mesa'?'mesas':pedExist.tipo==='balcao'?'balcao':'delivery');
     return;
   }
@@ -4300,7 +4308,10 @@ function confirmarPedido(){
   _incrementTrialCount(); // monetização: conta pedido no trial
   toast('Pedido '+num+' enviado!','g');
   anunciar('novo_pedido',ped);
-  if(BT.char&&ST.cfg.autoprint)setTimeout(()=>BT.printPedido(ped),500);
+  if(BT.char&&ST.cfg.autoprint){
+    const _blocos=np._printViaCli?['cli','coz','bar']:['coz','bar'];
+    setTimeout(()=>BT.printPedido(ped,_blocos),500);
+  }
   nav(np.tipo==='mesa'?'mesas':np.tipo==='balcao'?'balcao':'delivery');
 }
 
@@ -4934,6 +4945,11 @@ function renderPedidoWizard(){
         <div class="wiz-review-total-label">Total</div>
         <div class="wiz-review-total-val">${fmtR(total)}</div>
       </div>
+      <div style="display:flex;align-items:center;gap:10px;margin-top:14px;padding:12px;border-radius:12px;background:var(--sf);border:1px solid var(--br)">
+        <button class="sw${np._printViaCli?' on':''}" id="sw-via-cli" onclick="toggleSw(this);ST.novoPedido._printViaCli=this.classList.contains('on')"></button>
+        <div style="flex:1"><div class="fs14 bold">Imprimir via do cliente</div><div class="fs11 t2">Desative para economizar papel</div></div>
+        ${ppIcon('printer',18,1.5)}
+      </div>
     </div>`;
     navHtml=`<div class="wiz-nav-bar">
       <button class="btn bs" onclick="_wizBack()">← Voltar</button>
@@ -5174,6 +5190,11 @@ function renderVendaDiretaWizard(){
       <div class="wiz-review-total">
         <div class="wiz-review-total-label">Total</div>
         <div class="wiz-review-total-val">${fmtR(total)}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;margin-top:14px;padding:12px;border-radius:12px;background:var(--sf);border:1px solid var(--br)">
+        <button class="sw${np._printViaCli?' on':''}" id="sw-via-cli" onclick="toggleSw(this);ST.novoPedido._printViaCli=this.classList.contains('on')"></button>
+        <div style="flex:1"><div class="fs14 bold">Imprimir via do cliente</div><div class="fs11 t2">Desative para economizar papel</div></div>
+        ${ppIcon('printer',18,1.5)}
       </div>
     </div>`;
     navHtml=`<div class="wiz-nav-bar">
