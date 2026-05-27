@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#080A0E">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -17,7 +17,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800;900&family=Geist+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
 <style>
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%}
 :root{
   /* ── PedePronto Design System v2 — Dark ── */
   --bg:#121318;--sf:#1a1b22;--s2:#22232c;--s3:#2c2d38;--s4:#363844;
@@ -202,6 +202,18 @@ html.theme-neon .mesa-c.ocupada{border-color:rgba(0,240,255,.4);box-shadow:0 0 1
 html.theme-neon .kpi-v{text-shadow:0 0 6px currentColor}
 
 html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);font-family:var(--font);line-height:1.5;font-size:16px;-webkit-font-smoothing:antialiased}
+/* ── iOS compatibility ── */
+html{-webkit-overflow-scrolling:touch}
+#page,.wiz-body,.sheet,.notif-panel{-webkit-overflow-scrolling:touch}
+@supports(padding-top:env(safe-area-inset-top)){
+  #app{padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom);padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right)}
+  #pg-pedido.on{top:calc(56px + env(safe-area-inset-top))}
+  @media(max-width:400px){#pg-pedido.on{top:calc(52px + env(safe-area-inset-top))}}
+}
+/* iOS: prevent body scroll under modals/fixed layouts */
+@supports(-webkit-touch-callout:none){
+  body{position:fixed;width:100%}
+}
 ::-webkit-scrollbar{width:3px;height:3px}::-webkit-scrollbar-thumb{background:var(--br2);border-radius:99px}
 #app{position:fixed;inset:0;display:flex;flex-direction:column}
 
@@ -3000,7 +3012,7 @@ function nav(pg,extra){
   const sbi=document.getElementById('sbm-'+pg);if(sbi)sbi.classList.add('on');
   document.querySelectorAll('.bn-item').forEach(b=>b.classList.remove('on'));
   const bni=document.getElementById('bnm-'+pg);if(bni)bni.classList.add('on');
-  const renders={dash:renderDash,dados:renderDados,mesas:renderMesas,balcao:renderBalcao,delivery:renderDelivery,producao:renderProducao,cardapio:renderCardapio,clientes:renderClientes,caixa:renderCaixa,relatorio:renderRelatorio,funcionarios:renderFuncionarios,config:renderConfig,admin:renderAdmin,agente:renderAgente,pedido:()=>{const np=ST.novoPedido;if(np&&np._vendaDireta&&np._wizStep!==undefined)renderVendaDiretaWizard();else if(np&&np._wizStep!==undefined&&!np._addingTo&&np.tipo==='balcao')renderPedidoWizard();else renderPedido(extra);},fechar:()=>renderFechar(extra),pagamento:()=>renderPagamento(extra)};
+  const renders={dash:renderDash,dados:renderDados,mesas:renderMesas,balcao:renderBalcao,delivery:renderDelivery,producao:renderProducao,cardapio:renderCardapio,clientes:renderClientes,caixa:renderCaixa,relatorio:renderRelatorio,funcionarios:renderFuncionarios,config:renderConfig,admin:renderAdmin,agente:renderAgente,pedido:()=>{if(_cxFlow.tipo)return _renderCxFlow();const np=ST.novoPedido;if(np&&np._vendaDireta&&np._wizStep!==undefined)renderVendaDiretaWizard();else if(np&&np._wizStep!==undefined&&!np._addingTo&&np.tipo==='balcao')renderPedidoWizard();else renderPedido(extra);},fechar:()=>renderFechar(extra),pagamento:()=>renderPagamento(extra)};
   if(renders[pg])renders[pg]();
   // KDS tick: ligar no dash (produção inline) e producao, desligar ao sair
   if(pg==='producao'||pg==='dash')_kdsStartTick();else _kdsStopTick();
@@ -6256,12 +6268,12 @@ let _cxFlow={tipo:null,step:0,valor:'',motivo:''};
 function askSangria(){
   requireAdmin('Autorizar Sangria',()=>{
     _cxFlow={tipo:'sangria',step:0,valor:'',motivo:''};
-    _renderCxFlow();
+    nav('pedido');
   });
 }
 function askSuprimento(){
   _cxFlow={tipo:'suprimento',step:0,valor:'',motivo:''};
-  _renderCxFlow();
+  nav('pedido');
 }
 function _renderCxFlow(){
   const f=_cxFlow;
@@ -6312,7 +6324,7 @@ function _renderCxFlow(){
     </div>`;
   }
 
-  document.getElementById('pg-caixa').innerHTML=`
+  document.getElementById('pg-pedido').innerHTML=`
   <div class="wiz-container">
     ${progressHtml}
     <div class="wiz-header">
@@ -6332,7 +6344,7 @@ function _cxFlowNext(){
   _cxFlow.step=1;_renderCxFlow();
 }
 function _cxFlowBack(){_cxFlow.step=0;_renderCxFlow();}
-function _cxFlowCancel(){_cxFlow={tipo:null,step:0,valor:'',motivo:''};renderCaixa();}
+function _cxFlowCancel(){_cxFlow={tipo:null,step:0,valor:'',motivo:''};nav('caixa');}
 function _cxFlowConfirm(){
   const f=_cxFlow;
   const v=parseFloat(f.valor);
@@ -6342,7 +6354,7 @@ function _cxFlowConfirm(){
   ST.caixa.movs.push({id:uid(),tipo,valor:v,desc:(tipo==='sangria'?'Sangria':'Suprimento')+': '+mot,created:now()});
   save('caixa');
   _cxFlow={tipo:null,step:0,valor:'',motivo:''};
-  renderCaixa();
+  nav('caixa');
   toast((tipo==='sangria'?'Sangria':'Suprimento')+' de '+fmtR(v),tipo==='sangria'?'a':'g');
 }
 
@@ -8088,16 +8100,46 @@ function _selecionarVoz(idioma,genero){
   const kws=genero==='masculino'?_VOZ_MAS:_VOZ_FEM;
   return candidatas.find(v=>kws.some(k=>v.name.toLowerCase().includes(k)))||candidatas[0];
 }
-// Fala um texto com as configurações atuais; chama cb ao terminar
-function falar(texto,cb){
-  if(!_AUDIO.vozAtiva()||!window.speechSynthesis){if(cb)cb();return;}
-  const u=new SpeechSynthesisUtterance(texto);
+// ── Fila de fala — nunca interrompe anúncio em andamento ──
+const _falaQueue=[];
+let _falaFalando=false;
+
+function _falaProcessQueue(){
+  if(_falaFalando||!_falaQueue.length)return;
+  _falaFalando=true;
+  const item=_falaQueue.shift();
+  const u=new SpeechSynthesisUtterance(item.texto);
   u.lang=_AUDIO.idioma;u.rate=_AUDIO.velocidade;u.pitch=1.05;u.volume=1;
   const voz=_selecionarVoz(_AUDIO.idioma,_AUDIO.genero);
   if(voz)u.voice=voz;
-  u.onend=()=>cb&&cb();
-  speechSynthesis.cancel();
+  u.onend=()=>{_falaFalando=false;if(item.cb)item.cb();_falaProcessQueue();};
+  u.onerror=()=>{_falaFalando=false;if(item.cb)item.cb();_falaProcessQueue();};
   speechSynthesis.speak(u);
+}
+
+// Fala um texto com as configurações atuais; chama cb ao terminar
+// Enfileira se já houver fala em andamento (não interrompe)
+function falar(texto,cb){
+  if(!_AUDIO.vozAtiva()||!window.speechSynthesis){if(cb)cb();return;}
+  _falaQueue.push({texto,cb});
+  _falaProcessQueue();
+}
+
+// ── Fila de anúncios — serializa bell + fala completos ──
+const _anuncQueue=[];
+let _anuncBusy=false;
+
+function _anuncProcess(){
+  if(_anuncBusy||!_anuncQueue.length)return;
+  _anuncBusy=true;
+  const job=_anuncQueue.shift();
+  job(()=>{_anuncBusy=false;_anuncProcess();});
+}
+
+// Enfileira um anúncio completo (bell + fala). done() DEVE ser chamado ao terminar.
+function _enqueueAnunc(fn){
+  _anuncQueue.push(fn);
+  _anuncProcess();
 }
 
 // ── Dispatcher central de anúncios ──
@@ -8112,7 +8154,7 @@ function anunciar(tipo,dados){
               ped.tipo==='balcao'?'Retire no balcão.':
               ped.tipo==='mesa'?`Leve para a ${ped.mesa_label||'mesa'}.`:'Retire no balcão.';
 
-  // alimenta central de alertas para eventos relevantes
+  // alimenta central de alertas para eventos relevantes (imediato, sem fila)
   if(tipo==='novo_pedido')_addAlerta(ppIcon('plus',16,1.7),`Novo pedido ${ped.num||''}${ped.mesa_label?' · '+ped.mesa_label:''}${ped.cliente_nome?' · '+ped.cliente_nome:''}`.trim(),'novo');
   if(tipo==='atrasado')_addAlerta(ppIcon('timer',16,1.7),`Pedido ${ped.num||ped.id||''} atrasado`,'atrasado');
 
@@ -8122,7 +8164,7 @@ function anunciar(tipo,dados){
         const txt=cliente
           ?`Novo pedido! ${tipoLabel} ${num}. Cliente ${cliente}.`
           :`Novo pedido! ${tipoLabel} ${num}.`;
-        playChamada('novo',()=>falar(txt));
+        _enqueueAnunc(done=>playChamada('novo',()=>falar(txt,done)));
       }else{
         playSound('novo');
       }
@@ -8132,12 +8174,12 @@ function anunciar(tipo,dados){
       const txt=cliente
         ?`${cliente}! Seu pedido ${num}, no ${estab}, está pronto. ${local}`
         :`Pedido ${num}, no ${estab}, está pronto. ${local}`;
-      playChamada('pronto',()=>falar(txt));
+      _enqueueAnunc(done=>playChamada('pronto',()=>falar(txt,done)));
       break;
     }
     case 'atrasado':{
       const txt=`Atenção! Pedido ${num}${tipoLabel?' de '+tipoLabel:''} está atrasado.`;
-      if(_AUDIO.vozAtiva()) playChamada('atrasado',()=>falar(txt));
+      if(_AUDIO.vozAtiva()) _enqueueAnunc(done=>playChamada('atrasado',()=>falar(txt,done)));
       else playChamada('atrasado');
       break;
     }
@@ -8145,14 +8187,14 @@ function anunciar(tipo,dados){
       const txt=cliente
         ?`Pedido de ${cliente} saiu para entrega.`
         :`Pedido ${num} saiu para entrega.`;
-      if(_AUDIO.vozAtiva()) playChamada('novo',()=>falar(txt));
+      if(_AUDIO.vozAtiva()) _enqueueAnunc(done=>playChamada('novo',()=>falar(txt,done)));
       else playSound('novo');
       break;
     }
     case 'pedido_confirmado':
       if(_AUDIO.guiadoAtivo()){
         const nItens=ped.itens?.length||0;
-        falar(`Pedido ${num} confirmado! ${nItens} ${nItens===1?'item enviado':'itens enviados'} para produção.`);
+        _enqueueAnunc(done=>falar(`Pedido ${num} confirmado! ${nItens} ${nItens===1?'item enviado':'itens enviados'} para produção.`,done));
       }else playSound('sucesso');
       break;
 
@@ -8160,25 +8202,25 @@ function anunciar(tipo,dados){
       if(_AUDIO.guiadoAtivo()){
         const total=ped.total?fmtR(ped.total):'';
         const forma={dinheiro:'Dinheiro',cartao:'Cartão',pix:'PIX',maquininha:'Maquininha',cortesia:'Cortesia',voucher:'Voucher'}[ped.forma]||'';
-        falar(`Pagamento confirmado! ${total}${forma?' em '+forma:''}.`);
+        _enqueueAnunc(done=>falar(`Pagamento confirmado! ${total}${forma?' em '+forma:''}.`,done));
       }else playSound('sucesso');
       break;
 
     case 'caixa_aberto':
       if(_AUDIO.guiadoAtivo())
-        falar(`Caixa aberto. Bom turno, ${ped.operador||'operador'}.`);
+        _enqueueAnunc(done=>falar(`Caixa aberto. Bom turno, ${ped.operador||'operador'}.`,done));
       else playSound('sucesso');
       break;
 
     case 'caixa_fechado':
       if(_AUDIO.guiadoAtivo()){
         const txt=`Caixa fechado. ${ped.pedidos||0} pedidos. Total ${ped.total?fmtR(ped.total):'não informado'}.`;
-        falar(txt);
+        _enqueueAnunc(done=>falar(txt,done));
       }
       break;
 
     case 'nav':
-      if(_AUDIO.guiadoAtivo()&&ped.titulo)falar(ped.titulo);
+      if(_AUDIO.guiadoAtivo()&&ped.titulo)_enqueueAnunc(done=>falar(ped.titulo,done));
       break;
   }
 }
@@ -10657,7 +10699,7 @@ function renderAgente(){
     </div>`;return;
   }
   el.innerHTML=`
-  <div style="display:flex;flex-direction:column;height:calc(100vh - 56px);max-width:700px;margin:0 auto">
+  <div style="display:flex;flex-direction:column;height:calc(100dvh - 56px);max-width:700px;margin:0 auto">
     <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--br);flex-shrink:0">
       <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--ac),var(--pu));display:flex;align-items:center;justify-content:center">
         ${ppIcon('bot',18,1.6)}
