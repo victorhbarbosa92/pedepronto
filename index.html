@@ -869,7 +869,7 @@ html.tam-g .tbtn,html.tam-g .tbtn-ico{font-size:17px;min-height:44px}
 }
 
 /* ── WIZARD (fluxo guiado de pedido) ── */
-.wiz-container{display:flex;flex-direction:column;height:100%;min-height:0;background:var(--bg);padding:0}
+.wiz-container{display:flex;flex-direction:column;min-height:100%;background:var(--bg);padding:0}
 .wiz-progress{display:flex;align-items:center;gap:0;padding:10px 16px 6px;flex-shrink:0}
 .wiz-progress-step{flex:1;height:4px;border-radius:4px;background:var(--s3);transition:background .3s}
 .wiz-progress-step.done{background:var(--ac)}
@@ -878,7 +878,7 @@ html.tam-g .tbtn,html.tam-g .tbtn-ico{font-size:17px;min-height:44px}
 .wiz-header{padding:12px 16px 4px;flex-shrink:0}
 .wiz-step-title{font-size:22px;font-weight:800;color:var(--tx);line-height:1.2}
 .wiz-step-sub{font-size:14px;color:var(--t2);margin-top:4px}
-.wiz-body{flex:1;overflow-y:auto;padding:12px 16px;overscroll-behavior-y:contain}
+.wiz-body{padding:12px 16px;overflow-y:auto;overscroll-behavior-y:contain}
 .wiz-nav-bar{display:flex;gap:8px;padding:10px 16px;flex-shrink:0;border-top:1px solid var(--br)}
 .wiz-nav-bar .btn{flex:1}
 .wiz-input{width:100%;padding:16px 18px;font-size:20px;border-radius:14px;border:2px solid var(--br2);background:var(--s2);color:var(--tx);font-family:inherit;outline:none;transition:border-color .2s}
@@ -917,6 +917,17 @@ html.tam-g .tbtn,html.tam-g .tbtn-ico{font-size:17px;min-height:44px}
 .wiz-phone-result.warn{border-color:var(--ambr);background:var(--ambg)}
 .wiz-phone-name{font-size:16px;font-weight:700;color:var(--tx)}
 .wiz-phone-detail{font-size:13px;color:var(--t2);margin-top:2px}
+.wiz-nav-inline{display:flex;gap:8px;margin-top:18px}
+.wiz-nav-inline .btn{flex:1}
+.wiz-cart-section{margin-top:16px;padding-top:12px;border-top:2px solid var(--br)}
+.wiz-cart-section-title{font-size:14px;font-weight:700;color:var(--t2);margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.wiz-cart-item{display:flex;align-items:center;gap:8px;padding:6px 0;font-size:13px}
+.wiz-cart-item-qty{font-weight:800;color:var(--ac);min-width:24px;font-family:var(--mono)}
+.wiz-cart-item-name{flex:1;color:var(--tx);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wiz-cart-item-price{font-family:var(--mono);color:var(--t2);font-weight:600}
+.wiz-quick-vals{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.wiz-quick-val{padding:10px 18px;border-radius:12px;border:1.5px solid var(--br2);background:var(--sf);color:var(--tx);font-size:15px;font-weight:700;font-family:var(--mono);cursor:pointer;transition:all .18s}
+.wiz-quick-val:hover,.wiz-quick-val:active{border-color:var(--ac);background:var(--acbg)}
 
 /* ── PRODUCT GRID ── */
 .pos-prod-scroll{
@@ -5134,13 +5145,14 @@ function renderPedidoWizard(){
   // ── STEP 0: Nome do cliente ──
   if(step===0){
     headerHtml=`<div class="wiz-header"><div class="wiz-step-title">Nome do cliente</div><div class="wiz-step-sub">Quem está fazendo o pedido?</div></div>`;
-    bodyHtml=`<div class="wiz-body" style="display:flex;flex-direction:column;justify-content:center">
+    bodyHtml=`<div class="wiz-body" style="padding-top:24px">
       <input class="wiz-input" id="wiz-nome" value="${esc(np.cliente_nome)}" placeholder="Digite o nome..." autofocus
-        oninput="ST.novoPedido.cliente_nome=this.value" autocomplete="off">
-    </div>`;
-    navHtml=`<div class="wiz-nav-bar">
-      <button class="btn bs" onclick="_wizCancel()">✕ Cancelar</button>
-      <button class="btn bp" onclick="_wizNext()" id="wiz-next-btn">Próximo →</button>
+        oninput="ST.novoPedido.cliente_nome=this.value" autocomplete="off"
+        onkeydown="if(event.key==='Enter'){_wizNext()}">
+      <div class="wiz-nav-inline">
+        <button class="btn bs" onclick="_wizCancel()">✕ Cancelar</button>
+        <button class="btn bp" onclick="_wizNext()" id="wiz-next-btn">Próximo →</button>
+      </div>
     </div>`;
   }
   // ── STEP 1: Telefone (fidelidade) ──
@@ -5159,19 +5171,20 @@ function renderPedidoWizard(){
     }
     bodyHtml=`<div class="wiz-body">
       <input class="wiz-input" id="wiz-phone" value="${esc(np._loyaltyPhone)}" placeholder="(00) 00000-0000" type="tel"
-        oninput="_wizPhoneInput(this.value)" autocomplete="off">
+        oninput="_wizPhoneInput(this.value)" autocomplete="off"
+        onkeydown="if(event.key==='Enter'){_wizNext()}">
       <div id="wiz-phone-result">${phoneResultHtml}</div>
-    </div>`;
-    navHtml=`<div class="wiz-nav-bar">
-      <button class="btn bs" onclick="_wizBack()">← Voltar</button>
-      <button class="btn bs" onclick="_wizSkipPhone()">Pular</button>
-      <button class="btn bp" onclick="_wizNext()">Próximo →</button>
+      <div class="wiz-nav-inline">
+        <button class="btn bs" onclick="_wizBack()">← Voltar</button>
+        <button class="btn bs" onclick="_wizSkipPhone()">Pular</button>
+        <button class="btn bp" onclick="_wizNext()">Próximo →</button>
+      </div>
     </div>`;
   }
   // ── STEP 2: Local ou Viagem ──
   else if(step===2){
     headerHtml=`<div class="wiz-header"><div class="wiz-step-title">Consumo</div><div class="wiz-step-sub">O pedido é para consumir aqui ou levar?</div></div>`;
-    bodyHtml=`<div class="wiz-body" style="display:flex;align-items:center">
+    bodyHtml=`<div class="wiz-body" style="padding-top:16px">
       <div class="wiz-option-grid" style="width:100%">
         <div class="wiz-option-card ${np.consumo==='local'?'on':''}" onclick="ST.novoPedido.consumo='local';renderPedidoWizard()" style="${np.consumo==='local'?'border-color:var(--ac);background:var(--acbg)':''}">
           <div class="wiz-opt-ico">${ppIcon('home',36,1.5)}</div>
@@ -5182,10 +5195,10 @@ function renderPedidoWizard(){
           <div class="wiz-opt-label">Para Viagem</div>
         </div>
       </div>
-    </div>`;
-    navHtml=`<div class="wiz-nav-bar">
-      <button class="btn bs" onclick="_wizBack()">← Voltar</button>
-      <button class="btn bp" onclick="_wizNext()">Próximo →</button>
+      <div class="wiz-nav-inline">
+        <button class="btn bs" onclick="_wizBack()">← Voltar</button>
+        <button class="btn bp" onclick="_wizNext()">Próximo →</button>
+      </div>
     </div>`;
   }
   // ── STEP 3: Cardápio por categoria ──
@@ -5199,6 +5212,22 @@ function renderPedidoWizard(){
     const cartQtyMap={};np.cart.forEach(i=>{cartQtyMap[i.prod_id]=(cartQtyMap[i.prod_id]||0)+i.qty;});
 
     headerHtml=`<div class="wiz-header"><div class="wiz-step-title">${cat.emoji||'📦'} ${esc(cat.nome)}</div><div class="wiz-step-sub">Categoria ${catIdx+1} de ${cats.length}</div></div>`;
+    // Cart section below products
+    let cartSectionHtml='';
+    if(cartCount>0){
+      cartSectionHtml=`<div class="wiz-cart-section">
+        <div class="wiz-cart-section-title">${ppIcon('bag',14,1.7)} Carrinho · ${cartCount} ite${cartCount===1?'m':'ns'} · ${fmtR(total)}</div>
+        ${np.cart.map((ci,idx)=>`<div class="wiz-cart-item">
+          <span class="wiz-cart-item-qty">${ci.qty}x</span>
+          <span class="wiz-cart-item-name">${ci.ico||''} ${esc(ci.nome)}</span>
+          <span class="wiz-cart-item-price">${fmtR((ci.preco+(ci.obs_extras||0))*ci.qty)}</span>
+          <div style="display:flex;gap:2px;margin-left:4px">
+            <button class="qbtn-v2" onclick="cartQty(${idx},-1);renderPedidoWizard()">−</button>
+            <button class="qbtn-v2" onclick="cartQty(${idx},1);renderPedidoWizard()">+</button>
+          </div>
+        </div>`).join('')}
+      </div>`;
+    }
     bodyHtml=`<div class="wiz-body">
       <div class="wiz-product-grid">
         ${prods.map(p=>{
@@ -5213,11 +5242,12 @@ function renderPedidoWizard(){
           </div>`;
         }).join('')}
       </div>
-    </div>`;
-    navHtml=`<div class="wiz-nav-bar">
-      <button class="btn bs" onclick="_wizBack()">← Voltar</button>
-      <button class="btn bs" onclick="_wizSkipCat()">Pular →</button>
-      <button class="btn bp" onclick="_wizNextCat()">Próxima categoria →</button>
+      ${cartSectionHtml}
+      <div class="wiz-nav-inline" style="margin-top:16px;margin-bottom:8px">
+        <button class="btn bs" onclick="_wizBack()">← Voltar</button>
+        <button class="btn bs" onclick="_wizSkipCat()">Pular →</button>
+        <button class="btn bp" onclick="_wizNextCat()">Próxima categoria →</button>
+      </div>
     </div>`;
   }
   // ── STEP 4: Revisão ──
@@ -5246,10 +5276,10 @@ function renderPedidoWizard(){
         <div style="flex:1"><div class="fs14 bold">Imprimir via do cliente</div><div class="fs11 t2">Desative para economizar papel</div></div>
         ${ppIcon('printer',18,1.5)}
       </div>
-    </div>`;
-    navHtml=`<div class="wiz-nav-bar">
-      <button class="btn bs" onclick="_wizBack()">← Voltar</button>
-      <button class="btn bp" ${np.cart.length===0?'disabled':''} onclick="_wizFinish()">${ppIcon('send',16,1.7)} Confirmar Pedido</button>
+      <div class="wiz-nav-inline" style="margin-bottom:8px">
+        <button class="btn bs" onclick="_wizBack()">← Voltar</button>
+        <button class="btn bp" ${np.cart.length===0?'disabled':''} onclick="_wizFinish()">${ppIcon('send',16,1.7)} Confirmar Pedido</button>
+      </div>
     </div>`;
   }
 
@@ -5259,7 +5289,6 @@ function renderPedidoWizard(){
     ${headerHtml}
     ${miniCartHtml}
     ${bodyHtml}
-    ${navHtml}
   </div>`;
 
   // Auto-focus inputs
@@ -5436,13 +5465,14 @@ function renderVendaDiretaWizard(){
 
   if(step===0){
     headerHtml=`<div class="wiz-header"><div class="wiz-step-title">⚡ Venda Direta</div><div class="wiz-step-sub">Nome do cliente</div></div>`;
-    bodyHtml=`<div class="wiz-body" style="display:flex;flex-direction:column;justify-content:center">
+    bodyHtml=`<div class="wiz-body" style="padding-top:24px">
       <input class="wiz-input" id="wiz-nome" value="${esc(np.cliente_nome)}" placeholder="Nome..." autofocus
-        oninput="ST.novoPedido.cliente_nome=this.value" autocomplete="off">
-    </div>`;
-    navHtml=`<div class="wiz-nav-bar">
-      <button class="btn bs" onclick="_wizCancel()">✕ Cancelar</button>
-      <button class="btn bp" onclick="_vdNext()">Próximo →</button>
+        oninput="ST.novoPedido.cliente_nome=this.value" autocomplete="off"
+        onkeydown="if(event.key==='Enter'){_vdNext()}">
+      <div class="wiz-nav-inline">
+        <button class="btn bs" onclick="_wizCancel()">✕ Cancelar</button>
+        <button class="btn bp" onclick="_vdNext()">Próximo →</button>
+      </div>
     </div>`;
   } else if(step===1){
     const prods=_getVendaDiretaProds();
@@ -5463,10 +5493,22 @@ function renderVendaDiretaWizard(){
           </div>`;
         }).join('')}
       </div>`}
-    </div>`;
-    navHtml=`<div class="wiz-nav-bar">
-      <button class="btn bs" onclick="_vdBack()">← Voltar</button>
-      <button class="btn bp" ${cartCount===0?'disabled':''} onclick="_vdNext()">Revisar →</button>
+      ${cartCount>0?`<div class="wiz-cart-section">
+        <div class="wiz-cart-section-title">${ppIcon('bag',14,1.7)} Carrinho · ${cartCount} ite${cartCount===1?'m':'ns'} · ${fmtR(total)}</div>
+        ${np.cart.map((ci,idx)=>`<div class="wiz-cart-item">
+          <span class="wiz-cart-item-qty">${ci.qty}x</span>
+          <span class="wiz-cart-item-name">${ci.ico||''} ${esc(ci.nome)}</span>
+          <span class="wiz-cart-item-price">${fmtR((ci.preco+(ci.obs_extras||0))*ci.qty)}</span>
+          <div style="display:flex;gap:2px;margin-left:4px">
+            <button class="qbtn-v2" onclick="cartQty(${idx},-1);renderVendaDiretaWizard()">−</button>
+            <button class="qbtn-v2" onclick="cartQty(${idx},1);renderVendaDiretaWizard()">+</button>
+          </div>
+        </div>`).join('')}
+      </div>`:''}
+      <div class="wiz-nav-inline" style="margin-top:16px;margin-bottom:8px">
+        <button class="btn bs" onclick="_vdBack()">← Voltar</button>
+        <button class="btn bp" ${cartCount===0?'disabled':''} onclick="_vdNext()">Revisar →</button>
+      </div>
     </div>`;
   } else if(step===2){
     headerHtml=`<div class="wiz-header"><div class="wiz-step-title">Confirmar Venda</div><div class="wiz-step-sub">${esc(np.cliente_nome||'—')}</div></div>`;
@@ -5492,14 +5534,14 @@ function renderVendaDiretaWizard(){
         <div style="flex:1"><div class="fs14 bold">Imprimir via do cliente</div><div class="fs11 t2">Desative para economizar papel</div></div>
         ${ppIcon('printer',18,1.5)}
       </div>
-    </div>`;
-    navHtml=`<div class="wiz-nav-bar">
-      <button class="btn bs" onclick="_vdBack()">← Voltar</button>
-      <button class="btn bp" ${np.cart.length===0?'disabled':''} onclick="_vdFinish()">${ppIcon('send',16,1.7)} Confirmar</button>
+      <div class="wiz-nav-inline" style="margin-bottom:8px">
+        <button class="btn bs" onclick="_vdBack()">← Voltar</button>
+        <button class="btn bp" ${np.cart.length===0?'disabled':''} onclick="_vdFinish()">${ppIcon('send',16,1.7)} Confirmar</button>
+      </div>
     </div>`;
   }
 
-  document.getElementById('pg-pedido').innerHTML=`<div class="wiz-container">${progressHtml}${headerHtml}${miniCartHtml}${bodyHtml}${navHtml}</div>`;
+  document.getElementById('pg-pedido').innerHTML=`<div class="wiz-container">${progressHtml}${headerHtml}${miniCartHtml}${bodyHtml}</div>`;
   if(step===0){const el=document.getElementById('wiz-nome');if(el)setTimeout(()=>el.focus(),100);}
 }
 function _vdNext(){
@@ -6208,19 +6250,100 @@ function renderCaixa(){
     <div class="bold gn mono">${fmtR(h.saldo_final||0)}</div></div>
   </div>`).join('')}`:''}`;
 }
+// ── Sangria/Suprimento Wizard (in-page, sem prompt()) ──
+let _cxFlow={tipo:null,step:0,valor:'',motivo:''};
+
 function askSangria(){
   requireAdmin('Autorizar Sangria',()=>{
-    const v=parseFloat(prompt('Valor da sangria (R$):')||'0');if(!v||v<=0)return;
-    const mot=prompt('Motivo:')||'Sangria';
-    ST.caixa.movs.push({id:uid(),tipo:'sangria',valor:v,desc:'Sangria: '+mot,created:now()});
-    save('caixa');renderCaixa();toast('Sangria de '+fmtR(v),'a');
+    _cxFlow={tipo:'sangria',step:0,valor:'',motivo:''};
+    _renderCxFlow();
   });
 }
 function askSuprimento(){
-  const v=parseFloat(prompt('Valor do suprimento (R$):')||'0');if(!v||v<=0)return;
-  const mot=prompt('Descrição:')||'Suprimento';
-  ST.caixa.movs.push({id:uid(),tipo:'suprimento',valor:v,desc:'Suprimento: '+mot,created:now()});
-  save('caixa');renderCaixa();toast('Suprimento de '+fmtR(v),'g');
+  _cxFlow={tipo:'suprimento',step:0,valor:'',motivo:''};
+  _renderCxFlow();
+}
+function _renderCxFlow(){
+  const f=_cxFlow;
+  const isSangria=f.tipo==='sangria';
+  const titulo=isSangria?'Sangria':'Suprimento';
+  const cor=isSangria?'ba':'bg';
+  const ico=isSangria?ppIcon('upload',20,1.7):ppIcon('download',20,1.7);
+
+  let progressHtml=`<div class="wiz-progress">
+    <div class="wiz-progress-step ${f.step>=0?'done':''}"></div>
+    <div class="wiz-progress-step ${f.step>=1?'cur':''}"></div>
+  </div>`;
+
+  let bodyHtml='';
+
+  if(f.step===0){
+    // Step 1: Valor
+    bodyHtml=`<div class="wiz-body" style="padding-top:24px">
+      <input class="wiz-input" id="cx-flow-valor" type="number" inputmode="decimal" step="0.01" min="0.01"
+        value="${f.valor}" placeholder="0,00" autofocus
+        oninput="_cxFlow.valor=this.value" autocomplete="off"
+        onkeydown="if(event.key==='Enter'){_cxFlowNext()}"
+        style="text-align:center;font-size:28px;font-weight:800;font-family:var(--mono)">
+      <div class="wiz-quick-vals" style="justify-content:center">
+        ${[10,20,50,100,200].map(v=>`<button class="wiz-quick-val" onclick="_cxFlowSetVal(${v})">${fmtR(v)}</button>`).join('')}
+      </div>
+      <div class="wiz-nav-inline">
+        <button class="btn bs" onclick="_cxFlowCancel()">✕ Cancelar</button>
+        <button class="btn ${cor}" onclick="_cxFlowNext()">Próximo →</button>
+      </div>
+    </div>`;
+  } else if(f.step===1){
+    // Step 2: Motivo + Confirmar
+    const val=parseFloat(f.valor)||0;
+    bodyHtml=`<div class="wiz-body" style="padding-top:24px">
+      <div style="text-align:center;margin-bottom:16px">
+        <div class="fs12 t2 mb4">Valor</div>
+        <div style="font-size:28px;font-weight:900;font-family:var(--mono);color:${isSangria?'var(--rd)':'var(--gn)'}">${isSangria?'-':'+'} ${fmtR(val)}</div>
+      </div>
+      <input class="wiz-input" id="cx-flow-motivo" value="${esc(f.motivo)}"
+        placeholder="${isSangria?'Motivo da sangria...':'Descrição do suprimento...'}" autofocus
+        oninput="_cxFlow.motivo=this.value" autocomplete="off"
+        onkeydown="if(event.key==='Enter'){_cxFlowConfirm()}">
+      <div class="wiz-nav-inline">
+        <button class="btn bs" onclick="_cxFlowBack()">← Voltar</button>
+        <button class="btn ${cor}" onclick="_cxFlowConfirm()">${ico} Confirmar ${titulo}</button>
+      </div>
+    </div>`;
+  }
+
+  document.getElementById('pg-caixa').innerHTML=`
+  <div class="wiz-container">
+    ${progressHtml}
+    <div class="wiz-header">
+      <div class="wiz-step-title">${ico} ${titulo}</div>
+      <div class="wiz-step-sub">${f.step===0?'Informe o valor':'Informe o motivo e confirme'}</div>
+    </div>
+    ${bodyHtml}
+  </div>`;
+
+  const focusId=f.step===0?'cx-flow-valor':'cx-flow-motivo';
+  setTimeout(()=>{const el=document.getElementById(focusId);if(el)el.focus();},100);
+}
+function _cxFlowSetVal(v){_cxFlow.valor=v;document.getElementById('cx-flow-valor').value=v;}
+function _cxFlowNext(){
+  const v=parseFloat(_cxFlow.valor);
+  if(!v||v<=0){toast('Informe um valor válido','r');document.getElementById('cx-flow-valor')?.focus();return;}
+  _cxFlow.step=1;_renderCxFlow();
+}
+function _cxFlowBack(){_cxFlow.step=0;_renderCxFlow();}
+function _cxFlowCancel(){_cxFlow={tipo:null,step:0,valor:'',motivo:''};renderCaixa();}
+function _cxFlowConfirm(){
+  const f=_cxFlow;
+  const v=parseFloat(f.valor);
+  if(!v||v<=0){toast('Valor inválido','r');return;}
+  const mot=f.motivo.trim()||(f.tipo==='sangria'?'Sangria':'Suprimento');
+  const tipo=f.tipo;
+  ST.caixa.movs.push({id:uid(),tipo,valor:v,desc:(tipo==='sangria'?'Sangria':'Suprimento')+': '+mot,created:now()});
+  save('caixa');
+  _cxFlow={tipo:null,step:0,valor:'',motivo:''};
+  renderCaixa();
+  toast((tipo==='sangria'?'Sangria':'Suprimento')+' de '+fmtR(v),tipo==='sangria'?'a':'g');
 }
 
 // ═══════════════════════════════════════════
