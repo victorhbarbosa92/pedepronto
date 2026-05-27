@@ -96,6 +96,87 @@ html.theme-metro .metro-tile.tile-indigo{background:#283593;color:#fff}
 html.theme-metro .metro-tile:hover{filter:brightness(1.08)}
 html.theme-metro .metro-tile:active{filter:brightness(.92);transform:scale(.98)}
 
+/* ══════════════════════════════════════════════
+   DASHBOARD SKINS — Vibrante & Midnight
+   ══════════════════════════════════════════════ */
+/* Shared tile base */
+.dash-tile{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;
+  border-radius:16px;padding:18px 12px;cursor:pointer;border:none;
+  color:#fff;font-weight:600;font-size:14px;text-align:center;
+  transition:transform .15s,filter .15s;position:relative;overflow:hidden;
+  min-height:110px;
+}
+.dash-tile:active{transform:scale(.95);filter:brightness(.9)}
+.dash-tile svg{width:36px;height:36px;flex-shrink:0}
+.dash-tile-label{font-size:14px;font-weight:600;letter-spacing:-.01em}
+.dash-tile-badge{position:absolute;top:10px;right:10px;background:rgba(0,0,0,.3);color:#fff;font-size:11px;font-weight:800;padding:2px 8px;border-radius:99px;min-width:20px;text-align:center}
+.dash-tile-live{font-size:11px;opacity:.85;font-weight:400;margin-top:-4px}
+
+/* Wide tile (2 columns) */
+.dash-tile-wide{
+  flex-direction:row;align-items:center;justify-content:flex-start;gap:14px;
+  min-height:72px;padding:16px 20px;text-align:left;
+}
+.dash-tile-wide svg{width:28px;height:28px}
+.dash-tile-wide .dtw-info{flex:1;min-width:0}
+.dash-tile-wide .dtw-title{font-size:14px;font-weight:700}
+.dash-tile-wide .dtw-sub{font-size:12px;opacity:.75;font-weight:400;margin-top:2px}
+.dash-tile-wide .dtw-right{font-size:12px;opacity:.8;font-weight:500;text-align:right;white-space:nowrap}
+
+/* Small quick-access tile */
+.dash-tile-sm{
+  flex-direction:row;align-items:center;justify-content:flex-start;gap:10px;
+  min-height:56px;padding:14px 16px;border-radius:12px;
+  background:var(--sf);color:var(--tx);font-weight:500;
+}
+.dash-tile-sm svg{width:20px;height:20px}
+.dash-tile-sm .dts-label{font-size:13px;flex:1}
+.dash-tile-sm .dts-badge{font-size:11px;font-weight:700;color:var(--ac);opacity:.9}
+
+/* KPI strip */
+.dash-kpi-strip{
+  display:flex;gap:4px;margin-bottom:12px;
+}
+.dash-kpi-item{
+  flex:1;background:var(--sf);border-radius:10px;padding:10px 8px;text-align:center;
+}
+.dash-kpi-val{font-size:18px;font-weight:800;line-height:1.2}
+.dash-kpi-lbl{font-size:10px;color:var(--t3);font-weight:500;margin-top:2px}
+
+/* Header */
+.dash-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding:0 2px}
+.dash-greet{font-size:18px;font-weight:800;color:var(--tx)}
+.dash-greet-sub{font-size:12px;color:var(--t2);font-weight:400;margin-top:1px}
+.dash-caixa-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+
+/* Section divider */
+.dash-sec{font-size:12px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;margin:16px 0 8px;padding:0 2px}
+
+/* ── SKIN: Vibrante ── */
+.skin-vibrante .dash-tile.dt-balcao{background:linear-gradient(135deg,#2563eb,#06b6d4)}
+.skin-vibrante .dash-tile.dt-vdireta{background:linear-gradient(135deg,#ea580c,#f59e0b)}
+.skin-vibrante .dash-tile.dt-mesas{background:linear-gradient(135deg,#16a34a,#06b6d4)}
+.skin-vibrante .dash-tile.dt-delivery{background:linear-gradient(135deg,#ea580c,#ec4899)}
+.skin-vibrante .dash-tile.dt-producao{background:linear-gradient(135deg,#0d9488,#06b6d4)}
+.skin-vibrante .dash-tile.dt-coach{background:linear-gradient(135deg,#7c3aed,#ec4899)}
+.skin-vibrante .dash-tile-sm{background:var(--s2);border:1px solid var(--br)}
+
+/* ── SKIN: Midnight ── */
+.skin-midnight .dash-tile.dt-balcao{background:linear-gradient(135deg,#0c1a30,#162e55);box-shadow:0 0 24px rgba(37,99,235,.35);border:1px solid rgba(37,99,235,.25)}
+.skin-midnight .dash-tile.dt-vdireta{background:linear-gradient(135deg,#1f0e00,#4a2200);box-shadow:0 0 24px rgba(234,88,12,.35);border:1px solid rgba(234,88,12,.25)}
+.skin-midnight .dash-tile.dt-mesas{background:linear-gradient(135deg,#081820,#0e3540);box-shadow:0 0 24px rgba(8,145,178,.35);border:1px solid rgba(8,145,178,.25)}
+.skin-midnight .dash-tile.dt-delivery{background:linear-gradient(135deg,#120228,#261050);box-shadow:0 0 24px rgba(124,58,237,.35);border:1px solid rgba(124,58,237,.25)}
+.skin-midnight .dash-tile.dt-producao{background:linear-gradient(135deg,#021510,#073328);box-shadow:0 0 20px rgba(13,148,136,.3);border:1px solid rgba(13,148,136,.2)}
+.skin-midnight .dash-tile.dt-coach{background:linear-gradient(135deg,#08071a,#1a184a);box-shadow:0 0 20px rgba(99,102,241,.3);border:1px solid rgba(99,102,241,.2)}
+.skin-midnight .dash-tile-sm{background:rgba(10,18,35,.6);border:1px solid rgba(37,99,235,.2);box-shadow:0 0 12px rgba(37,99,235,.1)}
+
+/* Coach pulse animation */
+@keyframes coachPulse{0%,100%{box-shadow:0 0 8px rgba(124,58,237,.3)}50%{box-shadow:0 0 24px rgba(124,58,237,.6)}}
+.dash-tile.dt-coach.pulse{animation:coachPulse 2s ease-in-out infinite}
+.skin-midnight .dash-tile.dt-coach.pulse{animation-name:coachPulseMN}
+@keyframes coachPulseMN{0%,100%{box-shadow:0 0 8px rgba(99,102,241,.2)}50%{box-shadow:0 0 28px rgba(99,102,241,.5)}}
+
 /* ── TEMA NEON (Cyberpunk) ── */
 html.theme-neon{
   --bg:#0a0a14;--sf:#0f0f20;--s2:#151530;--s3:#1c1c40;--s4:#252550;
@@ -2747,6 +2828,39 @@ const PP_THEMES=[
 ];
 function _getCurrentThemeId(){return localStorage.getItem('pp_tema')||'dark';}
 function _isMetroTheme(){const t=_getCurrentThemeId();return t==='metro'||t==='metro-light';}
+
+// ── DASHBOARD SKINS ──
+const PP_DASH_SKINS=[
+  {id:'classic',label:'Classico',desc:'Dashboard original com botoes e KPIs'},
+  {id:'vibrante',label:'Vibrante',desc:'Tiles coloridos com gradientes fortes'},
+  {id:'midnight',label:'Midnight',desc:'Tiles escuros com brilho sutil'}
+];
+function _getDashSkin(){return ST.cfg.dash_skin||'classic';}
+function _hasDashSkin(){return _getDashSkin()!=='classic';}
+function _renderDashSkinPicker(){
+  var cur=_getDashSkin();
+  return PP_DASH_SKINS.map(function(s){
+    var ativo=cur===s.id;
+    var bdr=ativo?'var(--ac)':'var(--br2)';
+    var bg=ativo?'var(--acbg)':'var(--s2)';
+    var clr=ativo?'var(--ac)':'var(--tx)';
+    var inner='';
+    if(s.id==='classic'){
+      inner='<div style="position:absolute;inset:3px;display:flex;flex-direction:column;gap:2px"><div style="height:8px;background:var(--br2);border-radius:2px"></div><div style="flex:1;display:grid;grid-template-columns:1fr 1fr 1fr;gap:2px"><div style="background:var(--br2);border-radius:1px"></div><div style="background:var(--br2);border-radius:1px"></div><div style="background:var(--br2);border-radius:1px"></div></div></div>';
+    }else{
+      var c1=s.id==='vibrante'?'#2563eb':'#1e3a5f';
+      var c2=s.id==='vibrante'?'#ea580c':'#ea580c';
+      var c3=s.id==='vibrante'?'#16a34a':'#0891b2';
+      var c4=s.id==='vibrante'?'#ec4899':'#7c3aed';
+      inner='<div style="position:absolute;inset:3px;display:grid;grid-template-columns:1fr 1fr;gap:2px;border-radius:2px;overflow:hidden"><div style="background:'+c1+'"></div><div style="background:'+c2+'"></div><div style="background:'+c3+'"></div><div style="background:'+c4+'"></div></div>';
+    }
+    var pvBg=s.id==='classic'?'var(--sf)':s.id==='vibrante'?'linear-gradient(135deg,#2563eb,#06b6d4)':'linear-gradient(135deg,#0a1628,#1e3a5f)';
+    return'<button onclick="ST.cfg.dash_skin=\''+s.id+'\';save(\'cfg\');_renderCfgSection(\'interface\')" style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 8px;border-radius:12px;border:2px solid '+bdr+';background:'+bg+';cursor:pointer;color:var(--tx)">'
+      +'<div style="width:48px;height:34px;border-radius:6px;background:'+pvBg+';border:1px solid var(--br3);position:relative;overflow:hidden">'+inner+'</div>'
+      +'<span class="fs11 bold" style="color:'+clr+'">'+s.label+'</span>'
+      +'</button>';
+  }).join('');
+}
 function _syncThemeUI(){
   const tid=_getCurrentThemeId();
   const isLight=(tid==='light'||tid==='metro-light');
@@ -3856,29 +3970,16 @@ function _renderDashPedidosAtivos(_i){
 }
 
 function renderDash(){try{
+  const skin=_getDashSkin();
+  if(skin!=='classic')return _renderDashSkin(skin);
+  // ── CLASSIC DASHBOARD ──
   const _i=(n,s=14)=>ppIcon(n,s,1.7);
   const origemIco={mesa:_i('table'),balcao:_i('counter'),delivery:_i('bike')};
   const origemLbl={mesa:'Mesa',balcao:'Balcão',delivery:'Delivery'};
   const origemCls={mesa:'bg',balcao:'ba',delivery:'bpu'};
-
-  // Pedidos em produção — ordenados por prioridade: atrasados > preparo > aberto, depois por tempo
   const _isProntoD=p=>p.itens.length>0&&p.itens.every(i=>i.concluido)||(p.status==='pago'&&!p.entregue);
   const ativos=ST.pedidos.filter(p=>(p.status==='aberto'||p.status==='preparo')&&!_isProntoD(p));
   const aguardando=ST.pedidos.filter(p=>_isProntoD(p)&&!p.entregue&&naFila(p));
-
-  function prioridade(p){
-    const mins=Math.floor((Date.now()-new Date(p.created).getTime())/60000);
-    const late=mins>30;
-    if(late)return 0;
-    if(p.status==='preparo')return 1;
-    return 2;
-  }
-  const ordenados=[...ativos].sort((a,b)=>{
-    const pd=prioridade(a)-prioridade(b);
-    if(pd!==0)return pd;
-    return new Date(a.created)-new Date(b.created);
-  });
-
   document.getElementById('pg-dash').innerHTML=`
   ${!ST.caixa.aberto?`<div style="background:var(--rdbg);border:1px solid var(--rdbr);border-radius:12px;padding:14px;margin-bottom:14px;text-align:center">
     <div class="bold rd fs14" style="display:flex;align-items:center;justify-content:center;gap:6px">${_i('alertTriangle',16)} Caixa Fechado</div>
@@ -3905,11 +4006,7 @@ function renderDash(){try{
     return _isMetroTheme()?`<div class="g${Math.min(cols,4)} mb12" style="gap:4px">${_btns.map(b=>`<button class="btn metro-tile ${b.cls} bw" onclick="${b.act}">${_i(b.ico,32)}<span>${b.lbl}</span></button>`).join('')}</div>`
     :`<div class="g${Math.min(cols,4)} mb12">${_btns.map(b=>`<button class="btn ${b.c} bw" style="padding:12px 6px;flex-direction:column;gap:4px;font-size:13px" onclick="${b.act}">${_i(b.ico,22)}<span>${b.lbl}</span></button>`).join('')}</div>`;
   })():''}
-  ${(_userRole==='dono'||_userCargo==='dono')&&ST.cfg.ai_agent?.api_key&&_modAtivo('agente')?(_isMetroTheme()?`<div class="metro-tile tile-indigo mb12" style="min-height:70px;cursor:pointer;padding:14px 16px" onclick="_openCoachPanel()">
-    ${_i('bot',32)}
-    <span style="font-size:15px;font-weight:600">Coach IA</span>
-    <span style="font-size:11px;opacity:.7;margin-top:-4px">Briefing, combos, campanhas</span>
-  </div>`:`<div class="card mb12" style="padding:12px;background:linear-gradient(135deg,var(--s2),var(--s3));border:1px solid var(--acg);cursor:pointer" onclick="_openCoachPanel()">
+  ${(_userRole==='dono'||_userCargo==='dono')&&ST.cfg.ai_agent?.api_key&&_modAtivo('agente')?`<div class="card mb12" style="padding:12px;background:linear-gradient(135deg,var(--s2),var(--s3));border:1px solid var(--acg);cursor:pointer" onclick="_openCoachPanel()">
     <div style="display:flex;align-items:center;gap:12px">
       <div style="width:42px;height:42px;border-radius:11px;background:linear-gradient(135deg,var(--ac),var(--pu));display:flex;align-items:center;justify-content:center;flex-shrink:0">${_i('bot',22)}</div>
       <div style="flex:1;min-width:0">
@@ -3918,21 +4015,139 @@ function renderDash(){try{
       </div>
       <div style="color:var(--ac)">${_i('arrowRight',18)}</div>
     </div>
-  </div>`):''}
-  ${_isMetroTheme()&&hasPermission('pdv')?(()=>{
-    const _tiles=[
-      _modAtivo('dados')&&hasPermission('dados')?`<button class="btn metro-tile tile-green bw" style="min-height:60px" onclick="nav('dados')">${_i('chart',24)}<span style="font-size:12px">Dados</span></button>`:'',
-      _modAtivo('cardapio')&&hasPermission('cardapio_ver')?`<button class="btn metro-tile tile-amber bw" style="min-height:60px" onclick="nav('cardapio')">${_i('menu',24)}<span style="font-size:12px">Cardapio</span></button>`:'',
-      _modAtivo('clientes')&&hasPermission('clientes_ver')?`<button class="btn metro-tile tile-red bw" style="min-height:60px" onclick="nav('clientes')">${_i('users',24)}<span style="font-size:12px">Clientes</span></button>`:'',
-      _modAtivo('caixa')&&hasPermission('caixa_op')?`<button class="btn metro-tile tile-blue bw" style="min-height:60px" onclick="nav('caixa')">${_i('cash',24)}<span style="font-size:12px">Caixa</span></button>`:''
-    ].filter(Boolean);
-    return _tiles.length?`<div style="display:grid;grid-template-columns:repeat(${_tiles.length},1fr);gap:4px;margin-bottom:12px">${_tiles.join('')}</div>`:'';
-  })():''}
+  </div>`:''}
   ${_renderDashStatusBar(_i)}
   ${_renderSolicitacoesCancelamento(_i)}
   ${_renderDashProducao(_i,origemIco,origemLbl,origemCls)}
   ${_renderDashPedidosAtivos(_i)}`;
 }catch(e){console.error('[renderDash] ERRO:',e);document.getElementById('pg-dash').innerHTML=`<div style="padding:20px;color:var(--rd)"><b>Erro no dashboard:</b><br><pre style="font-size:12px;margin-top:8px;white-space:pre-wrap;color:var(--t2)">${e.message}\n${e.stack||''}</pre><button class="btn bp mt12" onclick="renderDash()">Tentar novamente</button></div>`;}}
+
+// ── DASHBOARD SKIN RENDERER ──
+function _renderDashSkin(skin){
+  const _i=(n,s=14)=>ppIcon(n,s,1.7);
+  const cls='skin-'+skin;
+  // Dados live
+  const hoje=new Date().toDateString();
+  const pedHoje=ST.pedidos.filter(p=>p.status==='pago'&&new Date(p.pago_em||p.created).toDateString()===hoje);
+  const receita=pedHoje.reduce((s,p)=>s+(p.total||0),0);
+  const abertos=ST.pedidos.filter(naFila);
+  const ticketMedio=pedHoje.length?receita/pedHoje.length:0;
+  // Producao
+  const _isPronto=p=>p.itens.length>0&&p.itens.every(i=>i.concluido)||(p.status==='pago'&&!p.entregue);
+  const emPreparo=ST.pedidos.filter(p=>(p.status==='aberto'||p.status==='preparo')&&!_isPronto(p)).length;
+  const prontos=ST.pedidos.filter(p=>_isPronto(p)&&!p.entregue&&naFila(p)).length;
+  // Mesas ocupadas
+  const mesasOcup=[...new Set(abertos.filter(p=>p.tipo==='mesa'&&(p.status==='aberto'||p.status==='preparo')).map(p=>p.mesa_id))].length;
+  // Greeting
+  const hora=new Date().getHours();
+  const greet=hora<12?'Bom dia':hora<18?'Boa tarde':'Boa noite';
+  const nome=ST.currentUser?.nome||ST.caixa.operador||'';
+  const nomeExib=nome?', '+nome.split(' ')[0]:'';
+  // Coach
+  const hasCoach=(_userRole==='dono'||_userCargo==='dono')&&ST.cfg.ai_agent?.api_key&&_modAtivo('agente');
+  const lastCoach=localStorage.getItem('pp_last_coach');
+  const coachPending=lastCoach!==new Date().toISOString().slice(0,10);
+  // Modules
+  const _mb=_modAtivo('mesas'),_bb=_modAtivo('balcao'),_db=_modAtivo('delivery'),_pb=_modAtivo('producao');
+
+  let h=`<div class="${cls}">`;
+
+  // ── HEADER ──
+  h+=`<div class="dash-header">
+    <div>
+      <div class="dash-greet">${greet}${esc(nomeExib)}</div>
+      <div class="dash-greet-sub">${ST.cfg.nome||'PedePronto PDV'}</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px">
+      ${!ST.caixa.aberto&&hasPermission('caixa_op')?`<button class="btn br_ bxs" style="font-size:11px;gap:4px;padding:6px 10px" onclick="pedirAberturaCaixa()">${_i('alertTriangle',12)} Abrir Caixa</button>`:''}
+      <div class="dash-caixa-dot" style="background:${ST.caixa.aberto?'var(--gn)':'var(--rd)'}" title="${ST.caixa.aberto?'Caixa aberto':'Caixa fechado'}"></div>
+    </div>
+  </div>`;
+
+  // ── KPI STRIP ──
+  if(hasPermission('dados')||hasCargo('dono','gerente')){
+    h+=`<div class="dash-kpi-strip">
+      <div class="dash-kpi-item"><div class="dash-kpi-val gn">${fmtR(receita)}</div><div class="dash-kpi-lbl">Faturamento</div></div>
+      <div class="dash-kpi-item"><div class="dash-kpi-val am">${abertos.length}</div><div class="dash-kpi-lbl">Em aberto</div></div>
+      <div class="dash-kpi-item"><div class="dash-kpi-val" style="color:var(--bl)">${fmtR(ticketMedio)}</div><div class="dash-kpi-lbl">Ticket medio</div></div>
+    </div>`;
+  }
+
+  // ── MAIN ACTION TILES (2x2) ──
+  if(hasPermission('pdv')){
+    const tiles=[];
+    if(_bb)tiles.push({ico:'counter',lbl:'Balcao',act:'novoBalcao()',dt:'dt-balcao',badge:''});
+    if(_bb)tiles.push({ico:'zap',lbl:'Venda Direta',act:'novoVendaDireta()',dt:'dt-vdireta',badge:''});
+    if(_mb)tiles.push({ico:'table',lbl:'Mesas',act:"nav('mesas')",dt:'dt-mesas',badge:mesasOcup>0?mesasOcup:''});
+    if(_db)tiles.push({ico:'bike',lbl:'Delivery',act:'novoDelivery()',dt:'dt-delivery',badge:''});
+    if(tiles.length){
+      h+=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">`;
+      tiles.forEach(t=>{
+        h+=`<button class="dash-tile ${t.dt}" onclick="${t.act}">
+          ${t.badge?`<span class="dash-tile-badge">${t.badge}</span>`:''}
+          ${_i(t.ico,36)}
+          <span class="dash-tile-label">${t.lbl}</span>
+        </button>`;
+      });
+      h+=`</div>`;
+    }
+  }
+
+  // ── PRODUCAO TILE (wide) ──
+  if(_pb&&hasPermission('pdv')){
+    h+=`<button class="dash-tile dash-tile-wide dt-producao" onclick="nav('producao')" style="margin-bottom:10px">
+      ${_i('monitor',28)}
+      <div class="dtw-info">
+        <div class="dtw-title">Producao</div>
+        <div class="dtw-sub">${emPreparo+prontos>0?emPreparo+' em preparo · '+prontos+' pronto'+(prontos!==1?'s':''):'Nenhum pedido em aberto'}</div>
+      </div>
+      <div class="dtw-right">${emPreparo+prontos>0?(emPreparo+prontos)+'':''} ${_i('arrowRight',16)}</div>
+    </button>`;
+  }
+
+  // ── COACH IA TILE (wide) ──
+  if(hasCoach){
+    h+=`<button class="dash-tile dash-tile-wide dt-coach${coachPending?' pulse':''}" onclick="_openCoachPanel()" style="margin-bottom:14px">
+      ${_i('bot',28)}
+      <div class="dtw-info">
+        <div class="dtw-title">Coach IA</div>
+        <div class="dtw-sub">${coachPending?'Briefing disponivel':'Briefing do dia visto'}</div>
+      </div>
+      <div class="dtw-right">${coachPending?_i('zap',16):_i('check',16)}</div>
+    </button>`;
+  }
+
+  // ── QUICK ACCESS (small tiles 2 columns) ──
+  const quickItems=[];
+  if(_modAtivo('cardapio')&&hasPermission('cardapio_ver'))quickItems.push({ico:'menu',lbl:'Cardapio',act:"nav('cardapio')",color:'var(--am)'});
+  if(_modAtivo('caixa')&&hasPermission('caixa_op'))quickItems.push({ico:'cash',lbl:'Caixa',act:"nav('caixa')",color:'var(--gn)'});
+  if(_modAtivo('clientes')&&hasPermission('clientes_ver'))quickItems.push({ico:'users',lbl:'Clientes',act:"nav('clientes')",color:'var(--bl)'});
+  if(_modAtivo('funcionarios')&&hasPermission('funcionarios'))quickItems.push({ico:'users',lbl:'Equipe',act:"nav('funcionarios')",color:'var(--pu)'});
+  if(_modAtivo('dados')&&hasPermission('dados'))quickItems.push({ico:'chart',lbl:'Relatorios',act:"nav('dados')",color:'var(--cy)'});
+  if(hasPermission('config_ver'))quickItems.push({ico:'settings',lbl:'Config',act:"nav('config')",color:'var(--t2)'});
+
+  if(quickItems.length){
+    h+=`<div class="dash-sec">Acesso rapido</div>`;
+    h+=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">`;
+    quickItems.forEach(q=>{
+      h+=`<button class="dash-tile-sm" onclick="${q.act}">
+        <span style="color:${q.color}">${ppIcon(q.ico,20,1.7)}</span>
+        <span class="dts-label">${q.lbl}</span>
+        ${_i('arrowRight',14)}
+      </button>`;
+    });
+    h+=`</div>`;
+  }
+
+  // ── CANCELAMENTOS PENDENTES ──
+  h+=_renderSolicitacoesCancelamento(_i);
+
+  // ── PEDIDOS ATIVOS (lista compacta) ──
+  h+=_renderDashPedidosAtivos(_i);
+
+  h+=`</div>`; // close skin wrapper
+  document.getElementById('pg-dash').innerHTML=h;
+}
 
 function renderDados(){
   const hoje=new Date().toDateString();
@@ -6227,10 +6442,17 @@ function _renderCfgSection(sec){
           }).join('')}
         </div>
       </div>
-      <div class="rb" style="padding:8px 0">
+      <div class="rb" style="padding:8px 0;border-bottom:1px solid var(--br)">
         <div><div class="fs13 bold">Tamanho da interface</div><div class="fs12 t2">Botoes e fontes</div></div>
         <div style="display:flex;gap:7px">
           ${['p','m','g'].map(t=>{const ativo=((localStorage.getItem('pp_tam')||'p')===t);return`<button class="btn bxs ${ativo?'bp':'bs'}" onclick="setTamanho('${t}');_renderCfgSection('interface')" style="min-width:44px">${t==='p'?'P':t==='m'?'M':'G'}</button>`;}).join('')}
+        </div>
+      </div>
+      <div style="padding:8px 0">
+        <div class="fs13 bold mb8">Tela Inicial</div>
+        <div class="fs12 t2 mb8">Escolha o estilo do dashboard</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+          ${_renderDashSkinPicker()}
         </div>
       </div>
     </div>`+_cfgFooter();
