@@ -3401,11 +3401,13 @@ const BT={
     blocosFilt.forEach((b,idx)=>{
       const itens=b==='coz'?ped.itens.filter(i=>i.dest==='coz'):b==='bar'?ped.itens.filter(i=>i.dest==='bar'):ped.itens;
 
-      // ═══ CABEÇALHO — tamanho normal (economia de espaço) ═══
-      all.push(...CMD.center,...CMD.bold1);
-      this.wrapText(cfg.nome.toUpperCase(),W).forEach(l=>all.push(...txt(l),...CMD.lf));
-      all.push(...CMD.bold0);
-      if(cfg.slogan)all.push(...txt(this.norm(cfg.slogan)),...CMD.lf);
+      // ═══ CABEÇALHO — nome grande + endereço/telefone ═══
+      all.push(...CMD.center,...CMD.dbl,...CMD.bold1);
+      this.wrapText(cfg.nome.toUpperCase(),W2).forEach(l=>all.push(...txt(l),...CMD.lf));
+      all.push(...CMD.bold0,...CMD.normal);
+      if(cfg.end)all.push(...CMD.center,...txt(this.norm(cfg.end)),...CMD.lf);
+      if(cfg.wa)all.push(...CMD.center,...txt('Tel: '+cfg.wa),...CMD.lf);
+      if(cfg.cnpj)all.push(...CMD.center,...txt('CNPJ: '+cfg.cnpj),...CMD.lf);
       all.push(...CMD.left,...txt(dst()),...CMD.lf);
 
       // ═══ VIA (CLIENTE/COZINHA/BAR) — tamanho duplo ═══
@@ -3444,6 +3446,9 @@ const BT={
         // Preço (só via cliente)
         if(totalStr)all.push(...CMD.dblH,...txt('   '+totalStr),...CMD.normal,...CMD.lf);
 
+        // Tempo de preparo (só cozinha/bar)
+        if((b==='coz'||b==='bar')&&it.tempo)all.push(...CMD.dblH,...txt('  ~'+it.tempo+'min'),...CMD.normal,...CMD.lf);
+
         // Observações — double-height, sublinhado
         if(it.obs){
           all.push(...CMD.dblH,...CMD.uline1);
@@ -3463,6 +3468,24 @@ const BT={
         all.push(...CMD.center,...CMD.dbl,...CMD.bold1,...txt('R$'+ped.total.toFixed(2)),...CMD.bold0,...CMD.normal,...CMD.lf,...CMD.left,...CMD.lf);
         const prevCli=ped.prev_coz||ped.prev_bar;
         if(prevCli)all.push(...CMD.center,...CMD.dblH,...CMD.bold1,...txt('Previsao: '+fmtH(prevCli)),...CMD.bold0,...CMD.normal,...CMD.lf);
+        // Fidelidade — pontos do cliente
+        if(ped.cliente_nome){
+          const cli=ST.clientes.find(c=>c.nome===ped.cliente_nome);
+          if(cli&&cli.pontos!==undefined){
+            const nivel=cli.pontos>=300?'OURO':cli.pontos>=100?'PRATA':'BRONZE';
+            all.push(...CMD.lf,...txt(dsh()),...CMD.lf);
+            all.push(...CMD.center,...CMD.dblH,...CMD.bold1,...txt('FIDELIDADE'),...CMD.bold0,...CMD.normal,...CMD.lf);
+            all.push(...CMD.center,...CMD.dblH,...txt(cli.pontos+' pts - '+nivel),...CMD.normal,...CMD.lf);
+          }
+        }
+        // Redes sociais
+        if(cfg.instagram||cfg.facebook||cfg.tiktok){
+          all.push(...CMD.lf,...txt(dsh()),...CMD.lf,...CMD.center);
+          if(cfg.instagram)all.push(...txt('IG: @'+this.norm(cfg.instagram)),...CMD.lf);
+          if(cfg.facebook)all.push(...txt('FB: '+this.norm(cfg.facebook)),...CMD.lf);
+          if(cfg.tiktok)all.push(...txt('TT: @'+this.norm(cfg.tiktok)),...CMD.lf);
+          all.push(...CMD.left);
+        }
       }
       if(b==='coz'||b==='bar'){
         const prev=b==='coz'?ped.prev_coz:ped.prev_bar;
@@ -6591,6 +6614,10 @@ function _renderCfgSection(sec){
       <div class="fg"><label class="fl">WhatsApp</label><input class="inp" value="${esc(cfg.wa||'')}" oninput="ST.cfg.wa=this.value" type="tel"></div>
       <div class="fg"><label class="fl">Telefone fixo</label><input class="inp" value="${esc(cfg.tel||'')}" oninput="ST.cfg.tel=this.value" type="tel"></div>
       <div class="fg"><label class="fl">Mensagem de rodape (cupom)</label><input class="inp" value="${esc(cfg.footer||'Obrigado pela preferência!')}" oninput="ST.cfg.footer=this.value"></div>
+      <div class="fs12 bold t2 mt12 mb6" style="text-transform:uppercase;letter-spacing:.5px">Redes sociais (impresso no cupom)</div>
+      <div class="fg"><label class="fl">Instagram (sem @)</label><input class="inp" value="${esc(cfg.instagram||'')}" oninput="ST.cfg.instagram=this.value" placeholder="baguetalho"></div>
+      <div class="fg"><label class="fl">Facebook</label><input class="inp" value="${esc(cfg.facebook||'')}" oninput="ST.cfg.facebook=this.value" placeholder="Baguetalho Lanches"></div>
+      <div class="fg"><label class="fl">TikTok (sem @)</label><input class="inp" value="${esc(cfg.tiktok||'')}" oninput="ST.cfg.tiktok=this.value" placeholder="baguetalho"></div>
     </div>${_cfgSaveBtn()}`+_cfgFooter();
     break;
 
