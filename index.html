@@ -4503,7 +4503,12 @@ function openObsSheet(cartIdx){
     ST.novoPedido.cart[cartIdx].obs=partes.join(' · ');
     ST.novoPedido.cart[cartIdx].obs_livre=livre;
     ST.novoPedido.cart[cartIdx].obs_extras=extras;
-    closeOv('ov-obs');renderPedido();
+    closeOv('ov-obs');
+    // Re-render context-aware: wizard or traditional
+    const _np=ST.novoPedido;
+    if(_np._wizStep!==undefined&&!_np._addingTo&&_np.tipo==='balcao') renderPedidoWizard();
+    else if(_np._vendaDireta&&_np._wizStep!==undefined) renderVendaDiretaWizard();
+    else renderPedido();
     toast('Observação salva','g');
   };
   buildSheet();
@@ -5231,9 +5236,10 @@ function renderPedidoWizard(){
         <div class="wiz-cart-section-title">${ppIcon('bag',14,1.7)} Carrinho · ${cartCount} ite${cartCount===1?'m':'ns'} · ${fmtR(total)}</div>
         ${np.cart.map((ci,idx)=>`<div class="wiz-cart-item">
           <span class="wiz-cart-item-qty">${ci.qty}x</span>
-          <span class="wiz-cart-item-name">${ci.ico||''} ${esc(ci.nome)}</span>
+          <span class="wiz-cart-item-name">${ci.ico||''} ${esc(ci.nome)}${ci.obs?'<span style="font-size:10px;color:var(--t3);font-weight:400"> · '+esc(ci.obs)+'</span>':''}</span>
           <span class="wiz-cart-item-price">${fmtR((ci.preco+(ci.obs_extras||0))*ci.qty)}</span>
           <div style="display:flex;gap:2px;margin-left:4px">
+            <button class="qbtn-v2" onclick="openObsSheet(${idx})" title="Obs" style="font-size:11px">📝</button>
             <button class="qbtn-v2" onclick="cartQty(${idx},-1);renderPedidoWizard()">−</button>
             <button class="qbtn-v2" onclick="cartQty(${idx},1);renderPedidoWizard()">+</button>
           </div>
@@ -5274,6 +5280,7 @@ function renderPedidoWizard(){
             <div class="wiz-review-name">${item.ico?item.ico+' ':''}${esc(item.nome)}${item.obs?'<div style="font-size:12px;color:var(--t2);font-weight:400;margin-top:2px">'+esc(item.obs)+'</div>':''}</div>
             <div class="wiz-review-price">${fmtR(unitTotal)}</div>
             <div style="display:flex;gap:4px;margin-left:4px">
+              <button class="qbtn-v2" onclick="openObsSheet(${idx})" title="Observações" style="font-size:11px">📝</button>
               <button class="qbtn-v2" onclick="cartQty(${idx},-1);renderPedidoWizard()">−</button>
               <button class="qbtn-v2" onclick="cartQty(${idx},1);renderPedidoWizard()">+</button>
             </div>
@@ -5358,18 +5365,25 @@ function _wizSkipPhone(){
 function _wizAddItem(prodId){
   const prod=ST.produtos.find(p=>p.id===prodId);if(!prod)return;
   const np=ST.novoPedido;
-  // Check if already in cart
-  const existing=np.cart.find(c=>c.prod_id===prodId&&!c.obs);
-  if(existing){existing.qty++;} else {
-    np.cart.push({
-      prod_id:prodId,nome:prod.nome,preco:prod.preco,qty:1,
-      ico:prod.ico||'',dest:prod.destino||'coz',tempo:prod.tempo||0,
-      obs:'',obs_extras:0,obs_livre:''
-    });
+  const hasObs=(prod.obs_grupos||[]).length>0;
+  // Só agrupa se não tem grupos de obs
+  if(!hasObs){
+    const existing=np.cart.find(c=>c.prod_id===prodId&&!c.obs);
+    if(existing){existing.qty++;toast(prod.ico+' '+prod.nome+' adicionado','g',1200);renderPedidoWizard();return;}
   }
-  // Visual feedback
-  toast(prod.ico+' '+prod.nome+' adicionado','g',1200);
-  renderPedidoWizard();
+  np.cart.push({
+    id:uid(),prod_id:prodId,nome:prod.nome,preco:prod.preco,qty:1,
+    ico:prod.ico||'',dest:prod.dest?prod.dest[0]:'coz',tempo:prod.tempo||0,
+    obs:'',obs_extras:0,obs_livre:''
+  });
+  // Se tem grupos de obs, abre sheet automaticamente
+  if(hasObs){
+    renderPedidoWizard();
+    openObsSheet(np.cart.length-1);
+  } else {
+    toast(prod.ico+' '+prod.nome+' adicionado','g',1200);
+    renderPedidoWizard();
+  }
 }
 function _wizFinish(){
   const np=ST.novoPedido;
@@ -5512,6 +5526,7 @@ function renderVendaDiretaWizard(){
           <span class="wiz-cart-item-name">${ci.ico||''} ${esc(ci.nome)}</span>
           <span class="wiz-cart-item-price">${fmtR((ci.preco+(ci.obs_extras||0))*ci.qty)}</span>
           <div style="display:flex;gap:2px;margin-left:4px">
+            <button class="qbtn-v2" onclick="openObsSheet(${idx})" title="Obs" style="font-size:11px">📝</button>
             <button class="qbtn-v2" onclick="cartQty(${idx},-1);renderVendaDiretaWizard()">−</button>
             <button class="qbtn-v2" onclick="cartQty(${idx},1);renderVendaDiretaWizard()">+</button>
           </div>
@@ -5529,9 +5544,10 @@ function renderVendaDiretaWizard(){
         const unitTotal=(item.preco+(item.obs_extras||0))*item.qty;
         return`<div class="wiz-review-item">
           <div class="wiz-review-qty">${item.qty}x</div>
-          <div class="wiz-review-name">${item.ico?item.ico+' ':''}${esc(item.nome)}</div>
+          <div class="wiz-review-name">${item.ico?item.ico+' ':''}${esc(item.nome)}${item.obs?'<div style="font-size:12px;color:var(--t2);font-weight:400;margin-top:2px">'+esc(item.obs)+'</div>':''}</div>
           <div class="wiz-review-price">${fmtR(unitTotal)}</div>
           <div style="display:flex;gap:4px;margin-left:4px">
+            <button class="qbtn-v2" onclick="openObsSheet(${idx})" title="Obs" style="font-size:11px">📝</button>
             <button class="qbtn-v2" onclick="cartQty(${idx},-1);renderVendaDiretaWizard()">−</button>
             <button class="qbtn-v2" onclick="cartQty(${idx},1);renderVendaDiretaWizard()">+</button>
           </div>
