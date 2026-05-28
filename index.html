@@ -2192,16 +2192,17 @@ function _toggleDbgConsole(){
   <pre id="pp-dbg-content" style="margin:0;padding:8px;color:#0f0;overflow:auto;flex:1;white-space:pre-wrap;word-break:break-all;max-height:45vh">${_dbgLogs.map(l=>l.msg).join('\n')}</pre>`;
   document.body.appendChild(p);
 }
-// Botão flutuante — só aparece em mobile
+// Botão flutuante — só aparece em mobile E apenas para super admin
 if(/iPhone|iPad|Android/i.test(navigator.userAgent)){
   setTimeout(()=>{
+    if(!isSuperAdmin()) return; // só super admin vê o debug
     const btn=document.createElement('div');
     btn.id='pp-dbg-btn';
     btn.onclick=_toggleDbgConsole;
     btn.style.cssText='position:fixed;bottom:70px;right:8px;width:36px;height:36px;background:#e94560;border-radius:50%;z-index:99998;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:900;box-shadow:0 2px 8px rgba(0,0,0,0.5);cursor:pointer;opacity:0.7';
     btn.textContent='🐛';
     document.body.appendChild(btn);
-  },2000);
+  },3000); // 3s para garantir que auth já carregou
 }
 
 // ── Boot Screen (tela de loading durante sync inicial) ──
@@ -2857,7 +2858,7 @@ function confirm2(ico,title,msg,okLbl,okCls,cb,cancelCb){
 // ═══════════════════════════════════════════
 //  NAVIGATION
 // ═══════════════════════════════════════════
-const PAGE_TTL={dash:'Início',dados:'Dados',funcionarios:'Funcionários',mesas:'Mesas',balcao:'Balcão',delivery:'Delivery',producao:'Produção',cardapio:'Cardápio',clientes:'Clientes',roleta:'Roleta Premiada',caixa:'Caixa',relatorio:'Relatórios',config:'Configurações',admin:'Super Admin',agente:'Agente IA',pedido:'Novo Pedido',fechar:'Fechar Conta',pagamento:'Pagamento'};
+const PAGE_TTL={dash:'Início',dados:'Dados',funcionarios:'Funcionários',mesas:'Mesas',balcao:'Balcão',delivery:'Delivery',producao:'Produção',cardapio:'Cardápio',clientes:'Clientes',roleta:'Roleta',caixa:'Caixa',relatorio:'Relatórios',config:'Configurações',admin:'Super Admin',agente:'Agente IA',pedido:'Novo Pedido',fechar:'Fechar Conta',pagamento:'Pagamento'};
 
 function applyResponsiveNav(){
   const mobile=isMobile();
@@ -3499,15 +3500,16 @@ const BT={
         all.push(...CMD.center,...CMD.dbl,...CMD.bold1,...txt('R$'+ped.total.toFixed(2)),...CMD.bold0,...CMD.normal,...CMD.lf,...CMD.left,...CMD.lf);
         const prevCli=ped.prev_coz||ped.prev_bar;
         if(prevCli)all.push(...CMD.center,...CMD.dblH,...CMD.bold1,...txt('Previsao: '+fmtH(prevCli)),...CMD.bold0,...CMD.normal,...CMD.lf);
-        // Fidelidade — pontos do cliente
+        // Fidelidade — nível do cliente
         if(ped.cliente_nome){
           const cli=ST.clientes.find(c=>c.nome===ped.cliente_nome);
           if(cli){
-            const _pts=cli.pontos_fidelidade||cli.pontos||0;
-            const nivel=_pts>=500?'OURO':_pts>=200?'PRATA':'BRONZE';
+            const tier=_getLoyaltyTier(cli);
+            const st=_loyaltyStatus(cli);
             all.push(...CMD.lf,...txt(dsh()),...CMD.lf);
             all.push(...CMD.center,...CMD.dblH,...CMD.bold1,...txt('FIDELIDADE'),...CMD.bold0,...CMD.normal,...CMD.lf);
-            all.push(...CMD.center,...CMD.dblH,...txt(_pts+' pts - '+nivel),...CMD.normal,...CMD.lf);
+            all.push(...CMD.center,...CMD.dblH,...txt('Nv.'+tier.nivel+' '+tier.nome.toUpperCase()),...CMD.normal,...CMD.lf);
+            if(st&&st.girosDisp>0) all.push(...CMD.center,...CMD.dblH,...txt(st.girosDisp+' giro(s) na roleta!'),...CMD.normal,...CMD.lf);
           }
         }
         // Redes sociais
@@ -5489,11 +5491,11 @@ function _wizPhoneInput(val){
     if(cliente){
       np._loyaltyClientId=cliente.id;
       np._loyaltyClientName=cliente.nome||'Cliente';
-      const tier=_getLoyaltyTier?_getLoyaltyTier(cliente):{nome:'',emoji:''};
-      const pts=cliente.pontos_fidelidade||cliente.pontos||0;
+      const tier=_getLoyaltyTier?_getLoyaltyTier(cliente):{nome:'',emoji:'',nivel:0};
+      const st=_loyaltyStatus?_loyaltyStatus(cliente):null;
       document.getElementById('wiz-phone-result').innerHTML=`<div class="wiz-phone-result">
         <div class="wiz-phone-name">${ppIcon('user',16,1.7)} ${esc(cliente.nome||'')}</div>
-        <div class="wiz-phone-detail">${pts} pontos ${tier.emoji||''} ${tier.nome||''}</div>
+        <div class="wiz-phone-detail">${tier.emoji||''} ${tier.nome||''} · Nv.${tier.nivel}${st&&st.girosDisp>0?' · '+st.girosDisp+' giro(s)':''}</div>
         <div style="display:flex;gap:8px;margin-top:10px">
           <button class="btn bg bsm" onclick="_wizLoyaltyConfirm(true)">✓ Correto</button>
           <button class="btn br_ bsm" onclick="_wizLoyaltyConfirm(false)">✕ Não é esse</button>
@@ -6556,6 +6558,7 @@ function _cfgMenuItems(){
   items.push({id:'sons',icon:'volume',label:'Sons & Voz',desc:({mudo:'Mudo',sons:'So sons',voz:'Voz',guiado:'Guiado'})[_AUDIO.modo]||'Sons'});
   if(hasPermission('config_editar')&&window.IS_HOSTED) items.push({id:'whatsapp',icon:'send',label:'Agente WhatsApp',desc:cfg.whatsapp_agent?.ativo?'Ativo':'Desativado'});
   if(hasPermission('convites')&&window.IS_HOSTED) items.push({id:'dispositivos',icon:'users',label:'Dispositivos vinculados',desc:''});
+  items.push({id:'fidelidade',icon:'star',label:'Fidelidade & Roleta',desc:(_getRoletaNome())});
   items.push({id:'ajuda',icon:'book',label:'Ajuda',desc:'Manual do usuario'});
   if(hasPermission('config_editar')) items.push({id:'sistema',icon:'alertTriangle',label:'Sistema',desc:'Salvar, resetar, backup'});
   return items;
@@ -7094,6 +7097,38 @@ function _renderCfgSection(sec){
       if(document.getElementById('cfg-membros-list')){_carregarMembros();_carregarConviteAtivo();}
     },50);
     break;
+
+  case 'fidelidade':{
+    const fc=_getFidelidadeCfg();
+    const premios=_getRotletaPremios();
+    const roletaNome=_getRoletaNome();
+    h=_cfgHeader('Fidelidade & Roleta')+`
+    <div class="card mb10">
+      <div class="bold fs14 mb8">Niveis de fidelidade</div>
+      <div class="fs12 t2 mb10">Clientes sobem de nivel conforme o total gasto. Cada nivel desbloqueia 1 giro na roleta.</div>
+      <div class="fg"><label class="fl">🐥 Pintinho → Bronze (Nivel ${fc.nivel_bronze})</label><input class="inp" type="number" value="${fc.gasto_bronze}" onchange="if(!ST.cfg.fidelidade)ST.cfg.fidelidade={...(_getFidelidadeCfg())};ST.cfg.fidelidade.gasto_bronze=+this.value;save('cfg')" placeholder="500"><div class="fs11 t3">R$ para atingir Bronze</div></div>
+      <div class="fg"><label class="fl">🥉 Bronze → Prata (Nivel ${fc.nivel_prata})</label><input class="inp" type="number" value="${fc.gasto_prata}" onchange="if(!ST.cfg.fidelidade)ST.cfg.fidelidade={...(_getFidelidadeCfg())};ST.cfg.fidelidade.gasto_prata=+this.value;save('cfg')" placeholder="1000"><div class="fs11 t3">R$ para atingir Prata</div></div>
+      <div class="fg"><label class="fl">🥈 Prata → Ouro (Nivel ${fc.nivel_ouro})</label><input class="inp" type="number" value="${fc.gasto_ouro}" onchange="if(!ST.cfg.fidelidade)ST.cfg.fidelidade={...(_getFidelidadeCfg())};ST.cfg.fidelidade.gasto_ouro=+this.value;save('cfg')" placeholder="1750"><div class="fs11 t3">R$ para atingir Ouro</div></div>
+    </div>
+    <div class="card mb10">
+      <div class="bold fs14 mb8">Configuracoes da Roleta</div>
+      <div class="fg"><label class="fl">Nome da roleta</label><input class="inp" value="${esc(roletaNome)}" onchange="ST.cfg.roleta_nome=this.value;save('cfg')" placeholder="Roleta do Peruano"></div>
+    </div>
+    <div class="card mb10">
+      <div class="bold fs14 mb8">Premios (${premios.length})</div>
+      <div class="fs12 t2 mb10">As probabilidades sao relativas (peso). Fatias da roda sao iguais visualmente.</div>
+      ${premios.map((p,i)=>`
+      <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px;padding:8px;background:var(--s2);border-radius:8px">
+        <input style="width:36px;font-size:18px;text-align:center;background:none;border:none" value="${p.ico}" onchange="_cfgRoletaPremioEdit(${i},'ico',this.value)">
+        <input class="inp" style="flex:1;padding:8px" value="${esc(p.nome)}" onchange="_cfgRoletaPremioEdit(${i},'nome',this.value)" placeholder="Nome">
+        <input class="inp" style="width:55px;padding:8px;text-align:center" type="number" value="${p.prob}" onchange="_cfgRoletaPremioEdit(${i},'prob',+this.value)" title="Peso probabilidade">
+        <input type="color" value="${p.cor}" onchange="_cfgRoletaPremioEdit(${i},'cor',this.value)" style="width:32px;height:32px;border:none;cursor:pointer;border-radius:4px">
+        <button class="btn br_ bxs" onclick="_cfgRoletaPremioRemove(${i})" style="padding:4px 8px">✕</button>
+      </div>`).join('')}
+      <button class="btn bb bsm mt8" onclick="_cfgRoletaPremioAdd()">+ Adicionar premio</button>
+    </div>`+_cfgFooter();
+    break;
+  }
 
   case 'ajuda':
     h=_cfgHeader('Ajuda')+`
@@ -11189,12 +11224,20 @@ function _crmCapture(ped){
     // Atualiza dados existentes
     existing.ultimo_pedido=ped.created;
     existing.total_pedidos=(existing.total_pedidos||0)+1;
+    const _prevNivel=_calcNivel(existing.total_gasto||0);
     existing.total_gasto=(existing.total_gasto||0)+(ped.total||0);
     existing.ticket_medio=existing.total_gasto/existing.total_pedidos;
     if(ped.telefone&&!existing.telefone) existing.telefone=ped.telefone;
     if(ped.endereco&&!existing.endereco) existing.endereco=ped.endereco;
-    // Loyalty: pontos
+    // Loyalty: pontos (mantém para compatibilidade)
     existing.pontos_fidelidade=(existing.pontos_fidelidade||0)+Math.floor(ped.total||0);
+    // Check nível — notificar se subiu
+    const _newNivel=_calcNivel(existing.total_gasto);
+    if(_newNivel>_prevNivel){
+      const tier=_getLoyaltyTier(existing);
+      const girosGanhos=_newNivel-_prevNivel;
+      toast(tier.emoji+' '+existing.nome+' subiu para Nv.'+_newNivel+' ('+tier.nome+')! +'+girosGanhos+' giro(s)','g',4000);
+    }
     // Check milestones
     _crmCheckRewards(existing);
     save('clientes');
@@ -11473,62 +11516,165 @@ async function _coachBriefing(tipo){
 //  LOYALTY — Cashback, recompensas, aniversário
 // ═══════════════════════════════════════════════════════════════
 
+// ── Fidelidade: Níveis por gasto total ──
+// Nível baseado no total gasto (R$). Configurável em ST.cfg.fidelidade
+function _getFidelidadeCfg(){
+  return ST.cfg.fidelidade||{
+    nivel_bronze:10,   // nível para Bronze
+    gasto_bronze:500,  // R$ para Bronze
+    nivel_prata:20,    // nível para Prata
+    gasto_prata:1000,  // R$ para Prata
+    nivel_ouro:30,     // nível para Ouro
+    gasto_ouro:1750    // R$ para Ouro
+  };
+}
+
+function _calcNivel(totalGasto){
+  const cfg=_getFidelidadeCfg();
+  if(totalGasto>=cfg.gasto_ouro) return cfg.nivel_ouro;
+  if(totalGasto>=cfg.gasto_prata){
+    const extra=totalGasto-cfg.gasto_prata;
+    const perLevel=(cfg.gasto_ouro-cfg.gasto_prata)/(cfg.nivel_ouro-cfg.nivel_prata);
+    return Math.min(cfg.nivel_prata+Math.floor(extra/perLevel), cfg.nivel_ouro);
+  }
+  if(totalGasto>=cfg.gasto_bronze){
+    const extra=totalGasto-cfg.gasto_bronze;
+    const perLevel=(cfg.gasto_prata-cfg.gasto_bronze)/(cfg.nivel_prata-cfg.nivel_bronze);
+    return Math.min(cfg.nivel_bronze+Math.floor(extra/perLevel), cfg.nivel_prata);
+  }
+  const perLevel=cfg.gasto_bronze/cfg.nivel_bronze;
+  return Math.min(Math.floor(totalGasto/perLevel), cfg.nivel_bronze);
+}
+
+function _getLoyaltyTier(cliente){
+  const gasto=cliente.total_gasto||0;
+  const cfg=_getFidelidadeCfg();
+  const nivel=_calcNivel(gasto);
+  if(nivel>=cfg.nivel_ouro) return{nome:'Ouro',emoji:'🥇',cor:'#f1c40f',nivel};
+  if(nivel>=cfg.nivel_prata) return{nome:'Prata',emoji:'🥈',cor:'#95a5a6',nivel};
+  if(nivel>=cfg.nivel_bronze) return{nome:'Bronze',emoji:'🥉',cor:'#cd7f32',nivel};
+  return{nome:'Pintinho',emoji:'🐥',cor:'#f7dc6f',nivel};
+}
+
 function _loyaltyStatus(cli){
   if(!cli) return null;
-  const rewards=ST.cfg.crm_rewards||{};
-  const pontos=cli.pontos_fidelidade||0;
+  const gasto=cli.total_gasto||0;
+  const cfg=_getFidelidadeCfg();
+  const nivel=_calcNivel(gasto);
+  const tier=_getLoyaltyTier(cli);
   const pedidos=cli.total_pedidos||0;
-  const cashback=cli.cashback_acumulado||0;
-  const nivel=pontos>=500?'Ouro':pontos>=200?'Prata':'Bronze';
-  const nivelCor={Ouro:'var(--am)',Prata:'var(--t2)',Bronze:'var(--ac)'}[nivel];
-  const proxReward=rewards.pedidos_meta?rewards.pedidos_meta-(pedidos%rewards.pedidos_meta):0;
-  return {pontos,nivel,nivelCor,cashback,proxReward,pedidos};
-}
-function _getLoyaltyTier(cliente){
-  const pontos=cliente.pontos_fidelidade||cliente.pontos||0;
-  if(pontos>=500)return{nome:'Ouro',emoji:'🥇'};
-  if(pontos>=200)return{nome:'Prata',emoji:'🥈'};
-  return{nome:'Bronze',emoji:'🥉'};
+  // Próximo nível
+  let proxNivel=nivel+1, gastoProx=0;
+  if(nivel<cfg.nivel_bronze){
+    const perLevel=cfg.gasto_bronze/cfg.nivel_bronze;
+    gastoProx=proxNivel*perLevel;
+  } else if(nivel<cfg.nivel_prata){
+    const perLevel=(cfg.gasto_prata-cfg.gasto_bronze)/(cfg.nivel_prata-cfg.nivel_bronze);
+    gastoProx=cfg.gasto_bronze+(proxNivel-cfg.nivel_bronze)*perLevel;
+  } else if(nivel<cfg.nivel_ouro){
+    const perLevel=(cfg.gasto_ouro-cfg.gasto_prata)/(cfg.nivel_ouro-cfg.nivel_prata);
+    gastoProx=cfg.gasto_prata+(proxNivel-cfg.nivel_prata)*perLevel;
+  } else {
+    gastoProx=gasto; // já é ouro max
+  }
+  const faltaProx=Math.max(0,Math.ceil(gastoProx-gasto));
+  // Giros: 1 por nível atingido
+  const girosGanhos=nivel;
+  const girosUsados=cli.giros_usados||0;
+  const girosDisp=Math.max(0,girosGanhos-girosUsados);
+  return {nivel,tier,gasto,pedidos,girosGanhos,girosUsados,girosDisp,faltaProx,proxNivel:nivel>=cfg.nivel_ouro?null:proxNivel};
 }
 
 // ═══════════════════════════════════════════════════════════════
 //  ROLETA PREMIADA — Fidelidade com spinning wheel
 // ═══════════════════════════════════════════════════════════════
-const ROLETA_META=200; // pontos necessários para girar
-const ROLETA_PREMIOS=[
-  {nome:'Refrigerante',     ico:'🥤',prob:25, cor:'#c0392b'},
-  {nome:'Suco (qualquer)',  ico:'🧃',prob:22, cor:'#1a1a2e'},
+// Prêmios padrão (usados se ST.cfg.roleta_premios não existir)
+const _ROLETA_PREMIOS_DEFAULT=[
+  {nome:'Refrigerante',     ico:'🥤',prob:32, cor:'#c0392b'},
+  {nome:'Suco (qualquer)',  ico:'🧃',prob:26, cor:'#1a1a2e'},
   {nome:'Suco Frozen',      ico:'🧊',prob:18, cor:'#b71c1c'},
-  {nome:'Baguetalho Sabor', ico:'🌯',prob:14, cor:'#212140'},
-  {nome:'Baguetalho Misto', ico:'🥖',prob:9,  cor:'#d32f2f'},
-  {nome:'Baguetudo',        ico:'🍔',prob:6,  cor:'#16213e'},
-  {nome:'Voucher Desconto', ico:'🎫',prob:4,  cor:'#b71c1c'},
-  {nome:'PIX R$30',         ico:'💰',prob:2,  cor:'#1b5e20'},
+  {nome:'Baguetalho Sabor', ico:'🌯',prob:11, cor:'#212140'},
+  {nome:'Baguetalho Misto', ico:'🥖',prob:6,  cor:'#d32f2f'},
+  {nome:'Baguetudo',        ico:'🍔',prob:4,  cor:'#16213e'},
+  {nome:'Voucher 10%',      ico:'🎫',prob:2,  cor:'#b71c1c'},
+  {nome:'PIX R$15',         ico:'💰',prob:1,  cor:'#1b5e20'},
 ];
+function _getRotletaPremios(){return ST.cfg.roleta_premios||_ROLETA_PREMIOS_DEFAULT;}
+function _getRoletaNome(){return ST.cfg.roleta_nome||'Roleta do Peruano';}
+// Helpers para editar prêmios nas config
+function _cfgRoletaPremioEdit(idx,field,val){
+  if(!ST.cfg.roleta_premios) ST.cfg.roleta_premios=JSON.parse(JSON.stringify(_ROLETA_PREMIOS_DEFAULT));
+  if(ST.cfg.roleta_premios[idx]) ST.cfg.roleta_premios[idx][field]=val;
+  save('cfg');
+}
+function _cfgRoletaPremioRemove(idx){
+  if(!ST.cfg.roleta_premios) ST.cfg.roleta_premios=JSON.parse(JSON.stringify(_ROLETA_PREMIOS_DEFAULT));
+  ST.cfg.roleta_premios.splice(idx,1);
+  save('cfg');_cfgSection='fidelidade';renderConfig();
+}
+function _cfgRoletaPremioAdd(){
+  if(!ST.cfg.roleta_premios) ST.cfg.roleta_premios=JSON.parse(JSON.stringify(_ROLETA_PREMIOS_DEFAULT));
+  ST.cfg.roleta_premios.push({nome:'Novo Premio',ico:'🎁',prob:10,cor:'#e74c3c'});
+  save('cfg');_cfgSection='fidelidade';renderConfig();
+}
 let _roletaSpinning=false;
 let _roletaCliId=null;
 
 function renderRoleta(){
   const el=document.getElementById('pg-roleta');
-  // Se veio com cliente selecionado
   const cli=_roletaCliId?ST.clientes.find(c=>c.id===_roletaCliId):null;
-  const pontos=cli?(cli.pontos_fidelidade||cli.pontos||0):0;
-  const podeGirar=pontos>=ROLETA_META&&!_roletaSpinning;
+  const premios=_getRotletaPremios();
+  const nomeRoleta=_getRoletaNome();
+  // Status de fidelidade
+  const status=cli?_loyaltyStatus(cli):null;
+  const tier=cli?_getLoyaltyTier(cli):{nome:'',emoji:'',nivel:0};
+  const girosDisp=status?status.girosDisp:0;
+  const podeGirar=girosDisp>0&&!_roletaSpinning;
   const hist=(cli?.roleta_hist||[]).slice(-5).reverse();
 
+  // Barra de progresso do nível
+  const _progBar=(status)=>{
+    if(!status||status.proxNivel===null) return '<div class="fs12" style="color:#f1c40f">🏆 Nível máximo atingido!</div>';
+    const cfg=_getFidelidadeCfg();
+    let gastoAtual=status.gasto, gastoInicio=0, gastoFim=0;
+    if(status.nivel<cfg.nivel_bronze){
+      gastoInicio=status.nivel*(cfg.gasto_bronze/cfg.nivel_bronze);
+      gastoFim=(status.nivel+1)*(cfg.gasto_bronze/cfg.nivel_bronze);
+    } else if(status.nivel<cfg.nivel_prata){
+      const pl=(cfg.gasto_prata-cfg.gasto_bronze)/(cfg.nivel_prata-cfg.nivel_bronze);
+      gastoInicio=cfg.gasto_bronze+(status.nivel-cfg.nivel_bronze)*pl;
+      gastoFim=gastoInicio+pl;
+    } else {
+      const pl=(cfg.gasto_ouro-cfg.gasto_prata)/(cfg.nivel_ouro-cfg.nivel_prata);
+      gastoInicio=cfg.gasto_prata+(status.nivel-cfg.nivel_prata)*pl;
+      gastoFim=gastoInicio+pl;
+    }
+    const pct=Math.min(100,Math.max(0,((gastoAtual-gastoInicio)/(gastoFim-gastoInicio))*100));
+    return`<div style="margin:8px 0">
+      <div class="rb fs11 t2 mb4"><span>Nível ${status.nivel} → ${status.proxNivel}</span><span>R$ ${status.faltaProx.toFixed(0)} restantes</span></div>
+      <div style="height:8px;background:rgba(255,255,255,.08);border-radius:4px;overflow:hidden">
+        <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,${tier.cor},#f7e38b);border-radius:4px;transition:width .5s"></div>
+      </div>
+    </div>`;
+  };
+
   el.innerHTML=`<div class="roleta-page">
-    <div style="font-size:30px;font-weight:900;margin-bottom:2px;color:#f7e38b;text-shadow:0 0 20px rgba(247,227,139,.2)">🎰 Roleta Premiada</div>
-    <div style="font-size:13px;color:var(--t2);margin-bottom:16px;letter-spacing:.5px">Acumule ${ROLETA_META} pontos e gire para ganhar</div>
+    <div style="font-size:30px;font-weight:900;margin-bottom:2px;color:#f7e38b;text-shadow:0 0 20px rgba(247,227,139,.2)">🎰 ${esc(nomeRoleta)}</div>
+    <div style="font-size:13px;color:var(--t2);margin-bottom:16px;letter-spacing:.5px">Suba de nível e ganhe giros para prêmios!</div>
 
     ${cli?`
       <div class="card mb12" style="padding:16px;border:1px solid rgba(200,164,78,.2)">
-        <div class="bold fs16" style="color:#f7e38b">${esc(cli.nome)}</div>
-        <div class="roleta-info">
-          <div class="roleta-info-item"><div class="roleta-info-val">${pontos}</div><div class="roleta-info-lbl">Pontos</div></div>
-          <div class="roleta-info-item"><div class="roleta-info-val">${_getLoyaltyTier(cli).emoji}</div><div class="roleta-info-lbl">${_getLoyaltyTier(cli).nome}</div></div>
-          <div class="roleta-info-item"><div class="roleta-info-val">${Math.floor(pontos/ROLETA_META)}</div><div class="roleta-info-lbl">Giros</div></div>
+        <div class="rb mb4">
+          <div class="bold fs16" style="color:#f7e38b">${esc(cli.nome)}</div>
+          <div style="font-size:28px">${tier.emoji}</div>
         </div>
-        ${pontos<ROLETA_META?`<div class="fs13 t2">Faltam <strong style="color:#f7e38b">${ROLETA_META-pontos}</strong> pontos para girar</div>`:''}
+        <div class="roleta-info">
+          <div class="roleta-info-item"><div class="roleta-info-val">${tier.nivel}</div><div class="roleta-info-lbl">Nível</div></div>
+          <div class="roleta-info-item"><div class="roleta-info-val" style="color:${tier.cor}">${tier.nome}</div><div class="roleta-info-lbl">Tier</div></div>
+          <div class="roleta-info-item"><div class="roleta-info-val" style="color:${girosDisp>0?'#2ecc71':'var(--t2)'}">${girosDisp}</div><div class="roleta-info-lbl">Giros</div></div>
+        </div>
+        <div class="fs12 t2 tc">Total gasto: <strong style="color:#f7e38b">R$ ${(status.gasto||0).toFixed(2)}</strong></div>
+        ${_progBar(status)}
       </div>
     `:`
       <div class="card mb12" style="padding:16px;border:1px solid rgba(200,164,78,.2)">
@@ -11551,11 +11697,11 @@ function renderRoleta(){
     </div>
 
     <div class="roleta-premios-legend">
-      ${ROLETA_PREMIOS.map(p=>`<div class="roleta-legend-item"><div class="roleta-legend-dot" style="background:${p.cor}"></div><span>${p.ico} ${esc(p.nome)}</span></div>`).join('')}
+      ${premios.map(p=>`<div class="roleta-legend-item"><div class="roleta-legend-dot" style="background:${p.cor}"></div><span>${p.ico} ${esc(p.nome)}</span></div>`).join('')}
     </div>
 
     <button class="roleta-btn" id="roleta-spin-btn" ${podeGirar?'':`disabled`} onclick="_roletaSpin()">
-      ${!cli?'Selecione um cliente':pontos<ROLETA_META?'Pontos insuficientes ('+pontos+'/'+ROLETA_META+')':_roletaSpinning?'Girando...':'🎰 Girar a Roleta'}
+      ${!cli?'Selecione um cliente':girosDisp<=0?'Sem giros disponíveis':_roletaSpinning?'Girando...':'🎰 Girar a Roleta ('+girosDisp+' giro'+(girosDisp>1?'s':'')+')'}
     </button>
 
     <div id="roleta-resultado"></div>
@@ -11581,11 +11727,13 @@ function _roletaSearchCli(q){
   const list=document.getElementById('roleta-cli-list');if(!list)return;
   q=q.toLowerCase().trim();
   if(!q){list.innerHTML='';return;}
-  const res=ST.clientes.filter(c=>c.nome.toLowerCase().includes(q)||(c.wa||'').includes(q)).slice(0,8);
+  const res=ST.clientes.filter(c=>c.nome.toLowerCase().includes(q)||(c.wa||'').includes(q)||(c.telefone||'').includes(q)).slice(0,8);
   list.innerHTML=res.map(c=>{
-    const pts=c.pontos_fidelidade||c.pontos||0;
+    const tier=_getLoyaltyTier(c);
+    const st=_loyaltyStatus(c);
+    const giros=st?st.girosDisp:0;
     return`<div class="card mb4" style="padding:10px;cursor:pointer" onclick="_roletaCliId='${c.id}';renderRoleta()">
-      <div class="rb"><div class="bold fs14">${esc(c.nome)}</div><div class="mono fs13" style="color:${pts>=ROLETA_META?'var(--gn)':'var(--t2)'}">${pts} pts</div></div>
+      <div class="rb"><div><div class="bold fs14">${tier.emoji} ${esc(c.nome)}</div><div class="fs11 t2">${tier.nome} · Nv.${tier.nivel}</div></div><div class="mono fs13" style="color:${giros>0?'var(--gn)':'var(--t2)'}">${giros} giro${giros!==1?'s':''}</div></div>
     </div>`;
   }).join('')||(q.length>=2?'<div class="fs13 t2 tc">Nenhum cliente encontrado</div>':'');
 }
@@ -11594,14 +11742,15 @@ function _roletaDrawWheel(highlightIdx){
   const canvas=document.getElementById('roleta-canvas');if(!canvas)return;
   const ctx=canvas.getContext('2d');
   const W=700,cx=W/2,cy=W/2,r=W/2-10;
-  const n=ROLETA_PREMIOS.length;
+  const premios=_getRotletaPremios();
+  const n=premios.length;
   const sliceAngle=(2*Math.PI)/n; // fatias IGUAIS visualmente
   let startAngle=-Math.PI/2;
 
   ctx.clearRect(0,0,W,W);
 
   // Desenhar fatias — IGUAIS, cores alternadas estilo cassino
-  ROLETA_PREMIOS.forEach((p,i)=>{
+  premios.forEach((p,i)=>{
     // Fatia principal
     ctx.beginPath();
     ctx.moveTo(cx,cy);
@@ -11673,69 +11822,65 @@ function _roletaSpin(){
   if(_roletaSpinning||!_roletaCliId)return;
   const cli=ST.clientes.find(c=>c.id===_roletaCliId);
   if(!cli)return;
-  const pontos=cli.pontos_fidelidade||cli.pontos||0;
-  if(pontos<ROLETA_META){toast('Pontos insuficientes','r');return;}
+  const status=_loyaltyStatus(cli);
+  if(!status||status.girosDisp<=0){toast('Sem giros disponíveis','r');return;}
 
   _roletaSpinning=true;
   const btn=document.getElementById('roleta-spin-btn');
   if(btn){btn.disabled=true;btn.textContent='🎰 Girando...';}
 
   // Sortear prêmio por probabilidade ponderada (nos bastidores)
-  const totalProb=ROLETA_PREMIOS.reduce((s,p)=>s+p.prob,0);
+  const premios=_getRotletaPremios();
+  const totalProb=premios.reduce((s,p)=>s+p.prob,0);
   let rand=Math.random()*totalProb;
   let winIdx=0;
-  for(let i=0;i<ROLETA_PREMIOS.length;i++){
-    rand-=ROLETA_PREMIOS[i].prob;
+  for(let i=0;i<premios.length;i++){
+    rand-=premios[i].prob;
     if(rand<=0){winIdx=i;break;}
   }
 
   // Calcular ângulo — fatias IGUAIS visualmente (360/n cada)
-  const n=ROLETA_PREMIOS.length;
+  const n=premios.length;
   const sliceDeg=360/n;
-  const targetDeg=winIdx*sliceDeg+sliceDeg/2; // centro da fatia vencedora
-  // Pointer está no topo (0°), wheel gira clockwise
-  const spinDeg=(360-targetDeg)+360*8+Math.random()*360; // 8+ voltas para mais dramaticidade
+  const targetDeg=winIdx*sliceDeg+sliceDeg/2;
+  const spinDeg=(360-targetDeg)+360*8+Math.random()*360;
 
   const canvas=document.getElementById('roleta-canvas');
   if(canvas){
     canvas.style.transition='none';
     canvas.style.transform='rotate(0deg)';
-    canvas.offsetHeight; // force reflow
+    canvas.offsetHeight;
     canvas.style.transition='transform 5.5s cubic-bezier(0.15,0.60,0.08,1.00)';
     canvas.style.transform='rotate('+spinDeg+'deg)';
   }
 
-  // Após parar
   setTimeout(()=>{
     _roletaSpinning=false;
-    const premio=ROLETA_PREMIOS[winIdx];
+    const premio=premios[winIdx];
 
-    // Debitar pontos
-    if(cli.pontos_fidelidade!==undefined) cli.pontos_fidelidade-=ROLETA_META;
-    else if(cli.pontos!==undefined) cli.pontos-=ROLETA_META;
+    // Debitar 1 giro
+    cli.giros_usados=(cli.giros_usados||0)+1;
     // Histórico
     cli.roleta_hist=cli.roleta_hist||[];
     cli.roleta_hist.push({nome:premio.nome,ico:premio.ico,data:now()});
     save('clientes');
 
-    // Mostrar resultado
+    // Resultado
+    const newStatus=_loyaltyStatus(cli);
     const res=document.getElementById('roleta-resultado');
     if(res) res.innerHTML=`<div class="roleta-resultado">
       <div class="roleta-premio-ico">${premio.ico}</div>
       <div class="roleta-premio-nome">${esc(premio.nome)}</div>
       <div class="fs14 t2 mt8">Parabéns, ${esc(cli.nome)}! 🎉</div>
-      <div class="fs12 t3 mt4">Saldo restante: ${(cli.pontos_fidelidade||cli.pontos||0)} pontos</div>
+      <div class="fs12 t3 mt4">Giros restantes: ${newStatus.girosDisp}</div>
     </div>`;
 
-    // Tocar som e anunciar
     playSound('sucesso');
     if(_AUDIO.vozAtiva()) falar('Parabéns '+cli.nome+'! Você ganhou '+premio.nome+'!');
 
-    // Update button
-    const newPts=cli.pontos_fidelidade||cli.pontos||0;
     if(btn){
-      btn.disabled=newPts<ROLETA_META;
-      btn.textContent=newPts>=ROLETA_META?'🎰 GIRAR NOVAMENTE!':'Pontos insuficientes ('+newPts+'/'+ROLETA_META+')';
+      btn.disabled=newStatus.girosDisp<=0;
+      btn.textContent=newStatus.girosDisp>0?'🎰 Girar novamente ('+newStatus.girosDisp+' giro'+(newStatus.girosDisp>1?'s':'')+')':(newStatus.proxNivel?'Suba para nível '+newStatus.proxNivel+' para mais giros':'Sem giros disponíveis');
     }
   },6200);
 }
