@@ -1497,6 +1497,7 @@ const _PP_PUBKEY_JWK={"crv":"P-256","ext":true,"key_ops":["verify"],"kty":"EC","
     </div>
     <div class="g2">
       <div class="fg"><label class="fl">Preço (R$)</label><input class="inp" id="ep-preco" type="number" step="0.01" placeholder="0,00"></div>
+      <div class="fg"><label class="fl">Custo (R$) <span class="t3 fs11">— opcional, para CMV</span></label><input class="inp" id="ep-custo" type="number" step="0.01" placeholder="0,00"></div>
       <div class="fg"><label class="fl">Tempo de preparo (min)</label><input class="inp" id="ep-tempo" type="number" placeholder="15" min="1" max="120"></div>
     </div>
     <div class="fg"><label class="fl">Categoria</label><select class="inp" id="ep-cat"></select></div>
@@ -6038,6 +6039,7 @@ function editProd(id){
   document.getElementById('mc-prod-title').textContent=p?'Editar Produto':'Novo Produto';
   document.getElementById('ep-nome').value=p?.nome||'';
   document.getElementById('ep-preco').value=p?.preco||'';
+  document.getElementById('ep-custo').value=p?.custo||'';
   document.getElementById('ep-ico').value=p?.ico||'🍽️';
   document.getElementById('ep-desc').value=p?.desc||'';
   document.getElementById('ep-tempo').value=p?.tempo||'15';
@@ -6127,7 +6129,16 @@ function saveProd(){
   const nome=document.getElementById('ep-nome').value.trim();
   if(!nome){toast('Nome obrigatório','r');return}
   const _parsePreco=v=>parseFloat((v||'').replace(',','.'))||0;
-  const data={nome,preco:_parsePreco(document.getElementById('ep-preco').value),ico:document.getElementById('ep-ico').value||'🍽️',desc:document.getElementById('ep-desc').value||'',cat_id:document.getElementById('ep-cat').value,tempo:parseInt(document.getElementById('ep-tempo').value)||15,dest:[..._prodDests],obs_grupos:[..._editObsGrupos],ativo:swVal('sw-prod-ativo'),venda_direta:swVal('sw-prod-vd'),foto:_epFoto||null};
+  const newPreco=_parsePreco(document.getElementById('ep-preco').value);
+  const newCusto=_parsePreco(document.getElementById('ep-custo').value);
+  // Guard: se preço mudou em produto existente, requer PIN
+  if(ST.editProd&&ST.editProd.preco&&newPreco!==ST.editProd.preco){
+    if(_userRole!=='dono'&&_userCargo!=='dono'&&_userCargo!=='gerente'){
+      askPin('Alterar Preço','PIN do dono para alterar preço',()=>_doSaveProd());return;
+    }
+  }
+  _doSaveProd();function _doSaveProd(){
+  const data={nome,preco:newPreco,custo:newCusto||0,ico:document.getElementById('ep-ico').value||'🍽️',desc:document.getElementById('ep-desc').value||'',cat_id:document.getElementById('ep-cat').value,tempo:parseInt(document.getElementById('ep-tempo').value)||15,dest:[..._prodDests],obs_grupos:[..._editObsGrupos],ativo:swVal('sw-prod-ativo'),venda_direta:swVal('sw-prod-vd'),foto:_epFoto||null};
   if(ST.editProd){
     // Busca pelo ID no array atual — sync pode ter substituído ST.produtos enquanto o modal estava aberto
     const idx=ST.produtos.findIndex(p=>p.id===ST.editProd.id);
@@ -6137,15 +6148,33 @@ function saveProd(){
     ST.produtos.push({id:uid(),...data});
   }
   save('produtos');closeMc('mc-prod');renderCardapio();toast('Produto salvo!','g');
+  } // fecha _doSaveProd
 }
 function delProd(id){confirm2(ppIcon('trash',36,1.4),'Excluir produto?','Não pode ser desfeito.','Excluir','br_',()=>{ST.produtos=ST.produtos.filter(p=>p.id!==id);save('produtos');renderCardapio();toast('Produto excluído','a')})}
 function editCat(id){
   const c=id?ST.categorias.find(x=>x.id===id):null;
-  const nome=prompt('Nome da categoria:',c?.nome||'');if(!nome)return;
-  const emoji=prompt('Emoji:',c?.emoji||'📂')||'📂';
-  const vd=confirm('Disponível para Venda Direta?\n(Todos os produtos desta categoria aparecerão no modo venda rápida)\n\nAtual: '+(c?.venda_direta?'SIM':'NÃO'));
+  showModal('mc-editcat',c?'Editar Categoria':'Nova Categoria',`
+    <div class="fg"><label class="fl">Nome da categoria</label>
+    <input class="inp" id="ec-nome" value="${esc(c?.nome||'')}" placeholder="Ex: Lanches" autofocus></div>
+    <div class="fg"><label class="fl">Emoji</label>
+    <input class="inp" id="ec-emoji" value="${esc(c?.emoji||'📂')}" placeholder="📂" style="font-size:22px;text-align:center" maxlength="4"></div>
+    <div class="rb" style="padding:10px 0">
+      <div><div class="fs13 bold">Venda Direta</div><div class="fs11 t2">Produtos aparecem no modo venda rápida</div></div>
+      <button class="sw ${c?.venda_direta?'on':''}" id="sw-cat-vd" onclick="toggleSw(this)"></button>
+    </div>
+    <div class="g2 mt8">
+      <button class="btn bp bw" onclick="_saveCatModal('${id||''}')">Salvar</button>
+      <button class="btn bs bw" onclick="closeMc('mc-editcat')">Cancelar</button>
+    </div>`);
+}
+function _saveCatModal(id){
+  const nome=(document.getElementById('ec-nome')?.value||'').trim();
+  if(!nome){toast('Nome obrigatório','r');return;}
+  const emoji=document.getElementById('ec-emoji')?.value||'📂';
+  const vd=swVal('sw-cat-vd');
+  const c=id?ST.categorias.find(x=>x.id===id):null;
   if(c){c.nome=nome;c.emoji=emoji;c.venda_direta=vd;}else ST.categorias.push({id:uid(),nome,emoji,venda_direta:vd});
-  save('categorias');renderCardapio();toast('Categoria salva!','g');
+  save('categorias');closeMc('mc-editcat');renderCardapio();toast('Categoria salva!','g');
 }
 function delCat(id){
   if(ST.produtos.some(p=>p.cat_id===id)){toast('Categoria tem produtos','r');return}
@@ -6494,7 +6523,12 @@ function renderRelatorio(){
       else formaData.outro=(formaData.outro||0)+(p.total||0);
     }
   });
+  const _relTab=ST._relTab||'vendas';
   document.getElementById('pg-relatorio').innerHTML=`
+  <div class="tabbar mb8">
+    ${[['vendas','Vendas'],['fidelidade','Fidelidade'],['custos','Custos']].map(([id,lbl])=>`<button class="tabitem ${_relTab===id?'on':''}" onclick="ST._relTab='${id}';renderRelatorio()">${lbl}</button>`).join('')}
+  </div>
+  ${_relTab==='fidelidade'?_renderRelFidelidade():_relTab==='custos'?_renderRelCustos(peds):`
   <div class="tabbar mb12">
     ${[['hoje','Hoje'],['semana','7 dias'],['mes','Mês']].map(([id,lbl])=>`<button class="tabitem ${per===id?'on':''}" onclick="ST._relPer='${id}';renderRelatorio()">${lbl}</button>`).join('')}
   </div>
@@ -6526,7 +6560,131 @@ function renderRelatorio(){
   <div class="g2 mt4">
     <button class="btn bs bw" onclick="Drive.exportJSON()">${ppIcon('save',14,1.7)} Exportar backup</button>
     <button class="btn bb bw" onclick="importBackup()">${ppIcon('download',14,1.7)} Importar</button>
-  </div>`;
+  </div>`}`;
+}
+
+// ── Relatório de Fidelidade ──
+function _renderRelFidelidade(){
+  const clientes=[...ST.clientes].sort((a,b)=>(b.total_gasto||0)-(a.total_gasto||0));
+  const totalGiros=clientes.reduce((s,c)=>s+(_calcNivel(c.total_gasto||0)),0);
+  const totalUsados=clientes.reduce((s,c)=>s+(c.giros_usados||0),0);
+  const totalPremios=clientes.reduce((s,c)=>s+((c.roleta_hist||[]).length),0);
+  const tiers={Pintinho:0,Bronze:0,Prata:0,Ouro:0};
+  clientes.forEach(c=>{const t=_getLoyaltyTier(c);tiers[t.nome]=(tiers[t.nome]||0)+1;});
+  // Histórico global de giros (todos os clientes)
+  const allHist=[];
+  clientes.forEach(c=>(c.roleta_hist||[]).forEach(h=>allHist.push({...h,cliente:c.nome})));
+  allHist.sort((a,b)=>new Date(b.data||0)-new Date(a.data||0));
+  const recentHist=allHist.slice(0,15);
+
+  return`<div class="g2 mb12">
+    <div class="kpi"><div class="kpi-v ac">${clientes.length}</div><div class="kpi-l">Clientes</div></div>
+    <div class="kpi"><div class="kpi-v am">${totalGiros}</div><div class="kpi-l">Giros ganhos</div></div>
+    <div class="kpi"><div class="kpi-v gn">${totalUsados}</div><div class="kpi-l">Giros usados</div></div>
+    <div class="kpi"><div class="kpi-v" style="color:#f7e38b">${totalPremios}</div><div class="kpi-l">Prêmios</div></div>
+  </div>
+  <div class="sec-title">Distribuição por Tier</div>
+  <div class="card mb10" style="display:flex;gap:12px;padding:14px;flex-wrap:wrap;justify-content:center">
+    ${[{n:'Pintinho',e:'🐥',c:'#f7dc6f'},{n:'Bronze',e:'🥉',c:'#cd7f32'},{n:'Prata',e:'🥈',c:'#95a5a6'},{n:'Ouro',e:'🥇',c:'#f1c40f'}].map(t=>`<div style="text-align:center;min-width:60px">
+      <div style="font-size:28px">${t.e}</div>
+      <div class="bold fs16" style="color:${t.c}">${tiers[t.n]||0}</div>
+      <div class="fs11 t2">${t.n}</div>
+    </div>`).join('')}
+  </div>
+  <div class="sec-title">Ranking de Clientes</div>
+  <div class="card mb10">
+    ${clientes.length?clientes.slice(0,15).map((c,i)=>{
+      const t=_getLoyaltyTier(c);const nv=_calcNivel(c.total_gasto||0);
+      return`<div class="rb" style="padding:8px 0;border-bottom:1px solid var(--br)">
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="width:22px;height:22px;border-radius:50%;background:var(--acbg);color:var(--ac);font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center">${i+1}</div>
+          <div><div class="fs13 bold">${t.emoji} ${esc(c.nome)}</div>
+          <div class="fs11 t2">Nv.${nv} · ${t.nome} · ${(c.total_pedidos||0)} pedidos</div></div>
+        </div>
+        <div class="bold mono am">${fmtR(c.total_gasto||0)}</div>
+      </div>`;
+    }).join(''):'<div class="fs12 t2 tc">Nenhum cliente cadastrado</div>'}
+  </div>
+  ${(ST._waNotifs||[]).length?`<div class="sec-title">📱 Notificações WhatsApp pendentes</div>
+  <div class="card mb10">
+    ${(ST._waNotifs||[]).map((n,i)=>`<div class="rb" style="padding:8px 0;border-bottom:1px solid var(--br)">
+      <div><div class="fs13 bold">${esc(n.cliente)}</div>
+      <div class="fs11 t2">Subiu para Nv.${n.nivel} (${n.tier}) · ${n.data?fmtDH(n.data):''}</div></div>
+      <div style="display:flex;gap:4px">
+        <a href="${n.url}" target="_blank" class="btn bp bxs" style="text-decoration:none">📱 Enviar</a>
+        <button class="btn bs bxs" onclick="ST._waNotifs.splice(${i},1);renderRelatorio()">✓</button>
+      </div>
+    </div>`).join('')}
+    <button class="btn bs bxs mt8" onclick="ST._waNotifs=[];renderRelatorio()">Limpar todas</button>
+  </div>`:''}
+  ${recentHist.length?`<div class="sec-title">Últimos Giros da Roleta</div>
+  <div class="card mb10">
+    ${recentHist.map(h=>`<div class="rb" style="padding:6px 0;border-bottom:1px solid var(--br)">
+      <div style="display:flex;align-items:center;gap:6px">
+        <span style="font-size:18px">${h.ico||'🎁'}</span>
+        <div><div class="fs13">${esc(h.nome)}</div><div class="fs11 t3">${esc(h.cliente)}</div></div>
+      </div>
+      <div class="fs11 t2 mono">${h.data?fmtDH(h.data):''}</div>
+    </div>`).join('')}
+  </div>`:''}`;
+}
+
+// ── Relatório de Custos / CMV ──
+function _renderRelCustos(peds){
+  // Calcular CMV baseado no custo dos produtos vendidos
+  const prodMap={};
+  ST.produtos.forEach(p=>{prodMap[p.nome]={preco:p.preco||0,custo:p.custo||0};});
+  let receitaTotal=0, custoTotal=0;
+  const prodStats={};
+  peds.forEach(p=>p.itens.forEach(it=>{
+    const info=prodMap[it.nome]||{preco:it.preco||0,custo:0};
+    const rec=(it.preco||info.preco)*it.qty;
+    const cst=info.custo*it.qty;
+    receitaTotal+=rec;custoTotal+=cst;
+    if(!prodStats[it.nome])prodStats[it.nome]={nome:it.nome,qty:0,receita:0,custo:0};
+    prodStats[it.nome].qty+=it.qty;
+    prodStats[it.nome].receita+=rec;
+    prodStats[it.nome].custo+=cst;
+  }));
+  const lucro=receitaTotal-custoTotal;
+  const cmvPct=receitaTotal>0?((custoTotal/receitaTotal)*100):0;
+  const topProds=Object.values(prodStats).sort((a,b)=>b.receita-a.receita).slice(0,10);
+  const semCusto=ST.produtos.filter(p=>p.ativo&&!p.custo);
+
+  return`<div class="g2 mb12">
+    <div class="kpi"><div class="kpi-v gn">${fmtR(receitaTotal)}</div><div class="kpi-l">Receita</div></div>
+    <div class="kpi"><div class="kpi-v rd">${fmtR(custoTotal)}</div><div class="kpi-l">Custo (CMV)</div></div>
+    <div class="kpi"><div class="kpi-v ${lucro>=0?'gn':'rd'}">${fmtR(lucro)}</div><div class="kpi-l">Lucro bruto</div></div>
+    <div class="kpi"><div class="kpi-v am">${cmvPct.toFixed(1)}%</div><div class="kpi-l">CMV %</div></div>
+  </div>
+  ${cmvPct>0?`<div class="card mb10" style="padding:14px">
+    <div class="fs12 t2 mb4">O ideal é manter o CMV entre <b>28-35%</b> para restaurantes.</div>
+    <div style="height:10px;background:rgba(255,255,255,.08);border-radius:5px;overflow:hidden">
+      <div style="height:100%;width:${Math.min(cmvPct,100)}%;background:${cmvPct<=35?'var(--gn)':cmvPct<=45?'var(--am)':'var(--rd)'};border-radius:5px;transition:width .5s"></div>
+    </div>
+    <div class="fs11 t3 mt4">${cmvPct<=35?'✅ CMV saudável':cmvPct<=45?'⚠️ CMV acima do ideal':'🔴 CMV alto — revise preços ou custos'}</div>
+  </div>`:''}
+  <div class="sec-title">Análise por Produto</div>
+  <div class="card mb10">
+    ${topProds.length?topProds.map(p=>{
+      const margem=p.receita>0?((p.receita-p.custo)/p.receita*100):0;
+      return`<div class="rb" style="padding:8px 0;border-bottom:1px solid var(--br)">
+        <div><div class="fs13 bold">${esc(p.nome)}</div>
+        <div class="fs11 t2">${p.qty}x vendido · Custo: ${fmtR(p.custo)}</div></div>
+        <div style="text-align:right"><div class="bold mono gn">${fmtR(p.receita)}</div>
+        <div class="fs11 ${margem>=50?'gn':margem>=30?'am':'rd'}">${p.custo>0?margem.toFixed(0)+'% margem':'sem custo'}</div></div>
+      </div>`;
+    }).join(''):'<div class="fs12 t2 tc">Sem dados no período</div>'}
+  </div>
+  ${semCusto.length?`<div class="sec-title">⚠️ Produtos sem custo cadastrado (${semCusto.length})</div>
+  <div class="card mb10">
+    <div class="fs12 t2 mb8">Cadastre o custo em Cardápio → Editar produto para análise de CMV completa.</div>
+    ${semCusto.slice(0,8).map(p=>`<div class="rb" style="padding:4px 0;border-bottom:1px solid var(--br)">
+      <div class="fs13">${p.ico||'🍽️'} ${esc(p.nome)}</div>
+      <div class="bold am mono">${fmtR(p.preco)}</div>
+    </div>`).join('')}
+    ${semCusto.length>8?'<div class="fs11 t3 mt4">...e mais '+(semCusto.length-8)+' produtos</div>':''}
+  </div>`:''}`;
 }
 
 function importBackup(){const inp=document.createElement('input');inp.type='file';inp.accept='.json';inp.onchange=e=>{if(e.target.files[0])Drive.import(e.target.files[0])};inp.click()}
@@ -6559,6 +6717,7 @@ function _cfgMenuItems(){
   if(hasPermission('config_editar')&&window.IS_HOSTED) items.push({id:'whatsapp',icon:'send',label:'Agente WhatsApp',desc:cfg.whatsapp_agent?.ativo?'Ativo':'Desativado'});
   if(hasPermission('convites')&&window.IS_HOSTED) items.push({id:'dispositivos',icon:'users',label:'Dispositivos vinculados',desc:''});
   items.push({id:'fidelidade',icon:'star',label:'Fidelidade & Roleta',desc:(_getRoletaNome())});
+  items.push({id:'cardapio_digital',icon:'monitor',label:'Cardápio Digital',desc:'QR Code para clientes'});
   items.push({id:'ajuda',icon:'book',label:'Ajuda',desc:'Manual do usuario'});
   if(hasPermission('config_editar')) items.push({id:'sistema',icon:'alertTriangle',label:'Sistema',desc:'Salvar, resetar, backup'});
   return items;
@@ -7498,7 +7657,15 @@ function _adminNovoEstab(){
 }
 async function _adminGerarConvite(uid,nome){
   if(!fbDB)return;
-  const cargo=prompt('Cargo do funcionario (caixa, cozinha, gerente):','caixa');
+  showModal('mc-cargo-conv','Cargo do Funcionário',`
+    <div class="fs13 t2 mb12">Selecione o cargo para o convite de <b>${esc(nome)}</b>:</div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      ${['caixa','cozinha','gerente'].map(c=>`<button class="btn bs bw" style="justify-content:flex-start;gap:8px" onclick="closeMc('mc-cargo-conv');_finishGerarConvite('${uid}','${esc(nome)}','${c}')">
+        ${c==='caixa'?'💰':c==='cozinha'?'👨‍🍳':'🔑'} ${c.charAt(0).toUpperCase()+c.slice(1)}</button>`).join('')}
+    </div>
+    <button class="btn bs bw mt10" onclick="closeMc('mc-cargo-conv')">Cancelar</button>`);
+}
+async function _finishGerarConvite(uid,nome,cargo){
   if(!cargo)return;
   const code=Math.random().toString(36).slice(2,8).toUpperCase();
   const exp=new Date();exp.setHours(exp.getHours()+48);
@@ -7858,7 +8025,20 @@ async function _adminExportAll(){
     a.click();toast('Exportado!','g');
   }catch(e){toast('Erro: '+e.message,'r');}
 }
-function changePIN(){askPin('Alterar PIN','Digite o PIN atual',()=>{const n=prompt('Novo PIN de 4 dígitos:');if(!n||n.length!==4||isNaN(n)){toast('PIN deve ter 4 dígitos','r');return}ST.cfg.pin=n;save('cfg');toast('PIN alterado!','g')})}
+function changePIN(){askPin('Alterar PIN','Digite o PIN atual',()=>{
+  showModal('mc-newpin','Novo PIN',`
+    <div class="fs13 t2 mb12">Digite o novo PIN de 4 dígitos:</div>
+    <input class="inp" id="newpin-val" type="number" inputmode="numeric" maxlength="4" placeholder="0000" style="font-size:28px;text-align:center;letter-spacing:12px;font-weight:900" autofocus>
+    <div class="g2 mt12">
+      <button class="btn bp bw" onclick="_saveNewPin()">Salvar</button>
+      <button class="btn bs bw" onclick="closeMc('mc-newpin')">Cancelar</button>
+    </div>`);
+})}
+function _saveNewPin(){
+  const n=(document.getElementById('newpin-val')?.value||'').trim();
+  if(!n||n.length!==4||isNaN(n)){toast('PIN deve ter 4 dígitos','r');return;}
+  ST.cfg.pin=n;save('cfg');closeMc('mc-newpin');toast('PIN alterado!','g');
+}
 function _renderManualSections(sections,version){
   return `<div style="max-height:70vh;overflow-y:auto;padding:4px">
     ${sections.map((s,i)=>`
@@ -10107,9 +10287,63 @@ function _atualizarBadgeLicenca(){
   bdg.style.display='block';
 }
 
+// ═══════════════════════════════════════════
+//  CARDÁPIO DIGITAL PÚBLICO
+// ═══════════════════════════════════════════
+function _renderPublicMenu(){
+  // Carregar dados do localStorage (se disponível)
+  const cfg=DB.get('cfg',{nome:'Restaurante',logo:'🍔'});
+  const prods=(DB.get('produtos')||[]).filter(p=>p.ativo);
+  const cats=DB.get('categorias')||[];
+  const catsComProd=cats.filter(c=>prods.some(p=>p.cat_id===c.id));
+  document.body.style.background='#0d1117';
+  document.body.innerHTML=`
+    <div style="max-width:500px;margin:0 auto;padding:16px;font-family:system-ui,-apple-system,sans-serif;color:#e6edf3">
+      <div style="text-align:center;padding:20px 0;border-bottom:1px solid rgba(255,255,255,.1)">
+        <div style="font-size:48px;margin-bottom:8px">${cfg.logo||'🍔'}</div>
+        <div style="font-size:22px;font-weight:900;color:#f7e38b">${_esc(cfg.nome||'Cardápio')}</div>
+        ${cfg.slogan?'<div style="font-size:13px;color:#8b949e;margin-top:4px">'+_esc(cfg.slogan)+'</div>':''}
+      </div>
+      ${catsComProd.map(c=>`
+        <div style="margin-top:20px">
+          <div style="font-size:16px;font-weight:700;margin-bottom:10px;color:#f0e6d3">${c.emoji||'📂'} ${_esc(c.nome)}</div>
+          ${prods.filter(p=>p.cat_id===c.id).map(p=>`
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.06)">
+              <div style="flex:1;min-width:0">
+                <div style="font-size:14px;font-weight:600">${p.ico||'🍽️'} ${_esc(p.nome)}</div>
+                ${p.desc?'<div style="font-size:11px;color:#8b949e;margin-top:2px">'+_esc(p.desc)+'</div>':''}
+              </div>
+              <div style="font-size:15px;font-weight:700;color:#f7e38b;margin-left:12px;white-space:nowrap">R$ ${(p.preco||0).toFixed(2).replace('.',',')}</div>
+            </div>`).join('')}
+        </div>`).join('')}
+      ${!catsComProd.length?'<div style="text-align:center;padding:40px 0;color:#8b949e">Cardápio não disponível no momento.</div>':''}
+      <div style="text-align:center;padding:24px 0;margin-top:20px;border-top:1px solid rgba(255,255,255,.1)">
+        <div style="font-size:12px;color:#8b949e">${_esc(cfg.footer||'Obrigado pela preferência!')}</div>
+        <div style="font-size:10px;color:#484f58;margin-top:6px">PedePronto PDV</div>
+      </div>
+    </div>`;
+  function _esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+}
+function _printQRCardapio(){
+  const url=window.location.origin+window.location.pathname+'?menu=1';
+  const nome=ST.cfg.nome||'PedePronto';
+  const w=window.open('','_blank','width=400,height=500');
+  w.document.write('<html><head><title>QR Cardápio</title></head><body style="text-align:center;padding:30px;font-family:sans-serif">'+
+    '<h2>'+nome+'</h2>'+
+    '<p>Escaneie para ver o cardápio</p>'+
+    '<img src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data='+encodeURIComponent(url)+'" style="width:250px;height:250px">'+
+    '<p style="font-size:11px;color:#888;margin-top:12px">'+url+'</p>'+
+    '<script>setTimeout(()=>{window.print()},500)<\/script></body></html>');
+  w.document.close();
+}
+
 //  BOOT
 // ═══════════════════════════════════════════
 (async function boot(){
+  // ── Cardápio Digital Público — se ?menu=1, renderiza só o cardápio ──
+  if(new URLSearchParams(window.location.search).get('menu')==='1'){
+    _renderPublicMenu();return;
+  }
   // Safety net: se nenhuma tela de login aparecer em 6s, força exibição
   window._loginShown=false;
   const _safetyTimer=setTimeout(()=>{
@@ -11237,6 +11471,18 @@ function _crmCapture(ped){
       const tier=_getLoyaltyTier(existing);
       const girosGanhos=_newNivel-_prevNivel;
       toast(tier.emoji+' '+existing.nome+' subiu para Nv.'+_newNivel+' ('+tier.nome+')! +'+girosGanhos+' giro(s)','g',4000);
+      // WhatsApp automático para cliente (se tem telefone)
+      const fone=(existing.telefone||existing.wa||'').replace(/\D/g,'');
+      if(fone.length>=10){
+        const nomeEstab=ST.cfg.nome||'PedePronto';
+        const msg=`🎉 Parabéns ${existing.nome}! Você subiu para o Nível ${_newNivel} (${tier.emoji} ${tier.nome}) no ${nomeEstab}!\n\n🎰 Você ganhou ${girosGanhos} giro(s) na ${_getRoletaNome()}!\n\nVenha girar e ganhar prêmios! 🎁`;
+        const waNum=fone.startsWith('55')?fone:'55'+fone;
+        const waUrl='https://wa.me/'+waNum+'?text='+encodeURIComponent(msg);
+        // Salvar notificação pendente para o dono enviar
+        ST._waNotifs=ST._waNotifs||[];
+        ST._waNotifs.push({cliente:existing.nome,nivel:_newNivel,tier:tier.nome,url:waUrl,data:now()});
+        if(ST._waNotifs.length>20)ST._waNotifs=ST._waNotifs.slice(-20);
+      }
     }
     // Check milestones
     _crmCheckRewards(existing);
@@ -12538,6 +12784,39 @@ _bootWithData=function(){
 // Hook into _renderCfgSection
 const _origRenderCfg=_renderCfgSection;
 _renderCfgSection=function(sec){
+  if(sec==='cardapio_digital'){
+    const cfg=ST.cfg;
+    const url=window.location.origin+window.location.pathname+'?menu=1';
+    const qrUrl='https://api.qrserver.com/v1/create-qr-code/?size=300x300&data='+encodeURIComponent(url);
+    const el=document.getElementById('pg-config');
+    const prods=ST.produtos.filter(p=>p.ativo);
+    const cats=ST.categorias.filter(c=>prods.some(p=>p.cat_id===c.id));
+    el.innerHTML=_cfgHeader('Cardápio Digital')+`
+    <div class="card mb10" style="text-align:center;padding:20px">
+      <div class="bold fs16 mb8">📱 QR Code do Cardápio</div>
+      <div class="fs12 t2 mb12">Imprima ou exiba este QR Code. Seus clientes escaneiam e veem o cardápio no celular.</div>
+      <div style="background:#fff;display:inline-block;padding:16px;border-radius:12px;margin-bottom:12px">
+        <img id="qr-cardapio" src="${qrUrl}" alt="QR Code" style="width:200px;height:200px;display:block">
+      </div>
+      <div class="fs11 t3 mb10" style="word-break:break-all">${esc(url)}</div>
+      <div class="g2">
+        <button class="btn bp bsm" onclick="_printQRCardapio()">🖨️ Imprimir QR</button>
+        <button class="btn bs bsm" onclick="navigator.clipboard?.writeText('${esc(url)}');toast('Link copiado!','g')">📋 Copiar link</button>
+      </div>
+    </div>
+    <div class="card mb10" style="padding:16px">
+      <div class="bold fs14 mb8">Prévia do cardápio</div>
+      <div class="fs12 t2 mb10">${prods.length} produtos em ${cats.length} categorias</div>
+      ${cats.map(c=>`<div class="mb8">
+        <div class="bold fs13 mb4">${c.emoji||'📂'} ${esc(c.nome)}</div>
+        ${prods.filter(p=>p.cat_id===c.id).map(p=>`<div class="rb" style="padding:4px 0;border-bottom:1px solid var(--br)">
+          <div class="fs12">${p.ico||'🍽️'} ${esc(p.nome)}</div>
+          <div class="bold am mono fs12">${fmtR(p.preco)}</div>
+        </div>`).join('')}
+      </div>`).join('')}
+    </div>`+_cfgFooter();
+    return;
+  }
   if(sec==='crm'){
     const cfg=ST.cfg;
     const rewards=cfg.crm_rewards||{};
