@@ -941,6 +941,25 @@ html.tam-g .tbtn,html.tam-g .tbtn-ico{font-size:17px;min-height:44px}
 .wiz-quick-val{padding:10px 18px;border-radius:12px;border:1.5px solid var(--br2);background:var(--sf);color:var(--tx);font-size:15px;font-weight:700;font-family:var(--mono);cursor:pointer;transition:all .18s}
 .wiz-quick-val:hover,.wiz-quick-val:active{border-color:var(--ac);background:var(--acbg)}
 
+/* ── ROLETA FIDELIDADE ── */
+.roleta-page{max-width:500px;margin:0 auto;padding:16px;text-align:center}
+.roleta-wrap{position:relative;width:min(320px,80vw);height:min(320px,80vw);margin:20px auto}
+.roleta-canvas{width:100%;height:100%;border-radius:50%;box-shadow:0 0 30px rgba(217,119,87,.25),0 0 0 6px var(--ac),0 0 0 10px var(--s3)}
+.roleta-pointer{position:absolute;top:-18px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:16px solid transparent;border-right:16px solid transparent;border-top:30px solid var(--ac);filter:drop-shadow(0 2px 4px rgba(0,0,0,.4));z-index:2}
+.roleta-btn{margin-top:24px;width:100%;padding:18px;font-size:18px;font-weight:800;border-radius:14px;border:none;background:linear-gradient(135deg,var(--ac),var(--acd));color:#fff;cursor:pointer;transition:all .2s;font-family:inherit}
+.roleta-btn:disabled{opacity:.4;cursor:not-allowed}
+.roleta-btn:not(:disabled):hover{filter:brightness(1.1);transform:scale(1.02)}
+.roleta-resultado{margin-top:20px;padding:20px;border-radius:16px;background:var(--sf);border:2px solid var(--acg);text-align:center}
+.roleta-premio-nome{font-size:22px;font-weight:900;color:var(--ac);margin-top:8px}
+.roleta-premio-ico{font-size:48px;margin-bottom:4px}
+.roleta-info{display:flex;justify-content:center;gap:20px;margin:16px 0}
+.roleta-info-item{text-align:center}
+.roleta-info-val{font-size:24px;font-weight:900;font-family:var(--mono);color:var(--ac)}
+.roleta-info-lbl{font-size:11px;color:var(--t2);text-transform:uppercase;letter-spacing:.5px;font-weight:700}
+.roleta-hist{text-align:left;margin-top:16px}
+.roleta-hist-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--br);font-size:13px}
+@keyframes roletaSpin{0%{transform:rotate(0deg)}100%{transform:rotate(var(--spin-deg))}}
+
 /* ── PRODUCT GRID ── */
 .pos-prod-scroll{
   flex:1;overflow-y:auto;overflow-x:hidden;
@@ -1292,6 +1311,7 @@ const _PP_PUBKEY_JWK={"crv":"P-256","ext":true,"key_ops":["verify"],"kty":"EC","
       <div class="pg" id="pg-dados"></div>
       <div class="pg" id="pg-cardapio"></div>
       <div class="pg" id="pg-clientes"></div>
+      <div class="pg" id="pg-roleta"></div>
       <div class="pg" id="pg-caixa"></div>
       <div class="pg" id="pg-relatorio"></div>
       <div class="pg" id="pg-funcionarios"></div>
@@ -2827,7 +2847,7 @@ function confirm2(ico,title,msg,okLbl,okCls,cb,cancelCb){
 // ═══════════════════════════════════════════
 //  NAVIGATION
 // ═══════════════════════════════════════════
-const PAGE_TTL={dash:'Início',dados:'Dados',funcionarios:'Funcionários',mesas:'Mesas',balcao:'Balcão',delivery:'Delivery',producao:'Produção',cardapio:'Cardápio',clientes:'Clientes',caixa:'Caixa',relatorio:'Relatórios',config:'Configurações',admin:'Super Admin',agente:'Agente IA',pedido:'Novo Pedido',fechar:'Fechar Conta',pagamento:'Pagamento'};
+const PAGE_TTL={dash:'Início',dados:'Dados',funcionarios:'Funcionários',mesas:'Mesas',balcao:'Balcão',delivery:'Delivery',producao:'Produção',cardapio:'Cardápio',clientes:'Clientes',roleta:'Roleta Premiada',caixa:'Caixa',relatorio:'Relatórios',config:'Configurações',admin:'Super Admin',agente:'Agente IA',pedido:'Novo Pedido',fechar:'Fechar Conta',pagamento:'Pagamento'};
 
 function applyResponsiveNav(){
   const mobile=isMobile();
@@ -3012,7 +3032,7 @@ function nav(pg,extra){
   const sbi=document.getElementById('sbm-'+pg);if(sbi)sbi.classList.add('on');
   document.querySelectorAll('.bn-item').forEach(b=>b.classList.remove('on'));
   const bni=document.getElementById('bnm-'+pg);if(bni)bni.classList.add('on');
-  const renders={dash:renderDash,dados:renderDados,mesas:renderMesas,balcao:renderBalcao,delivery:renderDelivery,producao:renderProducao,cardapio:renderCardapio,clientes:renderClientes,caixa:renderCaixa,relatorio:renderRelatorio,funcionarios:renderFuncionarios,config:renderConfig,admin:renderAdmin,agente:renderAgente,pedido:()=>{if(_cxFlow.tipo)return _renderCxFlow();const np=ST.novoPedido;if(np&&np._vendaDireta&&np._wizStep!==undefined)renderVendaDiretaWizard();else if(np&&np._wizStep!==undefined&&!np._addingTo&&np.tipo==='balcao')renderPedidoWizard();else renderPedido(extra);},fechar:()=>renderFechar(extra),pagamento:()=>renderPagamento(extra)};
+  const renders={dash:renderDash,dados:renderDados,mesas:renderMesas,balcao:renderBalcao,delivery:renderDelivery,producao:renderProducao,cardapio:renderCardapio,clientes:renderClientes,roleta:renderRoleta,caixa:renderCaixa,relatorio:renderRelatorio,funcionarios:renderFuncionarios,config:renderConfig,admin:renderAdmin,agente:renderAgente,pedido:()=>{if(_cxFlow.tipo)return _renderCxFlow();const np=ST.novoPedido;if(np&&np._vendaDireta&&np._wizStep!==undefined)renderVendaDiretaWizard();else if(np&&np._wizStep!==undefined&&!np._addingTo&&np.tipo==='balcao')renderPedidoWizard();else renderPedido(extra);},fechar:()=>renderFechar(extra),pagamento:()=>renderPagamento(extra)};
   if(renders[pg])renders[pg]();
   // KDS tick: ligar no dash (produção inline) e producao, desligar ao sair
   if(pg==='producao'||pg==='dash')_kdsStartTick();else _kdsStopTick();
@@ -3427,8 +3447,9 @@ const BT={
       // ═══ DADOS — tamanho duplo (tudo grande) ═══
       all.push(...CMD.left,...CMD.dbl);
       if(ped.mesa_label)all.push(...txt(row2b('Mesa:',this.norm(ped.mesa_label))),...CMD.lf);
-      all.push(...txt(row2b('Data:',fmtDH(ped.created).split(' ')[1]||fmtDH(ped.created))),...CMD.lf);
-      all.push(...txt(row2b('Modal:',ped.consumo==='viagem'?'VIAGEM':'LOCAL')),...CMD.lf);
+      all.push(...txt(row2b('Hora:',fmtDH(ped.created).split(' ')[1]||fmtDH(ped.created))),...CMD.lf);
+      const _modTxt=ped.tipo==='delivery'?'Delivery':ped.consumo==='viagem'?'Para Viagem':'Para consumo local';
+      all.push(...txt(ctr2(_modTxt.toUpperCase())),...CMD.lf);
       all.push(...CMD.normal,...CMD.left,...CMD.lf);
       all.push(...txt(dst()),...CMD.lf,...CMD.lf);
 
@@ -3471,11 +3492,12 @@ const BT={
         // Fidelidade — pontos do cliente
         if(ped.cliente_nome){
           const cli=ST.clientes.find(c=>c.nome===ped.cliente_nome);
-          if(cli&&cli.pontos!==undefined){
-            const nivel=cli.pontos>=300?'OURO':cli.pontos>=100?'PRATA':'BRONZE';
+          if(cli){
+            const _pts=cli.pontos_fidelidade||cli.pontos||0;
+            const nivel=_pts>=500?'OURO':_pts>=200?'PRATA':'BRONZE';
             all.push(...CMD.lf,...txt(dsh()),...CMD.lf);
             all.push(...CMD.center,...CMD.dblH,...CMD.bold1,...txt('FIDELIDADE'),...CMD.bold0,...CMD.normal,...CMD.lf);
-            all.push(...CMD.center,...CMD.dblH,...txt(cli.pontos+' pts - '+nivel),...CMD.normal,...CMD.lf);
+            all.push(...CMD.center,...CMD.dblH,...txt(_pts+' pts - '+nivel),...CMD.normal,...CMD.lf);
           }
         }
         // Redes sociais
@@ -5458,7 +5480,7 @@ function _wizPhoneInput(val){
       np._loyaltyClientId=cliente.id;
       np._loyaltyClientName=cliente.nome||'Cliente';
       const tier=_getLoyaltyTier?_getLoyaltyTier(cliente):{nome:'',emoji:''};
-      const pts=cliente.pontos||0;
+      const pts=cliente.pontos_fidelidade||cliente.pontos||0;
       document.getElementById('wiz-phone-result').innerHTML=`<div class="wiz-phone-result">
         <div class="wiz-phone-name">${ppIcon('user',16,1.7)} ${esc(cliente.nome||'')}</div>
         <div class="wiz-phone-detail">${pts} pontos ${tier.emoji||''} ${tier.nome||''}</div>
@@ -6208,7 +6230,10 @@ function renderClientes(){
   const clis=ST.clientes.filter(c=>!q||c.nome.toLowerCase().includes(q)||(c.wa||'').includes(q));
   document.getElementById('pg-clientes').innerHTML=`
   <div class="rb mb10"><div class="bold">${ST.clientes.length} clientes</div>
-  <button class="btn bp bsm" onclick="editCli(null)">+ Novo</button></div>
+  <div style="display:flex;gap:6px">
+    <button class="btn bs bsm" onclick="nav('roleta')">🎰 Roleta</button>
+    <button class="btn bp bsm" onclick="editCli(null)">+ Novo</button>
+  </div></div>
   <div class="fg mb10"><input class="inp" placeholder="🔍 Buscar..." oninput="ST._cliSearch=this.value;renderClientes()" value="${esc(ST._cliSearch||'')}"></div>
   ${clis.map(c=>{
     const peds=ST.pedidos.filter(p=>p.cliente_nome===c.nome&&p.status==='pago');
@@ -11454,6 +11479,227 @@ function _getLoyaltyTier(cliente){
   if(pontos>=500)return{nome:'Ouro',emoji:'🥇'};
   if(pontos>=200)return{nome:'Prata',emoji:'🥈'};
   return{nome:'Bronze',emoji:'🥉'};
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  ROLETA PREMIADA — Fidelidade com spinning wheel
+// ═══════════════════════════════════════════════════════════════
+const ROLETA_META=200; // pontos necessários para girar
+const ROLETA_PREMIOS=[
+  {nome:'Refrigerante',     ico:'🥤',prob:25, cor:'#e74c3c'},
+  {nome:'Suco (qualquer)',  ico:'🧃',prob:22, cor:'#f39c12'},
+  {nome:'Suco Frozen',      ico:'🧊',prob:18, cor:'#3498db'},
+  {nome:'Baguetalho Sabor', ico:'🌯',prob:14, cor:'#2ecc71'},
+  {nome:'Baguetalho Misto', ico:'🥖',prob:9,  cor:'#9b59b6'},
+  {nome:'Baguetudo',        ico:'🍔',prob:6,  cor:'#1abc9c'},
+  {nome:'Voucher Desconto', ico:'🎫',prob:4,  cor:'#e67e22'},
+  {nome:'PIX R$30',         ico:'💰',prob:2,  cor:'#f1c40f'},
+];
+let _roletaSpinning=false;
+let _roletaCliId=null;
+
+function renderRoleta(){
+  const el=document.getElementById('pg-roleta');
+  // Se veio com cliente selecionado
+  const cli=_roletaCliId?ST.clientes.find(c=>c.id===_roletaCliId):null;
+  const pontos=cli?(cli.pontos_fidelidade||cli.pontos||0):0;
+  const podeGirar=pontos>=ROLETA_META&&!_roletaSpinning;
+  const hist=(cli?.roleta_hist||[]).slice(-5).reverse();
+
+  el.innerHTML=`<div class="roleta-page">
+    <div style="font-size:28px;font-weight:900;margin-bottom:4px">🎰 Roleta Premiada</div>
+    <div style="font-size:14px;color:var(--t2);margin-bottom:16px">Acumule ${ROLETA_META} pontos e ganhe prêmios!</div>
+
+    ${cli?`
+      <div class="card mb12" style="padding:14px">
+        <div class="bold fs16">${esc(cli.nome)}</div>
+        <div class="roleta-info">
+          <div class="roleta-info-item"><div class="roleta-info-val">${pontos}</div><div class="roleta-info-lbl">Pontos</div></div>
+          <div class="roleta-info-item"><div class="roleta-info-val">${_getLoyaltyTier(cli).emoji}</div><div class="roleta-info-lbl">${_getLoyaltyTier(cli).nome}</div></div>
+          <div class="roleta-info-item"><div class="roleta-info-val">${Math.floor(pontos/ROLETA_META)}</div><div class="roleta-info-lbl">Giros</div></div>
+        </div>
+        ${pontos<ROLETA_META?`<div class="fs13 t2">Faltam <strong style="color:var(--ac)">${ROLETA_META-pontos}</strong> pontos para girar</div>`:''}
+      </div>
+    `:`
+      <div class="card mb12" style="padding:14px">
+        <div class="bold mb8">Selecione um cliente</div>
+        <div class="fg"><input class="inp" id="roleta-cli-search" placeholder="🔍 Nome ou telefone..." oninput="_roletaSearchCli(this.value)"></div>
+        <div id="roleta-cli-list" style="max-height:200px;overflow-y:auto;margin-top:8px"></div>
+      </div>
+    `}
+
+    <div class="roleta-wrap">
+      <div class="roleta-pointer"></div>
+      <canvas class="roleta-canvas" id="roleta-canvas" width="640" height="640"></canvas>
+    </div>
+
+    <button class="roleta-btn" id="roleta-spin-btn" ${podeGirar?'':`disabled`} onclick="_roletaSpin()">
+      ${!cli?'Selecione um cliente':pontos<ROLETA_META?'Pontos insuficientes ('+pontos+'/'+ROLETA_META+')':_roletaSpinning?'Girando...':'🎰 GIRAR A ROLETA!'}
+    </button>
+
+    <div id="roleta-resultado"></div>
+
+    ${hist.length?`
+      <div class="roleta-hist">
+        <div class="bold fs14 mb8">Últimos prêmios</div>
+        ${hist.map(h=>`<div class="roleta-hist-item">
+          <span style="font-size:20px">${h.ico||'🎁'}</span>
+          <span style="flex:1">${esc(h.nome)}</span>
+          <span class="fs11 t2 mono">${h.data?fmtDH(h.data):''}</span>
+        </div>`).join('')}
+      </div>
+    `:''}
+
+    <button class="btn bs mt16" onclick="_roletaCliId=null;renderRoleta()">← Trocar cliente</button>
+  </div>`;
+
+  _roletaDrawWheel();
+}
+
+function _roletaSearchCli(q){
+  const list=document.getElementById('roleta-cli-list');if(!list)return;
+  q=q.toLowerCase().trim();
+  if(!q){list.innerHTML='';return;}
+  const res=ST.clientes.filter(c=>c.nome.toLowerCase().includes(q)||(c.wa||'').includes(q)).slice(0,8);
+  list.innerHTML=res.map(c=>{
+    const pts=c.pontos_fidelidade||c.pontos||0;
+    return`<div class="card mb4" style="padding:10px;cursor:pointer" onclick="_roletaCliId='${c.id}';renderRoleta()">
+      <div class="rb"><div class="bold fs14">${esc(c.nome)}</div><div class="mono fs13" style="color:${pts>=ROLETA_META?'var(--gn)':'var(--t2)'}">${pts} pts</div></div>
+    </div>`;
+  }).join('')||(q.length>=2?'<div class="fs13 t2 tc">Nenhum cliente encontrado</div>':'');
+}
+
+function _roletaDrawWheel(highlightIdx){
+  const canvas=document.getElementById('roleta-canvas');if(!canvas)return;
+  const ctx=canvas.getContext('2d');
+  const cx=320,cy=320,r=300;
+  const totalProb=ROLETA_PREMIOS.reduce((s,p)=>s+p.prob,0);
+  let startAngle=-Math.PI/2; // começa do topo
+
+  ctx.clearRect(0,0,640,640);
+  ROLETA_PREMIOS.forEach((p,i)=>{
+    const sliceAngle=(p.prob/totalProb)*2*Math.PI;
+    // Fatia
+    ctx.beginPath();
+    ctx.moveTo(cx,cy);
+    ctx.arc(cx,cy,r,startAngle,startAngle+sliceAngle);
+    ctx.closePath();
+    ctx.fillStyle=highlightIdx===i?'#fff':p.cor;
+    ctx.fill();
+    ctx.strokeStyle='rgba(0,0,0,.3)';
+    ctx.lineWidth=2;
+    ctx.stroke();
+
+    // Texto + emoji
+    const midAngle=startAngle+sliceAngle/2;
+    const textR=r*0.65;
+    const tx=cx+Math.cos(midAngle)*textR;
+    const ty=cy+Math.sin(midAngle)*textR;
+    ctx.save();
+    ctx.translate(tx,ty);
+    ctx.rotate(midAngle+Math.PI/2);
+    // Emoji
+    ctx.font='bold 28px sans-serif';
+    ctx.fillStyle='#fff';
+    ctx.textAlign='center';
+    ctx.fillText(p.ico,0,-10);
+    // Nome
+    ctx.font='bold 13px sans-serif';
+    ctx.fillStyle=highlightIdx===i?'#000':'#fff';
+    ctx.shadowColor='rgba(0,0,0,.5)';ctx.shadowBlur=3;
+    const words=p.nome.split(' ');
+    words.forEach((w,wi)=>ctx.fillText(w,0,8+wi*14));
+    ctx.shadowBlur=0;
+    ctx.restore();
+    startAngle+=sliceAngle;
+  });
+  // Centro
+  ctx.beginPath();
+  ctx.arc(cx,cy,40,0,Math.PI*2);
+  ctx.fillStyle='var(--sf,#1a1b22)';
+  ctx.fill();
+  ctx.strokeStyle='var(--ac,#D97757)';
+  ctx.lineWidth=4;
+  ctx.stroke();
+  ctx.font='bold 16px sans-serif';
+  ctx.fillStyle='#fff';
+  ctx.textAlign='center';
+  ctx.textBaseline='middle';
+  ctx.fillText('🎰',cx,cy);
+}
+
+function _roletaSpin(){
+  if(_roletaSpinning||!_roletaCliId)return;
+  const cli=ST.clientes.find(c=>c.id===_roletaCliId);
+  if(!cli)return;
+  const pontos=cli.pontos_fidelidade||cli.pontos||0;
+  if(pontos<ROLETA_META){toast('Pontos insuficientes','r');return;}
+
+  _roletaSpinning=true;
+  const btn=document.getElementById('roleta-spin-btn');
+  if(btn){btn.disabled=true;btn.textContent='🎰 Girando...';}
+
+  // Sortear prêmio por probabilidade ponderada
+  const totalProb=ROLETA_PREMIOS.reduce((s,p)=>s+p.prob,0);
+  let rand=Math.random()*totalProb;
+  let winIdx=0;
+  for(let i=0;i<ROLETA_PREMIOS.length;i++){
+    rand-=ROLETA_PREMIOS[i].prob;
+    if(rand<=0){winIdx=i;break;}
+  }
+
+  // Calcular ângulo de destino
+  let cumAngle=0;
+  for(let i=0;i<winIdx;i++) cumAngle+=(ROLETA_PREMIOS[i].prob/totalProb)*360;
+  const sliceDeg=(ROLETA_PREMIOS[winIdx].prob/totalProb)*360;
+  const targetDeg=cumAngle+sliceDeg/2; // centro da fatia
+  // Pointer está no topo (0°), wheel gira clockwise
+  // Para parar com a fatia no topo: girar (360 - targetDeg) + rotações extras
+  const spinDeg=(360-targetDeg)+360*6+Math.random()*360; // 6+ voltas
+
+  const canvas=document.getElementById('roleta-canvas');
+  if(canvas){
+    canvas.style.transition='none';
+    canvas.style.transform='rotate(0deg)';
+    // Force reflow
+    canvas.offsetHeight;
+    canvas.style.transition='transform 5s cubic-bezier(0.17,0.67,0.12,0.99)';
+    canvas.style.transform='rotate('+spinDeg+'deg)';
+  }
+
+  // Após parar
+  setTimeout(()=>{
+    _roletaSpinning=false;
+    const premio=ROLETA_PREMIOS[winIdx];
+
+    // Debitar pontos
+    if(cli.pontos_fidelidade!==undefined) cli.pontos_fidelidade-=ROLETA_META;
+    else if(cli.pontos!==undefined) cli.pontos-=ROLETA_META;
+    // Histórico
+    cli.roleta_hist=cli.roleta_hist||[];
+    cli.roleta_hist.push({nome:premio.nome,ico:premio.ico,data:now()});
+    save('clientes');
+
+    // Mostrar resultado
+    const res=document.getElementById('roleta-resultado');
+    if(res) res.innerHTML=`<div class="roleta-resultado">
+      <div class="roleta-premio-ico">${premio.ico}</div>
+      <div class="roleta-premio-nome">${esc(premio.nome)}</div>
+      <div class="fs14 t2 mt8">Parabéns, ${esc(cli.nome)}! 🎉</div>
+      <div class="fs12 t3 mt4">Saldo restante: ${(cli.pontos_fidelidade||cli.pontos||0)} pontos</div>
+    </div>`;
+
+    // Tocar som e anunciar
+    playSound('sucesso');
+    if(_AUDIO.vozAtiva()) falar('Parabéns '+cli.nome+'! Você ganhou '+premio.nome+'!');
+
+    // Update button
+    const newPts=cli.pontos_fidelidade||cli.pontos||0;
+    if(btn){
+      btn.disabled=newPts<ROLETA_META;
+      btn.textContent=newPts>=ROLETA_META?'🎰 GIRAR NOVAMENTE!':'Pontos insuficientes ('+newPts+'/'+ROLETA_META+')';
+    }
+  },5500);
 }
 
 // ═══════════════════════════════════════════════════════════════
