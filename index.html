@@ -143,6 +143,41 @@ html.theme-metro .metro-tile:active{filter:brightness(.92);transform:scale(.98)}
 }
 .dash-kpi-val{font-size:18px;font-weight:800;line-height:1.2}
 .dash-kpi-lbl{font-size:10px;color:var(--t3);font-weight:500;margin-top:2px}
+@media(max-width:480px){
+  .dash-kpi-strip{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .dash-kpi-item{padding:12px 10px}
+  .dash-kpi-val{font-size:20px}
+}
+/* KPI grid for classic dashboard */
+.dash-kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px}
+@media(max-width:600px){.dash-kpi-grid{grid-template-columns:1fr 1fr}}
+.dash-kpi-toggle{display:none}
+@media(max-width:600px){.dash-kpi-toggle{display:block}}
+
+/* ── Pedido card action bar (responsive) ── */
+.ped-actions{display:flex;gap:6px;justify-content:flex-end}
+@media(max-width:600px){
+  .ped-actions{justify-content:stretch;margin-top:8px;border-top:1px solid var(--br);padding-top:8px}
+  .ped-actions .btn{flex:1;min-height:42px}
+}
+
+/* ── Client list compact ── */
+.cli-row{display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid var(--br);transition:background .15s}
+.cli-row:last-child{border-bottom:none}
+.cli-row:hover{background:var(--s2)}
+.cli-avatar{width:40px;height:40px;border-radius:50%;background:var(--s3);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:var(--ac);flex-shrink:0;text-transform:uppercase}
+.cli-info{flex:1;min-width:0}
+.cli-name{font-weight:700;font-size:14px;display:flex;align-items:center;gap:6px}
+.cli-meta{font-size:12px;color:var(--t2);margin-top:1px;display:flex;align-items:center;gap:8px}
+.cli-tier{font-size:9px;font-weight:800;padding:2px 7px;border-radius:99px;text-transform:uppercase;letter-spacing:.5px}
+.cli-tier.t-pintinho{background:var(--s3);color:var(--t2)}
+.cli-tier.t-bronze{background:rgba(205,127,50,.15);color:#cd7f32}
+.cli-tier.t-prata{background:rgba(192,192,192,.15);color:#c0c0c0}
+.cli-tier.t-ouro{background:rgba(255,215,0,.12);color:#ffd700}
+
+/* ── Config sections grouped ── */
+.cfg-group-title{font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:1px;padding:14px 4px 6px;font-family:var(--mono)}
+.cfg-group-title:first-child{padding-top:4px}
 
 /* Header */
 .dash-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding:0 2px}
@@ -2775,7 +2810,8 @@ const isMobile=()=>window.innerWidth<=768;
 function toast(msg,type='g',dur=3000){
   const w=document.getElementById('toast-w');
   const el=document.createElement('div');
-  el.className=`toast ${type}`;el.textContent=msg;w.appendChild(el);
+  const icons={g:'✅',r:'❌',a:'⚠️',b:'ℹ️'};
+  el.className=`toast ${type}`;el.innerHTML=`<span style="font-size:15px;flex-shrink:0">${icons[type]||''}</span> ${msg}`;w.appendChild(el);
   setTimeout(()=>{el.style.opacity='0';el.style.transform='translateX(14px)';el.style.transition='all .3s';setTimeout(()=>el.remove(),300)},dur);
 }
 
@@ -3934,6 +3970,7 @@ function _renderDashProducao(_i,origemIco,origemLbl,origemCls){
       <div style="margin-bottom:8px;display:flex;justify-content:center;color:var(--gn)">${_i('checkCircle',32)}</div>
       <div class="bold fs14">Nenhum pedido em aberto</div>
       <div class="fs12 t3 mt4">Tudo em dia!</div>
+      ${hasPermission('pdv')?`<button class="btn bp bsm mt12" onclick="novoBalcao()" style="gap:5px">${_i('plus',14)} Novo Pedido</button>`:''}
     </div>`;
   }
   peds.forEach((p,qi)=>{
@@ -3960,7 +3997,7 @@ function _renderDashProducao(_i,origemIco,origemLbl,origemCls){
         <div style="min-width:0;flex:1">
           <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:4px">
             <div class="bold fs15">${p.num}</div><div class="bold fs14 t2">·</div><div class="bold fs14">${lbl}</div>
-            <span class="bdg ${p.consumo==='viagem'?'bpu':'bg'}" style="font-size:10px;display:inline-flex;align-items:center;gap:3px">${p.consumo==='viagem'?_i('bag',11)+' Viagem':_i('utensils',11)+' Local'}</span>
+            <span class="bdg ${p.consumo==='viagem'?'bpu':'bg'}" style="font-size:10px;display:inline-flex;align-items:center;gap:3px">${p.consumo==='viagem'?'🛍️ Viagem':'🍽️ Local'}</span>
             ${late?`<span class="kds-late-badge" style="display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:800;color:var(--rd);background:var(--rdbg);padding:2px 8px;border-radius:99px;border:1px solid var(--rdbr)">${_i('alertTriangle',11)} +${Math.ceil((Date.now()-prevMs)/60000)}min</span>`:'<span class="kds-late-badge" style="display:none"></span>'}
           </div>
           ${p.cliente_nome?`<div class="fs12 t2" style="display:flex;align-items:center;gap:4px">${_i('user',12)} ${p.cliente_nome}</div>`:''}
@@ -4018,18 +4055,23 @@ function _renderDashStatusBar(_i){
   const sangrias=(ST.caixa.movs||[]).filter(m=>m.tipo==='sangria').reduce((s,m)=>s+(m.valor||0),0);
   const fundoIni=ST.caixa.saldo_inicial||0;
   const emCaixa=fundoIni+receita-sangrias;
-  return`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px;margin-bottom:14px">
+  // Primary KPIs (always visible)
+  let kpiHtml=`<div class="dash-kpi-grid">
     <div class="kpi" style="padding:10px"><div class="kpi-v gn" style="font-size:20px">${fmtR(receita)}</div><div class="kpi-l">Faturamento</div></div>
-    <div class="kpi" style="padding:10px"><div class="kpi-v ac" style="font-size:20px">${fmtR(ticketMedio)}</div><div class="kpi-l">Ticket médio</div></div>
-    <div class="kpi" style="padding:10px"><div class="kpi-v" style="font-size:20px;color:var(--bl)">${fmtR(emCaixa)}</div><div class="kpi-l">Em caixa</div></div>
     <div class="kpi" style="padding:10px"><div class="kpi-v am" style="font-size:20px">${abertos.length}</div><div class="kpi-l">Em aberto</div></div>
-    <div class="kpi" style="padding:10px"><div class="kpi-v" style="font-size:20px">${mesasOcupadas}</div><div class="kpi-l">Mesas</div></div>
-    <div class="kpi" style="padding:10px"><div class="kpi-v" style="font-size:20px;color:var(--pu)">${deliveriesHoje}</div><div class="kpi-l">Deliveries</div></div>
+    <div class="kpi" style="padding:10px"><div class="kpi-v" style="font-size:20px;color:var(--bl)">${fmtR(emCaixa)}</div><div class="kpi-l">Em caixa</div></div>
     <div class="kpi" style="padding:10px"><div class="kpi-v" style="font-size:20px">${pedHoje.length}</div><div class="kpi-l">Pagos</div></div>
-    ${cancelados>0?`<div class="kpi" style="padding:10px;border-color:var(--rdbr);background:var(--rdbg)"><div class="kpi-v rd" style="font-size:20px">${cancelados}</div><div class="kpi-l">Cancelados</div></div>`
-    :`<div class="kpi" style="padding:10px"><div class="kpi-v gn" style="font-size:20px">0</div><div class="kpi-l">Cancelados</div></div>`}
-    ${solicCancel>0?`<div class="kpi" style="padding:10px;border-color:var(--ambr);background:var(--ambg);cursor:pointer" onclick="document.querySelector('.cancel-solic-card')?.scrollIntoView({behavior:'smooth'})"><div class="kpi-v am" style="font-size:20px">${solicCancel}</div><div class="kpi-l">Solic. cancel.</div></div>`:''}
   </div>`;
+  // Secondary KPIs (collapsible on mobile)
+  const secKpis=[];
+  secKpis.push(`<div class="kpi" style="padding:10px"><div class="kpi-v ac" style="font-size:20px">${fmtR(ticketMedio)}</div><div class="kpi-l">Ticket médio</div></div>`);
+  secKpis.push(`<div class="kpi" style="padding:10px"><div class="kpi-v" style="font-size:20px">${mesasOcupadas}</div><div class="kpi-l">Mesas</div></div>`);
+  secKpis.push(`<div class="kpi" style="padding:10px"><div class="kpi-v" style="font-size:20px;color:var(--pu)">${deliveriesHoje}</div><div class="kpi-l">Deliveries</div></div>`);
+  if(cancelados>0) secKpis.push(`<div class="kpi" style="padding:10px;border-color:var(--rdbr);background:var(--rdbg)"><div class="kpi-v rd" style="font-size:20px">${cancelados}</div><div class="kpi-l">Cancelados</div></div>`);
+  if(solicCancel>0) secKpis.push(`<div class="kpi" style="padding:10px;border-color:var(--ambr);background:var(--ambg);cursor:pointer" onclick="document.querySelector('.cancel-solic-card')?.scrollIntoView({behavior:'smooth'})"><div class="kpi-v am" style="font-size:20px">${solicCancel}</div><div class="kpi-l">Solic. cancel.</div></div>`);
+  if(secKpis.length) kpiHtml+=`<div class="dash-kpi-extra" id="dash-kpi-extra" style="display:none"><div class="dash-kpi-grid">${secKpis.join('')}</div></div>
+  <button class="btn bs bxs bw dash-kpi-toggle" onclick="const ex=document.getElementById('dash-kpi-extra');const show=ex.style.display==='none';ex.style.display=show?'block':'none';this.innerHTML=show?'▲ Menos detalhes':'▼ Mais detalhes'" style="width:100%;margin-bottom:10px;font-size:12px;min-height:32px;padding:6px">▼ Mais detalhes</button>`;
+  return kpiHtml;
 }
 
 function _renderDashPedidosAtivos(_i){
@@ -4053,14 +4095,14 @@ function _renderDashPedidosAtivos(_i){
           <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px">
             <span class="bold fs13">${esc(p.cliente_nome||'Sem nome')}</span>
             <span class="bdg ${origemBdg[tipo]||'bs'}" style="font-size:10px;display:inline-flex;align-items:center;gap:3px">${origemIco[tipo]||''} ${lbl}</span>
-            <span class="bdg ${p.consumo==='viagem'?'bpu':'bg'}" style="font-size:10px;display:inline-flex;align-items:center;gap:3px">${p.consumo==='viagem'?_i('bag',11)+' Viagem':_i('utensils',11)+' Local'}</span>
+            <span class="bdg ${p.consumo==='viagem'?'bpu':'bg'}" style="font-size:10px;display:inline-flex;align-items:center;gap:3px">${p.consumo==='viagem'?'🛍️ Viagem':'🍽️ Local'}</span>
           </div>
           <div class="fs12 t2">${mins}min · ${p.itens.length} item(ns)</div>
           <div class="fs12 t3 mt2">${p.itens.map(i=>i.qty+'× '+i.nome).join(' · ')}</div>
         </div>
       </div>
       <div class="rb"><div class="bold am mono">${fmtR(p.total)}</div>
-      <div style="display:flex;gap:6px">
+      <div class="ped-actions">
         <button class="btn bb bxs" onclick="showCupomPrevia('${p.id}','comanda')">${_i('printer',14)}</button>
         ${hasPermission('cancelar')||hasPermission('cancelar_solicitar')?`<button class="btn br_ bxs" onclick="_cancelPed('${p.id}')">${_i('x',14)}</button>`:''}
         <button class="btn ba bxs" style="gap:4px" onclick="editarPedido('${p.id}')">${_i('edit',14)} Editar</button>
@@ -5702,26 +5744,31 @@ function renderBalcao(){
     <div class="mstat"><div class="mstat-v am">${fmtR(totalVal)}</div><div class="mstat-l">Total fila</div></div>
     <div class="mstat"><div class="mstat-v" style="color:var(--bl)">${tempoMed}min</div><div class="mstat-l">Tempo médio</div></div>
   </div>
-  ${peds.length===0&&aguardando.length===0?`<div class="card mb10" style="text-align:center;color:var(--t2);padding:22px">Nenhum pedido no balcão</div>`:''}
+  ${peds.length===0&&aguardando.length===0?`<div class="card mb10" style="text-align:center;padding:30px 16px">
+    <div style="font-size:36px;margin-bottom:8px">🍽️</div>
+    <div class="bold fs14" style="color:var(--t2);margin-bottom:4px">Nenhum pedido no balcão</div>
+    <div class="fs12 t3 mb12">Comece criando um novo pedido</div>
+    <button class="btn bp bsm" onclick="novoBalcao()" style="gap:5px">${ppIcon('plus',14,1.7)} Novo Pedido</button>
+  </div>`:''}
   ${peds.map(p=>`<div class="card mb8">
     <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:8px">
       <div class="senha-badge">${p.num.replace('#','')}</div>
       <div style="flex:1;min-width:0">
         <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px">
           <span class="bold fs13">${esc(p.cliente_nome||'Sem nome')}</span>
-          <span class="bdg ${p.consumo==='viagem'?'bpu':'bg'}" style="font-size:10px;display:inline-flex;align-items:center;gap:3px">${p.consumo==='viagem'?ppIcon('bag',11,1.7)+' Viagem':ppIcon('utensils',11,1.7)+' Local'}</span>
+          <span class="bdg ${p.consumo==='viagem'?'bpu':'bg'}" style="font-size:10px;display:inline-flex;align-items:center;gap:3px">${p.consumo==='viagem'?'🛍️ Viagem':'🍽️ Local'}</span>
         </div>
         <div class="fs12 t2">${elapsed(Date.now()-new Date(p.created).getTime())} · ${p.itens.length} item(ns)</div>
         <div class="fs12 t3 mt2">${p.itens.map(i=>i.qty+'x '+i.nome).join(' · ')}</div>
       </div>
     </div>
-    <div class="rb"><div class="bold am mono">${fmtR(p.total)}</div>
-    <div style="display:flex;gap:6px;flex-wrap:wrap">
+    <div class="rb"><div class="bold am mono">${fmtR(p.total)}</div></div>
+    <div class="ped-actions">
       <button class="btn bb bxs" onclick="showCupomPrevia('${p.id}','comanda')">${ppIcon('printer',14,1.7)}</button>
       <button class="btn bg bxs" style="gap:4px" onclick="_addItensBalcao('${p.id}')">${ppIcon('plus',14,1.7)} Itens</button>
       <button class="btn ba bxs" style="gap:4px" onclick="editarPedido('${p.id}')">${ppIcon('edit',14,1.7)} Editar</button>
       <button class="btn bp bxs" style="gap:4px" onclick="nav('pagamento','${p.id}')">${ppIcon('credit',14,1.7)} Pagar</button>
-    </div></div>
+    </div>
   </div>`).join('')}
   ${aguardando.length?`<div class="sec-title mt4">Aguardando retirada</div>
   ${aguardando.map(p=>`<div class="card mb8" style="border-color:var(--gnbr);background:var(--gnbg)">
@@ -5731,7 +5778,7 @@ function renderBalcao(){
         <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px">
           <span class="bold fs13">${esc(p.cliente_nome||'Sem nome')}</span>
           <span class="bdg bg" style="font-size:10px;display:inline-flex;align-items:center;gap:3px">${ppIcon('check',11,1.7)} Pago</span>
-          <span class="bdg ${p.consumo==='viagem'?'bpu':'bg'}" style="font-size:10px;display:inline-flex;align-items:center;gap:3px">${p.consumo==='viagem'?ppIcon('bag',11,1.7)+' Viagem':ppIcon('utensils',11,1.7)+' Local'}</span>
+          <span class="bdg ${p.consumo==='viagem'?'bpu':'bg'}" style="font-size:10px;display:inline-flex;align-items:center;gap:3px">${p.consumo==='viagem'?'🛍️ Viagem':'🍽️ Local'}</span>
         </div>
         <div class="fs12 t2">${elapsed(Date.now()-new Date(p.created).getTime())} · ${p.itens.length} item(ns)</div>
         <div class="fs12 t3 mt2">${p.itens.map(i=>i.qty+'x '+i.nome).join(' · ')}</div>
@@ -5829,7 +5876,7 @@ function renderProducao(){
       <span class="bold t2">·</span>
       <span class="bold fs14">${p.mesa_label||p.tipo}</span>
       ${p.cliente_nome?`<span class="fs12 t2" style="display:inline-flex;align-items:center;gap:3px">${ppIcon('user',12,1.7)} ${p.cliente_nome}</span>`:''}
-      <span class="bdg ${p.consumo==='viagem'?'bpu':'bg'}" style="font-size:10px;display:inline-flex;align-items:center;gap:3px">${p.consumo==='viagem'?ppIcon('bag',11,1.7)+' Viagem':ppIcon('utensils',11,1.7)+' Local'}</span>
+      <span class="bdg ${p.consumo==='viagem'?'bpu':'bg'}" style="font-size:10px;display:inline-flex;align-items:center;gap:3px">${p.consumo==='viagem'?'🛍️ Viagem':'🍽️ Local'}</span>
     </div>
     <div class="fs12 t2 mb10">${p.itens.filter(i=>i.dest===dest).map(i=>i.qty+'× '+i.nome).join(' · ')}</div>
     <button class="btn bg bw bsm" style="gap:5px" onclick="confirmarEntrega('${p.id}')">${ppIcon('check',14,1.7)} Confirmar entrega</button>
@@ -5861,7 +5908,7 @@ function renderProducao(){
             <div class="bold fs15">${p.num}</div>
             <div class="bold fs14 t2">·</div>
             <div class="bold fs14">${p.mesa_label||p.tipo}</div>
-            <span class="bdg ${p.consumo==='viagem'?'bpu':'bg'}" style="font-size:10px;display:inline-flex;align-items:center;gap:3px">${p.consumo==='viagem'?ppIcon('bag',11,1.7)+' Viagem':ppIcon('utensils',11,1.7)+' Local'}</span>
+            <span class="bdg ${p.consumo==='viagem'?'bpu':'bg'}" style="font-size:10px;display:inline-flex;align-items:center;gap:3px">${p.consumo==='viagem'?'🛍️ Viagem':'🍽️ Local'}</span>
             ${qi>0?`<span style="font-size:10px;font-weight:800;color:var(--am);background:var(--ambg);padding:2px 7px;border-radius:99px;border:1px solid var(--ambr);display:inline-flex;align-items:center;gap:3px">${ppIcon('clock',10,1.7)} +${qi}min na fila</span>`:''}
             ${late?`<span class="kds-late-badge" style="display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:800;color:var(--rd);background:var(--rdbg);padding:2px 8px;border-radius:99px;border:1px solid var(--rdbr)">${ppIcon('alertTriangle',11,1.7)} +${Math.ceil((Date.now()-prevMs)/60000)}min</span>`:'<span class="kds-late-badge" style="display:none"></span>'}
           </div>
@@ -6276,21 +6323,37 @@ function renderClientes(){
     <button class="btn bp bsm" onclick="editCli(null)">+ Novo</button>
   </div></div>
   <div class="fg mb10"><input class="inp" placeholder="🔍 Buscar..." oninput="ST._cliSearch=this.value;renderClientes()" value="${esc(ST._cliSearch||'')}"></div>
-  ${clis.map(c=>{
+  <div class="card" style="padding:0;overflow:hidden">
+  ${clis.length===0?`<div style="text-align:center;padding:30px 16px">
+    <div style="font-size:36px;margin-bottom:8px">👥</div>
+    <div class="bold fs14" style="color:var(--t2);margin-bottom:4px">Nenhum cliente cadastrado</div>
+    <div class="fs12 t3 mb12">Clientes são criados automaticamente nos pedidos</div>
+    <button class="btn bp bsm" onclick="editCli(null)" style="gap:5px">${ppIcon('plus',14,1.7)} Cadastrar Cliente</button>
+  </div>`:clis.map(c=>{
     const peds=ST.pedidos.filter(p=>p.cliente_nome===c.nome&&p.status==='pago');
     const gasto=peds.reduce((s,p)=>s+(p.total||0),0);
-    return`<div class="card mb8">
-      <div class="rb mb4">
-        <div><div class="bold">${esc(c.nome)}</div><div class="fs12 t2" style="display:flex;align-items:center;gap:3px">${ppIcon('phone',11,1.7)} ${c.wa||'—'}</div></div>
-        <div style="display:flex;gap:5px">
-          ${c.wa?`<button class="btn bg bxs" onclick="window.open('https://wa.me/55'+('${c.wa}'.replace(/\\D/g,'')))">💬</button>`:''}
-          <button class="btn bs bxs" onclick="editCli('${c.id}')">${ppIcon('edit',13,1.7)}</button>
+    const tiers=ST.cfg.fidelidade_tiers||[];
+    const tierObj=tiers.slice().reverse().find(t=>(c.total_gasto||gasto)>=t.min_gasto)||null;
+    const tierCls=tierObj?'t-'+tierObj.nome.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,''):'t-pintinho';
+    const tierNome=tierObj?tierObj.nome:'Novo';
+    const iniciais=c.nome.trim().split(' ').map(w=>w[0]).slice(0,2).join('');
+    return`<div class="cli-row">
+      <div class="cli-avatar">${iniciais}</div>
+      <div class="cli-info">
+        <div class="cli-name">${esc(c.nome)} <span class="cli-tier ${tierCls}">${tierNome}</span></div>
+        <div class="cli-meta">
+          ${c.wa?`<span>${ppIcon('phone',11,1.7)} ${c.wa}</span>`:''}
+          <span>${peds.length} pedidos</span>
+          <span class="bold">${fmtR(gasto)}</span>
         </div>
       </div>
-      <div class="rb"><div class="fs12 t2">${peds.length} pedidos · ${fmtR(gasto)}</div>
-      ${c.obs?`<div class="fs11 t3">${esc(c.obs)}</div>`:''}</div>
+      <div style="display:flex;gap:5px;flex-shrink:0">
+        ${c.wa?`<button class="btn bg bxs" onclick="window.open('https://wa.me/55'+('${c.wa}'.replace(/\\D/g,'')))">💬</button>`:''}
+        <button class="btn bs bxs" onclick="editCli('${c.id}')">${ppIcon('edit',13,1.7)}</button>
+      </div>
     </div>`;
-  }).join('')}`;
+  }).join('')}
+  </div>`;
 }
 function editCli(id){
   ST.editCli=id?ST.clientes.find(c=>c.id===id):null;
@@ -6700,26 +6763,32 @@ function _cfgMenuItems(){
   const cfg=ST.cfg;
   const items=[];
   const au=window.IS_HOSTED&&fbAuth?.currentUser;
-  if(au) items.push({id:'conta',icon:'user',label:'Minha conta',desc:esc(au.email)});
-  items.push({id:'estabelecimento',icon:'store',label:'Estabelecimento',desc:esc(cfg.nome||'Configurar')});
-  const _thLbl=(PP_THEMES.find(t=>t.id===_getCurrentThemeId())||{}).label||'Escuro';
-  items.push({id:'interface',icon:'monitor',label:'Interface',desc:_thLbl+' · Tam '+['P','M','G'][(localStorage.getItem('pp_tam')||'p')==='p'?0:(localStorage.getItem('pp_tam')||'p')==='m'?1:2]});
+  // ── Conta ──
+  if(au) items.push({id:'conta',icon:'user',label:'Minha conta',desc:esc(au.email),group:'Conta'});
+  // ── Negócio ──
+  items.push({id:'estabelecimento',icon:'store',label:'Estabelecimento',desc:esc(cfg.nome||'Configurar'),group:'Negócio'});
+  items.push({id:'operacoes',icon:'settings',label:'Operacoes',desc:`${cfg.mesas_total||10} mesas · ${cfg.taxa_servico||0}%`,group:'Negócio'});
   const _modCount=Object.values(cfg.modulos||{}).filter(v=>v!==false).length;
-  items.push({id:'modulos',icon:'grid',label:'Modulos',desc:_modCount+' ativos'});
-  items.push({id:'operacoes',icon:'settings',label:'Operacoes',desc:`${cfg.mesas_total||10} mesas · ${cfg.taxa_servico||0}%`});
-  items.push({id:'impressora',icon:'printer',label:'Impressora Bluetooth',desc:BT.device?.name||'Nenhuma'});
-  items.push({id:'seguranca',icon:'lock',label:'Seguranca',desc:'PIN do gerente'+(E2EE._enabled?' · E2EE ativo':'')});
-  items.push({id:'firebase',icon:'cloud',label:'Firebase & Sincronizacao',desc:fbAuth?(fbAuth.currentUser?'Conectado':'Desconectado'):'Offline'});
-  items.push({id:'vouchers',icon:'ticket',label:'Vouchers e Permuta',desc:`${ST.vouchers.length} voucher${ST.vouchers.length!==1?'s':''}`});
-  items.push({id:'pix',icon:'dollarSign',label:'PIX',desc:cfg.pix_chave?'Chave configurada':'Nao configurado'});
-  items.push({id:'maquininha',icon:'credit',label:'Maquininha integrada',desc:cfg.maquininha?.provider==='mp'?'Mercado Pago':cfg.maquininha?.provider==='pagseguro'?'PagSeguro':cfg.maquininha?.provider==='infinitepay'?'InfinitePay':'Manual'});
-  items.push({id:'sons',icon:'volume',label:'Sons & Voz',desc:({mudo:'Mudo',sons:'So sons',voz:'Voz',guiado:'Guiado'})[_AUDIO.modo]||'Sons'});
-  if(hasPermission('config_editar')&&window.IS_HOSTED) items.push({id:'whatsapp',icon:'send',label:'Agente WhatsApp',desc:cfg.whatsapp_agent?.ativo?'Ativo':'Desativado'});
-  if(hasPermission('convites')&&window.IS_HOSTED) items.push({id:'dispositivos',icon:'users',label:'Dispositivos vinculados',desc:''});
-  items.push({id:'fidelidade',icon:'star',label:'Fidelidade & Roleta',desc:(_getRoletaNome())});
-  items.push({id:'cardapio_digital',icon:'monitor',label:'Cardápio Digital',desc:'QR Code para clientes'});
-  items.push({id:'ajuda',icon:'book',label:'Ajuda',desc:'Manual do usuario'});
-  if(hasPermission('config_editar')) items.push({id:'sistema',icon:'alertTriangle',label:'Sistema',desc:'Salvar, resetar, backup'});
+  items.push({id:'modulos',icon:'grid',label:'Modulos',desc:_modCount+' ativos',group:'Negócio'});
+  items.push({id:'cardapio_digital',icon:'monitor',label:'Cardápio Digital',desc:'QR Code para clientes',group:'Negócio'});
+  items.push({id:'fidelidade',icon:'star',label:'Fidelidade & Roleta',desc:(_getRoletaNome()),group:'Negócio'});
+  // ── Pagamentos ──
+  items.push({id:'pix',icon:'dollarSign',label:'PIX',desc:cfg.pix_chave?'Chave configurada':'Nao configurado',group:'Pagamentos'});
+  items.push({id:'maquininha',icon:'credit',label:'Maquininha integrada',desc:cfg.maquininha?.provider==='mp'?'Mercado Pago':cfg.maquininha?.provider==='pagseguro'?'PagSeguro':cfg.maquininha?.provider==='infinitepay'?'InfinitePay':'Manual',group:'Pagamentos'});
+  items.push({id:'vouchers',icon:'ticket',label:'Vouchers e Permuta',desc:`${ST.vouchers.length} voucher${ST.vouchers.length!==1?'s':''}`,group:'Pagamentos'});
+  // ── Sistema ──
+  const _thLbl=(PP_THEMES.find(t=>t.id===_getCurrentThemeId())||{}).label||'Escuro';
+  items.push({id:'interface',icon:'monitor',label:'Interface',desc:_thLbl+' · Tam '+['P','M','G'][(localStorage.getItem('pp_tam')||'p')==='p'?0:(localStorage.getItem('pp_tam')||'p')==='m'?1:2],group:'Sistema'});
+  items.push({id:'seguranca',icon:'lock',label:'Seguranca',desc:'PIN do gerente'+(E2EE._enabled?' · E2EE ativo':''),group:'Sistema'});
+  items.push({id:'sons',icon:'volume',label:'Sons & Voz',desc:({mudo:'Mudo',sons:'So sons',voz:'Voz',guiado:'Guiado'})[_AUDIO.modo]||'Sons',group:'Sistema'});
+  items.push({id:'impressora',icon:'printer',label:'Impressora Bluetooth',desc:BT.device?.name||'Nenhuma',group:'Sistema'});
+  // ── Integrações ──
+  items.push({id:'firebase',icon:'cloud',label:'Firebase & Sincronizacao',desc:fbAuth?(fbAuth.currentUser?'Conectado':'Desconectado'):'Offline',group:'Integrações'});
+  if(hasPermission('config_editar')&&window.IS_HOSTED) items.push({id:'whatsapp',icon:'send',label:'Agente WhatsApp',desc:cfg.whatsapp_agent?.ativo?'Ativo':'Desativado',group:'Integrações'});
+  if(hasPermission('convites')&&window.IS_HOSTED) items.push({id:'dispositivos',icon:'users',label:'Dispositivos vinculados',desc:'',group:'Integrações'});
+  // ── Ajuda ──
+  items.push({id:'ajuda',icon:'book',label:'Ajuda',desc:'Manual do usuario',group:'Ajuda'});
+  if(hasPermission('config_editar')) items.push({id:'sistema',icon:'alertTriangle',label:'Sistema',desc:'Salvar, resetar, backup',group:'Ajuda'});
   return items;
 }
 
@@ -6730,21 +6799,27 @@ function renderConfig(){
   if(_cfgSection){_renderCfgSection(_cfgSection);return;}
   // Menu principal — lista de itens com setas
   const items=_cfgMenuItems();
-  el.innerHTML=`
-  <div style="max-width:520px;margin:0 auto">
-    <div class="fs11 t3 mb10" style="text-transform:uppercase;letter-spacing:.8px;font-weight:700;padding-left:4px">Configuracoes</div>
-    <div style="border-radius:14px;overflow:hidden;border:1px solid var(--br2);background:var(--card)">
-      ${items.map((it,i)=>`
-      <button onclick="_cfgSection='${it.id}';renderConfig()" style="display:flex;align-items:center;gap:12px;width:100%;padding:14px 16px;background:none;border:none;cursor:pointer;text-align:left;color:var(--tx);font-size:14px;${i<items.length-1?'border-bottom:1px solid var(--br);':''}transition:background .15s" onmouseenter="this.style.background='var(--s2)'" onmouseleave="this.style.background='none'">
+  // Group items by group property
+  const groups={};
+  items.forEach(it=>{const g=it.group||'Geral';if(!groups[g])groups[g]=[];groups[g].push(it);});
+  let cfgHtml=`<div style="max-width:520px;margin:0 auto">`;
+  Object.entries(groups).forEach(([groupName,groupItems])=>{
+    cfgHtml+=`<div class="cfg-group-title">${groupName}</div>`;
+    cfgHtml+=`<div style="border-radius:14px;overflow:hidden;border:1px solid var(--br2);background:var(--card);margin-bottom:6px">`;
+    groupItems.forEach((it,i)=>{
+      cfgHtml+=`<button onclick="_cfgSection='${it.id}';renderConfig()" style="display:flex;align-items:center;gap:12px;width:100%;padding:14px 16px;background:none;border:none;cursor:pointer;text-align:left;color:var(--tx);font-size:14px;${i<groupItems.length-1?'border-bottom:1px solid var(--br);':''}transition:background .15s" onmouseenter="this.style.background='var(--s2)'" onmouseleave="this.style.background='none'">
         <span style="width:32px;height:32px;border-radius:8px;background:var(--s2);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--ac)">${ppIcon(it.icon,16,1.6)}</span>
         <span style="flex:1;min-width:0">
           <span class="bold" style="display:block;font-size:14px">${it.label}</span>
           ${it.desc?`<span class="fs11 t3" style="display:block;margin-top:1px">${it.desc}</span>`:''}
         </span>
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
-      </button>`).join('')}
-    </div>
-  </div>`;
+      </button>`;
+    });
+    cfgHtml+=`</div>`;
+  });
+  cfgHtml+=`</div>`;
+  el.innerHTML=cfgHtml;
   document.getElementById('sb-est').textContent=cfg.nome||'PedePronto PDV';
 }
 
