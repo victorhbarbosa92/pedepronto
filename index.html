@@ -3393,67 +3393,88 @@ const BT={
       if(b==='bar')return ped.itens.some(i=>i.dest==='bar');
       return true;
     });
+    // W2 = largura em double-width (metade dos chars por linha)
+    const W2=Math.floor(W/2);
+    const ctr2=s=>{s=s.substring(0,W2);const p=Math.max(0,Math.floor((W2-s.length)/2));return ' '.repeat(p)+s};
+    const row2b=(l,r)=>{l=l.substring(0,W2-r.length-1);const sp=W2-l.length-r.length;return l+' '.repeat(Math.max(1,sp))+r};
+
     blocosFilt.forEach((b,idx)=>{
       const itens=b==='coz'?ped.itens.filter(i=>i.dest==='coz'):b==='bar'?ped.itens.filter(i=>i.dest==='bar'):ped.itens;
-      // Cabecalho
+
+      // ═══ CABEÇALHO — tamanho normal (economia de espaço) ═══
       all.push(...CMD.center,...CMD.bold1);
       this.wrapText(cfg.nome.toUpperCase(),W).forEach(l=>all.push(...txt(l),...CMD.lf));
       all.push(...CMD.bold0);
-      if(cfg.slogan)all.push(...CMD.center,...txt(this.norm(cfg.slogan)),...CMD.lf);
-      if(cfg.end)all.push(...CMD.center,...txt(this.norm(cfg.end)),...CMD.lf);
+      if(cfg.slogan)all.push(...txt(this.norm(cfg.slogan)),...CMD.lf);
       all.push(...CMD.left,...txt(dst()),...CMD.lf);
-      // Via
-      all.push(...CMD.center,...CMD.bold1,...txt('** '+lbl[b]+' **'),...CMD.bold0,...CMD.lf);
-      all.push(...CMD.left,...txt(dst()),...CMD.lf);
-      // Dados — Número do pedido em TAMANHO DUPLO
-      all.push(...CMD.center,...CMD.dbl,...txt(ped.num),...CMD.normal,...CMD.lf,...CMD.lf);
-      // Nome do cliente em BOLD + SUBLINHADO
-      if(ped.cliente_nome)all.push(...CMD.center,...CMD.bold1,...CMD.uline1,...txt(this.norm(ped.cliente_nome)),...CMD.uline0,...CMD.bold0,...CMD.lf,...CMD.lf);
-      all.push(...CMD.left);
-      if(ped.mesa_label)all.push(...txt(row2('Mesa:',this.norm(ped.mesa_label))),...CMD.lf);
-      all.push(...txt(row2('Data:',fmtDH(ped.created))),...CMD.lf);
-      all.push(...txt(row2('Atendente:',this.norm(ST.caixa.operador||'---'))),...CMD.lf);
-      all.push(...CMD.bold1,...txt(row2('Modalidade:',ped.consumo==='viagem'?'PARA VIAGEM':'CONSUMO LOCAL')),...CMD.bold0,...CMD.lf);
-      all.push(...txt(dsh()),...CMD.lf);
-      // Itens
+
+      // ═══ VIA (CLIENTE/COZINHA/BAR) — tamanho duplo ═══
+      all.push(...CMD.center,...CMD.dbl,...txt(lbl[b]),...CMD.normal,...CMD.lf);
+      all.push(...CMD.left,...txt(dst()),...CMD.lf,...CMD.lf);
+
+      // ═══ NÚMERO DO PEDIDO — tamanho duplo, centralizado ═══
+      all.push(...CMD.center,...CMD.dbl,...txt(ped.num),...CMD.normal,...CMD.lf);
+
+      // ═══ NOME DO CLIENTE — tamanho duplo, logo abaixo do número ═══
+      if(ped.cliente_nome){
+        const nomeUp=this.norm(ped.cliente_nome).toUpperCase();
+        all.push(...CMD.dbl,...txt(ctr2(nomeUp)),...CMD.normal,...CMD.lf);
+      }
+      all.push(...CMD.lf);
+
+      // ═══ DADOS — tamanho duplo (tudo grande) ═══
+      all.push(...CMD.left,...CMD.dbl);
+      if(ped.mesa_label)all.push(...txt(row2b('Mesa:',this.norm(ped.mesa_label))),...CMD.lf);
+      all.push(...txt(row2b('Data:',fmtDH(ped.created).split(' ')[1]||fmtDH(ped.created))),...CMD.lf);
+      all.push(...txt(row2b('Modal:',ped.consumo==='viagem'?'VIAGEM':'LOCAL')),...CMD.lf);
+      all.push(...CMD.normal,...CMD.left,...CMD.lf);
+      all.push(...txt(dst()),...CMD.lf,...CMD.lf);
+
+      // ═══ ITENS — tamanho duplo para visibilidade ═══
       (itens.length?itens:ped.itens).forEach(it=>{
-        const nomeN=this.norm(it.nome);
+        const nomeN=this.norm(it.nome).toUpperCase();
         const totalStr=b==='cli'?'R$'+(it.qty*it.preco).toFixed(2):'';
-        const qtyStr=it.qty+'x ';
-        const maxNome=W-qtyStr.length-(totalStr?totalStr.length+1:0);
-        if(nomeN.length<=maxNome){
-          const sp=W-qtyStr.length-nomeN.length-totalStr.length;
-          all.push(...CMD.bold1,...txt(qtyStr+nomeN+' '.repeat(Math.max(1,sp))+totalStr),...CMD.bold0,...CMD.lf);
-        } else {
-          const f=nomeN.substring(0,Math.max(1,maxNome));
-          const sp=W-qtyStr.length-f.length-totalStr.length;
-          all.push(...CMD.bold1,...txt(qtyStr+f+' '.repeat(Math.max(1,sp))+totalStr),...CMD.bold0,...CMD.lf);
-          this.wrapText(nomeN.substring(Math.max(1,maxNome)),W-4).forEach(l=>all.push(...txt('    '+l),...CMD.lf));
-        }
+
+        // Linha 1: QTD em double-size
+        all.push(...CMD.dbl,...txt(it.qty+'x'),...CMD.normal,...CMD.lf);
+
+        // Linha 2: Nome em double-height (cabe mais chars)
+        this.wrapText(nomeN,W).forEach(l=>all.push(...CMD.dblH,...CMD.bold1,...txt(l),...CMD.bold0,...CMD.normal,...CMD.lf));
+
+        // Preço (só via cliente)
+        if(totalStr)all.push(...CMD.dblH,...txt('   '+totalStr),...CMD.normal,...CMD.lf);
+
+        // Observações — double-height, sublinhado
         if(it.obs){
-          all.push(...CMD.uline1);
-          this.wrapText(this.norm(it.obs),W-4).forEach((ln,li)=>all.push(...txt((li===0?'  > ':'    ')+ln),...CMD.lf));
-          all.push(...CMD.uline0);
+          all.push(...CMD.dblH,...CMD.uline1);
+          this.wrapText(this.norm(it.obs),W).forEach((ln,li)=>all.push(...txt((li===0?'> ':'  ')+ln),...CMD.lf));
+          all.push(...CMD.uline0,...CMD.normal);
         }
-        if(it.obs_extras&&it.obs_extras>0)all.push(...txt('    +R$'+it.obs_extras.toFixed(2)+' (extras)'),...CMD.lf);
+        if(it.obs_extras&&it.obs_extras>0)all.push(...CMD.dblH,...txt('  +R$'+it.obs_extras.toFixed(2)+' extras'),...CMD.normal,...CMD.lf);
+
+        // Separador leve entre itens
+        all.push(...CMD.lf);
       });
-      all.push(...txt(dsh()),...CMD.lf);
+      all.push(...txt(dst()),...CMD.lf);
+
+      // ═══ TOTAL — tamanho duplo + bold ═══
       if(b==='cli'){
-        if(ped.desconto>0)all.push(...txt(row2('Desconto:','-R$'+ped.desconto.toFixed(2))),...CMD.lf);
-        all.push(...CMD.center,...CMD.dblH,...CMD.bold1,...txt('TOTAL: R$'+ped.total.toFixed(2)),...CMD.bold0,...CMD.normal,...CMD.lf,...CMD.left);
+        if(ped.desconto>0)all.push(...CMD.dblH,...txt(row2b('Desc:','-R$'+ped.desconto.toFixed(2))),...CMD.normal,...CMD.lf);
+        all.push(...CMD.center,...CMD.dbl,...CMD.bold1,...txt('R$'+ped.total.toFixed(2)),...CMD.bold0,...CMD.normal,...CMD.lf,...CMD.left,...CMD.lf);
         const prevCli=ped.prev_coz||ped.prev_bar;
-        if(prevCli)all.push(...CMD.center,...CMD.bold1,...txt('Previsao: '+fmtH(prevCli)),...CMD.bold0,...CMD.lf);
+        if(prevCli)all.push(...CMD.center,...CMD.dblH,...CMD.bold1,...txt('Previsao: '+fmtH(prevCli)),...CMD.bold0,...CMD.normal,...CMD.lf);
       }
       if(b==='coz'||b==='bar'){
         const prev=b==='coz'?ped.prev_coz:ped.prev_bar;
-        all.push(...CMD.center,...CMD.bold1,...txt('Previsao: '+(prev?fmtH(prev):'em breve')),...CMD.bold0,...CMD.lf);
+        all.push(...CMD.center,...CMD.dblH,...CMD.bold1,...txt('Previsao: '+(prev?fmtH(prev):'em breve')),...CMD.bold0,...CMD.normal,...CMD.lf);
       }
-      all.push(...CMD.center,...txt(this.norm(cfg.footer||'Obrigado!')),...CMD.lf,...CMD.left,...CMD.lf,...CMD.lf);
-      // Separador
+      all.push(...CMD.lf,...CMD.center,...CMD.dblH,...txt(this.norm(cfg.footer||'Obrigado!')),...CMD.normal,...CMD.lf,...CMD.left,...CMD.lf,...CMD.lf);
+
+      // Separador entre vias
       if(idx<blocosFilt.length-1){
         const nextLbl=lbl[blocosFilt[idx+1]]||blocosFilt[idx+1];
         all.push(...txt('- '.repeat(W/2).slice(0,W)),...CMD.lf);
-        all.push(...CMD.center,...CMD.bold1,...txt('DESTACAR: '+nextLbl),...CMD.bold0,...CMD.lf);
+        all.push(...CMD.center,...CMD.dbl,...txt(nextLbl),...CMD.normal,...CMD.lf);
         all.push(...txt('- '.repeat(W/2).slice(0,W)),...CMD.lf,...CMD.lf);
       }
     });
