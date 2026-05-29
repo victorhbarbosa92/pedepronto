@@ -1316,6 +1316,10 @@ const _PP_PUBKEY_JWK={"crv":"P-256","ext":true,"key_ops":["verify"],"kty":"EC","
     <button class="sb-item" id="sbm-clientes" title="Clientes" onclick="nav('clientes')"><span class="sb-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="4"/><path d="M2 21c0-4 3-6 7-6s7 2 7 6M17 11a4 4 0 100-8M22 21c0-3-2-5-5-5.5"/></svg></span><span class="sb-lbl">Clientes</span></button>
     <button class="sb-item" id="sbm-caixa" title="Caixa" onclick="nav('caixa')"><span class="sb-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M6 9v6M18 9v6"/></svg></span><span class="sb-lbl">Caixa</span></button>
     <button class="sb-item" id="sbm-relatorio" title="Relatórios" onclick="nav('relatorio')"><span class="sb-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M22 7l-9 9-4-4-7 7M16 7h6v6"/></svg></span><span class="sb-lbl">Relatórios</span></button>
+    <button class="sb-item" id="sbm-relav" title="Análises" onclick="nav('relav')"><span class="sb-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18M7 14l4-4 4 4 5-5"/></svg></span><span class="sb-lbl">Análises</span></button>
+    <button class="sb-item" id="sbm-despesas" title="Despesas" onclick="nav('despesas')"><span class="sb-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h6"/></svg></span><span class="sb-lbl">Despesas</span></button>
+    <button class="sb-item" id="sbm-comissao" title="Comissão" onclick="nav('comissao')"><span class="sb-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01"/></svg></span><span class="sb-lbl">Comissão</span></button>
+    <button class="sb-item" id="sbm-promos" title="Promoções" onclick="nav('promos')"><span class="sb-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20.6 13.4L13.4 20.6a2 2 0 01-2.8 0L2 12V2h10l8.6 8.6a2 2 0 010 2.8z"/><circle cx="7" cy="7" r="1.5"/></svg></span><span class="sb-lbl">Promoções</span></button>
     <div class="sb-sec">Sistema</div>
     <button class="sb-item" id="sbm-funcionarios" title="Funcionários" onclick="nav('funcionarios')"><span class="sb-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="4"/><path d="M2 21c0-4 3-6 7-6s7 2 7 6"/></svg></span><span class="sb-lbl">Funcionários</span></button>
     <button class="sb-item" id="sbm-agente" title="Agente IA" onclick="nav('agente')" style="display:none"><span class="sb-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a4 4 0 014 4v2H8V6a4 4 0 014-4zM5 12h14v7a3 3 0 01-3 3H8a3 3 0 01-3-3v-7zM8 8v4M16 8v4M9 16h6"/></svg></span><span class="sb-lbl">Agente IA</span></button>
@@ -1359,6 +1363,10 @@ const _PP_PUBKEY_JWK={"crv":"P-256","ext":true,"key_ops":["verify"],"kty":"EC","
       <div class="pg" id="pg-roleta"></div>
       <div class="pg" id="pg-caixa"></div>
       <div class="pg" id="pg-relatorio"></div>
+      <div class="pg" id="pg-relav"></div>
+      <div class="pg" id="pg-despesas"></div>
+      <div class="pg" id="pg-comissao"></div>
+      <div class="pg" id="pg-promos"></div>
       <div class="pg" id="pg-funcionarios"></div>
       <div class="pg" id="pg-config"></div>
       <div class="pg" id="pg-admin"></div>
@@ -1544,6 +1552,13 @@ const _PP_PUBKEY_JWK={"crv":"P-256","ext":true,"key_ops":["verify"],"kty":"EC","
       </div>
     </div>
     <div class="fg"><label class="fl">Descrição / ingredientes</label><textarea class="inp" id="ep-desc" rows="2" placeholder="Ingredientes, observações fixas..."></textarea></div>
+
+    <!-- HORÁRIO DISPONÍVEL + ESTOQUE -->
+    <div class="g2">
+      <div class="fg"><label class="fl">Disponível das (h) <span class="t3 fs11">— deixe 0/24 sempre</span></label><input class="inp" id="ep-hini" type="number" min="0" max="23" placeholder="0"></div>
+      <div class="fg"><label class="fl">Até as (h)</label><input class="inp" id="ep-hfim" type="number" min="0" max="24" placeholder="24"></div>
+    </div>
+    <div class="fg"><label class="fl">Estoque atual <span class="t3 fs11">— deixe vazio para infinito</span></label><input class="inp" id="ep-estoque" type="number" min="0" placeholder=""></div>
 
     <!-- GRUPOS DE OBSERVAÇÃO -->
     <div class="fg">
@@ -2464,6 +2479,10 @@ function loadAll(){
   const cutoff=Date.now()-24*60*60*1000;
   ST.alertas=alts.filter(a=>new Date(a.created).getTime()>cutoff).slice(0,50);
   ST.pedidos_cancelados=DB.get('pedidos_cancelados')||[];
+  ST.despesas=DB.get('despesas')||[];
+  ST.movCaixa=DB.get('movCaixa')||[];
+  // Aplica tema/fonte
+  try{if(typeof aplicarTema==='function')aplicarTema();}catch(e){}
 }
 
 // ═══════════════════════════════════════════
@@ -2895,7 +2914,7 @@ function confirm2(ico,title,msg,okLbl,okCls,cb,cancelCb){
 // ═══════════════════════════════════════════
 //  NAVIGATION
 // ═══════════════════════════════════════════
-const PAGE_TTL={dash:'Início',dados:'Dados',funcionarios:'Funcionários',mesas:'Mesas',balcao:'Balcão',delivery:'Delivery',producao:'Produção',cardapio:'Cardápio',clientes:'Clientes',roleta:'Roleta',caixa:'Caixa',relatorio:'Relatórios',config:'Configurações',admin:'Super Admin',agente:'Agente IA',pedido:'Novo Pedido',fechar:'Fechar Conta',pagamento:'Pagamento'};
+const PAGE_TTL={dash:'Início',dados:'Dados',funcionarios:'Funcionários',mesas:'Mesas',balcao:'Balcão',delivery:'Delivery',producao:'Produção',cardapio:'Cardápio',clientes:'Clientes',roleta:'Roleta',caixa:'Caixa',relatorio:'Relatórios',relav:'Relatórios Avançados',despesas:'Despesas',comissao:'Comissão',promos:'Promoções',config:'Configurações',admin:'Super Admin',agente:'Agente IA',pedido:'Novo Pedido',fechar:'Fechar Conta',pagamento:'Pagamento'};
 
 function applyResponsiveNav(){
   const mobile=isMobile();
@@ -3080,7 +3099,7 @@ function nav(pg,extra){
   const sbi=document.getElementById('sbm-'+pg);if(sbi)sbi.classList.add('on');
   document.querySelectorAll('.bn-item').forEach(b=>b.classList.remove('on'));
   const bni=document.getElementById('bnm-'+pg);if(bni)bni.classList.add('on');
-  const renders={dash:renderDash,dados:renderDados,mesas:renderMesas,balcao:renderBalcao,delivery:renderDelivery,producao:renderProducao,cardapio:renderCardapio,clientes:renderClientes,roleta:renderRoleta,caixa:renderCaixa,relatorio:renderRelatorio,funcionarios:renderFuncionarios,config:renderConfig,admin:renderAdmin,agente:renderAgente,pedido:()=>{if(_cxFlow.tipo)return _renderCxFlow();const np=ST.novoPedido;if(np&&np._vendaDireta&&np._wizStep!==undefined)renderVendaDiretaWizard();else if(np&&np._wizStep!==undefined&&!np._addingTo&&np.tipo==='balcao')renderPedidoWizard();else renderPedido(extra);},fechar:()=>renderFechar(extra),pagamento:()=>renderPagamento(extra)};
+  const renders={dash:renderDash,dados:renderDados,mesas:renderMesas,balcao:renderBalcao,delivery:renderDelivery,producao:renderProducao,cardapio:renderCardapio,clientes:renderClientes,roleta:renderRoleta,caixa:renderCaixa,relatorio:renderRelatorio,funcionarios:renderFuncionarios,config:renderConfig,admin:renderAdmin,agente:renderAgente,despesas:renderDespesas,comissao:renderComissao,promos:renderPromocoes,relav:renderRelAvancado,pedido:()=>{if(_cxFlow.tipo)return _renderCxFlow();const np=ST.novoPedido;if(np&&np._vendaDireta&&np._wizStep!==undefined)renderVendaDiretaWizard();else if(np&&np._wizStep!==undefined&&!np._addingTo&&np.tipo==='balcao')renderPedidoWizard();else renderPedido(extra);},fechar:()=>renderFechar(extra),pagamento:()=>renderPagamento(extra)};
   if(renders[pg])renders[pg]();
   // KDS tick: ligar no dash (produção inline) e producao, desligar ao sair
   if(pg==='producao'||pg==='dash')_kdsStartTick();else _kdsStopTick();
@@ -4125,6 +4144,7 @@ function renderDash(){try{
   const ativos=ST.pedidos.filter(p=>(p.status==='aberto'||p.status==='preparo')&&!_isProntoD(p));
   const aguardando=ST.pedidos.filter(p=>_isProntoD(p)&&!p.entregue&&naFila(p));
   document.getElementById('pg-dash').innerHTML=`
+  ${typeof renderAlertaEstoque==='function'?renderAlertaEstoque():''}
   ${!ST.caixa.aberto?`<div style="background:var(--rdbg);border:1px solid var(--rdbr);border-radius:12px;padding:14px;margin-bottom:14px;text-align:center">
     <div class="bold rd fs14" style="display:flex;align-items:center;justify-content:center;gap:6px">${_i('alertTriangle',16)} Caixa Fechado</div>
     <div class="fs12 t2 mt4">${hasPermission('caixa_op')?'Abra o caixa para iniciar as operações do dia':'Aguardando abertura do caixa pelo administrador'}</div>
@@ -4721,6 +4741,8 @@ function confirmarPedido(){
   const _dtNow=new Date();
   const _dtStr=_dtNow.getFullYear()+String(_dtNow.getMonth()+1).padStart(2,'0')+String(_dtNow.getDate()).padStart(2,'0')+String(_dtNow.getHours()).padStart(2,'0');
   const _offlineId='T'+_dtStr+'#'+ST.pedido_seq+'_'+_DEV_ID.slice(0,5);
+  // Promoções automáticas (happy hour, etc.) — alteram preço dos itens
+  try{aplicarPromosAuto({itens:np.cart});}catch(e){console.warn('[Promos]',e);}
   const total=np.cart.reduce((s,i)=>s+(i.preco+(i.obs_extras||0))*i.qty,0);
   // calcula previsão por maior tempo entre itens de cada destino
   const temposCoz=np.cart.filter(i=>i.dest==='coz').map(i=>i.tempo||15);
@@ -4735,6 +4757,7 @@ function confirmarPedido(){
     prev_coz:maxCoz?addMin(now(),maxCoz):null,
     prev_bar:maxBar?addMin(now(),maxBar):null,
     operador:ST.caixa.operador||'',
+    atendente:ST.caixa.operador||(ST.userAtivo&&ST.userAtivo.nome)||'—',
   };
   if(np.tipo==='delivery'){
     // Monta endereço a partir dos campos estruturados (ou campo livre legado)
@@ -5120,10 +5143,14 @@ function _renderPagScreen(){
   </div>
   ${!quitado?`
   <div class="sec-title mb8">Adicionar pagamento <span class="fs11 t3">(restante: ${fmtR(restante)})</span></div>
-  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:12px">
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:8px">
     ${formas.map(f=>`<button class="pay-m" onclick="openPagModal('${f.id}')">
       <span style="font-size:20px">${f.ico}</span><span>${f.lbl}</span>
     </button>`).join('')}
+  </div>
+  <div style="display:flex;gap:6px;margin-bottom:12px">
+    <button class="btn bs bsm" style="flex:1" onclick="abrirDividirConta('${ped.id}')">${ppIcon('users',13,1.7)} Dividir conta</button>
+    <button class="btn bs bsm" style="flex:1" onclick="nav('fechar','${ped.id}')">${ppIcon('tag',13,1.7)} Desconto</button>
   </div>`:''}
   ${_pagParcelas.length?`
   <div class="sec-title mb6">Pagamentos registrados</div>
@@ -5586,7 +5613,20 @@ function _wizPinOverride(){
 // ── Venda Direta: fluxo rápido ──
 function _getVendaDiretaProds(){
   const catIds=ST.categorias.filter(c=>c.venda_direta).map(c=>c.id);
-  return ST.produtos.filter(p=>p.ativo&&(p.venda_direta||catIds.includes(p.cat_id)));
+  return ST.produtos.filter(p=>p.ativo&&(p.venda_direta||catIds.includes(p.cat_id))&&_prodDisponivel(p));
+}
+// Helper: produto disponível considerando horário e estoque
+function _prodDisponivel(p){
+  if(!p)return false;
+  // Estoque zerado bloqueia
+  if(typeof p.estoque==='number'&&p.estoque<=0)return false;
+  // Horário
+  if(p.h_ini!=null&&p.h_fim!=null&&!(p.h_ini===0&&p.h_fim===24)){
+    const h=new Date().getHours();
+    if(p.h_ini<=p.h_fim){if(h<p.h_ini||h>=p.h_fim)return false;}
+    else {if(h<p.h_ini&&h>=p.h_fim)return false;} // ex: 22h–4h
+  }
+  return true;
 }
 function novoVendaDireta(){
   ST.novoPedido={tipo:'balcao',mesa_id:null,mesa_label:'Venda Direta',cliente_nome:'',cart:[],obs:{},endereco:'',consumo:'local',
@@ -6100,6 +6140,9 @@ function editProd(id){
   document.getElementById('ep-ico').value=p?.ico||'🍽️';
   document.getElementById('ep-desc').value=p?.desc||'';
   document.getElementById('ep-tempo').value=p?.tempo||'15';
+  const epHini=document.getElementById('ep-hini');if(epHini)epHini.value=p?.h_ini??0;
+  const epHfim=document.getElementById('ep-hfim');if(epHfim)epHfim.value=p?.h_fim??24;
+  const epEst=document.getElementById('ep-estoque');if(epEst)epEst.value=(p?.estoque!=null?p.estoque:'');
   const sel=document.getElementById('ep-cat');
   sel.innerHTML=ST.categorias.map(c=>`<option value="${c.id}" ${p?.cat_id===c.id?'selected':''}>${c.emoji||''} ${c.nome}</option>`).join('');
   _prodDests=p?.dest?[...p.dest]:['coz'];
@@ -6195,7 +6238,11 @@ function saveProd(){
     }
   }
   _doSaveProd();function _doSaveProd(){
-  const data={nome,preco:newPreco,custo:newCusto||0,ico:document.getElementById('ep-ico').value||'🍽️',desc:document.getElementById('ep-desc').value||'',cat_id:document.getElementById('ep-cat').value,tempo:parseInt(document.getElementById('ep-tempo').value)||15,dest:[..._prodDests],obs_grupos:[..._editObsGrupos],ativo:swVal('sw-prod-ativo'),venda_direta:swVal('sw-prod-vd'),foto:_epFoto||null};
+  const hIni=parseInt(document.getElementById('ep-hini')?.value);
+  const hFim=parseInt(document.getElementById('ep-hfim')?.value);
+  const estoqueRaw=document.getElementById('ep-estoque')?.value;
+  const estoque=estoqueRaw===''||estoqueRaw==null?null:parseInt(estoqueRaw);
+  const data={nome,preco:newPreco,custo:newCusto||0,ico:document.getElementById('ep-ico').value||'🍽️',desc:document.getElementById('ep-desc').value||'',cat_id:document.getElementById('ep-cat').value,tempo:parseInt(document.getElementById('ep-tempo').value)||15,h_ini:isNaN(hIni)?0:hIni,h_fim:isNaN(hFim)?24:hFim,estoque:estoque,dest:[..._prodDests],obs_grupos:[..._editObsGrupos],ativo:swVal('sw-prod-ativo'),venda_direta:swVal('sw-prod-vd'),foto:_epFoto||null};
   if(ST.editProd){
     // Busca pelo ID no array atual — sync pode ter substituído ST.produtos enquanto o modal estava aberto
     const idx=ST.produtos.findIndex(p=>p.id===ST.editProd.id);
@@ -6927,6 +6974,21 @@ function _renderCfgSection(sec){
         <div><div class="fs13 bold">Tamanho da interface</div><div class="fs12 t2">Botoes e fontes</div></div>
         <div style="display:flex;gap:7px">
           ${['p','m','g'].map(t=>{const ativo=((localStorage.getItem('pp_tam')||'p')===t);return`<button class="btn bxs ${ativo?'bp':'bs'}" onclick="setTamanho('${t}');_renderCfgSection('interface')" style="min-width:44px">${t==='p'?'P':t==='m'?'M':'G'}</button>`;}).join('')}
+        </div>
+      </div>
+      <div class="rb" style="padding:8px 0;border-bottom:1px solid var(--br)">
+        <div><div class="fs13 bold">Modo claro/escuro</div><div class="fs12 t2">Inverte cores de fundo</div></div>
+        <div style="display:flex;gap:7px">
+          <button class="btn bxs ${(cfg.tema||'escuro')==='escuro'?'bp':'bs'}" onclick="setTema('escuro');_renderCfgSection('interface')">🌙 Escuro</button>
+          <button class="btn bxs ${cfg.tema==='claro'?'bp':'bs'}" onclick="setTema('claro');_renderCfgSection('interface')">☀️ Claro</button>
+        </div>
+      </div>
+      <div class="rb" style="padding:8px 0;border-bottom:1px solid var(--br)">
+        <div><div class="fs13 bold">Escala de fonte</div><div class="fs12 t2">Acessibilidade (${Math.round((cfg.font_scale||1)*100)}%)</div></div>
+        <div style="display:flex;gap:6px">
+          <button class="btn bxs bs" onclick="setFontScale((ST.cfg.font_scale||1)-0.1);_renderCfgSection('interface')">A-</button>
+          <button class="btn bxs bs" onclick="setFontScale(1);_renderCfgSection('interface')">100%</button>
+          <button class="btn bxs bs" onclick="setFontScale((ST.cfg.font_scale||1)+0.1);_renderCfgSection('interface')">A+</button>
         </div>
       </div>
       <div style="padding:8px 0">
@@ -11060,6 +11122,434 @@ function maqCancelar(){
   closeMc('mc-maq-status');
   toast('Cobrança na maquininha cancelada','a');
 }
+
+// ═══════════════════════════════════════════
+//  DIVISÃO DE CONTA
+// ═══════════════════════════════════════════
+function abrirDividirConta(ped_id){
+  const ped=ST.pedidos.find(p=>p.id===ped_id);if(!ped)return;
+  const pago=+(_pagParcelas.reduce((s,p)=>s+p.valor,0).toFixed(2));
+  const restante=+(Math.max(0,ped.total-pago).toFixed(2));
+  if(restante<0.01){toast('Conta já está quitada','a');return;}
+  const body=`
+    <div class="fs12 t2 mb10">Total restante: <span class="bold ac mono">${fmtR(restante)}</span></div>
+    <div class="fg"><label class="fl">Dividir entre quantas pessoas?</label>
+    <input class="inp" id="div-qtd" type="number" min="2" max="20" value="2" oninput="_divCalcular(${restante})"></div>
+    <div class="card mb10" style="text-align:center;padding:14px">
+      <div class="fs11 t2 mb4">Valor por pessoa</div>
+      <div class="bold ac mono" style="font-size:22px" id="div-valor">${fmtR(restante/2)}</div>
+    </div>
+    <div class="fs11 t3 mb10" style="line-height:1.5">Adiciona N parcelas iguais ao pagamento. Use a forma de pagamento que cada pessoa preferir.</div>
+    <button class="btn bp bw" onclick="_divConfirmar('${ped_id}',${restante})">${ppIcon('checkCircle',14,1.7)} Dividir e adicionar parcelas</button>
+  `;
+  showModal('mc-dividir','Dividir conta',body);
+}
+function _divCalcular(restante){
+  const qtd=Math.max(2,parseInt(document.getElementById('div-qtd').value)||2);
+  const v=+(restante/qtd).toFixed(2);
+  const el=document.getElementById('div-valor');if(el)el.textContent=fmtR(v);
+}
+function _divConfirmar(ped_id,restante){
+  const qtd=Math.max(2,parseInt(document.getElementById('div-qtd').value)||2);
+  const valor=+(restante/qtd).toFixed(2);
+  closeMc('mc-dividir');
+  // Abre um modal de seleção de formas por pessoa
+  let html=`<div class="fs12 t2 mb10">${qtd} pessoas × ${fmtR(valor)}</div>`;
+  for(let i=1;i<=qtd;i++){
+    html+=`<div class="rb mb6"><span class="fs13 bold">Pessoa ${i}</span>
+      <select class="inp" id="div-p-${i}" style="max-width:140px;padding:8px 10px">
+        ${_PAG_FORMAS.filter(f=>f.id!=='voucher').map(f=>`<option value="${f.id}">${f.lbl}</option>`).join('')}
+      </select></div>`;
+  }
+  html+=`<button class="btn bp bw mt10" onclick="_divAplicar('${ped_id}',${qtd},${valor})">Aplicar pagamentos</button>`;
+  showModal('mc-div2','Forma de pagamento de cada pessoa',html);
+}
+function _divAplicar(ped_id,qtd,valor){
+  for(let i=1;i<=qtd;i++){
+    const forma=document.getElementById('div-p-'+i)?.value||'dinheiro';
+    const fm=_PAG_FORMAS.find(f=>f.id===forma)||_PAG_FORMAS[0];
+    _pagParcelas.push({forma,ico:fm.ico,lbl:fm.lbl+' (pessoa '+i+')',valor,troco:0});
+  }
+  closeMc('mc-div2');
+  _renderPagScreen();
+  toast(qtd+' parcelas adicionadas!','g');
+}
+
+// ═══════════════════════════════════════════
+//  DESPESAS / CONTAS A PAGAR
+// ═══════════════════════════════════════════
+function renderDespesas(){
+  ST.despesas=ST.despesas||[];
+  const hoje=new Date();hoje.setHours(0,0,0,0);
+  const dh=hoje.getTime();
+  const futuras=ST.despesas.filter(d=>!d.paga&&new Date(d.venc).getTime()>=dh).sort((a,b)=>new Date(a.venc)-new Date(b.venc));
+  const vencidas=ST.despesas.filter(d=>!d.paga&&new Date(d.venc).getTime()<dh).sort((a,b)=>new Date(a.venc)-new Date(b.venc));
+  const pagas=ST.despesas.filter(d=>d.paga).sort((a,b)=>b.ts-a.ts).slice(0,30);
+  const totalAberto=[...futuras,...vencidas].reduce((s,d)=>s+(+d.valor||0),0);
+  const totalVencido=vencidas.reduce((s,d)=>s+(+d.valor||0),0);
+  const root=document.getElementById('pg-despesas');if(!root)return;
+  const row=d=>`<div class="card mb6" style="display:flex;align-items:center;gap:10px;padding:12px">
+    <div style="flex:1;min-width:0">
+      <div class="bold fs13">${esc(d.descricao||'Despesa')}</div>
+      <div class="fs11 t3">${esc(d.categoria||'—')} · Venc ${new Date(d.venc).toLocaleDateString('pt-BR')}${d.paga?' · ✅ Pago':''}</div>
+    </div>
+    <div class="bold mono" style="color:${d.paga?'var(--gn)':'var(--rd)'}">${fmtR(d.valor)}</div>
+    ${!d.paga?`<button class="btn bp bxs" onclick="pagarDespesa('${d.id}')">Pagar</button>`:''}
+    <button class="btn br_ bxs" onclick="excluirDespesa('${d.id}')">✕</button>
+  </div>`;
+  root.innerHTML=`
+    <div class="rb mb10"><div><div class="bold fs14">Despesas / Contas a pagar</div>
+    <div class="fs12 t2">Total em aberto: <span class="bold rd mono">${fmtR(totalAberto)}</span>${totalVencido>0?` · Vencido: ${fmtR(totalVencido)}`:''}</div></div>
+    <button class="btn bp bsm" onclick="novaDespesa()">${ppIcon('plus',13,1.7)} Nova</button></div>
+    ${vencidas.length?`<div class="sec-title mb6" style="color:var(--rd)">⚠️ Vencidas (${vencidas.length})</div>${vencidas.map(row).join('')}`:''}
+    ${futuras.length?`<div class="sec-title mb6 mt10">A vencer (${futuras.length})</div>${futuras.map(row).join('')}`:''}
+    ${pagas.length?`<div class="sec-title mb6 mt10">Últimas pagas</div>${pagas.map(row).join('')}`:''}
+    ${ST.despesas.length===0?`<div class="card" style="text-align:center;padding:30px;color:var(--t2)">${ppIcon('fileText',32,1.4)}<div class="mt6">Nenhuma despesa cadastrada</div></div>`:''}
+  `;
+}
+function novaDespesa(){
+  const hoje=new Date().toISOString().slice(0,10);
+  const body=`
+    <div class="fg"><label class="fl">Descrição</label>
+    <input class="inp" id="desp-desc" placeholder="Ex: Aluguel, Conta de luz..."></div>
+    <div class="fg"><label class="fl">Categoria</label>
+    <select class="inp" id="desp-cat">
+      <option>Aluguel</option><option>Energia</option><option>Água</option>
+      <option>Internet</option><option>Funcionários</option><option>Fornecedor</option>
+      <option>Impostos</option><option>Marketing</option><option>Outros</option>
+    </select></div>
+    <div class="fg"><label class="fl">Valor (R$)</label>
+    <input class="inp" id="desp-val" type="number" step="0.01" min="0.01" placeholder="0,00"></div>
+    <div class="fg"><label class="fl">Vencimento</label>
+    <input class="inp" id="desp-venc" type="date" value="${hoje}"></div>
+    <button class="btn bp bw" onclick="_salvarDespesa()">Salvar</button>
+  `;
+  showModal('mc-desp','Nova despesa',body);
+}
+function _salvarDespesa(){
+  const desc=(document.getElementById('desp-desc')?.value||'').trim();
+  const cat=document.getElementById('desp-cat')?.value||'Outros';
+  const val=parseFloat(document.getElementById('desp-val')?.value)||0;
+  const venc=document.getElementById('desp-venc')?.value||new Date().toISOString().slice(0,10);
+  if(!desc){toast('Informe a descrição','r');return;}
+  if(val<=0){toast('Informe um valor válido','r');return;}
+  ST.despesas=ST.despesas||[];
+  ST.despesas.push({id:'dp'+Date.now(),descricao:desc,categoria:cat,valor:val,venc,paga:false,ts:Date.now()});
+  save('despesas');
+  closeMc('mc-desp');
+  renderDespesas();
+  toast('Despesa cadastrada','g');
+}
+function pagarDespesa(id){
+  const d=(ST.despesas||[]).find(x=>x.id===id);if(!d)return;
+  confirm2(ppIcon('checkCircle',32,1.4),'Marcar como paga?',`<b>${esc(d.descricao)}</b> · ${fmtR(d.valor)}`,'Pagar','bp',()=>{
+    d.paga=true;d.pagoEm=Date.now();save('despesas');renderDespesas();
+    toast('Despesa marcada como paga','g');
+  });
+}
+function excluirDespesa(id){
+  confirm2('🗑️','Excluir despesa?','Esta ação não pode ser desfeita.','Excluir','br_',()=>{
+    ST.despesas=(ST.despesas||[]).filter(x=>x.id!==id);save('despesas');renderDespesas();
+    toast('Despesa excluída','a');
+  });
+}
+
+// ═══════════════════════════════════════════
+//  COMISSÃO DE GARÇOM
+// ═══════════════════════════════════════════
+function renderComissao(){
+  const root=document.getElementById('pg-comissao');if(!root)return;
+  const pct=ST.cfg.comissao_pct||10;
+  // Agrupar por usuário
+  const periodo=parseInt(localStorage.getItem('comissao_dias')||'7');
+  const limite=Date.now()-periodo*86400000;
+  const peds=ST.pedidos.filter(p=>p.pago&&p.ts>=limite&&p.atendente);
+  const agg={};
+  peds.forEach(p=>{
+    const u=p.atendente||'—';
+    if(!agg[u]) agg[u]={nome:u,vendas:0,qtd:0};
+    agg[u].vendas+=p.total||0;
+    agg[u].qtd++;
+  });
+  const lista=Object.values(agg).sort((a,b)=>b.vendas-a.vendas);
+  root.innerHTML=`
+    <div class="rb mb10"><div><div class="bold fs14">Comissão de garçons</div>
+    <div class="fs12 t2">Últimos ${periodo} dias · ${pct}% sobre vendas</div></div>
+    <select class="inp" style="width:auto" onchange="localStorage.setItem('comissao_dias',this.value);renderComissao()">
+      <option value="7" ${periodo==7?'selected':''}>7 dias</option>
+      <option value="15" ${periodo==15?'selected':''}>15 dias</option>
+      <option value="30" ${periodo==30?'selected':''}>30 dias</option>
+    </select></div>
+    <div class="card mb10" style="padding:12px">
+      <div class="fs11 t2 mb6">% de comissão (configurável)</div>
+      <input class="inp" type="number" step="0.5" min="0" max="50" value="${pct}" oninput="ST.cfg.comissao_pct=parseFloat(this.value)||0;save('cfg');renderComissao()">
+    </div>
+    ${lista.length===0?`<div class="card" style="text-align:center;padding:30px;color:var(--t2)">Sem dados no período</div>`:lista.map(u=>`
+      <div class="card mb6" style="padding:14px">
+        <div class="rb mb6"><span class="bold fs14">${esc(u.nome)}</span><span class="bdg bg-s">${u.qtd} pedidos</span></div>
+        <div class="rb"><span class="fs12 t2">Vendas</span><span class="mono">${fmtR(u.vendas)}</span></div>
+        <div class="rb"><span class="fs12 bold gn">Comissão (${pct}%)</span><span class="bold gn mono">${fmtR(u.vendas*pct/100)}</span></div>
+      </div>`).join('')}
+  `;
+}
+
+// ═══════════════════════════════════════════
+//  RELATÓRIOS AVANÇADOS (Heatmap, ABC, Comparativo)
+// ═══════════════════════════════════════════
+function renderRelAvancado(){
+  const root=document.getElementById('pg-relav');if(!root)return;
+  const aba=localStorage.getItem('relav_aba')||'heat';
+  root.innerHTML=`
+    <div class="rb mb10"><div class="bold fs14">Relatórios avançados</div></div>
+    <div class="rb mb12" style="gap:6px">
+      <button class="btn ${aba==='heat'?'bp':'bs'} bsm" onclick="localStorage.setItem('relav_aba','heat');renderRelAvancado()">${ppIcon('clock',13,1.7)} Horários</button>
+      <button class="btn ${aba==='abc'?'bp':'bs'} bsm" onclick="localStorage.setItem('relav_aba','abc');renderRelAvancado()">${ppIcon('barChart',13,1.7)} Curva ABC</button>
+      <button class="btn ${aba==='comp'?'bp':'bs'} bsm" onclick="localStorage.setItem('relav_aba','comp');renderRelAvancado()">${ppIcon('trendingUp',13,1.7)} Comparativo</button>
+    </div>
+    <div id="relav-cont">${aba==='heat'?_relHeatHtml():aba==='abc'?_relAbcHtml():_relCompHtml()}</div>
+  `;
+}
+function _relHeatHtml(){
+  // 7 dias x 24h
+  const grid={};for(let d=0;d<7;d++){grid[d]={};for(let h=0;h<24;h++)grid[d][h]=0;}
+  const lim=Date.now()-30*86400000;
+  ST.pedidos.filter(p=>p.pago&&p.ts>=lim).forEach(p=>{
+    const dt=new Date(p.ts);
+    grid[dt.getDay()][dt.getHours()]+=p.total||0;
+  });
+  // Max para escala de cor
+  let max=0;for(let d=0;d<7;d++)for(let h=0;h<24;h++)max=Math.max(max,grid[d][h]);
+  const dias=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+  const cor=v=>{if(!v||!max)return 'var(--s2)';const p=v/max;
+    if(p>=0.75)return 'rgba(255,107,53,0.9)';if(p>=0.5)return 'rgba(255,107,53,0.65)';
+    if(p>=0.25)return 'rgba(255,107,53,0.4)';return 'rgba(255,107,53,0.2)';};
+  let html=`<div class="card" style="padding:12px;overflow-x:auto">
+    <div class="fs12 t2 mb8">Faturamento por dia × hora — últimos 30 dias</div>
+    <div style="display:grid;grid-template-columns:40px repeat(24,1fr);gap:2px;min-width:600px">
+    <div></div>${Array.from({length:24},(_,h)=>`<div class="fs10 t3" style="text-align:center">${h}</div>`).join('')}`;
+  dias.forEach((d,di)=>{
+    html+=`<div class="fs11 bold" style="display:flex;align-items:center">${d}</div>`;
+    for(let h=0;h<24;h++){
+      const v=grid[di][h];
+      html+=`<div title="${d} ${h}h: ${fmtR(v)}" style="background:${cor(v)};aspect-ratio:1;border-radius:3px;min-height:20px"></div>`;
+    }
+  });
+  html+=`</div></div>`;
+  return html;
+}
+function _relAbcHtml(){
+  // Curva ABC: produtos por receita
+  const lim=Date.now()-30*86400000;
+  const agg={};
+  ST.pedidos.filter(p=>p.pago&&p.ts>=lim).forEach(p=>{
+    (p.itens||[]).forEach(it=>{
+      const k=it.prod_id||it.nome;
+      if(!agg[k]) agg[k]={nome:it.nome,qtd:0,receita:0};
+      agg[k].qtd+=it.qtd||1;
+      agg[k].receita+=(it.preco||0)*(it.qtd||1);
+    });
+  });
+  const lista=Object.values(agg).sort((a,b)=>b.receita-a.receita);
+  const totalR=lista.reduce((s,x)=>s+x.receita,0);
+  let acum=0;
+  const rows=lista.map(x=>{
+    acum+=x.receita;const pct=totalR?acum/totalR*100:0;
+    const cls=pct<=80?'A':pct<=95?'B':'C';
+    const cor=cls==='A'?'var(--gn)':cls==='B'?'var(--am)':'var(--t3)';
+    return {...x,pct,cls,cor};
+  });
+  if(!lista.length) return `<div class="card" style="text-align:center;padding:30px;color:var(--t2)">Sem dados</div>`;
+  return `<div class="card" style="padding:12px">
+    <div class="fs12 t2 mb8">Últimos 30 dias · Receita acumulada</div>
+    <div class="fs11 mb6"><span style="color:var(--gn);font-weight:700">A</span>: 80% da receita · <span style="color:var(--am);font-weight:700">B</span>: 80-95% · <span style="color:var(--t3);font-weight:700">C</span>: 95-100%</div>
+    ${rows.map(x=>`<div class="rb mb4" style="padding:8px;background:var(--s2);border-radius:8px">
+      <span class="bdg" style="background:${x.cor};color:#fff;font-weight:800">${x.cls}</span>
+      <span style="flex:1;min-width:0;padding:0 8px" class="fs12">${esc(x.nome)}</span>
+      <span class="fs11 t3">${x.qtd}×</span>
+      <span class="bold mono fs12" style="margin-left:8px">${fmtR(x.receita)}</span>
+    </div>`).join('')}
+  </div>`;
+}
+function _relCompHtml(){
+  const agora=Date.now();
+  const semana=7*86400000;
+  const f=(ini,fim)=>ST.pedidos.filter(p=>p.pago&&p.ts>=ini&&p.ts<fim).reduce((s,p)=>s+(p.total||0),0);
+  const qtd=(ini,fim)=>ST.pedidos.filter(p=>p.pago&&p.ts>=ini&&p.ts<fim).length;
+  const s1i=agora-semana,s1f=agora;
+  const s2i=agora-2*semana,s2f=agora-semana;
+  const fS=f(s1i,s1f),fA=f(s2i,s2f);
+  const qS=qtd(s1i,s1f),qA=qtd(s2i,s2f);
+  const variacao=(a,b)=>b===0?'—':((a-b)/b*100).toFixed(1)+'%';
+  const cor=v=>typeof v==='string'&&v.startsWith('-')?'var(--rd)':'var(--gn)';
+  return `<div class="card" style="padding:14px">
+    <div class="sec-title mb8">Semana atual vs semana anterior</div>
+    <div class="rb mb8" style="padding:10px;background:var(--s2);border-radius:10px">
+      <div><div class="fs11 t2">Faturamento</div><div class="bold mono fs14">${fmtR(fS)}</div></div>
+      <div style="text-align:right"><div class="fs11 t3">vs ${fmtR(fA)}</div>
+      <div class="bold mono fs13" style="color:${cor(variacao(fS,fA))}">${variacao(fS,fA).startsWith('-')?'':'+'}${variacao(fS,fA)}</div></div>
+    </div>
+    <div class="rb mb8" style="padding:10px;background:var(--s2);border-radius:10px">
+      <div><div class="fs11 t2">Pedidos</div><div class="bold mono fs14">${qS}</div></div>
+      <div style="text-align:right"><div class="fs11 t3">vs ${qA}</div>
+      <div class="bold mono fs13" style="color:${cor(variacao(qS,qA))}">${variacao(qS,qA).startsWith('-')?'':'+'}${variacao(qS,qA)}</div></div>
+    </div>
+    <div class="rb" style="padding:10px;background:var(--s2);border-radius:10px">
+      <div><div class="fs11 t2">Ticket médio</div><div class="bold mono fs14">${fmtR(qS?fS/qS:0)}</div></div>
+      <div style="text-align:right"><div class="fs11 t3">vs ${fmtR(qA?fA/qA:0)}</div></div>
+    </div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════
+//  PROMOÇÕES AUTOMÁTICAS (HAPPY HOUR)
+// ═══════════════════════════════════════════
+function aplicarPromosAuto(ped){
+  if(!ped||!ped.itens)return;
+  const promos=ST.cfg.promos||[];
+  if(!promos.length)return;
+  const agora=new Date();
+  const h=agora.getHours()+agora.getMinutes()/60;
+  const dia=agora.getDay();
+  promos.forEach(pr=>{
+    if(!pr.ativa)return;
+    if(pr.dias&&!pr.dias.includes(dia))return;
+    if(pr.hIni>h||pr.hFim<=h)return;
+    (ped.itens||[]).forEach(it=>{
+      if(pr.cat_id&&it.cat_id!==pr.cat_id)return;
+      if(pr.prod_id&&it.prod_id!==pr.prod_id)return;
+      if(it._promoAplicada)return;
+      const original=it.preco;
+      it.preco=+(original*(1-pr.desc_pct/100)).toFixed(2);
+      it._promoAplicada=pr.id;
+      it._precoOriginal=original;
+    });
+  });
+}
+function renderPromocoes(){
+  const root=document.getElementById('pg-promos');if(!root)return;
+  const promos=ST.cfg.promos||[];
+  const cats=ST.categorias||[];
+  root.innerHTML=`
+    <div class="rb mb10"><div><div class="bold fs14">Promoções automáticas</div>
+    <div class="fs12 t2">Happy hour, descontos por horário, etc.</div></div>
+    <button class="btn bp bsm" onclick="novaPromocao()">${ppIcon('plus',13,1.7)} Nova</button></div>
+    ${promos.length===0?`<div class="card" style="text-align:center;padding:30px;color:var(--t2)">${ppIcon('tag',32,1.4)}<div class="mt6">Nenhuma promoção</div></div>`:
+      promos.map(pr=>`<div class="card mb6" style="padding:12px">
+        <div class="rb mb4"><span class="bold fs13">${esc(pr.nome)}</span>
+        <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" ${pr.ativa?'checked':''} onchange="_promoToggle('${pr.id}',this.checked)"><span class="fs11">${pr.ativa?'Ativa':'Inativa'}</span></label></div>
+        <div class="fs11 t2">${pr.hIni}h–${pr.hFim}h · ${pr.desc_pct}% off · ${pr.cat_id?(cats.find(c=>c.id===pr.cat_id)?.nome||'?'):'Todos itens'}</div>
+        <button class="btn br_ bxs mt4" onclick="_promoExcluir('${pr.id}')">Excluir</button>
+      </div>`).join('')}
+  `;
+}
+function novaPromocao(){
+  const cats=ST.categorias||[];
+  const body=`
+    <div class="fg"><label class="fl">Nome da promoção</label>
+    <input class="inp" id="pr-nome" placeholder="Ex: Happy Hour"></div>
+    <div class="rb" style="gap:8px">
+      <div class="fg" style="flex:1"><label class="fl">Início (h)</label>
+      <input class="inp" id="pr-ini" type="number" min="0" max="23" value="17"></div>
+      <div class="fg" style="flex:1"><label class="fl">Fim (h)</label>
+      <input class="inp" id="pr-fim" type="number" min="0" max="24" value="19"></div>
+    </div>
+    <div class="fg"><label class="fl">Desconto (%)</label>
+    <input class="inp" id="pr-desc" type="number" min="1" max="100" value="20"></div>
+    <div class="fg"><label class="fl">Aplicar em</label>
+    <select class="inp" id="pr-cat">
+      <option value="">Todos itens</option>
+      ${cats.map(c=>`<option value="${c.id}">${esc(c.nome)}</option>`).join('')}
+    </select></div>
+    <button class="btn bp bw" onclick="_promoSalvar()">Salvar</button>
+  `;
+  showModal('mc-promo','Nova promoção',body);
+}
+function _promoSalvar(){
+  const nome=(document.getElementById('pr-nome')?.value||'').trim();
+  const hIni=parseInt(document.getElementById('pr-ini')?.value)||17;
+  const hFim=parseInt(document.getElementById('pr-fim')?.value)||19;
+  const desc_pct=parseFloat(document.getElementById('pr-desc')?.value)||20;
+  const cat_id=document.getElementById('pr-cat')?.value||'';
+  if(!nome){toast('Informe o nome','r');return;}
+  ST.cfg.promos=ST.cfg.promos||[];
+  ST.cfg.promos.push({id:'pr'+Date.now(),nome,hIni,hFim,desc_pct,cat_id,ativa:true,dias:[0,1,2,3,4,5,6]});
+  save('cfg');closeMc('mc-promo');renderPromocoes();
+  toast('Promoção criada','g');
+}
+function _promoToggle(id,ativa){
+  const pr=(ST.cfg.promos||[]).find(p=>p.id===id);if(!pr)return;
+  pr.ativa=ativa;save('cfg');renderPromocoes();
+}
+function _promoExcluir(id){
+  ST.cfg.promos=(ST.cfg.promos||[]).filter(p=>p.id!==id);
+  save('cfg');renderPromocoes();
+  toast('Promoção excluída','a');
+}
+
+// ═══════════════════════════════════════════
+//  ALERTA DE ESTOQUE BAIXO
+// ═══════════════════════════════════════════
+function checarEstoqueBaixo(){
+  const limite=ST.cfg.estoque_minimo||5;
+  const baixos=(ST.produtos||[]).filter(p=>p.ativo&&typeof p.estoque==='number'&&p.estoque<=limite&&p.estoque>=0);
+  return baixos;
+}
+function renderAlertaEstoque(){
+  const baixos=checarEstoqueBaixo();
+  if(!baixos.length) return '';
+  return `<div class="card mb10" style="background:rgba(255,107,53,0.08);border:1px solid var(--ac);padding:10px">
+    <div class="rb"><span class="fs12 bold ac">⚠️ Estoque baixo (${baixos.length})</span>
+    <button class="btn ba bxs" onclick="nav('produtos')">Ver</button></div>
+    <div class="fs11 t2 mt4">${baixos.slice(0,3).map(p=>esc(p.nome)+' ('+p.estoque+')').join(' · ')}${baixos.length>3?'...':''}</div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════
+//  ATALHOS DE TECLADO
+// ═══════════════════════════════════════════
+function _initAtalhos(){
+  document.addEventListener('keydown',e=>{
+    // Ignora se estiver em input/textarea
+    const tag=document.activeElement?.tagName;
+    if(tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT')return;
+    if(e.ctrlKey||e.metaKey||e.altKey)return;
+    if(e.key==='F1'){e.preventDefault();if(typeof novoBalcao==='function')novoBalcao();}
+    else if(e.key==='F2'){e.preventDefault();nav('mesas');}
+    else if(e.key==='F3'){e.preventDefault();nav('dash');}
+    else if(e.key==='F4'){e.preventDefault();nav('caixa');}
+    else if(e.key==='F9'){e.preventDefault();nav('cfg');}
+    else if(e.key==='Escape'){
+      // Fecha modais abertos
+      document.querySelectorAll('.mc.open').forEach(el=>{
+        const id=el.id;if(id&&typeof closeMc==='function')closeMc(id);
+      });
+    }
+  });
+}
+if(typeof window!=='undefined'){
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',_initAtalhos);
+  } else _initAtalhos();
+}
+
+// ═══════════════════════════════════════════
+//  TEMA CLARO + TAMANHO FONTE
+// ═══════════════════════════════════════════
+function aplicarTema(){
+  const t=ST.cfg.tema||'escuro';
+  if(t==='claro')document.documentElement.classList.add('light');
+  else document.documentElement.classList.remove('light');
+  const fs=ST.cfg.font_scale||1;
+  document.documentElement.style.fontSize=(16*fs)+'px';
+}
+function setTema(t){
+  ST.cfg.tema=t;save('cfg');aplicarTema();
+  toast('Tema: '+t,'g');
+}
+function setFontScale(s){
+  ST.cfg.font_scale=Math.max(0.85,Math.min(1.5,s));save('cfg');aplicarTema();
+}
+
 // ═══════════════════════════════════════════
 //  TRIAL / MONETIZAÇÃO
 // ═══════════════════════════════════════════
