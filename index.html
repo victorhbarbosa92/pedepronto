@@ -1255,6 +1255,8 @@ const _PP_PUBKEY_JWK={"crv":"P-256","ext":true,"key_ops":["verify"],"kty":"EC","
   <button id="btn-back" onclick="_goBack()" title="Voltar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg> Voltar</button>
   <!-- título da página -->
   <div id="top-title">Início</div>
+  <!-- indicador offline -->
+  <div id="tb-offline" style="display:none;background:var(--am);color:#fff;padding:3px 10px;border-radius:99px;font-size:11px;font-weight:700;gap:4px;align-items:center" title="Sem conexão — operando offline">📡 Offline</div>
   <!-- session strip: caixa status -->
   <div class="tb-session" id="tb-session">
     <span class="tb-session-dot" id="tb-session-dot"></span>
@@ -1367,6 +1369,7 @@ const _PP_PUBKEY_JWK={"crv":"P-256","ext":true,"key_ops":["verify"],"kty":"EC","
       <div class="pg" id="pg-despesas"></div>
       <div class="pg" id="pg-comissao"></div>
       <div class="pg" id="pg-promos"></div>
+      <div class="pg" id="pg-garcom"></div>
       <div class="pg" id="pg-funcionarios"></div>
       <div class="pg" id="pg-config"></div>
       <div class="pg" id="pg-admin"></div>
@@ -2483,6 +2486,10 @@ function loadAll(){
   ST.movCaixa=DB.get('movCaixa')||[];
   // Aplica tema/fonte
   try{if(typeof aplicarTema==='function')aplicarTema();}catch(e){}
+  // Pedir permissão de notificação se já estava ativo
+  try{if(ST.cfg&&ST.cfg.notif_pedidos&&typeof pedirPermissaoNotif==='function')pedirPermissaoNotif();}catch(e){}
+  // Verifica backup pendente
+  try{if(typeof checarBackupAuto==='function')checarBackupAuto();}catch(e){}
 }
 
 // ═══════════════════════════════════════════
@@ -2914,7 +2921,7 @@ function confirm2(ico,title,msg,okLbl,okCls,cb,cancelCb){
 // ═══════════════════════════════════════════
 //  NAVIGATION
 // ═══════════════════════════════════════════
-const PAGE_TTL={dash:'Início',dados:'Dados',funcionarios:'Funcionários',mesas:'Mesas',balcao:'Balcão',delivery:'Delivery',producao:'Produção',cardapio:'Cardápio',clientes:'Clientes',roleta:'Roleta',caixa:'Caixa',relatorio:'Relatórios',relav:'Relatórios Avançados',despesas:'Despesas',comissao:'Comissão',promos:'Promoções',config:'Configurações',admin:'Super Admin',agente:'Agente IA',pedido:'Novo Pedido',fechar:'Fechar Conta',pagamento:'Pagamento'};
+const PAGE_TTL={dash:'Início',dados:'Dados',funcionarios:'Funcionários',mesas:'Mesas',balcao:'Balcão',delivery:'Delivery',producao:'Produção',cardapio:'Cardápio',clientes:'Clientes',roleta:'Roleta',caixa:'Caixa',relatorio:'Relatórios',relav:'Relatórios Avançados',despesas:'Despesas',comissao:'Comissão',promos:'Promoções',garcom:'Modo Garçom',config:'Configurações',admin:'Super Admin',agente:'Agente IA',pedido:'Novo Pedido',fechar:'Fechar Conta',pagamento:'Pagamento'};
 
 function applyResponsiveNav(){
   const mobile=isMobile();
@@ -3099,7 +3106,7 @@ function nav(pg,extra){
   const sbi=document.getElementById('sbm-'+pg);if(sbi)sbi.classList.add('on');
   document.querySelectorAll('.bn-item').forEach(b=>b.classList.remove('on'));
   const bni=document.getElementById('bnm-'+pg);if(bni)bni.classList.add('on');
-  const renders={dash:renderDash,dados:renderDados,mesas:renderMesas,balcao:renderBalcao,delivery:renderDelivery,producao:renderProducao,cardapio:renderCardapio,clientes:renderClientes,roleta:renderRoleta,caixa:renderCaixa,relatorio:renderRelatorio,funcionarios:renderFuncionarios,config:renderConfig,admin:renderAdmin,agente:renderAgente,despesas:renderDespesas,comissao:renderComissao,promos:renderPromocoes,relav:renderRelAvancado,pedido:()=>{if(_cxFlow.tipo)return _renderCxFlow();const np=ST.novoPedido;if(np&&np._vendaDireta&&np._wizStep!==undefined)renderVendaDiretaWizard();else if(np&&np._wizStep!==undefined&&!np._addingTo&&np.tipo==='balcao')renderPedidoWizard();else renderPedido(extra);},fechar:()=>renderFechar(extra),pagamento:()=>renderPagamento(extra)};
+  const renders={dash:renderDash,dados:renderDados,mesas:renderMesas,balcao:renderBalcao,delivery:renderDelivery,producao:renderProducao,cardapio:renderCardapio,clientes:renderClientes,roleta:renderRoleta,caixa:renderCaixa,relatorio:renderRelatorio,funcionarios:renderFuncionarios,config:renderConfig,admin:renderAdmin,agente:renderAgente,despesas:renderDespesas,comissao:renderComissao,promos:renderPromocoes,relav:renderRelAvancado,garcom:renderGarcomMode,pedido:()=>{if(_cxFlow.tipo)return _renderCxFlow();const np=ST.novoPedido;if(np&&np._vendaDireta&&np._wizStep!==undefined)renderVendaDiretaWizard();else if(np&&np._wizStep!==undefined&&!np._addingTo&&np.tipo==='balcao')renderPedidoWizard();else renderPedido(extra);},fechar:()=>renderFechar(extra),pagamento:()=>renderPagamento(extra)};
   if(renders[pg])renders[pg]();
   // KDS tick: ligar no dash (produção inline) e producao, desligar ao sair
   if(pg==='producao'||pg==='dash')_kdsStartTick();else _kdsStopTick();
@@ -6843,6 +6850,10 @@ function _cfgMenuItems(){
   items.push({id:'firebase',icon:'cloud',label:'Firebase & Sincronizacao',desc:fbAuth?(fbAuth.currentUser?'Conectado':'Desconectado'):'Offline',group:'Integrações'});
   if(hasPermission('config_editar')&&window.IS_HOSTED) items.push({id:'whatsapp',icon:'send',label:'Agente WhatsApp',desc:cfg.whatsapp_agent?.ativo?'Ativo':'Desativado',group:'Integrações'});
   if(hasPermission('convites')&&window.IS_HOSTED) items.push({id:'dispositivos',icon:'users',label:'Dispositivos vinculados',desc:'',group:'Integrações'});
+  // ── Modos especiais ──
+  items.push({id:'modo_garcom',icon:'users',label:'Modo Garçom',desc:'Tela cheia simplificada',group:'Sistema'});
+  items.push({id:'notif',icon:'bell',label:'Notificações',desc:cfg.notif_pedidos?'Ativas':'Desativadas',group:'Sistema'});
+  items.push({id:'backup',icon:'download',label:'Backup',desc:cfg.ultimo_backup?'Último: '+new Date(cfg.ultimo_backup).toLocaleDateString('pt-BR'):'Nunca',group:'Sistema'});
   // ── Ajuda ──
   items.push({id:'ajuda',icon:'book',label:'Ajuda',desc:'Manual do usuario',group:'Ajuda'});
   if(hasPermission('config_editar')) items.push({id:'sistema',icon:'alertTriangle',label:'Sistema',desc:'Salvar, resetar, backup',group:'Ajuda'});
@@ -7435,6 +7446,51 @@ function _renderCfgSection(sec){
     </div>`+_cfgFooter();
     break;
   }
+
+  case 'modo_garcom':
+    h=_cfgHeader('Modo Garçom')+`
+    <div class="card mb10">
+      <div class="fs12 t2 mb10" style="line-height:1.6">Interface ultra-simplificada para garçons: só mesas + botão "Novo Pedido". Sem sidebar. Para sair, segure o logo por 2 segundos (pede PIN).</div>
+      <button class="btn bp bw" onclick="ativarModoGarcom()">${ppIcon('users',14,1.7)} Ativar Modo Garçom agora</button>
+      <div class="fs11 t3 mt8" style="line-height:1.5">⚠️ Recomendado em tablets/celulares dedicados ao garçom. Não use no celular do dono.</div>
+    </div>`+_cfgFooter();
+    break;
+
+  case 'notif':
+    h=_cfgHeader('Notificações')+`
+    <div class="card mb10">
+      <div class="rb" style="padding:8px 0;border-bottom:1px solid var(--br)">
+        <div><div class="fs13 bold">Notificações do navegador</div><div class="fs11 t2">Status: ${('Notification' in window)?Notification.permission:'não suportado'}</div></div>
+        <button class="btn bp bsm" onclick="pedirPermissaoNotif()">${('Notification' in window)&&Notification.permission==='granted'?'Ativado':'Ativar'}</button>
+      </div>
+      <div class="rb" style="padding:8px 0">
+        <div><div class="fs13 bold">Notificar novos pedidos</div><div class="fs11 t2">Beep + popup quando aba estiver em background</div></div>
+        <button class="sw ${cfg.notif_pedidos?'on':''}" onclick="ST.cfg.notif_pedidos=!ST.cfg.notif_pedidos;save('cfg');_renderCfgSection('notif')"></button>
+      </div>
+    </div>`+_cfgFooter();
+    break;
+
+  case 'backup':
+    h=_cfgHeader('Backup')+`
+    <div class="card mb10">
+      <div class="fs12 t2 mb10" style="line-height:1.6">Baixe um arquivo JSON com todos os seus dados. Guarde em local seguro (Google Drive, Dropbox, e-mail, etc.).</div>
+      <button class="btn bp bw mb8" onclick="exportarBackup()">${ppIcon('download',14,1.7)} Baixar backup agora</button>
+      <div class="rb" style="padding:8px 0;border-top:1px solid var(--br)">
+        <div><div class="fs13 bold">Lembrete de backup</div><div class="fs11 t2">Toast a cada N dias se passar do prazo</div></div>
+        <button class="sw ${cfg.backup_auto?'on':''}" onclick="ST.cfg.backup_auto=!ST.cfg.backup_auto;save('cfg');_renderCfgSection('backup')"></button>
+      </div>
+      ${cfg.backup_auto?`<div class="fg"><label class="fl">Lembrar a cada (dias)</label>
+      <input class="inp" type="number" min="1" max="90" value="${cfg.backup_dias||7}" oninput="ST.cfg.backup_dias=parseInt(this.value)||7;save('cfg')"></div>`:''}
+      <div class="divider mt10 mb10"></div>
+      <div class="fs12 bold mb6">Restaurar de backup</div>
+      <div class="fs11 t3 mb8">⚠️ Sobrescreve dados atuais</div>
+      <label class="btn ba bw" style="cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
+        ${ppIcon('upload',14,1.7)} Selecionar arquivo .json
+        <input type="file" accept=".json" style="display:none" onchange="importarBackup(this)">
+      </label>
+      ${cfg.ultimo_backup?`<div class="fs11 t3 mt8" style="text-align:center">Último backup: ${new Date(cfg.ultimo_backup).toLocaleString('pt-BR')}</div>`:''}
+    </div>`+_cfgFooter();
+    break;
 
   case 'ajuda':
     h=_cfgHeader('Ajuda')+`
@@ -10491,6 +10547,10 @@ function _printQRCardapio(){
   if(new URLSearchParams(window.location.search).get('menu')==='1'){
     _renderPublicMenu();return;
   }
+  // ── Comanda do Cliente — se ?comanda=ID, renderiza só a comanda ──
+  if(new URLSearchParams(window.location.search).get('comanda')){
+    if(_initComandaCliente())return;
+  }
   // Safety net: se nenhuma tela de login aparecer em 6s, força exibição
   window._loginShown=false;
   const _safetyTimer=setTimeout(()=>{
@@ -11530,6 +11590,262 @@ if(typeof window!=='undefined'){
   if(document.readyState==='loading'){
     document.addEventListener('DOMContentLoaded',_initAtalhos);
   } else _initAtalhos();
+}
+
+// ═══════════════════════════════════════════
+//  INDICADOR ONLINE/OFFLINE
+// ═══════════════════════════════════════════
+function _updateOfflineUI(){
+  const el=document.getElementById('tb-offline');
+  if(!el)return;
+  if(navigator.onLine){el.style.display='none';}
+  else {el.style.display='inline-flex';}
+}
+if(typeof window!=='undefined'){
+  window.addEventListener('online',()=>{_updateOfflineUI();toast('Conexão restaurada','g',3000);});
+  window.addEventListener('offline',()=>{_updateOfflineUI();toast('Sem conexão — operando offline','a',5000);});
+  setTimeout(_updateOfflineUI,1000);
+}
+
+// ═══════════════════════════════════════════
+//  MODO TELA CHEIA GARÇOM
+// ═══════════════════════════════════════════
+let _garcomIdleTimer=null;
+function ativarModoGarcom(){
+  ST.cfg.modo_garcom=true;save('cfg');
+  nav('garcom');
+  toast('Modo garçom ativado — toque longo no logo para sair','g',5000);
+}
+function sairModoGarcom(){
+  requireOwnerPin('Sair do modo garçom',()=>{
+    ST.cfg.modo_garcom=false;save('cfg');
+    if(_garcomIdleTimer){clearTimeout(_garcomIdleTimer);_garcomIdleTimer=null;}
+    nav('dash');
+  });
+}
+function renderGarcomMode(){
+  const root=document.getElementById('pg-garcom');if(!root)return;
+  const total=ST.cfg.mesas_total||10;
+  const mesas=Array.from({length:total},(_,i)=>({id:'m'+(i+1),label:'Mesa '+(i+1)}));
+  const pedAtivos=ST.pedidos.filter(p=>p.status==='aberto'||p.status==='preparo');
+  const mesaPed=id=>pedAtivos.find(p=>p.tipo==='mesa'&&String(p.mesa_id)===String(id));
+  // Reset idle timer
+  if(_garcomIdleTimer)clearTimeout(_garcomIdleTimer);
+  _garcomIdleTimer=setTimeout(()=>{
+    if(ST.cfg.modo_garcom)toast('Aviso: ociosidade prolongada — bloqueando','a',3000);
+  },300000); // 5 min
+  root.innerHTML=`
+    <div style="position:fixed;inset:0;background:var(--bg);z-index:1000;display:flex;flex-direction:column;padding:16px;overflow:auto">
+      <div class="rb mb14">
+        <div onmousedown="_grLongStart()" onmouseup="_grLongEnd()" ontouchstart="_grLongStart()" ontouchend="_grLongEnd()" style="cursor:pointer;display:flex;align-items:center;gap:10px">
+          <div style="font-size:24px;font-weight:900;color:var(--ac);font-family:var(--mono)">⚡ PedePronto</div>
+        </div>
+        <div class="fs12 t2">${new Date().toLocaleString('pt-BR',{hour:'2-digit',minute:'2-digit',day:'2-digit',month:'2-digit'})}</div>
+      </div>
+      <button class="btn bp bw" style="padding:24px;font-size:20px;min-height:80px;margin-bottom:14px" onclick="novoBalcao()">
+        ${ppIcon('plus',22,1.8)} Novo Pedido (Balcão)
+      </button>
+      <div class="sec-title mb8">Mesas</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px">
+        ${mesas.map(m=>{
+          const p=mesaPed(m.id);
+          const occ=!!p;
+          return `<button class="btn ${occ?'ba':'bs'} bw" style="padding:18px;min-height:90px;display:flex;flex-direction:column;align-items:center;gap:4px" onclick="${occ?`nav('fechar','${p.id}')`:`novoMesa('${m.id}')`}">
+            <span style="font-size:20px;font-weight:900">${esc(m.label||m.id)}</span>
+            ${occ?`<span class="fs11 ac">${fmtR(p.total||0)}</span>`:'<span class="fs10 t3">Livre</span>'}
+          </button>`;
+        }).join('')}
+      </div>
+      ${pedAtivos.length?`<div class="sec-title mt14 mb8">Pedidos em andamento</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px">
+        ${pedAtivos.slice(0,6).map(p=>`<button class="btn bs bw" style="padding:12px;display:flex;flex-direction:column;gap:2px" onclick="nav('fechar','${p.id}')">
+          <span class="bold">${esc(p.num)} ${esc(p.mesa_label||p.cliente_nome||'')}</span>
+          <span class="fs11 ac mono">${fmtR(p.total||0)}</span>
+        </button>`).join('')}
+      </div>`:''}
+    </div>
+  `;
+}
+let _grLongTimer=null;
+function _grLongStart(){_grLongTimer=setTimeout(()=>sairModoGarcom(),2000);}
+function _grLongEnd(){if(_grLongTimer){clearTimeout(_grLongTimer);_grLongTimer=null;}}
+function novoMesa(mesa_id){
+  const num=mesa_id.replace(/^m/,'');
+  ST.novoPedido={tipo:'mesa',mesa_id:mesa_id,mesa_label:'Mesa '+num,cliente_nome:'',cart:[],obs:{},endereco:'',consumo:'local'};
+  ST._prodFilter='todos';nav('pedido');
+}
+
+// ═══════════════════════════════════════════
+//  COMANDA DO CLIENTE — Tempo real via URL ?comanda=PED_ID
+// ═══════════════════════════════════════════
+function _initComandaCliente(){
+  const url=new URL(location.href);
+  const pedId=url.searchParams.get('comanda');
+  if(!pedId)return false;
+  document.body.innerHTML='';
+  const root=document.createElement('div');
+  root.style.cssText='min-height:100vh;background:#0e0e12;color:#eee;font-family:system-ui,sans-serif;padding:20px;max-width:480px;margin:0 auto';
+  root.innerHTML='<div id="cli-comanda-cont"><div style="text-align:center;padding:40px">⌛ Carregando comanda...</div></div>';
+  document.body.appendChild(root);
+  // Tenta carregar via Firestore
+  const attemptLoad=()=>{
+    if(window.firebase&&firebase.firestore){
+      const db=firebase.firestore();
+      db.collection('estabelecimentos').doc(_estabUid||url.searchParams.get('estab')||'').collection('pedidos').doc(pedId).onSnapshot(snap=>{
+        if(!snap.exists){document.getElementById('cli-comanda-cont').innerHTML='<div style="text-align:center;padding:40px;color:#f66">❌ Pedido não encontrado</div>';return;}
+        _renderComandaCliente(snap.data());
+      },err=>{
+        document.getElementById('cli-comanda-cont').innerHTML='<div style="text-align:center;padding:40px;color:#f66">❌ '+err.message+'</div>';
+      });
+    } else {
+      setTimeout(attemptLoad,500);
+    }
+  };
+  attemptLoad();
+  return true;
+}
+function gerarLinkComanda(ped_id){
+  const base=location.origin+location.pathname.replace(/[^/]*$/,'');
+  const estab=_estabUid||'';
+  return base+'?comanda='+encodeURIComponent(ped_id)+(estab?'&estab='+encodeURIComponent(estab):'');
+}
+function compartilharComanda(ped_id){
+  const url=gerarLinkComanda(ped_id);
+  if(navigator.share){
+    navigator.share({title:'Sua comanda — PedePronto',url:url}).catch(()=>{});
+  } else if(navigator.clipboard){
+    navigator.clipboard.writeText(url).then(()=>toast('Link copiado!','g'));
+  } else {
+    prompt('Copie o link:',url);
+  }
+}
+function _renderComandaCliente(ped){
+  const root=document.getElementById('cli-comanda-cont');if(!root)return;
+  const statusMap={aberto:'🟡 Aguardando',preparo:'👨‍🍳 Em preparo',pronto:'✅ Pronto',pago:'💚 Pago',entregue:'✅ Entregue'};
+  const itens=ped.itens||[];
+  const total=ped.total||0;
+  root.innerHTML=`
+    <div style="background:#1a1b22;border-radius:14px;padding:18px;margin-bottom:14px">
+      <div style="font-size:13px;color:#888">PedePronto · Sua comanda</div>
+      <div style="font-size:24px;font-weight:900;margin-top:4px">${ped.num||'Pedido'}</div>
+      <div style="font-size:14px;color:#aaa;margin-top:2px">${ped.cliente_nome||ped.mesa_label||''}</div>
+      <div style="margin-top:14px;padding:10px;background:#22232c;border-radius:10px;text-align:center;font-size:14px;font-weight:700">${statusMap[ped.status]||ped.status}</div>
+    </div>
+    <div style="background:#1a1b22;border-radius:14px;padding:18px;margin-bottom:14px">
+      <div style="font-size:13px;color:#888;margin-bottom:10px">Itens</div>
+      ${itens.map(i=>`<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #2a2d3a">
+        <div><div style="font-weight:700">${i.qty||1}× ${i.nome||'—'}</div>${i.obs?`<div style="font-size:11px;color:#888">${i.obs}</div>`:''}</div>
+        <div style="font-family:monospace;color:#D97757;font-weight:700">${('R$ '+((i.preco||0)*(i.qty||1)).toFixed(2).replace('.',','))}</div>
+      </div>`).join('')}
+    </div>
+    <div style="background:#1a1b22;border-radius:14px;padding:18px;display:flex;justify-content:space-between;align-items:center">
+      <div style="font-size:14px;color:#aaa">Total</div>
+      <div style="font-size:24px;font-weight:900;color:#D97757;font-family:monospace">${('R$ '+total.toFixed(2).replace('.',','))}</div>
+    </div>
+    ${ped.status==='aberto'||ped.status==='preparo'?`<div style="margin-top:14px;padding:12px;background:rgba(217,119,87,.12);border-radius:10px;font-size:12px;text-align:center;color:#D97757">📡 Esta página atualiza em tempo real</div>`:''}
+  `;
+}
+
+// ═══════════════════════════════════════════
+//  BACKUP / EXPORT JSON
+// ═══════════════════════════════════════════
+function exportarBackup(){
+  const data={
+    versao:window.PP_VERSION||'1.0',
+    exportado_em:new Date().toISOString(),
+    cfg:ST.cfg,
+    produtos:ST.produtos,categorias:ST.categorias,
+    clientes:ST.clientes,
+    pedidos:ST.pedidos.slice(-500), // últimos 500 pedidos
+    funcionarios:ST.funcionarios,
+    vouchers:ST.vouchers,
+    despesas:ST.despesas,
+    caixa_historico:(ST.caixa&&ST.caixa.historico)||[],
+  };
+  const json=JSON.stringify(data,null,2);
+  const blob=new Blob([json],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download='pedepronto-backup-'+new Date().toISOString().slice(0,10)+'.json';
+  document.body.appendChild(a);a.click();
+  setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},100);
+  ST.cfg.ultimo_backup=Date.now();save('cfg');
+  toast('Backup baixado!','g');
+}
+function importarBackup(input){
+  const file=input.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const data=JSON.parse(e.target.result);
+      confirm2('⚠️','Restaurar backup?','Isso sobrescreverá os dados atuais. Continuar?','Restaurar','br_',()=>{
+        ['cfg','produtos','categorias','clientes','pedidos','funcionarios','vouchers','despesas'].forEach(k=>{
+          if(data[k]){ST[k]=data[k];save(k);}
+        });
+        toast('Backup restaurado! Recarregando...','g',3000);
+        setTimeout(()=>location.reload(),1500);
+      });
+    }catch(err){toast('Arquivo inválido: '+err.message,'r',5000);}
+  };
+  reader.readAsText(file);
+  input.value='';
+}
+function checarBackupAuto(){
+  if(!ST.cfg.backup_auto)return;
+  const ult=ST.cfg.ultimo_backup||0;
+  const dias=ST.cfg.backup_dias||7;
+  if(Date.now()-ult>dias*86400000){
+    // Mostra notificação não-bloqueante
+    setTimeout(()=>{
+      toast('Hora do backup! Vá em Configurações para baixar','b',6000);
+    },5000);
+  }
+}
+
+// ═══════════════════════════════════════════
+//  NOTIFICAÇÕES DO NAVEGADOR
+// ═══════════════════════════════════════════
+let _notifPermAsked=false;
+function pedirPermissaoNotif(){
+  if(!('Notification' in window))return false;
+  if(Notification.permission==='granted')return true;
+  if(Notification.permission==='denied')return false;
+  if(_notifPermAsked)return false;
+  _notifPermAsked=true;
+  Notification.requestPermission().then(p=>{
+    if(p==='granted'){toast('Notificações ativadas!','g');}
+  });
+}
+function notificar(titulo,corpo,tag){
+  if(!('Notification' in window))return;
+  if(Notification.permission!=='granted')return;
+  if(document.hasFocus())return; // só notifica quando aba está em background
+  try{
+    const n=new Notification(titulo,{
+      body:corpo,
+      icon:'/icons/icon-192x192.png',
+      badge:'/icons/icon-192x192.png',
+      tag:tag||'pedepronto',
+      vibrate:[200,100,200],
+    });
+    n.onclick=()=>{window.focus();n.close();};
+    setTimeout(()=>n.close(),8000);
+  }catch(e){console.warn('[Notif]',e);}
+}
+// Auto: notifica em novos pedidos
+let _ultimoPedidoNotificado=0;
+function _checarNovosPedidos(){
+  if(!ST.cfg.notif_pedidos)return;
+  if(Notification.permission!=='granted')return;
+  const novos=ST.pedidos.filter(p=>p.created>_ultimoPedidoNotificado&&p.status==='aberto');
+  novos.forEach(p=>{
+    notificar('Novo pedido '+p.num,(p.mesa_label||p.cliente_nome||'')+' · R$ '+((p.total||0).toFixed(2)),'ped-'+p.id);
+  });
+  if(novos.length)_ultimoPedidoNotificado=Math.max(...novos.map(p=>p.created));
+}
+if(typeof window!=='undefined'){
+  setInterval(()=>{try{_checarNovosPedidos();}catch(e){}},10000); // a cada 10s
 }
 
 // ═══════════════════════════════════════════
