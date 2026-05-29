@@ -7376,27 +7376,78 @@ function _renderCfgSection(sec){
       <div style="border-top:1px solid var(--br);padding-top:12px;margin-top:6px">
         <div class="fs12 bold mb6">Delivery</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-          <div class="fg" style="margin:0"><label class="fl">Taxa de entrega (R$)</label>
+          <div class="fg" style="margin:0"><label class="fl">Taxa de entrega padrão (R$)</label>
           <input class="inp" type="number" step="0.5" value="${cfg.whatsapp_agent?.taxa_entrega||0}" oninput="ST.cfg.whatsapp_agent.taxa_entrega=parseFloat(this.value)||0"></div>
-          <div class="fg" style="margin:0"><label class="fl">Tempo medio (min)</label>
+          <div class="fg" style="margin:0"><label class="fl">Tempo médio (min)</label>
           <input class="inp" type="number" value="${cfg.whatsapp_agent?.tempo_medio||45}" oninput="ST.cfg.whatsapp_agent.tempo_medio=parseInt(this.value)||45"></div>
         </div>
+        <div class="fg"><label class="fl">Pedido mínimo (R$)</label>
+        <input class="inp" type="number" step="0.5" value="${cfg.whatsapp_agent?.pedido_minimo||0}" oninput="ST.cfg.whatsapp_agent.pedido_minimo=parseFloat(this.value)||0" placeholder="0 = sem mínimo"></div>
+        <div class="fg"><label class="fl">Raio de entrega (km)</label>
+        <input class="inp" type="number" step="0.5" value="${cfg.whatsapp_agent?.raio_km||5}" oninput="ST.cfg.whatsapp_agent.raio_km=parseFloat(this.value)||5"></div>
+        <div class="fg"><label class="fl">Bairros atendidos + taxa (um por linha — Bairro:Taxa)</label>
+        <textarea class="inp" rows="4" style="resize:vertical;font-family:monospace;font-size:12px" oninput="ST.cfg.whatsapp_agent.bairros=this.value" placeholder="Centro:5.00&#10;Vila Nova:7.50&#10;Jardim:8.00&#10;Bairro Alto:10.00">${esc(cfg.whatsapp_agent?.bairros||'')}</textarea>
+        <div class="fs11 t3 mt4">Formato: Nome do bairro : taxa em R$. Bairros não listados pagam taxa padrão.</div></div>
+        <div class="fg"><label class="fl">Formas de pagamento aceitas</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          ${[['pix','PIX'],['dinheiro','Dinheiro'],['credito','Cartão Crédito'],['debito','Cartão Débito']].map(([id,lbl])=>{
+            const ativo=(cfg.whatsapp_agent?.formas_pag||['pix','dinheiro','credito','debito']).includes(id);
+            return `<label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:8px;background:var(--s2);border-radius:8px"><input type="checkbox" ${ativo?'checked':''} onchange="(function(c){ST.cfg.whatsapp_agent.formas_pag=(ST.cfg.whatsapp_agent.formas_pag||['pix','dinheiro','credito','debito']);if(c.checked){if(!ST.cfg.whatsapp_agent.formas_pag.includes('${id}'))ST.cfg.whatsapp_agent.formas_pag.push('${id}');}else{ST.cfg.whatsapp_agent.formas_pag=ST.cfg.whatsapp_agent.formas_pag.filter(x=>x!=='${id}');}save('cfg');})(this)" style="accent-color:var(--ac)"><span class="fs12">${lbl}</span></label>`;
+          }).join('')}
+        </div></div>
       </div>
       <div style="border-top:1px solid var(--br);padding-top:12px;margin-top:6px">
-        <div class="fs12 bold mb6">Horario de funcionamento</div>
+        <div class="fs12 bold mb6">Horário de funcionamento</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
           <div class="fg" style="margin:0"><label class="fl">Abre</label>
           <input class="inp" type="time" value="${cfg.whatsapp_agent?.horario_inicio||'11:00'}" oninput="ST.cfg.whatsapp_agent.horario_inicio=this.value"></div>
           <div class="fg" style="margin:0"><label class="fl">Fecha</label>
           <input class="inp" type="time" value="${cfg.whatsapp_agent?.horario_fim||'23:00'}" oninput="ST.cfg.whatsapp_agent.horario_fim=this.value"></div>
         </div>
+        <div class="fg"><label class="fl">Dias de funcionamento</label>
+        <div style="display:flex;gap:5px;flex-wrap:wrap">
+          ${['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'].map((d,i)=>{
+            const dias=cfg.whatsapp_agent?.dias_func||[0,1,2,3,4,5,6];
+            const at=dias.includes(i);
+            return `<button type="button" class="btn ${at?'bp':'bs'} bxs" onclick="(function(){ST.cfg.whatsapp_agent.dias_func=ST.cfg.whatsapp_agent.dias_func||[0,1,2,3,4,5,6];const idx=ST.cfg.whatsapp_agent.dias_func.indexOf(${i});if(idx>=0)ST.cfg.whatsapp_agent.dias_func.splice(idx,1);else ST.cfg.whatsapp_agent.dias_func.push(${i});save('cfg');_renderCfgSection('whatsapp');})()" style="min-width:48px">${d}</button>`;
+          }).join('')}
+        </div></div>
       </div>
       <div style="border-top:1px solid var(--br);padding-top:12px;margin-top:6px">
-        <div class="fs12 bold mb6">Mensagens</div>
-        <div class="fg"><label class="fl">Saudacao inicial</label>
-        <input class="inp" value="${esc(cfg.whatsapp_agent?.greeting||'Ola! Bem-vindo ao '+(cfg.whatsapp_agent?.nome_restaurante||cfg.nome||'Baguetalho')+'!')}" oninput="ST.cfg.whatsapp_agent.greeting=this.value"></div>
-        <div class="fg"><label class="fl">Mensagem fora do horario</label>
-        <input class="inp" value="${esc(cfg.whatsapp_agent?.mensagem_fora_horario||'Estamos fechados no momento.')}" oninput="ST.cfg.whatsapp_agent.mensagem_fora_horario=this.value"></div>
+        <div class="fs12 bold mb6">Personalidade do atendente</div>
+        <div class="fg"><label class="fl">Tom de voz</label>
+        <select class="inp" oninput="ST.cfg.whatsapp_agent.tom=this.value;save('cfg')">
+          <option value="amigavel" ${(cfg.whatsapp_agent?.tom||'amigavel')==='amigavel'?'selected':''}>😊 Amigável e acolhedor (padrão)</option>
+          <option value="descontraido" ${cfg.whatsapp_agent?.tom==='descontraido'?'selected':''}>😎 Descontraído com gírias leves</option>
+          <option value="formal" ${cfg.whatsapp_agent?.tom==='formal'?'selected':''}>👔 Formal e profissional</option>
+          <option value="divertido" ${cfg.whatsapp_agent?.tom==='divertido'?'selected':''}>🎉 Divertido com emojis</option>
+        </select></div>
+        <div class="fg"><label class="fl">Saudação inicial</label>
+        <input class="inp" value="${esc(cfg.whatsapp_agent?.greeting||'Oi! 👋 Bem-vindo(a) ao '+(cfg.whatsapp_agent?.nome_restaurante||cfg.nome||'')+'! Como posso te ajudar hoje?')}" oninput="ST.cfg.whatsapp_agent.greeting=this.value"></div>
+        <div class="fg"><label class="fl">Mensagem fora do horário</label>
+        <input class="inp" value="${esc(cfg.whatsapp_agent?.mensagem_fora_horario||('Oi! No momento estamos fechados. Voltamos '+(cfg.whatsapp_agent?.horario_inicio||'11h')+'. Pode deixar seu pedido pronto que assim que abrirmos te chamamos! 🙏'))}" oninput="ST.cfg.whatsapp_agent.mensagem_fora_horario=this.value"></div>
+        <div class="fg"><label class="fl">Mensagem pedido enviado</label>
+        <input class="inp" value="${esc(cfg.whatsapp_agent?.msg_pedido_ok||'Pedido confirmado! 🎉 Já tá na cozinha. Previsão: '+(cfg.whatsapp_agent?.tempo_medio||45)+' min. Qualquer coisa é só chamar! 😊')}" oninput="ST.cfg.whatsapp_agent.msg_pedido_ok=this.value"></div>
+        <div class="fg"><label class="fl">Instruções extras (opcional)</label>
+        <textarea class="inp" rows="3" style="resize:vertical;font-size:12px" oninput="ST.cfg.whatsapp_agent.persona_extra=this.value" placeholder="Ex: Sempre sugira nossa cerveja artesanal X com hambúrgueres. Mencione que sextas tem promoção. Não vendemos comida sem glúten.">${esc(cfg.whatsapp_agent?.persona_extra||'')}</textarea></div>
+      </div>
+      <div style="border-top:1px solid var(--br);padding-top:12px;margin-top:6px">
+        <div class="fs12 bold mb6">Captura de dados (perguntas-chave)</div>
+        <div class="fs11 t3 mb8" style="line-height:1.5">O atendente vai sempre perguntar:</div>
+        <div style="background:var(--s2);border-radius:8px;padding:10px">
+          <div class="fs12" style="line-height:1.8">
+            ✅ Nome do cliente<br>
+            ✅ Endereço completo (rua, número, bairro, complemento, referência)<br>
+            ✅ Forma de pagamento (e troco se for dinheiro)<br>
+            ✅ Observações dos itens (ponto da carne, sem cebola, etc)<br>
+            ✅ Confirmação do total antes de fechar
+          </div>
+        </div>
+      </div>
+      <div style="border-top:1px solid var(--br);padding-top:12px;margin-top:6px">
+        <div class="fs12 bold mb6">Prompt do atendente IA</div>
+        <div class="fs11 t3 mb8" style="line-height:1.5">Visualize e copie o prompt completo enviado para a IA. Útil para testar em ChatGPT/Claude antes de configurar webhook.</div>
+        <button class="btn bb bw" onclick="_verPromptWhatsapp()">${ppIcon('bot',14,1.7)} Ver/copiar prompt do agente</button>
       </div>
       <div class="fs11 t3 mt10" style="display:flex;align-items:center;gap:6px;padding:8px;background:var(--s2);border-radius:8px">
         ${ppIcon('info',14,1.6)} Pedidos do WhatsApp aparecem automaticamente no PDV com a origem <span class="bdg bg-gn" style="font-size:9px">WhatsApp</span>
@@ -12087,12 +12138,22 @@ function renderAgente(){
     </div>
     <div id="agent-msgs" style="flex:1;overflow-y:auto;padding:12px 0;display:flex;flex-direction:column;gap:10px">
       ${_agentMsgs.length===0?`
-      <div style="text-align:center;padding:40px 0;color:var(--t3)">
+      <div style="text-align:center;padding:30px 0;color:var(--t3)">
         <div style="font-size:40px;margin-bottom:8px">🤖</div>
-        <div class="fs13 bold mb4">Assistente de vendas inteligente</div>
-        <div class="fs12" style="line-height:1.6;max-width:360px;margin:0 auto">Analisa seu cardapio, historico de clientes e sugere upsells. Pergunte sobre vendas, clientes ou peca sugestoes de marketing.</div>
-        <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:16px">
-          ${['Quais meus produtos mais vendidos?','Sugira um combo para o cardapio','Analise meus clientes VIP','Como aumentar o ticket medio?'].map(s=>`<button class="btn bxs bs" style="font-size:11px;padding:6px 12px" onclick="_agentQuickSend('${s}')">${s}</button>`).join('')}
+        <div class="fs13 bold mb4">Consultor de vendas inteligente</div>
+        <div class="fs12" style="line-height:1.6;max-width:380px;margin:0 auto">Analisa seu negócio, identifica oportunidades, sugere ações com dados reais.</div>
+        <div style="margin-top:20px;display:grid;gap:8px;max-width:380px;margin-left:auto;margin-right:auto">
+          <div class="fs11 bold t2" style="text-align:left;padding:0 4px">💡 Perguntas estratégicas</div>
+          ${[
+            ['📈','Como aumentar meu ticket médio?'],
+            ['🎯','Que combo posso lançar essa semana?'],
+            ['💔','Quais clientes devo chamar de volta?'],
+            ['🏆','Quais produtos viraram meus best-sellers?'],
+            ['⚠️','Que produtos estão dando prejuízo?'],
+            ['🕐','Por que tem pouco movimento à tarde?'],
+            ['💰','Qual horário gera mais receita?'],
+            ['📱','Crie uma mensagem de WhatsApp para clientes inativos']
+          ].map(([ico,s])=>`<button class="btn bs bsm" style="justify-content:flex-start;padding:10px 12px;text-align:left;font-size:12px;gap:8px" onclick="_agentQuickSend(this.dataset.q)" data-q="${esc(s)}"><span style="font-size:16px">${ico}</span>${esc(s)}</button>`).join('')}
         </div>
       </div>`:_agentMsgs.map(m=>`
       <div style="display:flex;justify-content:${m.role==='user'?'flex-end':'flex-start'}">
@@ -12137,11 +12198,17 @@ async function _agentSend(text){
   const messages=[{role:'system',content:systemPrompt},..._agentMsgs];
 
   try{
-    const res=await fetch(endpoint,{
-      method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey},
-      body:JSON.stringify({messages,model:cfg.model||'gpt-4o-mini',temperature:0.7,max_tokens:1000})
-    });
+    // Parâmetros otimizados por provider, com overrides do user
+    const isAnthropic=(endpoint||'').includes('anthropic');
+    const temp=cfg.temperature??0.6;
+    const maxTok=cfg.max_tokens||1500;
+    const body=isAnthropic
+      ? {model:cfg.model||'claude-3-5-haiku-20241022',messages:_agentMsgs,system:systemPrompt,max_tokens:maxTok,temperature:temp,top_p:0.9}
+      : {messages,model:cfg.model||'gpt-4o-mini',temperature:temp,top_p:0.9,frequency_penalty:0.2,presence_penalty:0.1,max_tokens:maxTok};
+    const headers={'Content-Type':'application/json'};
+    if(isAnthropic){headers['x-api-key']=apiKey;headers['anthropic-version']='2023-06-01';}
+    else headers['Authorization']='Bearer '+apiKey;
+    const res=await fetch(endpoint,{method:'POST',headers,body:JSON.stringify(body)});
     const data=await res.json();
     const reply=data.choices?.[0]?.message?.content||data.content?.[0]?.text||data.response||'Sem resposta da IA.';
     _agentMsgs.push({role:'assistant',content:reply});
@@ -12152,48 +12219,344 @@ async function _agentSend(text){
   renderAgente();
 }
 
+function _verPromptIA(){
+  const prompt=_buildAgentSystemPrompt();
+  const body=`
+    <div class="fs11 t2 mb8">Este é o prompt completo enviado ao Agente IA do PDV. Inclui cardápio, vendas, clientes e regras de comportamento.</div>
+    <textarea class="inp" readonly rows="14" style="font-family:monospace;font-size:11px;line-height:1.4;resize:vertical">${esc(prompt)}</textarea>
+    <button class="btn bp bw mt8" onclick="(function(){if(navigator.clipboard){navigator.clipboard.writeText(_buildAgentSystemPrompt()).then(()=>toast('Prompt copiado!','g'));}})()">${ppIcon('copy',14,1.7)} Copiar prompt</button>
+    <div class="fs11 t3 mt8" style="line-height:1.5">📊 Tamanho: ~${Math.round(prompt.length/4)} tokens · ${prompt.length} caracteres</div>
+  `;
+  showModal('mc-promptia','Prompt do Agente IA (PDV)',body);
+}
+function _verPromptWhatsapp(){
+  const prompt=_buildWhatsappAgentPrompt();
+  const body=`
+    <div class="fs11 t2 mb8">Cole este prompt como "system" no seu provedor de IA (ChatGPT, Claude, etc.) para testar antes de configurar webhook.</div>
+    <textarea class="inp" readonly rows="14" style="font-family:monospace;font-size:11px;line-height:1.4;resize:vertical">${esc(prompt)}</textarea>
+    <button class="btn bp bw mt8" onclick="_copyPromptWa()">${ppIcon('copy',14,1.7)} Copiar prompt</button>
+    <div class="fs11 t3 mt8" style="line-height:1.5">📊 Tamanho: ~${Math.round(prompt.length/4)} tokens · ${prompt.length} caracteres</div>
+  `;
+  showModal('mc-promptwa','Prompt do Agente WhatsApp',body);
+}
+function _copyPromptWa(){
+  const txt=_buildWhatsappAgentPrompt();
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(txt).then(()=>toast('Prompt copiado!','g'));
+  } else {
+    const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);
+    ta.select();document.execCommand('copy');ta.remove();
+    toast('Prompt copiado!','g');
+  }
+}
+
+function _buildWhatsappAgentPrompt(){
+  const cfg=ST.cfg;
+  const wa=cfg.whatsapp_agent||{};
+  const prods=ST.produtos.filter(p=>p.ativo!==false);
+  const cats=ST.categorias;
+  const nome=wa.nome_restaurante||cfg.nome||'Restaurante';
+
+  // Cardápio formatado para o agente
+  const cardapio=cats.map(c=>{
+    const items=prods.filter(p=>p.cat_id===c.id);
+    if(!items.length)return '';
+    return `\n*${c.emoji||''} ${c.nome}*\n`+items.map(p=>{
+      const det=[];
+      if(p.desc)det.push(p.desc);
+      if(p.tempo)det.push(p.tempo+'min');
+      return `• *${p.nome}* — R$ ${Number(p.preco||0).toFixed(2).replace('.',',')}${det.length?'\n  _'+det.join(' · ')+'_':''}`;
+    }).join('\n');
+  }).filter(Boolean).join('\n');
+
+  // Bairros parseados
+  const bairros=(wa.bairros||'').split('\n').map(l=>{
+    const [n,t]=l.split(':').map(x=>(x||'').trim());
+    return n?{nome:n,taxa:parseFloat(t)||wa.taxa_entrega||0}:null;
+  }).filter(Boolean);
+  const bairrosStr=bairros.length?bairros.map(b=>`• ${b.nome}: R$ ${b.taxa.toFixed(2).replace('.',',')}`).join('\n'):'Atendemos todos os bairros próximos (taxa padrão R$ '+(wa.taxa_entrega||0).toFixed(2).replace('.',',')+')';
+
+  const formasMap={pix:'PIX',dinheiro:'Dinheiro',credito:'Cartão Crédito (na entrega)',debito:'Cartão Débito (na entrega)'};
+  const formas=(wa.formas_pag||['pix','dinheiro','credito','debito']).map(f=>'• '+formasMap[f]).join('\n');
+
+  const diasMap=['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+  const diasFunc=(wa.dias_func||[0,1,2,3,4,5,6]).map(d=>diasMap[d]).join(', ');
+
+  const tom=wa.tom||'amigavel';
+  const tomDesc={
+    amigavel:'Use linguagem amigável, calorosa e acolhedora. Cumprimente com carinho. Use até 1-2 emojis por mensagem para humanizar.',
+    descontraido:'Use linguagem descontraída e jovem. Pode usar gírias leves como "beleza", "mano", "show". Emojis à vontade mas sem exagero.',
+    formal:'Use linguagem formal e profissional. Trate por "senhor"/"senhora". Sem gírias. Sem emojis ou no máximo 1 por mensagem.',
+    divertido:'Use linguagem divertida e energética com vários emojis 🎉🍔🔥. Brinque com o cliente, faça piadas leves. Seja a alma da conversa.'
+  }[tom];
+
+  return `Você é o **atendente virtual do ${nome}** no WhatsApp. Seu trabalho é receber pedidos de delivery de forma humana, eficiente e completa.
+
+# IDENTIDADE
+Você é um(a) atendente real do restaurante. NUNCA se identifique como IA, robô ou bot. Se perguntarem, diga "Sou do atendimento do ${nome}, em que posso ajudar?"
+
+# TOM DE VOZ
+${tomDesc}
+
+# CARDÁPIO COMPLETO
+${cardapio||'⚠️ Cardápio sem produtos'}
+
+# FUNCIONAMENTO
+- Horário: ${wa.horario_inicio||'11:00'} às ${wa.horario_fim||'23:00'}
+- Dias: ${diasFunc}
+- Tempo médio de entrega: ${wa.tempo_medio||45} minutos
+${wa.pedido_minimo>0?'- Pedido mínimo: R$ '+wa.pedido_minimo.toFixed(2).replace('.',','):''}
+- Raio de entrega: ${wa.raio_km||5} km
+
+# BAIRROS E TAXAS
+${bairrosStr}
+
+# FORMAS DE PAGAMENTO ACEITAS
+${formas}
+${wa.chave_pix?`\n# PIX\nNossa chave PIX: ${wa.chave_pix}`:''}
+
+# FLUXO DE ATENDIMENTO — SIGA SEMPRE NESTA ORDEM
+
+## 1️⃣ ABERTURA
+Se for primeiro contato, cumprimente e pergunte o nome:
+"${wa.greeting||'Oi! 👋 Bem-vindo ao '+nome+'! Como posso te ajudar hoje?'} Qual é o seu nome?"
+
+## 2️⃣ DESCOBERTA — Entenda o que o cliente quer
+Se ele perguntar cardápio: ofereça por categoria. NÃO despeje tudo de uma vez.
+Exemplo: "Temos lanches, bebidas e sobremesas. Qual te interessa?"
+
+Se ele já souber o que quer: confirme o pedido e siga.
+
+## 3️⃣ UPSELL INTELIGENTE (sutil, não forçado)
+- Se pedir um lanche → pergunte se vai querer bebida
+- Se pedir só bebida → pergunte se vai querer algo pra acompanhar
+- Se pedir 1 item caro → mencione promoção/combo se houver
+- NUNCA seja chato. 1 sugestão por pedido, no máximo.
+
+## 4️⃣ COLETA DE DADOS — PERGUNTAS-CHAVE OBRIGATÓRIAS
+
+Para CADA item: pergunte se tem alguma observação ou preferência.
+Exemplos:
+- Hambúrguer → "Como prefere a carne? Mal, ao ponto, ou bem passado? Algo a tirar/adicionar?"
+- Pizza → "Borda recheada? Algum ingrediente a remover?"
+- Bebida → "Geladinha ou natural?"
+
+Depois colete TODOS estes dados (NÃO PULE NENHUM):
+1. **Endereço completo**: rua, *número*, bairro, complemento (apto/casa)
+2. **Ponto de referência**: "Próximo de quê?" (ajuda muito o motoboy)
+3. **Forma de pagamento**: liste só as aceitas
+4. Se for dinheiro: **"Precisa de troco para quanto?"**
+5. Se pedir confirmação por chamada/avisar quando saiu: anote.
+
+## 5️⃣ RESUMO E CONFIRMAÇÃO
+Antes de fechar, monte um resumo claro:
+\`\`\`
+📋 *Seu pedido:*
+${'• [item] - R$ X,XX'}
+${'• ...'}
+
+🛵 Entrega: [endereço]
+🏘 Bairro: [bairro] - Taxa R$ X,XX
+💰 Pagamento: [forma]${'(troco para R$ X)'}
+
+*Subtotal:* R$ X,XX
+*Taxa entrega:* R$ X,XX
+*TOTAL:* R$ X,XX
+
+⏱ Previsão: ${wa.tempo_medio||45}min
+
+Tá certinho assim? Posso confirmar? ✅
+\`\`\`
+
+Espere o "sim/ok/confirma" antes de fechar.
+
+## 6️⃣ FECHAMENTO
+Quando confirmar:
+"${wa.msg_pedido_ok||'Pedido confirmado! 🎉 Já tá na cozinha. Previsão: '+(wa.tempo_medio||45)+'min. Qualquer coisa é só chamar!'}"
+
+# REGRAS CRÍTICAS
+
+✅ **SEMPRE** pergunte número da casa/apto (sem isso o motoboy não acha)
+✅ **SEMPRE** confirme bairro (impacta taxa e tempo)
+✅ **SEMPRE** pergunte forma de pagamento ANTES de fechar
+✅ **SEMPRE** pergunte troco se for dinheiro
+✅ **SEMPRE** confirme o total antes de fechar
+✅ Use NOMES e PREÇOS EXATOS do cardápio acima
+✅ Se cliente pedir item fora do cardápio: "Desculpa, esse a gente não tem. Quer ver o que tem disponível?"
+✅ Se o valor não bater com o mínimo: explique "Nosso pedido mínimo é R$ ${(wa.pedido_minimo||0).toFixed(2).replace('.',',')}. Quer adicionar mais alguma coisa?"
+
+⛔ **NUNCA** invente produtos ou preços
+⛔ **NUNCA** prometa tempo menor que ${wa.tempo_medio||45}min
+⛔ **NUNCA** aceite formas de pagamento não listadas
+⛔ **NUNCA** confirme pedido sem endereço completo
+⛔ **NUNCA** seja prolixo. Mensagens curtas, diretas, humanas.
+
+# SITUAÇÕES ESPECIAIS
+
+**Fora do horário:**
+"${wa.mensagem_fora_horario||'No momento estamos fechados. Voltamos '+(wa.horario_inicio||'11h')+'. Pode deixar seu pedido pronto que assim que abrirmos te chamamos!'}"
+
+**Cliente insatisfeito/reclamação:**
+- Demonstre empatia genuína: "Poxa, sinto muito por isso."
+- NÃO tente resolver problemas complexos sozinho. Diga: "Vou chamar o gerente agora pra te ajudar pessoalmente."
+- Marque como urgente e avise o dono.
+
+**Cliente pedindo desconto/cupom:**
+- Se houver promoção ativa, mencione.
+- Se não houver, diga educadamente: "Hoje não temos cupom ativo, mas sempre tem novidades no nosso WhatsApp! 😉"
+- NÃO invente desconto.
+
+**Cliente perguntando se entrega em outro bairro:**
+- Confirme distância (raio ${wa.raio_km||5}km).
+- Se não atende: "Infelizmente esse bairro tá fora da nossa área de entrega. Se quiser, pode buscar na loja!"
+
+**Pedido grande (catering/eventos):**
+- "Que legal! Esse tipo de pedido a gente combina pelo telefone com o gerente. Posso passar pra ele te chamar?"
+
+# FORMATO DE RESPOSTA
+- Mensagens curtas (2-4 linhas máximo por turno)
+- Use *negrito* (asteriscos) para destacar preços e totais
+- Use emojis com moderação (1-2 por mensagem, mais se tom for "divertido")
+- Sem markdown complexo (sem títulos #, sem listas com hífen)
+- Quebras de linha naturais
+
+${wa.persona_extra?'\n# INSTRUÇÕES ESPECIAIS DO DONO\n'+wa.persona_extra:''}
+
+Lembre: você representa o ${nome}. Cada conversa é uma chance de fidelizar. Seja humano, atencioso e eficiente.`;
+}
+
 function _buildAgentSystemPrompt(){
   const cfg=ST.cfg;
   const prods=ST.produtos.filter(p=>p.ativo!==false);
   const cats=ST.categorias;
   const peds=ST.pedidos||[];
   const clis=ST.clientes||[];
+  const pedsPagos=peds.filter(p=>p.status==='pago');
 
-  // Top produtos por frequência
-  const prodCount={};
-  peds.forEach(p=>(p.itens||[]).forEach(it=>{prodCount[it.nome]=(prodCount[it.nome]||0)+it.qtd;}));
-  const topProds=Object.entries(prodCount).sort((a,b)=>b[1]-a[1]).slice(0,10).map(([n,q])=>n+' ('+q+'x)').join(', ');
+  // ── Análise de produtos: vendas, receita, ticket ──
+  const prodStats={};
+  pedsPagos.forEach(p=>(p.itens||[]).forEach(it=>{
+    const k=it.nome;
+    if(!prodStats[k])prodStats[k]={nome:it.nome,qtd:0,receita:0};
+    prodStats[k].qtd+=(it.qty||it.qtd||1);
+    prodStats[k].receita+=(it.preco||0)*(it.qty||it.qtd||1);
+  }));
+  const topByQtd=Object.values(prodStats).sort((a,b)=>b.qtd-a.qtd).slice(0,10);
+  const topByReceita=Object.values(prodStats).sort((a,b)=>b.receita-a.receita).slice(0,5);
 
-  // Cardápio resumido
-  const cardapio=cats.map(c=>{
-    const items=prods.filter(p=>p.categoria===c.nome).map(p=>p.nome+' R$'+Number(p.preco||0).toFixed(2)).join('; ');
-    return items?c.nome+': '+items:'';
+  // ── Cardápio agrupado por categoria, com descrição ──
+  const cardapioStr=cats.map(c=>{
+    const items=prods.filter(p=>p.cat_id===c.id);
+    if(!items.length)return '';
+    return `\n[${c.emoji||''} ${c.nome}]\n`+items.map(p=>{
+      const det=[];
+      if(p.desc)det.push(p.desc.substring(0,80));
+      if(p.tempo)det.push(p.tempo+'min');
+      if(p.estoque!=null&&p.estoque<=5)det.push('estoque baixo: '+p.estoque);
+      return `• ${p.nome} — R$ ${Number(p.preco||0).toFixed(2).replace('.',',')}${det.length?' ('+det.join(' · ')+')':''}`;
+    }).join('\n');
   }).filter(Boolean).join('\n');
 
-  // Top clientes
-  const cliStats=clis.slice(0,10).map(c=>{
-    const pedsCli=peds.filter(p=>p.cliente_nome===c.nome);
-    return c.nome+' ('+pedsCli.length+' pedidos)';
-  }).join(', ');
+  // ── Combos detectados (top pairs) ──
+  const pairs={};
+  pedsPagos.forEach(p=>{
+    const nomes=(p.itens||[]).map(i=>i.nome).filter(Boolean);
+    for(let i=0;i<nomes.length;i++)for(let j=i+1;j<nomes.length;j++){
+      const key=[nomes[i],nomes[j]].sort().join(' + ');
+      pairs[key]=(pairs[key]||0)+1;
+    }
+  });
+  const topPairs=Object.entries(pairs).sort((a,b)=>b[1]-a[1]).slice(0,5);
 
-  return `Voce e o assistente de vendas inteligente do "${cfg.nome||'PedePronto'}".
-Seu papel: ajudar o operador a vender mais, sugerir upsells, analisar dados de CRM e criar estrategias de retencao.
+  // ── Análise temporal ──
+  const ultimos30=Date.now()-30*86400000;
+  const peds30=pedsPagos.filter(p=>new Date(p.pago_em||p.created).getTime()>=ultimos30);
+  const receita30=peds30.reduce((s,p)=>s+(p.total||0),0);
+  const ticketMedio=peds30.length?receita30/peds30.length:0;
 
-CARDAPIO ATUAL:
-${cardapio||'Nenhum produto cadastrado'}
+  // Horários de pico
+  const horCount=new Array(24).fill(0);
+  peds30.forEach(p=>{horCount[new Date(p.pago_em||p.created).getHours()]++;});
+  const picoH=horCount.map((c,h)=>({h,c})).sort((a,b)=>b.c-a.c).slice(0,3).map(x=>x.h+'h');
 
-TOP PRODUTOS VENDIDOS: ${topProds||'Sem dados ainda'}
-TOTAL DE PEDIDOS: ${peds.length}
-TOP CLIENTES: ${cliStats||'Sem clientes'}
-TICKET MEDIO: R$ ${peds.length>0?(peds.reduce((s,p)=>s+(p.total||0),0)/peds.length).toFixed(2):'0.00'}
+  // ── Clientes VIP ──
+  const cliPedidos={};
+  pedsPagos.forEach(p=>{
+    const n=p.cliente_nome;if(!n)return;
+    if(!cliPedidos[n])cliPedidos[n]={qtd:0,total:0,ultimo:0};
+    cliPedidos[n].qtd++;cliPedidos[n].total+=p.total||0;
+    cliPedidos[n].ultimo=Math.max(cliPedidos[n].ultimo,new Date(p.pago_em||p.created).getTime());
+  });
+  const vips=Object.entries(cliPedidos).sort((a,b)=>b[1].total-a[1].total).slice(0,5);
+  const inativos=Object.entries(cliPedidos).filter(([,d])=>Date.now()-d.ultimo>30*86400000&&d.qtd>=3).slice(0,5);
 
-Regras:
-- Responda em portugues BR, de forma objetiva e amigavel
-- Sugira combos e upsells baseados no cardapio real
-- Use dados de CRM para personalizar sugestoes
-- Seja proativo: identifique oportunidades de venda
-- Formato: texto limpo, sem markdown complexo
-${cfg.ai_agent?.persona?'\nINSTRUCOES EXTRAS DO DONO:\n'+cfg.ai_agent.persona:''}`;
+  // ── Produtos sem giro ──
+  const semGiro=prods.filter(p=>!prodStats[p.nome]||prodStats[p.nome].qtd<2);
+
+  // ── Promoções ativas ──
+  const promosAtivas=(cfg.promos||[]).filter(pr=>pr.ativa).map(pr=>`${pr.nome} (${pr.hIni}h-${pr.hFim}h, ${pr.desc_pct}% off)`).join(', ');
+
+  const dataHoje=new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long'});
+  const horaAtual=new Date().getHours();
+
+  return `Você é o **Consultor de Vendas Inteligente** do ${cfg.nome||'estabelecimento'}.
+
+# SEU PAPEL
+Ajudar o dono a vender mais, identificar oportunidades, otimizar cardápio, recuperar clientes inativos e treinar a equipe. Você fala como um colega experiente do dono — direto ao ponto, com dados na mão, sem enrolação.
+
+# CONTEXTO ATUAL
+- Data: ${dataHoje} (${horaAtual}h)
+- Estabelecimento: ${cfg.nome||'—'} ${cfg.endereco?'· '+cfg.endereco:''}
+- Modo: ${cfg.taxa_servico?'Com taxa serviço '+cfg.taxa_servico+'%':'Sem taxa serviço'}
+
+# CARDÁPIO COMPLETO
+${cardapioStr||'⚠️ Nenhum produto ativo cadastrado'}
+
+# DADOS DE VENDAS (últimos 30 dias)
+- Pedidos pagos: **${peds30.length}** · Receita: **R$ ${receita30.toFixed(2).replace('.',',')}**
+- Ticket médio: **R$ ${ticketMedio.toFixed(2).replace('.',',')}**
+- Horários de pico: ${picoH.join(', ')||'sem dados'}
+
+# TOP 10 PRODUTOS (quantidade vendida)
+${topByQtd.length?topByQtd.map((p,i)=>`${i+1}. ${p.nome} — ${p.qtd}x · R$ ${p.receita.toFixed(2).replace('.',',')}`).join('\n'):'Sem dados ainda'}
+
+# TOP 5 PRODUTOS (receita)
+${topByReceita.length?topByReceita.map((p,i)=>`${i+1}. ${p.nome} — R$ ${p.receita.toFixed(2).replace('.',',')}`).join('\n'):'—'}
+
+# COMBOS MAIS PEDIDOS
+${topPairs.length?topPairs.map(([k,v])=>`• ${k} (${v}x juntos)`).join('\n'):'Sem padrão detectado'}
+
+# CLIENTES VIP (maior valor gasto)
+${vips.length?vips.map(([n,d],i)=>`${i+1}. ${n} — ${d.qtd} pedidos · R$ ${d.total.toFixed(2).replace('.',',')}`).join('\n'):'Sem dados'}
+
+# CLIENTES INATIVOS RECUPERÁVEIS (3+ pedidos mas sem comprar há 30+ dias)
+${inativos.length?inativos.map(([n,d])=>`• ${n} — ${d.qtd} pedidos, último ${Math.floor((Date.now()-d.ultimo)/86400000)} dias atrás`).join('\n'):'Nenhum'}
+
+# PRODUTOS COM POUCA SAÍDA (candidatos a remover ou promover)
+${semGiro.length?semGiro.slice(0,8).map(p=>'• '+p.nome).join('\n'):'Todos giram bem'}
+
+# PROMOÇÕES ATIVAS
+${promosAtivas||'Nenhuma promoção configurada'}
+
+# COMO RESPONDER
+1. **Seja específico**: use nomes reais do cardápio, valores reais em R$, números reais de pedidos.
+2. **Dê 1-3 ações práticas** para cada sugestão, no formato:
+   "Ação: [o que fazer] · Por quê: [dado que justifica] · Impacto: [estimativa em R$ ou %]"
+3. **Use o cardápio acima** para combos — nunca invente produtos.
+4. **Personalize por cliente**: cite nomes reais ao falar de VIPs/inativos.
+5. **Tom**: direto, prático, profissional. Sem floreios. Português BR.
+6. **Formato**: bullets curtos quando houver lista. Texto corrido quando for análise.
+7. **Proatividade**: se identificar uma oportunidade óbvia (ex: produto X tem 80% de margem e vende muito → sugira combo com ele), aponte mesmo sem ser perguntado.
+8. **Não dê palpite sem dado**: se não tiver dados suficientes, diga "preciso de mais histórico" ou peça contexto.
+
+# EXEMPLOS DE PERGUNTAS QUE VOCÊ RESPONDE BEM
+- "Como aumentar meu ticket médio?"
+- "Qual produto está dando prejuízo?"
+- "Quais clientes devo chamar de volta hoje?"
+- "Que combo posso lançar essa semana?"
+- "Está horário tem pouco movimento, o que faço?"
+- "Qual mensagem mando no WhatsApp pro [cliente]?"
+${cfg.ai_agent?.persona?'\n# INSTRUÇÕES EXTRAS DO DONO\n'+cfg.ai_agent.persona:''}`;
 }
 
 // ═══════════════════════════════════════════
@@ -12334,8 +12697,9 @@ _renderCfgSection=function(sec){
   if(sec==='ia_agente'){
     const ai=cfg.ai_agent||{};
     const _aiPresets={
-      groq:{label:'Groq (Gratuito)',endpoint:'https://api.groq.com/openai/v1/chat/completions',model:'llama-3.3-70b-versatile',placeholder:'gsk_...'},
-      openai:{label:'OpenAI (Pago)',endpoint:'https://api.openai.com/v1/chat/completions',model:'gpt-4o-mini',placeholder:'sk-...'},
+      groq:{label:'Groq (Grátis)',endpoint:'https://api.groq.com/openai/v1/chat/completions',model:'llama-3.3-70b-versatile',placeholder:'gsk_...'},
+      anthropic:{label:'Claude (Anthropic)',endpoint:'https://api.anthropic.com/v1/messages',model:'claude-3-5-haiku-20241022',placeholder:'sk-ant-...'},
+      openai:{label:'OpenAI',endpoint:'https://api.openai.com/v1/chat/completions',model:'gpt-4o-mini',placeholder:'sk-...'},
       openrouter:{label:'OpenRouter',endpoint:'https://openrouter.ai/api/v1/chat/completions',model:'meta-llama/llama-3.3-70b-instruct',placeholder:'sk-or-...'},
       custom:{label:'Personalizado',endpoint:'',model:'',placeholder:''}
     };
@@ -12375,7 +12739,23 @@ _renderCfgSection=function(sec){
       <div class="fg mt10" style="border-top:1px solid var(--br);padding-top:10px">
         <label class="fl">Personalidade do agente (opcional)</label>
         <textarea class="inp" rows="3" style="resize:vertical;font-size:12px" oninput="ST.cfg.ai_agent.persona=this.value" placeholder="Ex: Seja informal e use girias. Sempre sugira a cerveja artesanal como upsell...">${esc(ai.persona||'')}</textarea>
-        <div class="fs11 t3 mt4">Instrucoes extras adicionadas ao prompt do sistema. O contexto de CRM e incluido automaticamente.</div>
+        <div class="fs11 t3 mt4">Instruções extras adicionadas ao prompt do sistema. O contexto de CRM é incluído automaticamente.</div>
+      </div>
+      <div class="fg" style="border-top:1px solid var(--br);padding-top:10px">
+        <label class="fl">Parâmetros avançados</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div><label class="fs11 t2">Criatividade (${ai.temperature??0.6})</label>
+          <input type="range" min="0" max="1" step="0.1" value="${ai.temperature??0.6}" oninput="ST.cfg.ai_agent.temperature=parseFloat(this.value);save('cfg');this.previousElementSibling.textContent='Criatividade ('+this.value+')'" style="width:100%;accent-color:var(--ac)">
+          <div class="fs10 t3">0=preciso · 1=criativo</div></div>
+          <div><label class="fs11 t2">Tamanho resposta</label>
+          <select class="inp" style="padding:6px" oninput="ST.cfg.ai_agent.max_tokens=parseInt(this.value)||1500;save('cfg')">
+            <option value="500" ${ai.max_tokens==500?'selected':''}>Curta (500)</option>
+            <option value="1500" ${(ai.max_tokens||1500)==1500?'selected':''}>Média (1500)</option>
+            <option value="3000" ${ai.max_tokens==3000?'selected':''}>Longa (3000)</option>
+            <option value="6000" ${ai.max_tokens==6000?'selected':''}>Extra longa (6000)</option>
+          </select></div>
+        </div>
+        <button class="btn bs bsm bw mt8" onclick="_verPromptIA()">${ppIcon('bot',13,1.7)} Ver prompt completo do agente</button>
       </div>
       `:''}
     </div>
@@ -12390,6 +12770,7 @@ _renderCfgSection=function(sec){
 function _aiSetProvider(prov){
   const presets={
     groq:{endpoint:'https://api.groq.com/openai/v1/chat/completions',model:'llama-3.3-70b-versatile'},
+    anthropic:{endpoint:'https://api.anthropic.com/v1/messages',model:'claude-3-5-haiku-20241022'},
     openai:{endpoint:'https://api.openai.com/v1/chat/completions',model:'gpt-4o-mini'},
     openrouter:{endpoint:'https://openrouter.ai/api/v1/chat/completions',model:'meta-llama/llama-3.3-70b-instruct'},
     custom:{endpoint:'',model:''}
