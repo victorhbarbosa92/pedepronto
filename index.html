@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5,viewport-fit=cover">
 <meta name="theme-color" content="#080A0E">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1262,9 +1262,9 @@ const _PP_PUBKEY_JWK={"crv":"P-256","ext":true,"key_ops":["verify"],"kty":"EC","
   <!-- DESKTOP: logo -->
   <div class="logo" id="tb-logo">Pede<s>Pronto</s></div>
   <!-- MOBILE: home -->
-  <button class="tbtn-ico" id="btn-home" onclick="nav('dash')" title="Início"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8M5 10v10h14V10"/></svg></button>
+  <button class="tbtn-ico" id="btn-home" onclick="nav('dash')" title="Início" aria-label="Ir para tela inicial"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-8 9 8M5 10v10h14V10"/></svg></button>
   <!-- VOLTAR -->
-  <button id="btn-back" onclick="_goBack()" title="Voltar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg> Voltar</button>
+  <button id="btn-back" onclick="_goBack()" title="Voltar" aria-label="Voltar para tela anterior"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg> Voltar</button>
   <!-- título da página -->
   <div id="top-title">Início</div>
   <!-- indicador offline -->
@@ -1276,10 +1276,10 @@ const _PP_PUBKEY_JWK={"crv":"P-256","ext":true,"key_ops":["verify"],"kty":"EC","
   </div>
   <!-- ações da direita -->
   <div class="tb-actions">
-    <button id="btn-theme" onclick="toggleTheme()" title="Alternar tema"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg></button>
-    <button class="tbtn-ico" id="alerta-bell" onclick="openAlertas()" title="Alertas"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg><span class="alerta-dot" id="alerta-dot"></span></button>
-    <button class="tbtn-ico" id="btn-bt" onclick="openMc('mc-bt')" title="Impressora"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6z"/></svg></button>
-    <button class="tbtn-ico" id="btn-drive" onclick="showCloudStatus()" title="Sincronização"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 110-14h.5M17.5 19a4.5 4.5 0 100-9H9"/></svg></button>
+    <button id="btn-theme" onclick="toggleTheme()" title="Alternar tema" aria-label="Alternar tema claro/escuro"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg></button>
+    <button class="tbtn-ico" id="alerta-bell" onclick="openAlertas()" title="Alertas" aria-label="Abrir notificações"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg><span class="alerta-dot" id="alerta-dot" aria-hidden="true"></span></button>
+    <button class="tbtn-ico" id="btn-bt" onclick="openMc('mc-bt')" title="Impressora" aria-label="Configurar impressora Bluetooth"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6z"/></svg></button>
+    <button class="tbtn-ico" id="btn-drive" onclick="showCloudStatus()" title="Sincronização" aria-label="Status da sincronização na nuvem"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.5 19H9a7 7 0 110-14h.5M17.5 19a4.5 4.5 0 100-9H9"/></svg></button>
     <div class="tb-divider"></div>
     <button class="tbtn tb-caixa" onclick="showCaixaQuick()" title="Caixa" id="btn-caixa-st"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M6 9v6M18 9v6"/></svg> Caixa</button>
   </div>
@@ -1309,7 +1309,7 @@ const _PP_PUBKEY_JWK={"crv":"P-256","ext":true,"key_ops":["verify"],"kty":"EC","
         <div class="sb-brand-icon">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h18l-1 4H4zM5 12v8h14v-8M9 16h6"/></svg>
         </div>
-        <img id="sb-logo-img" src="" style="display:none;width:36px;height:36px;border-radius:8px;object-fit:cover;flex-shrink:0">
+        <img id="sb-logo-img" src="" alt="Logo do estabelecimento" style="display:none;width:36px;height:36px;border-radius:8px;object-fit:cover;flex-shrink:0">
         <div style="min-width:0">
           <div class="sb-brand-name" id="sb-brand">PedePronto</div>
           <div id="sb-est" style="font-size:11px;color:var(--t2);margin-top:1px;font-weight:500;font-family:var(--mono)">Carregando...</div>
@@ -2848,9 +2848,17 @@ const isMobile=()=>window.innerWidth<=768;
 // ═══════════════════════════════════════════
 function toast(msg,type='g',dur=3000){
   const w=document.getElementById('toast-w');
+  // Garante atributo aria-live para leitores de tela
+  if(w&&!w.hasAttribute('aria-live')){
+    w.setAttribute('aria-live','polite');
+    w.setAttribute('aria-atomic','true');
+    w.setAttribute('role','status');
+  }
   const el=document.createElement('div');
   const icons={g:'✅',r:'❌',a:'⚠️',b:'ℹ️'};
-  el.className=`toast ${type}`;el.innerHTML=`<span style="font-size:15px;flex-shrink:0">${icons[type]||''}</span> ${msg}`;w.appendChild(el);
+  // Errors com role=alert (assertivo)
+  if(type==='r')el.setAttribute('role','alert');
+  el.className=`toast ${type}`;el.innerHTML=`<span style="font-size:15px;flex-shrink:0" aria-hidden="true">${icons[type]||''}</span> ${msg}`;w.appendChild(el);
   setTimeout(()=>{el.style.opacity='0';el.style.transform='translateX(14px)';el.style.transition='all .3s';setTimeout(()=>el.remove(),300)},dur);
 }
 
@@ -3497,8 +3505,9 @@ const BT={
     const txt=(s)=>[...enc.encode(this.norm(s))];
     let all=[...CMD.init,...CMD.cp850,...CMD.lf];
     const blocosFilt=blocos.filter(b=>{
-      if(b==='coz')return ped.itens.some(i=>i.dest==='coz');
-      if(b==='bar')return ped.itens.some(i=>i.dest==='bar');
+      // FIX bug #1: usa helper que suporta dests array + dest legado
+      if(b==='coz')return ped.itens.some(i=>_itemPraDest(i,'coz'));
+      if(b==='bar')return ped.itens.some(i=>_itemPraDest(i,'bar'));
       return true;
     });
     // W2 = largura em double-width (metade dos chars por linha)
@@ -3507,7 +3516,8 @@ const BT={
     const row2b=(l,r)=>{l=l.substring(0,W2-r.length-1);const sp=W2-l.length-r.length;return l+' '.repeat(Math.max(1,sp))+r};
 
     blocosFilt.forEach((b,idx)=>{
-      const itens=b==='coz'?ped.itens.filter(i=>i.dest==='coz'):b==='bar'?ped.itens.filter(i=>i.dest==='bar'):ped.itens;
+      // FIX bug #1: filtro com helper multi-destino
+      const itens=b==='coz'?ped.itens.filter(i=>_itemPraDest(i,'coz')):b==='bar'?ped.itens.filter(i=>_itemPraDest(i,'bar')):ped.itens;
 
       // ═══ CABEÇALHO — nome grande + endereço/telefone ═══
       all.push(...CMD.center,...CMD.dbl,...CMD.bold1);
@@ -3970,13 +3980,13 @@ function _renderDashProducao(_i,origemIco,origemLbl,origemCls){
   const tab=ST._dashKdsTab||'cozinha';ST._dashKdsTab=tab;
   const dest=tab==='cozinha'?'coz':'bar';
   const _isPronto=p=>p.itens.length>0&&p.itens.every(i=>i.concluido)||(p.status==='pago'&&!p.entregue);
-  const peds=ST.pedidos.filter(p=>(p.status==='aberto'||p.status==='preparo')&&!_isPronto(p)&&p.itens.some(i=>i.dest===dest));
-  const prontos=ST.pedidos.filter(p=>_isPronto(p)&&!p.entregue&&naFila(p)&&p.itens.some(i=>i.dest===dest));
+  const peds=ST.pedidos.filter(p=>(p.status==='aberto'||p.status==='preparo')&&!_isPronto(p)&&p.itens.some(i=>_itemPraDest(i,dest)));
+  const prontos=ST.pedidos.filter(p=>_isPronto(p)&&!p.entregue&&naFila(p)&&p.itens.some(i=>_itemPraDest(i,dest)));
   // Detecta novos pedidos — som e voz
   const primLoad=_kdsSeenIds.size===0;
   peds.forEach(p=>{if(!_kdsSeenIds.has(p.id)){_kdsSeenIds.add(p.id);if(!primLoad)anunciar('novo_pedido',p);}});
-  const cozAtivos=ST.pedidos.filter(p=>(p.status==='aberto'||p.status==='preparo')&&!_isPronto(p)&&p.itens.some(i=>i.dest==='coz')).length;
-  const barAtivos=ST.pedidos.filter(p=>(p.status==='aberto'||p.status==='preparo')&&!_isPronto(p)&&p.itens.some(i=>i.dest==='bar')).length;
+  const cozAtivos=ST.pedidos.filter(p=>(p.status==='aberto'||p.status==='preparo')&&!_isPronto(p)&&p.itens.some(i=>_itemPraDest(i,'coz'))).length;
+  const barAtivos=ST.pedidos.filter(p=>(p.status==='aberto'||p.status==='preparo')&&!_isPronto(p)&&p.itens.some(i=>_itemPraDest(i,'bar'))).length;
   let html=`
   <div class="rb mb10">
     <div class="tabbar" style="flex:1">
@@ -3995,7 +4005,7 @@ function _renderDashProducao(_i,origemIco,origemLbl,origemCls){
           <span class="bold fs15">${p.num}</span><span class="bold t2">·</span><span class="bold fs14">${lbl}</span>
           ${p.cliente_nome?`<span class="fs12 t2">${_i('user',12)} ${p.cliente_nome}</span>`:''}
         </div>
-        <div class="fs12 t2 mb10">${p.itens.filter(i=>i.dest===dest).map(i=>i.qty+'× '+i.nome).join(' · ')}</div>
+        <div class="fs12 t2 mb10">${p.itens.filter(i=>_itemPraDest(i,dest)).map(i=>i.qty+'× '+i.nome).join(' · ')}</div>
         <div style="display:flex;gap:8px">
           <button class="btn bg bw bsm" style="flex:1;gap:5px" onclick="confirmarEntrega('${p.id}')">${_i('check',14)} Confirmar entrega</button>
           <button class="btn ba bsm" style="gap:5px" onclick="chamarPedido(ST.pedidos.find(x=>x.id==='${p.id}'))">${_i('bell',14)} Chamar</button>
@@ -4024,7 +4034,7 @@ function _renderDashProducao(_i,origemIco,origemLbl,origemCls){
     const minsRest=prevMs?Math.ceil((prevMs-Date.now())/60000):null;
     const cls=late?'atrasado':mins<2?'novo':'preparo';
     const statusCor=late?'var(--rd)':minsRest!==null&&minsRest<4?'var(--am)':'var(--gn)';
-    const itensDest=p.itens.filter(i=>i.dest===dest);
+    const itensDest=p.itens.filter(i=>_itemPraDest(i,dest));
     const todoConcluido=itensDest.every(i=>i.concluido);
     const R=26,C=2*Math.PI*R;
     const totalSec=prevMs?Math.floor((prevMs-created)/1000):0;
@@ -4498,10 +4508,10 @@ function renderPedido(){
             <button class="cart-item-v2-edit" onclick="openObsSheet(${idx})" style="display:inline-flex;align-items:center;gap:4px">${ppIcon('edit',12,1.7)} Obs / Adicionais</button>
           </div>
           <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">
-            <div class="cart-qty-v2">
-              <button class="qbtn-v2" onclick="cartQty(${idx},-1)">−</button>
-              <div class="qn-v2">${item.qty}</div>
-              <button class="qbtn-v2" onclick="cartQty(${idx},1)">+</button>
+            <div class="cart-qty-v2" role="group" aria-label="Quantidade de ${esc(item.nome)}">
+              <button class="qbtn-v2" onclick="cartQty(${idx},-1)" aria-label="Diminuir quantidade">−</button>
+              <div class="qn-v2" aria-live="polite">${item.qty}</div>
+              <button class="qbtn-v2" onclick="cartQty(${idx},1)" aria-label="Aumentar quantidade">+</button>
             </div>
             <div class="cart-item-v2-price">${fmtR(unitTotal*item.qty)}</div>
           </div>
@@ -4704,12 +4714,33 @@ function setConsumo(val){
     btn.classList.toggle('on',(val==='local'&&isLocal)||(val==='viagem'&&!isLocal));
   });
 }
+// Helper: item vai para destino X? (suporta dests array + dest legado)
+function _itemPraDest(item,d){
+  if(!item)return false;
+  if(Array.isArray(item.dests))return item.dests.includes(d);
+  return item.dest===d;
+}
+// Helper: produto tem destino X?
+function _prodPraDest(p,d){
+  if(!p)return false;
+  if(Array.isArray(p.dest))return p.dest.includes(d);
+  return p.dest===d;
+}
 function addCart(prod_id){
   const p=ST.produtos.find(x=>x.id===prod_id);if(!p)return;
+  // FIX bug #2: validar disponibilidade (horário e estoque)
+  if(typeof _prodDisponivel==='function'&&!_prodDisponivel(p)){
+    const motivo=(typeof p.estoque==='number'&&p.estoque<=0)?'sem estoque':'fora do horário disponível';
+    toast(p.nome+' está '+motivo,'r',3500);
+    return;
+  }
   // só agrupa se não tem grupos de obs
   const hasObs=(p.obs_grupos||[]).length>0;
   if(!hasObs){const ex=ST.novoPedido.cart.find(c=>c.prod_id===prod_id&&!c.obs);if(ex){ex.qty++;renderPedido();toast('+ '+p.nome,'g',1200);return;}}
-  ST.novoPedido.cart.push({id:uid(),prod_id,nome:p.nome,preco:p.preco,ico:p.ico||'',qty:1,obs:'',dest:p.dest?p.dest[0]:'coz',tempo:p.tempo||15});
+  // FIX bug #1: preserva TODOS os destinos (cozinha + bar se for o caso)
+  const dests=Array.isArray(p.dest)?[...p.dest]:[p.dest||'coz'];
+  const dest=dests[0]; // mantém campo legado para retrocompatibilidade
+  ST.novoPedido.cart.push({id:uid(),prod_id,nome:p.nome,preco:p.preco,ico:p.ico||'',qty:1,obs:'',dest,dests,tempo:p.tempo||15});
   renderPedido();
   // se tem grupos, abre obs automaticamente
   if(hasObs)openObsSheet(ST.novoPedido.cart.length-1);
@@ -4740,8 +4771,8 @@ function confirmarPedido(){
     pedExist.total_bruto=novoTotal;
     pedExist.total=+(novoTotal-pedExist.desconto).toFixed(2);
     // recalcula previsão
-    const tCoz=pedExist.itens.filter(i=>i.dest==='coz'&&!i.concluido).map(i=>i.tempo||15);
-    const tBar=pedExist.itens.filter(i=>i.dest==='bar'&&!i.concluido).map(i=>i.tempo||5);
+    const tCoz=pedExist.itens.filter(i=>_itemPraDest(i,'coz')&&!i.concluido).map(i=>i.tempo||15);
+    const tBar=pedExist.itens.filter(i=>_itemPraDest(i,'bar')&&!i.concluido).map(i=>i.tempo||5);
     if(tCoz.length)pedExist.prev_coz=addMin(now(),Math.max(...tCoz));
     if(tBar.length)pedExist.prev_bar=addMin(now(),Math.max(...tBar));
     save('pedidos');
@@ -4766,8 +4797,8 @@ function confirmarPedido(){
   try{aplicarPromosAuto({itens:np.cart});}catch(e){console.warn('[Promos]',e);}
   const total=np.cart.reduce((s,i)=>s+(i.preco+(i.obs_extras||0))*i.qty,0);
   // calcula previsão por maior tempo entre itens de cada destino
-  const temposCoz=np.cart.filter(i=>i.dest==='coz').map(i=>i.tempo||15);
-  const temposBar=np.cart.filter(i=>i.dest==='bar').map(i=>i.tempo||5);
+  const temposCoz=np.cart.filter(i=>_itemPraDest(i,'coz')).map(i=>i.tempo||15);
+  const temposBar=np.cart.filter(i=>_itemPraDest(i,'bar')).map(i=>i.tempo||5);
   const maxCoz=temposCoz.length?Math.max(...temposCoz):0;
   const maxBar=temposBar.length?Math.max(...temposBar):0;
   // C4: removida a propriedade consumo duplicada
@@ -4820,13 +4851,17 @@ function renderFechar(ped_id){
   </div>
   <div class="card mb10">
     <div class="sec-title mb8">Itens do pedido</div>
-    ${ped.itens.map((it,i)=>`<div class="cart-item">
-      <div style="flex:1"><div class="cart-nome">${it.ico||''} ${it.nome}</div>
-      ${it.obs?`<div class="cart-obs-txt">> ${it.obs}</div>`:''}</div>
-      <div class="fs12 t2 mono">${it.qty}x ${fmtR(it.preco)}</div>
-      <div class="cart-p">${fmtR(it.preco*it.qty)}</div>
-      <button class="btn br_ bxs" style="margin-left:6px;flex-shrink:0" onclick="cancelarItemDireto('${ped.id}',${i})" title="Remover item">✕</button>
-    </div>`).join('')}
+    ${ped.itens.map((it,i)=>{
+      const unit=(it.preco||0)+(it.obs_extras||0);
+      return `<div class="cart-item">
+      <div style="flex:1"><div class="cart-nome">${it.ico||''} ${esc(it.nome)}</div>
+      ${it.obs?`<div class="cart-obs-txt">> ${esc(it.obs)}</div>`:''}
+      ${it.obs_extras>0?`<div class="fs11 am">+${fmtR(it.obs_extras)} adicionais</div>`:''}</div>
+      <div class="fs12 t2 mono">${it.qty}x ${fmtR(unit)}</div>
+      <div class="cart-p">${fmtR(unit*it.qty)}</div>
+      <button class="btn br_ bxs" style="margin-left:6px;flex-shrink:0" onclick="cancelarItemDireto('${ped.id}',${i})" title="Remover item" aria-label="Remover ${esc(it.nome)}">✕</button>
+    </div>`;
+    }).join('')}
     <div style="border-top:1px solid var(--br);padding-top:8px;margin-top:4px">
       <div class="rb"><span class="fs12 t2">Subtotal</span><span class="bold mono am">${fmtR(ped.total_bruto)}</span></div>
       ${ped.desconto?`<div class="rb"><span class="fs12 rd">Desconto</span><span class="fs12 rd mono">-${fmtR(ped.desconto)}</span></div>`:''}
@@ -5088,20 +5123,20 @@ function showCupomPrevia(ped_id, tipo='cupom'){
   if(tipo==='cupom'){
     html+=bloco('cupom',ped.itens,'** CUPOM NÃO FISCAL **',null,true);
   } else {
-    const hasCoz=ped.itens.some(i=>i.dest==='coz');
-    const hasBar=ped.itens.some(i=>i.dest==='bar');
+    const hasCoz=ped.itens.some(i=>_itemPraDest(i,'coz'));
+    const hasBar=ped.itens.some(i=>_itemPraDest(i,'bar'));
     html+=bloco('cli',ped.itens,'** VIA CLIENTE **',ped.prev_coz||ped.prev_bar||null,true);
     if(hasCoz){
       html+=`<div class="tpaper" style="border-radius:0;margin:0;padding:5px 12px">
         <div class="tcut"><hr class="tcut-line"><div class="tcut-lbl">${ppIcon('scissors',12,1.7)} ${ped.num} — DESTACAR COZINHA</div></div>
       </div>`;
-      html+=bloco('coz',ped.itens.filter(i=>i.dest==='coz'),'** COZINHA **',ped.prev_coz,false);
+      html+=bloco('coz',ped.itens.filter(i=>_itemPraDest(i,'coz')),'** COZINHA **',ped.prev_coz,false);
     }
     if(hasBar){
       html+=`<div class="tpaper" style="border-radius:0;margin:0;padding:5px 12px">
         <div class="tcut"><hr class="tcut-line"><div class="tcut-lbl">${ppIcon('scissors',12,1.7)} ${ped.num} — DESTACAR BAR</div></div>
       </div>`;
-      html+=bloco('bar',ped.itens.filter(i=>i.dest==='bar'),'** BAR **',ped.prev_bar,false);
+      html+=bloco('bar',ped.itens.filter(i=>_itemPraDest(i,'bar')),'** BAR **',ped.prev_bar,false);
     }
   }
   html+=`</div></div>`;
@@ -5908,15 +5943,15 @@ function renderProducao(){
   const dest=tab==='cozinha'?'coz':'bar';
   // "pronto" = todos os itens concluídos (pago ou não) OU pago e não entregue
   const _isPronto=p=>p.itens.length>0&&p.itens.every(i=>i.concluido)||(p.status==='pago'&&!p.entregue);
-  const peds=ST.pedidos.filter(p=>(p.status==='aberto'||p.status==='preparo')&&!_isPronto(p)&&p.itens.some(i=>i.dest===dest));
-  const prontos=ST.pedidos.filter(p=>_isPronto(p)&&!p.entregue&&naFila(p)&&p.itens.some(i=>i.dest===dest));
+  const peds=ST.pedidos.filter(p=>(p.status==='aberto'||p.status==='preparo')&&!_isPronto(p)&&p.itens.some(i=>_itemPraDest(i,dest)));
+  const prontos=ST.pedidos.filter(p=>_isPronto(p)&&!p.entregue&&naFila(p)&&p.itens.some(i=>_itemPraDest(i,dest)));
   // detecta novos pedidos e toca som
   const primLoad=_kdsSeenIds.size===0;
   peds.forEach(p=>{if(!_kdsSeenIds.has(p.id)){_kdsSeenIds.add(p.id);if(!primLoad)anunciar('novo_pedido',p);}});
-  const cozAtivos=ST.pedidos.filter(p=>(p.status==='aberto'||p.status==='preparo')&&!_isPronto(p)&&p.itens.some(i=>i.dest==='coz')).length;
-  const barAtivos=ST.pedidos.filter(p=>(p.status==='aberto'||p.status==='preparo')&&!_isPronto(p)&&p.itens.some(i=>i.dest==='bar')).length;
-  const cozProntos=ST.pedidos.filter(p=>_isPronto(p)&&!p.entregue&&naFila(p)&&p.itens.some(i=>i.dest==='coz')).length;
-  const barProntos=ST.pedidos.filter(p=>_isPronto(p)&&!p.entregue&&naFila(p)&&p.itens.some(i=>i.dest==='bar')).length;
+  const cozAtivos=ST.pedidos.filter(p=>(p.status==='aberto'||p.status==='preparo')&&!_isPronto(p)&&p.itens.some(i=>_itemPraDest(i,'coz'))).length;
+  const barAtivos=ST.pedidos.filter(p=>(p.status==='aberto'||p.status==='preparo')&&!_isPronto(p)&&p.itens.some(i=>_itemPraDest(i,'bar'))).length;
+  const cozProntos=ST.pedidos.filter(p=>_isPronto(p)&&!p.entregue&&naFila(p)&&p.itens.some(i=>_itemPraDest(i,'coz'))).length;
+  const barProntos=ST.pedidos.filter(p=>_isPronto(p)&&!p.entregue&&naFila(p)&&p.itens.some(i=>_itemPraDest(i,'bar'))).length;
   document.getElementById('pg-producao').innerHTML=`
   ${_kitchenMode?`<div class="kds-kitchen-bar" style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;margin-bottom:10px;background:var(--s2);border-radius:12px">
     <div style="display:flex;align-items:center;gap:8px">
@@ -5952,7 +5987,7 @@ function renderProducao(){
       ${p.cliente_nome?`<span class="fs12 t2" style="display:inline-flex;align-items:center;gap:3px">${ppIcon('user',12,1.7)} ${p.cliente_nome}</span>`:''}
       <span class="bdg ${p.consumo==='viagem'?'bpu':'bg'}" style="font-size:10px;display:inline-flex;align-items:center;gap:3px">${p.consumo==='viagem'?'🛍️ Viagem':'🍽️ Local'}</span>
     </div>
-    <div class="fs12 t2 mb10">${p.itens.filter(i=>i.dest===dest).map(i=>i.qty+'× '+i.nome).join(' · ')}</div>
+    <div class="fs12 t2 mb10">${p.itens.filter(i=>_itemPraDest(i,dest)).map(i=>i.qty+'× '+i.nome).join(' · ')}</div>
     <button class="btn bg bw bsm" style="gap:5px" onclick="confirmarEntrega('${p.id}')">${ppIcon('check',14,1.7)} Confirmar entrega</button>
   </div>`).join('')}<div class="sec-title mt8">Em preparo</div>`:''}
   ${peds.map((p,qi)=>{
@@ -5967,7 +6002,7 @@ function renderProducao(){
     const minsRest=prevMs?Math.ceil((prevMs-Date.now())/60000):null;
     const cls=late?'atrasado':mins<2?'novo':'preparo';
     const statusCor=late?'var(--rd)':minsRest!==null&&minsRest<4?'var(--am)':'var(--gn)';
-    const itensDest=p.itens.filter(i=>i.dest===dest);
+    const itensDest=p.itens.filter(i=>_itemPraDest(i,dest));
     const todoConcluido=itensDest.every(i=>i.concluido);
     // 2.1: anel SVG — r=26, circunference≈163.4
     const R=26,C=2*Math.PI*R;
@@ -6033,7 +6068,7 @@ function concluirItem(pedId,itIdx){
 }
 function concluirKDS(id,dest){
   const p=ST.pedidos.find(x=>x.id===id);if(!p)return;
-  p.itens.filter(i=>i.dest===dest).forEach(i=>i.concluido=true);
+  p.itens.filter(i=>_itemPraDest(i,dest)).forEach(i=>i.concluido=true);
   const allDone=p.itens.every(i=>i.concluido);
   if(allDone){p.status='preparo';}
   save('pedidos');
@@ -6100,7 +6135,7 @@ function renderCardProds(){
     <div class="rb">
       <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0">
         <div style="flex-shrink:0;width:52px;height:52px;border-radius:10px;overflow:hidden;background:var(--s3);display:flex;align-items:center;justify-content:center">
-          ${p.foto?`<img src="${p.foto}" style="width:100%;height:100%;object-fit:cover">`:`<span style="font-size:26px">${p.ico||'🍽️'}</span>`}
+          ${p.foto?`<img src="${p.foto}" alt="${esc(p.nome)}" style="width:100%;height:100%;object-fit:cover">`:`<span style="font-size:26px" aria-hidden="true">${p.ico||'🍽️'}</span>`}
         </div>
         <div style="min-width:0">
           <div class="bold">${esc(p.nome)}</div>
@@ -6183,7 +6218,7 @@ function _syncProdFotoPrev(){
   const prev=document.getElementById('ep-foto-prev');
   const del=document.getElementById('ep-foto-del');
   if(!prev)return;
-  prev.innerHTML=_epFoto?`<img src="${_epFoto}" style="width:100%;height:100%;object-fit:cover;border-radius:8px">`:'📷';
+  prev.innerHTML=_epFoto?`<img src="${_epFoto}" alt="Foto do produto" style="width:100%;height:100%;object-fit:cover;border-radius:8px">`:'<span aria-hidden="true">📷</span>';
   if(del)del.style.display=_epFoto?'':'none';
 }
 function pickProdFoto(inp){
@@ -6955,7 +6990,7 @@ function _renderCfgSection(sec){
         <label class="fl">Logo do estabelecimento</label>
         <div style="display:flex;align-items:center;gap:12px">
           <div class="foto-pick-prev" id="cfg-logo-prev" onclick="document.getElementById('cfg-logo-inp').click()" style="width:64px;height:64px;border-radius:12px">
-            ${cfg.logo?`<img src="${cfg.logo}" style="width:100%;height:100%;object-fit:cover;border-radius:10px">`:ppIcon('store',28,1.4)}
+            ${cfg.logo?`<img src="${cfg.logo}" alt="Logo" style="width:100%;height:100%;object-fit:cover;border-radius:10px">`:ppIcon('store',28,1.4)}
           </div>
           <div style="flex:1">
             <input type="file" id="cfg-logo-inp" accept="image/*" style="display:none" onchange="pickLogo(this)">
@@ -9573,27 +9608,31 @@ function editarPedido(ped_id){
   const ped=ST.pedidos.find(p=>p.id===ped_id);if(!ped)return;
   function buildEditSheet(){
     const sh=document.getElementById('sh-obs');
-    const total=ped.itens.reduce((s,i)=>s+i.preco*i.qty,0);
+    // FIX bug #14: inclui obs_extras
+    const total=ped.itens.reduce((s,i)=>s+((i.preco||0)+(i.obs_extras||0))*(i.qty||1),0);
     sh.innerHTML=`<div class="sh-handle"></div>
     <div class="sh-title">Editar pedido ${ped.num}</div>
     <div class="fs12 t2 mb12">Ajuste quantidades ou remova itens</div>
     ${ped.itens.length===0?`<div style="text-align:center;padding:24px;color:var(--t3)"><div style="font-size:40px;margin-bottom:8px">🛒</div><div>Nenhum item no pedido</div></div>`:''}
-    ${ped.itens.map((it,i)=>`<div class="cart-item">
+    ${ped.itens.map((it,i)=>{
+      const unit=(it.preco||0)+(it.obs_extras||0);
+      return `<div class="cart-item">
       <div style="flex:1;min-width:0">
         <div class="cart-nome">${esc(it.nome)}</div>
         ${it.obs?`<div class="cart-obs-txt">> ${esc(it.obs)}</div>`:''}
-        <div class="fs12 t2">${fmtR(it.preco)} un.</div>
+        <div class="fs12 t2">${fmtR(it.preco)}${it.obs_extras>0?' + '+fmtR(it.obs_extras)+' adic.':''} un.</div>
       </div>
       <div class="cart-qty">
-        <button class="qbtn" style="background:var(--rdbg);color:var(--rd)" onclick="_editQty('${ped_id}',${i},-1)">-</button>
+        <button class="qbtn" style="background:var(--rdbg);color:var(--rd)" onclick="_editQty('${ped_id}',${i},-1)" aria-label="Diminuir quantidade">-</button>
         <div class="qn">${it.qty}</div>
-        <button class="qbtn" onclick="_editQty('${ped_id}',${i},1)">+</button>
+        <button class="qbtn" onclick="_editQty('${ped_id}',${i},1)" aria-label="Aumentar quantidade">+</button>
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
-        <div class="cart-p">${fmtR(it.preco*it.qty)}</div>
+        <div class="cart-p">${fmtR(unit*it.qty)}</div>
         <button class="btn br_ bxs" onclick="_remItem('${ped_id}',${i})">Remover</button>
       </div>
-    </div>`).join('')}
+    </div>`;
+    }).join('')}
     <div style="border-top:1px solid var(--br);padding-top:10px;margin-top:4px">
       <div class="rb mb12"><div class="bold fs14">Total:</div><div class="bold ac mono fs14">${fmtR(total)}</div></div>
       <div class="g2">
@@ -9638,7 +9677,8 @@ function editarPedido(ped_id){
   openOv('ov-obs');
 }
 function recalcPedido(ped){
-  const b=ped.itens.reduce((s,i)=>s+i.preco*i.qty,0);
+  // FIX bug #6/#14: inclui obs_extras no cálculo
+  const b=ped.itens.reduce((s,i)=>s+((i.preco||0)+(i.obs_extras||0))*(i.qty||1),0);
   ped.total_bruto=+b.toFixed(2);
   ped.desconto=Math.min(ped.desconto||0,ped.total_bruto);
   const subtDesc=+(ped.total_bruto-(ped.desconto||0)).toFixed(2);
@@ -9852,7 +9892,7 @@ async function _carregarConviteAtivo(){
           <button class="btn br_ bsm" onclick="_revogarConvite('${esc(inv.id)}')">${ppIcon('xCircle',12,1.7)} Revogar</button>
         </div>
         <div id="cfg-qr-${inv.id}" style="display:none;margin-bottom:8px;text-align:center">
-          <img style="width:180px;height:180px;border-radius:8px;border:1px solid var(--br2)">
+          <img alt="QR Code do convite" style="width:180px;height:180px;border-radius:8px;border:1px solid var(--br2)">
         </div>
         <div class="fs11 t3">Cargo: ${_CARGO_LABELS[inv.cargo]||'—'} · Criado: ${criado} · Expira: ${expira} · Usos: ${usos}</div>
       </div>`;
@@ -10602,7 +10642,7 @@ function _printQRCardapio(){
   w.document.write('<html><head><title>QR Cardápio</title></head><body style="text-align:center;padding:30px;font-family:sans-serif">'+
     '<h2>'+nome+'</h2>'+
     '<p>Escaneie para ver o cardápio</p>'+
-    '<img src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data='+encodeURIComponent(url)+'" style="width:250px;height:250px">'+
+    '<img src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data='+encodeURIComponent(url)+'" alt="QR Code do cardápio" style="width:250px;height:250px">'+
     '<p style="font-size:11px;color:#888;margin-top:12px">'+url+'</p>'+
     '<script>setTimeout(()=>{window.print()},500)<\/script></body></html>');
   w.document.close();
