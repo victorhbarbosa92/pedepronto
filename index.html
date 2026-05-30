@@ -345,24 +345,32 @@ html{-webkit-overflow-scrolling:touch}
 .kpi-v{font-size:28px;font-weight:700;font-family:var(--mono);letter-spacing:-.02em}
 .kpi-l{font-size:10px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:1px;margin-top:4px;font-family:var(--mono)}
 
-/* ── BUTTONS ── */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:13px 20px;border-radius:11px;font-size:16px;font-weight:700;cursor:pointer;border:none;font-family:inherit;transition:all .15s;white-space:nowrap;line-height:1;min-height:54px}
-.btn:hover{filter:brightness(1.08)}
-.btn:active{transform:scale(.96);filter:brightness(.95)}
-.btn:disabled{opacity:.38;pointer-events:none}
-.bp{background:linear-gradient(135deg,var(--ac),var(--acd));color:#fff;box-shadow:0 4px 18px var(--acg)}
-.bp:hover{box-shadow:0 6px 22px var(--acg)}
-.bs{background:var(--s2);color:var(--t2);border:1px solid var(--br2)}
-.bs:hover{color:var(--tx);background:var(--s3);border-color:var(--br3)}
-.bg{background:var(--gnbg);color:var(--gn);border:1px solid var(--gnbr)}
-.br_{background:var(--rdbg);color:var(--rd);border:1px solid var(--rdbr)}
-.ba{background:var(--ambg);color:var(--am);border:1px solid var(--ambr)}
-.bb{background:var(--blbg);color:var(--bl);border:1px solid var(--blbr)}
-.bpu{background:var(--pubg);color:var(--pu);border:1px solid var(--pubr)}
-.bcy{background:var(--cybg);color:var(--cy);border:1px solid var(--cybr)}
-.bw{width:100%}
-.bsm{padding:10px 16px;font-size:14px;border-radius:10px;min-height:44px}
-.bxs{padding:7px 13px;font-size:13px;border-radius:8px;min-height:36px}
+/* ── BUTTONS ── Touch-first ergonomia 56px min — atualizado v3 */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 14px 24px; border-radius: 14px; font-size: 16px; font-weight: 800;
+  letter-spacing: -0.01em; cursor: pointer; border: 1.5px solid transparent;
+  font-family: inherit; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  white-space: nowrap; line-height: 1; min-height: 56px;
+  user-select: none; -webkit-user-select: none;
+}
+.btn:hover { filter: brightness(1.1); }
+.btn:active { transform: scale(0.95); filter: brightness(0.9); }
+.btn:disabled { opacity: 0.4; pointer-events: none; filter: grayscale(1); }
+
+.bp { background: linear-gradient(135deg, var(--ac), var(--acd)); color: #fff; box-shadow: 0 6px 20px var(--acg); }
+.bp:hover { box-shadow: 0 8px 25px var(--acg); transform: translateY(-1px); }
+.bs { background: var(--s2); color: var(--tx); border-color: var(--br2); }
+.bs:hover { background: var(--s3); border-color: var(--br3); }
+.bg { background: var(--gnbg); color: var(--gn); border-color: var(--gnbr); }
+.br_ { background: var(--rdbg); color: var(--rd); border-color: var(--rdbr); }
+.ba { background: var(--ambg); color: var(--am); border-color: var(--ambr); }
+.bb { background: var(--blbg); color: var(--bl); border-color: var(--blbr); }
+.bpu { background: var(--pubg); color: var(--pu); border-color: var(--pubr); }
+.bcy { background: var(--cybg); color: var(--cy); border-color: var(--cybr); }
+.bw { width: 100%; }
+.bsm { padding: 12px 18px; font-size: 14px; border-radius: 12px; min-height: 48px; }
+.bxs { padding: 8px 14px; font-size: 13px; border-radius: 10px; min-height: 40px; font-weight: 700; }
 
 /* ── BADGES ── */
 .bdg{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:99px;font-size:12px;font-weight:700;border:1px solid transparent;white-space:nowrap}
@@ -375,14 +383,19 @@ html{-webkit-overflow-scrolling:touch}
 .bg-pu{background:var(--pubg);color:var(--pu);border-color:var(--pubr)}
 .bg-cy{background:var(--cybg);color:var(--cy);border-color:var(--cybr)}
 
-/* ── FORM ── */
-.fg{margin-bottom:14px}
-.fl{font-size:12px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.8px;display:block;margin-bottom:6px}
-.inp{width:100%;background:var(--s2);border:1.5px solid var(--br2);border-radius:11px;padding:13px 15px;font-size:17px;color:var(--tx);font-family:inherit;outline:none;transition:border-color .15s,box-shadow .15s;-webkit-appearance:none}
-.inp:focus{border-color:var(--ac);box-shadow:0 0 0 3px rgba(255,92,26,.15)}
-.inp::placeholder{color:var(--t3)}
-textarea.inp{resize:vertical;min-height:64px}
-select.inp{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%238896B0'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 13px center;padding-right:32px;background-color:var(--s2)}
+/* ── FORM ── Touch-first inputs com foco maior — atualizado v3 */
+.fg { margin-bottom: 18px; }
+.fl { font-size: 13px; font-weight: 800; color: var(--t2); text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 8px; }
+.inp {
+  width: 100%; background: var(--s2); border: 2px solid var(--br2);
+  border-radius: 14px; padding: 16px 18px; font-size: 16px; font-weight: 500;
+  color: var(--tx); font-family: inherit; outline: none; transition: all 0.2s;
+  -webkit-appearance: none;
+}
+.inp:focus { border-color: var(--ac); background: var(--sf); box-shadow: 0 0 0 4px var(--ac-soft); }
+.inp::placeholder { color: var(--t3); font-weight: 400; }
+textarea.inp { resize: vertical; min-height: 80px; }
+select.inp { cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%238896B0'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 16px center; padding-right: 40px; }
 
 /* ── SWITCH ── */
 .sw{position:relative;width:44px;height:24px;border-radius:99px;cursor:pointer;transition:background .2s;flex-shrink:0;border:none;outline:none;display:inline-block;vertical-align:middle}
@@ -788,6 +801,17 @@ select.inp{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns=
 
   /* obs chips */
   .obs-chip{padding:9px 14px;font-size:13px}
+
+  /* ── Ajustes para tela de pedido em maquininha ── */
+  .pos-left { padding: 10px 10px 80px !important; }
+  .pos-prod-grid { grid-template-columns: 1fr; gap: 10px; }
+  .pos-prod-card { flex-direction: row; min-height: 100px; align-items: center; padding: 10px; }
+  .pos-prod-thumb, .pos-prod-thumb-ico { width: 80px; height: 80px; border-radius: 12px; aspect-ratio: 1/1; flex-shrink: 0; }
+  .pos-prod-body { padding: 0 12px; }
+  .pos-prod-footer { padding: 0; margin-left: auto; flex-direction: column; }
+  .pos-prod-add { width: 48px; height: 48px; border-radius: 14px; flex: none; }
+  .pos-prod-express { width: 48px; height: 48px; border-radius: 14px; }
+  .btn-pay { font-size: 18px; height: 64px; border-radius: 16px; }
 }
 /* ── TAMANHO DA INTERFACE ── */
 html.tam-m .btn{min-height:52px;font-size:16px}
@@ -853,9 +877,26 @@ html.tam-g .tbtn,html.tam-g .tbtn-ico{font-size:17px;min-height:44px}
   .pos-right{width:280px}
 }
 @media(max-width:680px){
-  .pos-layout{flex-direction:column}
-  .pos-right{width:100%;flex-shrink:0;height:auto;border-left:none;border-top:1px solid var(--pos-border);box-shadow:0 -4px 16px rgba(0,0,0,.06)}
-  .pos-left{padding:10px 10px 0}
+  /* Carrinho vira gaveta inferior — desliza pra cima quando tem itens */
+  .pos-layout { display: block; height: 100%; position: relative; background: var(--pos-bg-app); }
+  .pos-left { height: 100%; padding: 10px 10px 160px !important; overflow-y: auto; }
+  .pos-prod-scroll { flex: none; height: auto; overflow: visible; padding-bottom: 0; }
+
+  .pos-right {
+    position: fixed; bottom: 0; left: 0; right: 0; width: 100%; height: auto;
+    max-height: 75vh; border-radius: 28px 28px 0 0;
+    border: 1px solid var(--pos-border); border-bottom: none;
+    box-shadow: 0 -10px 40px rgba(0,0,0,0.3); z-index: 200;
+    background: var(--pos-bg-card);
+    transform: translateY(120%); transition: transform 0.4s cubic-bezier(0.34, 1.05, 0.64, 1);
+  }
+  .pos-right.has-items { transform: translateY(0); }
+
+  .cart-panel-head { padding-top: 12px; }
+  .cart-panel-head::before {
+    content: ''; display: block; width: 48px; height: 6px;
+    background: var(--br3); border-radius: 99px; margin: 0 auto 12px;
+  }
   #pg-pedido.on{top:56px}
 }
 
@@ -1025,50 +1066,50 @@ html.tam-g .tbtn,html.tam-g .tbtn-ico{font-size:17px;min-height:44px}
   .pos-prod-grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
 }
 
-/* ── PRODUCT CARD v2 ── */
-.pos-prod-card{
-  background:var(--pos-bg-card);border:1.5px solid var(--pos-border);
-  border-radius:14px;overflow:hidden;cursor:pointer;
-  transition:all .18s;display:flex;flex-direction:column;
-  position:relative;box-shadow:0 1px 4px rgba(0,0,0,.06)
+/* ── PRODUCT CARD v3 — Touch-first com Venda Expressa ── */
+.pos-prod-card {
+  background: var(--pos-bg-card); border: 2px solid var(--pos-border);
+  border-radius: 18px; overflow: hidden; cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex; flex-direction: column; position: relative;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04); user-select: none; -webkit-user-select: none;
 }
-.pos-prod-card:hover{border-color:var(--pos-primary);box-shadow:0 4px 16px var(--pos-primary-glow);transform:translateY(-1px)}
-.pos-prod-card:active{transform:scale(.97);border-color:var(--pos-primary)}
-.pos-prod-card.off{opacity:.38;pointer-events:none}
-.pos-prod-thumb{
-  width:100%;aspect-ratio:4/3;object-fit:cover;display:block;
-  background:var(--pos-bg-app)
+.pos-prod-card:hover { border-color: var(--pos-primary); box-shadow: 0 8px 24px var(--pos-primary-glow); transform: translateY(-2px); }
+.pos-prod-card:active { transform: scale(0.95); border-color: var(--pos-primary); background: var(--acbg); }
+.pos-prod-card.off { opacity: 0.4; pointer-events: none; filter: grayscale(1); }
+
+.pos-prod-thumb { width: 100%; aspect-ratio: 4/3; object-fit: cover; display: block; background: var(--pos-bg-app); }
+.pos-prod-thumb-ico { width: 100%; aspect-ratio: 4/3; display: flex; align-items: center; justify-content: center; font-size: 48px; background: var(--s2); }
+
+.pos-prod-body { padding: 14px 14px 12px; flex: 1; display: flex; flex-direction: column; gap: 4px; }
+.pos-prod-name { font-size: 15px; font-weight: 800; color: var(--pos-text-main); line-height: 1.3; }
+.pos-prod-price { font-size: 16px; font-weight: 900; color: var(--pos-primary); font-family: monospace; }
+.pos-prod-tempo { font-size: 11px; color: var(--pos-text-muted); font-weight: 600; }
+
+.pos-prod-footer { display: flex; align-items: center; gap: 8px; padding: 0 14px 14px; }
+.pos-prod-add {
+  flex: 1; height: 44px; border-radius: 12px; border: none;
+  background: var(--s2); color: var(--tx); font-size: 15px; font-weight: 800;
+  cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s;
 }
-.pos-prod-thumb-ico{
-  width:100%;aspect-ratio:4/3;display:flex;align-items:center;
-  justify-content:center;font-size:40px;background:var(--pos-bg-app)
+.pos-prod-card:hover .pos-prod-add { background: var(--pos-primary); color: #fff; }
+
+.pos-prod-express {
+  width: 44px; height: 44px; border-radius: 12px; border: none;
+  background: var(--gnbg); color: var(--gn); font-size: 18px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; transition: all 0.15s; flex-shrink: 0;
 }
-.pos-prod-body{padding:10px 12px 6px;flex:1;display:flex;flex-direction:column;gap:2px}
-.pos-prod-name{font-size:14px;font-weight:700;color:var(--pos-text-main);line-height:1.3}
-.pos-prod-price{font-size:15px;font-weight:800;color:var(--pos-primary);font-family:monospace}
-.pos-prod-tempo{font-size:11px;color:var(--pos-text-muted);font-weight:500}
-.pos-prod-footer{
-  display:flex;align-items:center;justify-content:flex-end;
-  padding:0 10px 10px
+.pos-prod-express:hover { background: var(--gn); color: #fff; box-shadow: 0 4px 12px var(--gnbr); }
+.pos-prod-express:active { transform: scale(0.9); }
+
+.pos-prod-qty {
+  position: absolute; top: 10px; right: 10px;
+  min-width: 28px; height: 28px; border-radius: 99px;
+  background: var(--pos-primary); color: #fff; font-size: 14px; font-weight: 900;
+  display: none; align-items: center; justify-content: center; padding: 0 6px;
+  box-shadow: 0 4px 12px var(--pos-primary-glow); border: 2px solid var(--pos-bg-card); z-index: 2;
 }
-.pos-prod-add{
-  width:38px;height:38px;border-radius:10px;border:none;
-  background:var(--pos-primary);color:#fff;font-size:22px;font-weight:700;
-  cursor:pointer;display:flex;align-items:center;justify-content:center;
-  transition:all .15s;flex-shrink:0;
-  box-shadow:0 3px 10px var(--pos-primary-glow);line-height:1
-}
-.pos-prod-add:hover{background:var(--pos-primary-dark);box-shadow:0 4px 14px var(--pos-primary-glow)}
-.pos-prod-add:active{transform:scale(.9)}
-/* quantity indicator when item is in cart */
-.pos-prod-qty{
-  position:absolute;top:8px;left:8px;
-  min-width:22px;height:22px;border-radius:99px;
-  background:var(--pos-primary);color:#fff;font-size:11px;font-weight:800;
-  display:none;align-items:center;justify-content:center;padding:0 5px;
-  box-shadow:0 2px 6px var(--pos-primary-glow)
-}
-.pos-prod-qty.on{display:flex}
+.pos-prod-qty.on { display: flex; animation: zin 0.2s cubic-bezier(0.34, 1.05, 0.64, 1); }
 
 /* ── CART PANEL (right pane) ── */
 .cart-panel-head{
@@ -4534,7 +4575,8 @@ function renderPedido(){
             ${p.tempo?`<div class="pos-prod-tempo" style="display:flex;align-items:center;gap:3px">${ppIcon('timer',11,1.5)} ${p.tempo} min</div>`:''}
           </div>
           <div class="pos-prod-footer">
-            <button class="pos-prod-add" onclick="event.stopPropagation();addCart('${p.id}')">+</button>
+            <button class="pos-prod-add" onclick="event.stopPropagation();addCart('${p.id}')" aria-label="Adicionar ${esc(p.nome)} ao carrinho">+ Adicionar</button>
+            ${p.venda_direta ? `<button class="pos-prod-express" onclick="event.stopPropagation();abrirExpressModal('${p.id}')" title="Venda Expressa — 1 clique" aria-label="Venda expressa de ${esc(p.nome)}">⚡</button>` : ''}
           </div>
         </div>`;
       }).join('');
@@ -4563,8 +4605,8 @@ function renderPedido(){
       </div>
     </div>
 
-    <!-- ── RIGHT: cart panel ── -->
-    <div class="pos-right">
+    <!-- ── RIGHT: cart panel (gaveta no mobile) ── -->
+    <div class="pos-right ${np.cart.length > 0 ? 'has-items' : ''}">
       <div class="cart-panel-head">
         <div class="cart-panel-title">Pedido atual</div>
         <div class="cart-panel-order">${esc(np.cliente_nome||np.mesa_label||'—')}</div>
@@ -11294,6 +11336,108 @@ function maqCancelar(){
 // ═══════════════════════════════════════════
 //  DIVISÃO DE CONTA
 // ═══════════════════════════════════════════
+// ═══════════════════════════════════════════
+//  VENDA EXPRESSA — 1 clique no produto → modal pagamento → vende
+// ═══════════════════════════════════════════
+function abrirExpressModal(prod_id) {
+  if (!ST.caixa.aberto) { toast('Abra o caixa primeiro para vendas expressas', 'r', 4000); return; }
+  const p = ST.produtos.find(x => x.id === prod_id);
+  if (!p) return;
+  // FIX: validar disponibilidade (horário/estoque)
+  if (typeof _prodDisponivel === 'function' && !_prodDisponivel(p)) {
+    const motivo = (typeof p.estoque === 'number' && p.estoque <= 0) ? 'sem estoque' : 'fora do horário';
+    toast(p.nome + ' está ' + motivo, 'r', 3500);
+    return;
+  }
+
+  const maqCfg = ST.cfg.maquininha || {};
+  const maqLbls = { 'mp': 'Mercado Pago', 'pagseguro': 'PagSeguro', 'infinitepay': 'InfinitePay', 'manual': 'Maquininha' };
+  const formas = _PAG_FORMAS.filter(f => f.id !== 'voucher').map(f =>
+    f.id === 'maquininha' ? { ...f, lbl: maqLbls[maqCfg.provider || 'manual'] || 'Maquininha' } : f
+  );
+
+  const sh = document.getElementById('sh-obs');
+  sh.innerHTML = `
+    <div class="sh-handle"></div>
+    <div style="text-align:center; margin-bottom: 16px;">
+        <div style="font-size: 48px; line-height: 1; margin-bottom: 8px;" aria-hidden="true">${p.ico || '⚡'}</div>
+        <div style="font-size: 18px; font-weight: 900; color: var(--tx);">${esc(p.nome)}</div>
+        <div style="font-size: 18px; font-weight: 800; color: var(--pos-primary); font-family: monospace; margin-top: 4px;">${fmtR(p.preco)}</div>
+    </div>
+    <div class="sec-title mb12" style="justify-content:center;">Cobrar como?</div>
+    <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 18px;">
+        ${formas.map(f => `
+            <button class="pay-m" onclick="checkoutExpress('${p.id}', '${f.id}')" style="padding: 16px 6px; min-height: 90px;" aria-label="Cobrar com ${esc(f.lbl)}">
+                <span style="font-size: 26px; margin-bottom: 6px;" aria-hidden="true">${f.ico}</span>
+                <span style="font-size: 12px; font-weight: 800;">${f.lbl}</span>
+            </button>
+        `).join('')}
+    </div>
+    <button class="btn bs bw" onclick="closeOv('ov-obs')">Cancelar</button>
+  `;
+  openOv('ov-obs');
+}
+
+function checkoutExpress(prod_id, forma) {
+  closeOv('ov-obs');
+  const p = ST.produtos.find(x => x.id === prod_id);
+  if (!p) return;
+
+  if (!ST.pedido_seq) ST.pedido_seq = 1;
+  const num = '#' + String(ST.pedido_seq++).padStart(3, '0');
+  DB.set('pedido_seq', ST.pedido_seq);
+
+  const _dtNow = new Date();
+  const _dtStr = _dtNow.getFullYear() + String(_dtNow.getMonth()+1).padStart(2,'0') + String(_dtNow.getDate()).padStart(2,'0') + String(_dtNow.getHours()).padStart(2,'0');
+  const _offlineId = 'T' + _dtStr + '#' + ST.pedido_seq + '_' + _DEV_ID.slice(0,5);
+  const isInstantPaid = ['dinheiro', 'credito', 'debito'].includes(forma);
+
+  // FIX bug #1: multi-destino preservado
+  const dests = Array.isArray(p.dest) ? [...p.dest] : [p.dest || 'coz'];
+  const dest = dests[0];
+
+  const ped = {
+    id: _offlineId, num: num, tipo: 'balcao', mesa_id: null, mesa_label: 'Venda Expressa',
+    cliente_nome: 'Cliente Balcão', status: isInstantPaid ? 'pago' : 'aberto', created: now(),
+    itens: [{ id: uid(), prod_id: p.id, nome: p.nome, preco: p.preco, qty: 1, ico: p.ico || '', dest, dests, concluido: true, tempo: p.tempo || 5 }],
+    total_bruto: p.preco, desconto: 0, taxa_servico: 0, taxa_valor: 0, total: p.preco, troco: 0, consumo: 'local',
+    operador: ST.caixa.operador || '', atendente: ST.caixa.operador || (ST.userAtivo && ST.userAtivo.nome) || '—'
+  };
+
+  if (isInstantPaid) {
+    ped.pago_em = now();
+    const fm = _PAG_FORMAS.find(f => f.id === forma) || {lbl: forma};
+    ped.forma_pag = fm.lbl;
+    ped.parcelas = [{ forma: forma, lbl: fm.lbl, valor: p.preco, troco: 0 }];
+    ST.caixa.movs.push({ id: uid(), tipo: 'entrada', valor: p.preco, desc: 'Pedido ' + ped.num + ' · ' + fm.lbl + ' (Express)', created: now() });
+  }
+
+  ST.pedidos.push(ped);
+  save('pedidos');
+  // Conta no trial só quando é pedido novo concluído (mantém consistência)
+  try { if (typeof _incrementTrialCount === 'function') _incrementTrialCount(); } catch(e) {}
+
+  if (isInstantPaid) {
+    save('caixa');
+    toast('⚡ ' + p.nome + ' vendido! (' + fmtR(p.preco) + ')', 'g', 2200);
+    try { playSound && playSound('sucesso'); } catch(e) {}
+    try { if (typeof anunciar === 'function') anunciar('novo_pedido', ped); } catch(e) {}
+    // Auto-imprimir cupom se configurado
+    if (BT.char && ST.cfg.autocupom !== false) {
+      try { setTimeout(() => BT.printCupom ? BT.printCupom(ped) : BT.printPedido(ped, ['cli']), 250); } catch(e) {}
+    }
+    // Re-render da tela atual
+    if (ST.curNav === 'balcao') renderBalcao();
+    else if (ST.curNav === 'dash') renderDash();
+    else if (ST.curNav === 'pedido' && ST.novoPedido && ST.novoPedido._vendaDireta) renderVendaDiretaWizard();
+  } else {
+    // Pagamentos que precisam de fluxo (pix, maquininha) — usam contexto de pagamento
+    _pagCtxPed = ped.id; _pagParcelas = [];
+    if (forma === 'pix') mostrarPixQR(ped.id);
+    else if (forma === 'maquininha') maqCobrar(ped.id);
+  }
+}
+
 function abrirDividirConta(ped_id){
   const ped=ST.pedidos.find(p=>p.id===ped_id);if(!ped)return;
   const pago=+(_pagParcelas.reduce((s,p)=>s+p.valor,0).toFixed(2));
