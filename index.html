@@ -284,8 +284,7 @@ html{-webkit-overflow-scrolling:touch}
 #sidebar{width:215px;background:var(--sf);border-right:1px solid var(--br);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}
 #main{flex:1;overflow:hidden;display:flex;flex-direction:column;position:relative}
 #page{flex:1;overflow-y:auto;overflow-x:hidden;overscroll-behavior-y:contain}
-#bnav{height:58px;background:var(--sf);border-top:1px solid var(--br);display:none;flex-direction:row;flex-shrink:0}
-@media(max-width:768px){#sidebar{display:none}#bnav{display:flex}}
+@media(max-width:768px){#sidebar{display:none}}
 
 /* ── SIDEBAR ── */
 .sb-sec{padding:4px 8px;font-size:10px;font-weight:700;color:var(--t3);letter-spacing:1.2px;text-transform:uppercase;margin-top:10px;font-family:var(--mono);display:flex;align-items:center;gap:8px}
@@ -315,14 +314,39 @@ html{-webkit-overflow-scrolling:touch}
 .sb-theme-toggle svg{flex-shrink:0}
 .sb-foot-ver{font-family:var(--mono);font-size:10px;color:var(--t3);font-weight:500}
 
-/* ── BOTTOM NAV ── */
-.bn-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;font-size:9px;font-weight:700;color:var(--t3);transition:all .15s;border:none;background:transparent;font-family:inherit;position:relative;padding:0 2px}
-.bn-item.on{color:var(--ac)}
-.bn-item.on::before{content:'';position:absolute;top:0;left:20%;right:20%;height:2px;background:var(--ac);border-radius:0 0 99px 99px}
-.bn-ico{line-height:1;flex-shrink:0;display:flex;align-items:center;justify-content:center}
-.bn-lbl{font-size:9px;font-weight:700;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
-.bn-bdg{position:absolute;top:3px;right:calc(50% - 22px);min-width:16px;height:16px;border-radius:99px;background:var(--rd);color:#fff;font-size:9px;font-weight:800;display:none;align-items:center;justify-content:center;padding:0 4px}
-.bn-bdg.on{display:flex}
+/* ── FAB: Floating Action Buttons (mobile) ── */
+/* Substitui bottom nav. Esquerda = voltar (segurar = home). Direita = menu. */
+#fab-back, #fab-menu {
+  position: fixed;
+  bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  border: none;
+  background: var(--ac);
+  background: linear-gradient(135deg, var(--ac), var(--acd));
+  color: #fff;
+  cursor: pointer;
+  display: none; /* só aparece em mobile */
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 22px var(--acg), 0 2px 8px rgba(0,0,0,.25);
+  z-index: 150;
+  transition: transform .18s cubic-bezier(0.4, 0, 0.2, 1), box-shadow .18s, opacity .25s;
+  -webkit-tap-highlight-color: transparent;
+}
+#fab-back { left: 16px; }
+#fab-menu { right: 16px; background: var(--sf); color: var(--tx); border: 1.5px solid var(--br2); box-shadow: 0 4px 16px rgba(0,0,0,.18); }
+#fab-back:hover, #fab-menu:hover { transform: translateY(-2px); box-shadow: 0 10px 28px var(--acg), 0 4px 12px rgba(0,0,0,.3); }
+#fab-back:active, #fab-menu:active { transform: scale(.92); }
+#fab-back.hide, #fab-menu.hide { opacity: 0; pointer-events: none; transform: translateY(20px); }
+/* Mostra só em telas pequenas */
+@media(max-width:768px){
+  #fab-back, #fab-menu { display: flex; }
+}
+/* Ajustes para não cobrir conteúdo importante */
+@media(max-width:768px){
+  #page { padding-bottom: calc(90px + env(safe-area-inset-bottom, 0px)); }
+}
 
 /* ── PAGES ── */
 .pg{display:none;padding:14px;animation:fi .18s ease}
@@ -684,10 +708,6 @@ select.inp { cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg x
 
 /* ── MOBILE ≤ 768px ── */
 @media(max-width:768px){
-  /* bottom nav: apenas ícones, mais altos */
-  #bnav{height:62px}
-  .bn-item{font-size:10px;gap:3px}
-  .bn-ico svg{width:22px;height:22px}
   /* topbar: hide session strip, show home btn, hide logo */
   .logo{display:none!important}
   #btn-home{display:flex!important}
@@ -719,12 +739,6 @@ select.inp { cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg x
   #btn-drive{display:none!important}
   #btn-bt{display:none!important}
   #btn-theme{width:36px;height:36px}
-
-  /* bottom nav: só ícones grandes, sem labels */
-  #bnav{height:66px}
-  .bn-lbl{display:none}
-  .bn-ico svg{width:26px;height:26px}
-  .bn-bdg{font-size:9px;top:4px;right:calc(50% - 18px)}
 
   /* botões: mínimo 58px de altura em telas pequenas */
   .btn{min-height:58px;font-size:16px;padding:14px 16px;border-radius:12px}
@@ -1434,13 +1448,18 @@ const _PP_PUBKEY_JWK={"crv":"P-256","ext":true,"key_ops":["verify"],"kty":"EC","
     </div>
 
     <!-- BOTTOM NAV mobile -->
-    <div id="bnav">
-      <button class="bn-item" id="bnm-balcao" onclick="nav('balcao')"><div class="bn-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h18l-1 4H4zM5 12v8h14v-8M9 16h6"/></svg></div><div class="bn-lbl">Balcão</div><div class="bn-bdg" id="bn-bal-bdg">0</div></button>
-      <button class="bn-item" id="bnm-mesas" onclick="nav('mesas')"><div class="bn-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18v12H3zM3 12h18M8 6V4M16 6V4M8 18v2M16 18v2"/></svg></div><div class="bn-lbl">Mesas</div><div class="bn-bdg" id="bn-mesa-bdg">0</div></button>
-      <button class="bn-item" id="bnm-delivery" onclick="nav('delivery')"><div class="bn-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17a2 2 0 104 0 2 2 0 10-4 0M15 17a2 2 0 104 0 2 2 0 10-4 0M5 17H3V8l4-3h6l4 5h4v7h-2"/><path d="M9 17h6M13 5v5h4"/></svg></div><div class="bn-lbl">Delivery</div><div class="bn-bdg" id="bn-del-bdg">0</div></button>
-      <button class="bn-item" id="bnm-producao" onclick="nav('producao')"><div class="bn-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6h20v14H2zM6 6V4h12v2M8 12h8M8 15h5"/></svg></div><div class="bn-lbl">Produção</div></button>
-      <button class="bn-item" id="bnm-menu" onclick="openMenuSheet()"><div class="bn-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg></div><div class="bn-lbl">Menu</div></button>
-    </div>
+    <!-- FAB: Floating Action Button — Voltar/Início (substitui bottom nav) -->
+    <button id="fab-back" type="button" aria-label="Voltar para tela anterior ou Início" title="Voltar (segure para Início)">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M19 12H5M12 19l-7-7 7-7"/>
+      </svg>
+    </button>
+    <!-- FAB menu (3-pontinhos) — abre sheet com todas as telas -->
+    <button id="fab-menu" type="button" aria-label="Menu de navegação" title="Menu" onclick="openMenuSheet()">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/>
+      </svg>
+    </button>
   </div>
 </div>
 
@@ -3104,17 +3123,66 @@ function _goBack(){
   const dest=ST.backNav||'dash';
   nav(dest);
 }
+function _goHome(){
+  nav('dash');
+}
 function _updateBackBtn(){
   const btn=document.getElementById('btn-back');
-  if(!btn)return;
   // Mostra o botão em qualquer página que não seja o dashboard
   const showBack=ST.curNav&&ST.curNav!=='dash';
-  btn.classList.toggle('vis',showBack);
-  // Texto do botão — "Início" para dashboard, nome da página para os demais
-  const back=ST.backNav||'dash';
-  const destLbl=back==='dash'?'Início':(PAGE_TTL[back]||'Voltar');
-  btn.textContent='← '+destLbl;
+  if(btn){
+    btn.classList.toggle('vis',showBack);
+    const back=ST.backNav||'dash';
+    const destLbl=back==='dash'?'Início':(PAGE_TTL[back]||'Voltar');
+    btn.textContent='← '+destLbl;
+  }
+  // Atualiza FAB de voltar (mobile)
+  const fab=document.getElementById('fab-back');
+  if(fab){
+    fab.classList.toggle('hide',!showBack);
+    // Title contextual: mostra o destino
+    const back=ST.backNav||'dash';
+    const destLbl=back==='dash'?'Início':(PAGE_TTL[back]||'Voltar');
+    fab.setAttribute('title','Voltar para '+destLbl+' (segure para ir ao Início)');
+    fab.setAttribute('aria-label','Voltar para '+destLbl);
+  }
 }
+// FAB de voltar: clique = volta. Long-press (600ms) = vai pro dashboard
+(function _initFabBack(){
+  if(typeof window==='undefined')return;
+  const tryInit=()=>{
+    const fab=document.getElementById('fab-back');
+    if(!fab){setTimeout(tryInit,200);return;}
+    if(fab.dataset.bound)return;
+    fab.dataset.bound='1';
+    let pressTimer=null,longPressed=false;
+    const start=e=>{
+      longPressed=false;
+      pressTimer=setTimeout(()=>{
+        longPressed=true;
+        try{if(navigator.vibrate)navigator.vibrate(30);}catch(e){}
+        _goHome();
+      },600);
+    };
+    const end=e=>{
+      if(pressTimer){clearTimeout(pressTimer);pressTimer=null;}
+    };
+    const click=e=>{
+      e.preventDefault();
+      if(longPressed){longPressed=false;return;} // já navegou via long-press
+      _goBack();
+    };
+    fab.addEventListener('mousedown',start);
+    fab.addEventListener('touchstart',start,{passive:true});
+    fab.addEventListener('mouseup',end);
+    fab.addEventListener('mouseleave',end);
+    fab.addEventListener('touchend',end);
+    fab.addEventListener('touchcancel',end);
+    fab.addEventListener('click',click);
+  };
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',tryInit);
+  else tryInit();
+})();
 
 // Mapeamento de páginas a permissões necessárias
 const _PAGE_PERMS={
@@ -3140,7 +3208,6 @@ function _applyPermissionUI(){
     const mod=_PAGE_MOD[pg];
     const show=hasPermission(perm)&&(!mod||_modAtivo(mod));
     const sb=document.getElementById('sbm-'+pg);if(sb)sb.style.display=show?'':'none';
-    const bn=document.getElementById('bnm-'+pg);if(bn)bn.style.display=show?'':'none';
   });
   // Super Admin button
   const sbAdmin=document.getElementById('sbm-admin');
@@ -3166,8 +3233,6 @@ function nav(pg,extra){
   document.getElementById('top-title').textContent=PAGE_TTL[pg]||pg;
   document.querySelectorAll('.sb-item').forEach(s=>s.classList.remove('on'));
   const sbi=document.getElementById('sbm-'+pg);if(sbi)sbi.classList.add('on');
-  document.querySelectorAll('.bn-item').forEach(b=>b.classList.remove('on'));
-  const bni=document.getElementById('bnm-'+pg);if(bni)bni.classList.add('on');
   const renders={dash:renderDash,dados:renderDados,mesas:renderMesas,balcao:renderBalcao,delivery:renderDelivery,producao:renderProducao,cardapio:renderCardapio,clientes:renderClientes,roleta:renderRoleta,caixa:renderCaixa,relatorio:renderRelatorio,funcionarios:renderFuncionarios,config:renderConfig,admin:renderAdmin,agente:renderAgente,despesas:renderDespesas,comissao:renderComissao,promos:renderPromocoes,relav:renderRelAvancado,garcom:renderGarcomMode,pedido:()=>{if(_cxFlow.tipo)return _renderCxFlow();const np=ST.novoPedido;if(np&&np._vendaDireta&&np._wizStep!==undefined)renderVendaDiretaWizard();else if(np&&np._wizStep!==undefined&&!np._addingTo&&np.tipo==='balcao')renderPedidoWizard();else renderPedido(extra);},fechar:()=>renderFechar(extra),pagamento:()=>renderPagamento(extra)};
   if(renders[pg])renders[pg]();
   // KDS tick: ligar no dash (produção inline) e producao, desligar ao sair
@@ -3243,10 +3308,9 @@ function updateBadges(){
   const balCnt=ST.pedidos.filter(p=>p.tipo==='balcao'&&naFila(p)).length;
   const delCnt=ST.pedidos.filter(p=>p.tipo==='delivery'&&(naFila(p)||p.status==='rota')).length;
   const setB=(id,n)=>{const el=document.getElementById(id);if(el){el.textContent=n;el.style.display=n?'flex':'none'}};
-  const setBN=(id,n)=>{const el=document.getElementById(id);if(el){el.textContent=n;el.className='bn-bdg'+(n?' on':'')}};
-  setB('sb-mesa-bdg',mesasCnt);setBN('bn-mesa-bdg',mesasCnt);
-  setB('sb-bal-bdg',balCnt);setBN('bn-bal-bdg',balCnt);
-  setB('sb-del-bdg',delCnt);setBN('bn-del-bdg',delCnt);
+  setB('sb-mesa-bdg',mesasCnt);
+  setB('sb-bal-bdg',balCnt);
+  setB('sb-del-bdg',delCnt);
 }
 
 // ═══════════════════════════════════════════
