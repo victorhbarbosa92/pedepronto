@@ -253,31 +253,102 @@ html{-webkit-overflow-scrolling:touch}
 #app{position:fixed;inset:0;display:flex;flex-direction:column}
 
 /* ── TOPBAR ── */
-#topbar{height:52px;background:var(--sf);border-bottom:1px solid var(--br);display:flex;align-items:center;padding:0 12px;gap:8px;flex-shrink:0;z-index:20}
+/* ── TOPBAR v3 — 3 zonas: esquerda (Menu/Logo) · centro (título + ícones) · direita (Fechar Caixa) ── */
+#topbar{height:54px;background:var(--sf);border-bottom:1px solid var(--br);display:flex;align-items:center;padding:0 10px;gap:10px;flex-shrink:0;z-index:20}
+.tb-left{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.tb-center{flex:1;min-width:0;display:flex;align-items:center;justify-content:center;gap:10px}
+.tb-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.tb-icons{display:flex;gap:4px;align-items:center;flex-shrink:0}
+
 .logo{font-size:16px;font-weight:800;font-family:var(--mono);color:var(--ac);white-space:nowrap;letter-spacing:-.04em;display:block}
-#btn-home{display:none}
 .logo s{color:var(--t2);font-weight:400;text-decoration:none}
-#top-title{font-size:14px;font-weight:700;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 4px;letter-spacing:-.02em;font-family:var(--mono)}
+
+#top-title{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-.02em;font-family:var(--mono)}
+
+/* Botão Menu — verde, quadrado, sempre visível em mobile */
+#tb-menu-btn{
+  display:none; /* desktop usa sidebar */
+  align-items:center; gap:6px;
+  height:42px; padding:0 14px;
+  background:linear-gradient(135deg,var(--gn),#4aa37e);
+  color:#fff; border:none; border-radius:11px;
+  font-size:13px; font-weight:800; font-family:inherit;
+  cursor:pointer; transition:all .15s;
+  box-shadow:0 3px 10px rgba(94,201,154,.32);
+  -webkit-tap-highlight-color:transparent;
+}
+#tb-menu-btn:hover{transform:translateY(-1px);box-shadow:0 5px 14px rgba(94,201,154,.4)}
+#tb-menu-btn:active{transform:scale(.94)}
+.tb-menu-lbl{font-weight:800;letter-spacing:.02em}
+
+/* Botão Fechar Caixa — vermelho, sempre visível quando caixa aberto */
+#btn-fechar-caixa{
+  display:none; /* mostrado via JS quando caixa aberto */
+  align-items:center; gap:6px;
+  height:42px; padding:0 14px;
+  background:linear-gradient(135deg,var(--rd),#b04640);
+  color:#fff; border:none; border-radius:11px;
+  font-size:13px; font-weight:800; font-family:inherit;
+  cursor:pointer; transition:all .15s;
+  box-shadow:0 3px 10px rgba(212,90,79,.32);
+  white-space:nowrap;
+  -webkit-tap-highlight-color:transparent;
+}
+#btn-fechar-caixa:hover{transform:translateY(-1px);box-shadow:0 5px 14px rgba(212,90,79,.45)}
+#btn-fechar-caixa:active{transform:scale(.94)}
+#btn-fechar-caixa.on{display:inline-flex}
+
+/* Status caixa (label discreto) */
 .tb-session{display:flex;align-items:center;gap:6px;padding:4px 10px;background:var(--s2);border:1px solid var(--br);border-radius:7px;font-family:var(--mono);font-size:11px;font-weight:500;color:var(--t2);flex-shrink:0;cursor:pointer;transition:all .15s}
 .tb-session:hover{background:var(--s3);color:var(--tx)}
 .tb-session-dot{width:6px;height:6px;border-radius:50%;background:var(--t3);flex-shrink:0}
 .tb-session-dot.open{background:var(--gn)}
 .tb-session-lbl{white-space:nowrap}
-.tb-actions{display:flex;gap:4px;align-items:center;flex-shrink:0}
-.tb-divider{width:1px;height:24px;background:var(--br2);margin:0 4px;flex-shrink:0}
-.tb-caixa{font-size:12px;padding:0 12px;font-weight:700;font-family:var(--mono);gap:6px}
+
+.tb-divider{width:1px;height:24px;background:var(--br2);flex-shrink:0}
+
 .tbtn{height:38px;min-width:38px;border-radius:10px;background:var(--s2);border:1px solid var(--br2);color:var(--t2);font-size:13px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:0 12px;font-family:inherit;font-weight:700;white-space:nowrap;transition:all .15s}
 .tbtn:hover{background:var(--s3);color:var(--tx)}
 .tbtn:active{background:var(--s4);transform:scale(.95)}
 .tbtn.pr{background:linear-gradient(135deg,var(--ac),var(--acd));color:#fff;border-color:transparent;box-shadow:0 3px 10px var(--acg)}
-.tbtn-ico{height:38px;width:38px;border-radius:10px;background:var(--s2);border:1px solid var(--br2);color:var(--t2);font-size:17px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all .15s}
+.tbtn-ico{height:38px;width:38px;border-radius:10px;background:var(--s2);border:1px solid var(--br2);color:var(--t2);font-size:17px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all .15s;position:relative}
 .tbtn-ico:hover{background:var(--s3);color:var(--tx)}
 .tbtn-ico:active{background:var(--s4);transform:scale(.95)}
-/* botão voltar — destaque visual */
+
+/* Botão tema — segue mesmo estilo dos outros ícones */
+#btn-theme{height:38px;width:38px;border-radius:10px;background:var(--s2);border:1px solid var(--br2);color:var(--t2);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all .15s}
+#btn-theme:hover{background:var(--s3);color:var(--tx)}
+
+/* botão voltar topbar — só desktop (mobile usa FAB) */
 #btn-back{height:38px;padding:0 14px;border-radius:10px;background:var(--s3);border:1px solid var(--br3);color:var(--tx);font-size:14px;font-weight:800;cursor:pointer;display:none;align-items:center;justify-content:center;gap:6px;font-family:inherit;transition:all .15s;white-space:nowrap;flex-shrink:0}
 #btn-back:hover{background:var(--ac);color:#fff;border-color:transparent}
 #btn-back:active{transform:scale(.95)}
 #btn-back.vis{display:inline-flex}
+
+/* ── MOBILE ≤ 768px: mostra botão Menu, esconde logo desktop, esconde voltar da topbar (vira FAB) ── */
+@media(max-width:768px){
+  #tb-menu-btn{display:inline-flex}
+  #tb-logo{display:none}
+  #btn-back{display:none !important} /* mobile usa FAB */
+  /* Topbar mobile: ajusta padding e gaps */
+  #topbar{padding:0 8px;gap:8px;padding-left:8px !important}
+  /* Esconde label do botão fechar caixa em telas pequenas (só ícone) */
+  #btn-fechar-caixa span{display:none}
+  #btn-fechar-caixa{padding:0 10px;height:40px}
+  /* Esconde session label, mantém só o dot */
+  .tb-session-lbl{display:none}
+  .tb-session{padding:4px 8px}
+}
+@media(max-width:400px){
+  /* maquininha — esconde ícones secundários, mantém só notificações */
+  #btn-theme{display:none}
+  #btn-bt{display:none}
+  #btn-drive{display:none}
+  .tb-session{display:none}
+  /* Botão menu menor */
+  #tb-menu-btn{padding:0 10px;height:40px}
+  .tb-menu-lbl{font-size:12px}
+}
 
 /* ── LAYOUT ── */
 #layout{flex:1;display:flex;overflow:hidden}
@@ -314,37 +385,16 @@ html{-webkit-overflow-scrolling:touch}
 .sb-theme-toggle svg{flex-shrink:0}
 .sb-foot-ver{font-family:var(--mono);font-size:10px;color:var(--t3);font-weight:500}
 
-/* ── FAB: Floating Action Buttons (mobile) ── */
-/* Menu: canto superior esquerdo (flutuante).  Voltar: canto inferior esquerdo (quadrado). */
-#fab-back, #fab-menu {
+/* ── FAB: Botão flutuante de Voltar (mobile only) ── */
+/* Menu agora está na topbar como botão verde. Aqui só o Voltar. */
+#fab-back {
   position: fixed;
-  border: none;
-  cursor: pointer;
-  display: none; /* só aparece em mobile */
+  display: none; /* só mobile */
   align-items: center;
   justify-content: center;
+  border: none;
+  cursor: pointer;
   z-index: 150;
-  transition: transform .18s cubic-bezier(0.4, 0, 0.2, 1),
-              box-shadow .18s, opacity .25s,
-              top .25s ease, bottom .25s ease, left .25s ease;
-  -webkit-tap-highlight-color: transparent;
-  -webkit-user-select: none; user-select: none;
-}
-/* MENU — canto superior esquerdo, circular, neutro */
-#fab-menu {
-  top: calc(12px + env(safe-area-inset-top, 0px));
-  left: 12px;
-  width: 48px; height: 48px;
-  border-radius: 50%;
-  background: var(--sf);
-  color: var(--tx);
-  border: 1.5px solid var(--br2);
-  box-shadow: 0 4px 14px rgba(0,0,0,.22), 0 1px 4px rgba(0,0,0,.12);
-}
-#fab-menu:hover { transform: scale(1.05); box-shadow: 0 6px 18px rgba(0,0,0,.28); }
-#fab-menu:active { transform: scale(.92); }
-/* VOLTAR — canto inferior esquerdo, quadrado com cantos arredondados */
-#fab-back {
   bottom: calc(20px + env(safe-area-inset-bottom, 0px));
   left: 16px;
   width: 56px; height: 56px;
@@ -352,22 +402,22 @@ html{-webkit-overflow-scrolling:touch}
   background: linear-gradient(135deg, var(--ac), var(--acd));
   color: #fff;
   box-shadow: 0 6px 22px var(--acg), 0 2px 8px rgba(0,0,0,.25);
+  transition: transform .18s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow .18s, opacity .25s,
+              bottom .2s ease;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none; user-select: none;
 }
 #fab-back:hover { transform: translateY(-2px); box-shadow: 0 10px 28px var(--acg), 0 4px 12px rgba(0,0,0,.3); }
 #fab-back:active { transform: scale(.92); }
-/* Estado "escondido" quando não há para onde voltar */
-#fab-back.hide, #fab-menu.hide { opacity: 0; pointer-events: none; transform: scale(.7); }
-/* Quando teclado virtual abre (visualViewport ajustado via JS) */
-#fab-back.kb-up { bottom: calc(12px + env(safe-area-inset-bottom, 0px)); transform: scale(.85); }
-#fab-menu.kb-up { transform: scale(.85); }
-/* Mostra só em telas pequenas (tablet+ usa sidebar) */
+#fab-back.hide { opacity: 0; pointer-events: none; transform: scale(.7); }
+/* Quando teclado virtual abre — sobe para ficar acima do teclado */
+#fab-back.kb-up { /* bottom dinâmico aplicado via JS direto no style */ transform: scale(.92); }
+/* Mostra só em mobile */
 @media(max-width:768px){
-  #fab-back, #fab-menu { display: flex; }
-  /* Espaço para o voltar não cobrir conteúdo do rodapé */
+  #fab-back { display: flex; }
+  /* Espaço pro conteúdo não ficar atrás do FAB */
   #page { padding-bottom: calc(90px + env(safe-area-inset-bottom, 0px)); }
-  /* Topbar precisa de espaço pra não conflitar com o FAB menu top-left */
-  #topbar { padding-left: 68px !important; }
-  #btn-home { display: none !important; } /* Menu FAB substitui o home/menu da topbar */
 }
 
 /* ── PAGES ── */
@@ -730,13 +780,8 @@ select.inp { cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg x
 
 /* ── MOBILE ≤ 768px ── */
 @media(max-width:768px){
-  /* topbar: hide session strip, show home btn, hide logo */
-  .logo{display:none!important}
-  #btn-home{display:flex!important}
-  .tb-session{display:none}
-  .tb-divider{display:none}
+  /* topbar mobile já é tratada na seção principal da topbar v3 */
   .tb-caixa{display:none}
-  #topbar{height:48px;padding:0 8px;gap:4px}
   /* produto: 2 colunas */
   .prod-grid{grid-template-columns:1fr 1fr;gap:9px}
   /* cards com menos padding */
@@ -1338,33 +1383,41 @@ const _PP_PUBKEY_JWK={"crv":"P-256","ext":true,"key_ops":["verify"],"kty":"EC","
 <body>
 <div id="app">
 
-<!-- ══════════ TOPBAR ══════════ -->
+<!-- ══════════ TOPBAR v3 ══════════ -->
 <div id="topbar">
-  <!-- DESKTOP: logo -->
-  <div class="logo" id="tb-logo">Pede<s>Pronto</s></div>
-  <!-- MOBILE: home -->
-  <button class="tbtn-ico" id="btn-home" onclick="nav('dash')" title="Início" aria-label="Ir para tela inicial"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-8 9 8M5 10v10h14V10"/></svg></button>
-  <!-- VOLTAR -->
-  <button id="btn-back" onclick="_goBack()" title="Voltar" aria-label="Voltar para tela anterior"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg> Voltar</button>
-  <!-- título da página -->
-  <div id="top-title">Início</div>
-  <!-- indicador offline -->
-  <div id="tb-offline" class="tb-offline-pill" style="display:none" title="Sem conexão — operando offline">📡 OFFLINE</div>
-  <!-- indicador update pendente (clica para atualizar agora) -->
-  <button id="tb-update" class="tb-update-pill" type="button" onclick="_swForcePromptNow()" title="Atualização disponível — toque para aplicar agora" aria-label="Atualização disponível">🚀 ATUALIZAR</button>
-  <!-- session strip: caixa status -->
-  <div class="tb-session" id="tb-session">
-    <span class="tb-session-dot" id="tb-session-dot"></span>
-    <span class="tb-session-lbl" id="tb-session-lbl">Caixa fechado</span>
+  <!-- ESQUERDA: Menu (mobile) + Logo (desktop) -->
+  <div class="tb-left">
+    <button id="tb-menu-btn" type="button" onclick="openMenuSheet()" title="Menu" aria-label="Abrir menu">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+      <span class="tb-menu-lbl">Menu</span>
+    </button>
+    <div class="logo" id="tb-logo">Pede<s>Pronto</s></div>
+    <button id="btn-back" onclick="_goBack()" title="Voltar" aria-label="Voltar para tela anterior"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg> Voltar</button>
   </div>
-  <!-- ações da direita -->
-  <div class="tb-actions">
-    <button id="btn-theme" onclick="toggleTheme()" title="Alternar tema" aria-label="Alternar tema claro/escuro"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg></button>
-    <button class="tbtn-ico" id="alerta-bell" onclick="openAlertas()" title="Alertas" aria-label="Abrir notificações"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg><span class="alerta-dot" id="alerta-dot" aria-hidden="true"></span></button>
-    <button class="tbtn-ico" id="btn-bt" onclick="openMc('mc-bt')" title="Impressora" aria-label="Configurar impressora Bluetooth"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6z"/></svg></button>
-    <button class="tbtn-ico" id="btn-drive" onclick="showCloudStatus()" title="Sincronização" aria-label="Status da sincronização na nuvem"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.5 19H9a7 7 0 110-14h.5M17.5 19a4.5 4.5 0 100-9H9"/></svg></button>
-    <div class="tb-divider"></div>
-    <button class="tbtn tb-caixa" onclick="showCaixaQuick()" title="Caixa" id="btn-caixa-st"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M6 9v6M18 9v6"/></svg> Caixa</button>
+
+  <!-- CENTRO: título + indicadores + ícones de status -->
+  <div class="tb-center">
+    <div id="top-title">Início</div>
+    <div id="tb-offline" class="tb-offline-pill" style="display:none" title="Sem conexão — operando offline">📡 OFFLINE</div>
+    <button id="tb-update" class="tb-update-pill" type="button" onclick="_swForcePromptNow()" title="Atualização disponível — toque para aplicar agora" aria-label="Atualização disponível">🚀 ATUALIZAR</button>
+    <div class="tb-icons">
+      <button id="btn-theme" onclick="toggleTheme()" title="Alternar tema" aria-label="Alternar tema claro/escuro"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg></button>
+      <button class="tbtn-ico" id="alerta-bell" onclick="openAlertas()" title="Alertas" aria-label="Abrir notificações"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg><span class="alerta-dot" id="alerta-dot" aria-hidden="true"></span></button>
+      <button class="tbtn-ico" id="btn-bt" onclick="openMc('mc-bt')" title="Impressora" aria-label="Configurar impressora Bluetooth"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6z"/></svg></button>
+      <button class="tbtn-ico" id="btn-drive" onclick="showCloudStatus()" title="Sincronização" aria-label="Status da sincronização na nuvem"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.5 19H9a7 7 0 110-14h.5M17.5 19a4.5 4.5 0 100-9H9"/></svg></button>
+    </div>
+  </div>
+
+  <!-- DIREITA: Status caixa + botão fechar caixa -->
+  <div class="tb-right">
+    <div class="tb-session" id="tb-session">
+      <span class="tb-session-dot" id="tb-session-dot"></span>
+      <span class="tb-session-lbl" id="tb-session-lbl">Caixa fechado</span>
+    </div>
+    <button id="btn-fechar-caixa" type="button" onclick="fecharCaixa()" title="Fechar Caixa" aria-label="Fechar caixa">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+      <span>Fechar Caixa</span>
+    </button>
   </div>
 </div>
 
@@ -1476,16 +1529,10 @@ const _PP_PUBKEY_JWK={"crv":"P-256","ext":true,"key_ops":["verify"],"kty":"EC","
     </div>
 
     <!-- BOTTOM NAV mobile -->
-    <!-- FAB: Floating Action Button — Voltar/Início (substitui bottom nav) -->
+    <!-- FAB: Floating Action Button — Voltar/Início (mobile only). Menu agora está na topbar. -->
     <button id="fab-back" type="button" aria-label="Voltar para tela anterior ou Início" title="Voltar (segure para Início)">
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M19 12H5M12 19l-7-7 7-7"/>
-      </svg>
-    </button>
-    <!-- FAB menu (3-pontinhos) — abre sheet com todas as telas -->
-    <button id="fab-menu" type="button" aria-label="Menu de navegação" title="Menu" onclick="openMenuSheet()">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/>
       </svg>
     </button>
   </div>
@@ -3035,10 +3082,7 @@ const PAGE_TTL={dash:'Início',dados:'Dados',funcionarios:'Funcionários',mesas:
 function applyResponsiveNav(){
   const mobile=isMobile();
   const maquininha=window.innerWidth<=400;
-  document.getElementById('tb-logo').style.display=mobile?'none':'block';
-  document.getElementById('btn-home').style.display=mobile?'flex':'none';
-  const btDrive=document.getElementById('btn-drive');
-  if(btDrive)btDrive.style.display=maquininha?'none':'';
+  // CSS cuida da maioria do show/hide via @media — só toggles de classe
   document.body.classList.toggle('is-mobile',mobile);
   document.body.classList.toggle('is-maquininha',maquininha);
   document.body.classList.toggle('is-tablet',!mobile&&window.innerWidth<=1100);
@@ -3168,12 +3212,20 @@ function _updateBackBtn(){
   const fab=document.getElementById('fab-back');
   if(fab){
     fab.classList.toggle('hide',!showBack);
-    // Title contextual: mostra o destino
     const back=ST.backNav||'dash';
     const destLbl=back==='dash'?'Início':(PAGE_TTL[back]||'Voltar');
     fab.setAttribute('title','Voltar para '+destLbl+' (segure para ir ao Início)');
     fab.setAttribute('aria-label','Voltar para '+destLbl);
   }
+  // Atualiza visibilidade do botão "Fechar Caixa" na topbar
+  _updateFecharCaixaBtn();
+}
+function _updateFecharCaixaBtn(){
+  const btn=document.getElementById('btn-fechar-caixa');
+  if(!btn)return;
+  const aberto=ST&&ST.caixa&&ST.caixa.aberto;
+  const podeFechar=typeof hasPermission==='function'?hasPermission('caixa_op'):true;
+  btn.classList.toggle('on',!!(aberto&&podeFechar));
 }
 // FAB de voltar: clique = volta. Long-press (600ms) = vai pro dashboard
 (function _initFabBack(){
@@ -3212,45 +3264,62 @@ function _updateBackBtn(){
   else tryInit();
 })();
 
-// FABs se ajustam quando o teclado virtual aparece (Android/iOS)
-// Usa visualViewport API quando disponível, fallback para focusin/focusout
+// FAB Voltar se ajusta dinamicamente quando o teclado virtual aparece
+// Usa visualViewport API para calcular altura exata do teclado e reposicionar o FAB acima dele
 (function _initKeyboardAdjust(){
   if(typeof window==='undefined')return;
-  const KB_THRESHOLD=150; // px de diferença para considerar "teclado aberto"
+  const KB_THRESHOLD=120; // px mínimos para considerar teclado aberto
   let kbOpen=false;
-  const setKbState=(open)=>{
-    if(kbOpen===open)return;
-    kbOpen=open;
+  let kbHeight=0;
+
+  const applyFabPosition=()=>{
     const back=document.getElementById('fab-back');
-    const menu=document.getElementById('fab-menu');
-    if(back)back.classList.toggle('kb-up',open);
-    if(menu)menu.classList.toggle('kb-up',open);
-    // Marca body para usos futuros (ex: esconder elementos)
-    document.body.classList.toggle('kb-open',open);
+    if(!back)return;
+    if(kbOpen){
+      // Posiciona o FAB acima do teclado, com margem de 12px
+      const newBottom = kbHeight + 12;
+      back.style.bottom = newBottom + 'px';
+      back.classList.add('kb-up');
+    } else {
+      // Volta à posição padrão (usa CSS)
+      back.style.bottom = '';
+      back.classList.remove('kb-up');
+    }
+    document.body.classList.toggle('kb-open',kbOpen);
   };
+
   // 1. visualViewport API (melhor opção — Android Chrome, iOS Safari 13+)
   if(window.visualViewport){
-    let last=window.visualViewport.height;
-    window.visualViewport.addEventListener('resize',()=>{
-      const h=window.visualViewport.height;
-      const diff=window.innerHeight-h;
-      setKbState(diff>KB_THRESHOLD);
-      last=h;
-    });
+    const onResize=()=>{
+      const vh = window.visualViewport.height;
+      const diff = window.innerHeight - vh;
+      const wasOpen = kbOpen;
+      kbOpen = diff > KB_THRESHOLD;
+      kbHeight = kbOpen ? diff : 0;
+      if(wasOpen !== kbOpen || kbOpen){
+        applyFabPosition();
+      }
+    };
+    window.visualViewport.addEventListener('resize',onResize);
+    window.visualViewport.addEventListener('scroll',onResize);
   } else {
-    // 2. Fallback: detecta foco em input/textarea
+    // 2. Fallback: assume altura média de teclado (300px)
+    const KB_FALLBACK_HEIGHT = 300;
     document.addEventListener('focusin',e=>{
       const t=e.target;
       if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.tagName==='SELECT'||t.isContentEditable)){
-        setKbState(true);
+        kbOpen=true;
+        kbHeight=KB_FALLBACK_HEIGHT;
+        applyFabPosition();
       }
     });
-    document.addEventListener('focusout',e=>{
-      // Pequeno delay para evitar flicker quando troca de input
+    document.addEventListener('focusout',()=>{
       setTimeout(()=>{
         const a=document.activeElement;
         if(!a||(a.tagName!=='INPUT'&&a.tagName!=='TEXTAREA'&&a.tagName!=='SELECT'&&!a.isContentEditable)){
-          setKbState(false);
+          kbOpen=false;
+          kbHeight=0;
+          applyFabPosition();
         }
       },80);
     });
@@ -4074,6 +4143,8 @@ function updateSbOperador(){
   const lbl=document.getElementById('tb-session-lbl');
   if(dot)dot.classList.toggle('open',!!ST.caixa.aberto);
   if(lbl)lbl.textContent=ST.caixa.aberto?ST.caixa.operador.split(' ')[0]+' · Aberto':'Caixa fechado';
+  // Atualiza visibilidade do botão "Fechar Caixa" na topbar
+  try{if(typeof _updateFecharCaixaBtn==='function')_updateFecharCaixaBtn();}catch(e){}
 }
 function updateSyncStatus(){
   const sLbl=document.getElementById('sb-foot-sync-lbl');
@@ -4393,8 +4464,9 @@ function renderDash(){try{
   </div>`:''}
   ${_renderDashStatusBar(_i)}
   ${_renderSolicitacoesCancelamento(_i)}
-  ${_renderDashProducao(_i,origemIco,origemLbl,origemCls)}
-  ${_renderDashPedidosAtivos(_i)}`;
+  ${_renderDashProducao(_i,origemIco,origemLbl,origemCls)}`;
+  // Lista de Pedidos Ativos foi REMOVIDA do dashboard (era poluição visual).
+  // Para ver pedidos abertos: nav('mesas') / nav('balcao') / nav('delivery').
 }catch(e){console.error('[renderDash] ERRO:',e);document.getElementById('pg-dash').innerHTML=`<div style="padding:20px;color:var(--rd)"><b>Erro no dashboard:</b><br><pre style="font-size:12px;margin-top:8px;white-space:pre-wrap;color:var(--t2)">${e.message}\n${e.stack||''}</pre><button class="btn bp mt12" onclick="renderDash()">Tentar novamente</button></div>`;}}
 
 // ── DASHBOARD SKIN RENDERER ──
