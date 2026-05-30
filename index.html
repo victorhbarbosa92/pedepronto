@@ -1269,6 +1269,10 @@ html.tam-g .tbtn,html.tam-g .tbtn-ico{font-size:17px;min-height:44px}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
 .tb-offline-pill{background:var(--am);color:#1a1b22;padding:4px 10px;border-radius:99px;font-size:10px;font-weight:800;gap:4px;align-items:center;letter-spacing:.3px;animation:pulse 2s ease-in-out infinite}
 html.light .tb-offline-pill{color:#fff;background:#c4860a}
+/* ── Pill de update pendente (quando usuário escolheu "lembrar ao fechar caixa") ── */
+.tb-update-pill{display:none;background:var(--bl);color:#fff;padding:4px 12px;border-radius:99px;font-size:10px;font-weight:800;align-items:center;gap:5px;cursor:pointer;letter-spacing:.3px;transition:all .15s;border:none;font-family:inherit}
+.tb-update-pill:hover{background:var(--ac);transform:scale(1.05)}
+.tb-update-pill.on{display:inline-flex;animation:zin .3s}
 /* ── Refinamentos: cards uniformes ── */
 .refined-empty{text-align:center;padding:30px 20px;color:var(--t2)}
 .refined-empty-ico{font-size:38px;margin-bottom:8px;opacity:.6}
@@ -1346,6 +1350,8 @@ const _PP_PUBKEY_JWK={"crv":"P-256","ext":true,"key_ops":["verify"],"kty":"EC","
   <div id="top-title">Início</div>
   <!-- indicador offline -->
   <div id="tb-offline" class="tb-offline-pill" style="display:none" title="Sem conexão — operando offline">📡 OFFLINE</div>
+  <!-- indicador update pendente (clica para atualizar agora) -->
+  <button id="tb-update" class="tb-update-pill" type="button" onclick="_swForcePromptNow()" title="Atualização disponível — toque para aplicar agora" aria-label="Atualização disponível">🚀 ATUALIZAR</button>
   <!-- session strip: caixa status -->
   <div class="tb-session" id="tb-session">
     <span class="tb-session-dot" id="tb-session-dot"></span>
@@ -4049,6 +4055,8 @@ function fecharCaixa(){
     renderCaixa();updateSbOperador();
     _addAlerta(ppIcon('lock',16,1.7,'var(--am)'),'Caixa fechado · '+pedsPagos.length+' pedidos · Saldo: '+fmtR(saldo),'info');
     toast('Caixa fechado. Saldo: '+fmtR(saldo),'a',5000);
+    // ── Hook auto-update: se usuário escolheu "lembrar ao fechar caixa", dispara agora ──
+    try{if(typeof _swCheckOnCaixaClose==='function')_swCheckOnCaixaClose();}catch(e){}
   });
 }
 function updateSbOperador(){
@@ -9936,42 +9944,161 @@ function registerSW(){
   }).catch(e=>console.warn('[SW] falhou:',e));
 }
 
+// Guarda referência ao SW aguardando ativação (usado pelo modal e hook de fechar caixa)
+let _swWaitingReg=null;
+// Flag persistida — usuário escolheu "Lembrar ao fechar o caixa"
+let _swRemindOnCaixa=false;
+// Timestamp do último "Não, mais tarde" — não inunda usuário
+let _swDismissedAt=0;
+
 function _swPromptUpdate(reg){
+  // Guarda referência mesmo se já tem prompt aberto
+  _swWaitingReg=reg;
   if(_swUpdatePending)return;
   _swUpdatePending=true;
-  // Estratégia: se usuário está IDLE (sem caixa aberto OU sem pedidos em aberto), reload silencioso
-  // Caso contrário, mostra banner discreto
-  const caixaAberto=ST&&ST.caixa&&ST.caixa.aberto;
-  const pedAtivos=ST&&ST.pedidos?ST.pedidos.filter(p=>p.status==='aberto'||p.status==='preparo').length:0;
-  const userBusy=caixaAberto&&pedAtivos>0;
 
-  if(!userBusy){
-    // Silencioso — pula direto pro SW novo
-    console.log('[SW] atualizando silenciosamente');
-    setTimeout(()=>{
-      try{reg.waiting?.postMessage({type:'SKIP_WAITING'});}catch(e){}
-    },500);
+  // Se usuário escolheu "lembrar ao fechar caixa" anteriormente, não interrompe
+  if(_swRemindOnCaixa){
+    console.log('[SW] update aguardando fechamento de caixa');
     return;
   }
 
-  // Banner discreto — usuário decide quando atualizar
-  let banner=document.getElementById('sw-update-banner');
-  if(banner)return;
-  banner=document.createElement('div');
-  banner.id='sw-update-banner';
-  banner.style.cssText='position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:var(--ac);color:#fff;padding:12px 18px;border-radius:99px;font-size:13px;font-weight:700;box-shadow:0 8px 24px rgba(0,0,0,.35);z-index:9999;display:flex;align-items:center;gap:12px;cursor:pointer;animation:zin .3s;max-width:90vw';
-  banner.innerHTML='<span>🔄 Nova versão disponível</span><button style="background:#fff;color:var(--ac);border:none;padding:6px 12px;border-radius:99px;font-weight:800;font-size:12px;cursor:pointer">Atualizar</button>';
-  banner.onclick=()=>{
-    try{reg.waiting?.postMessage({type:'SKIP_WAITING'});}catch(e){}
-    banner.remove();
+  // Se "Não, mais tarde" foi clicado há menos de 15 min, espera
+  if(_swDismissedAt && Date.now() - _swDismissedAt < 15*60*1000){
+    console.log('[SW] update adiado por 15 min');
+    setTimeout(()=>{
+      _swUpdatePending=false;
+      _swPromptUpdate(reg);
+    }, 15*60*1000 - (Date.now()-_swDismissedAt) + 1000);
+    return;
+  }
+
+  _showSwUpdateModal();
+}
+
+function _showSwUpdateModal(){
+  // Evita duplicação
+  if(document.getElementById('mc-sw-update'))return;
+  const caixaAberto = ST && ST.caixa && ST.caixa.aberto;
+
+  // Cria modal customizado (não usa showModal pq queremos opções específicas e não-bloqueante)
+  const mc = document.createElement('div');
+  mc.id = 'mc-sw-update';
+  mc.className = 'mc on';
+  mc.style.cssText = 'display:flex;align-items:center;justify-content:center;position:fixed;inset:0;z-index:9998';
+  mc.innerHTML = `
+    <div class="mc-bg" style="position:absolute;inset:0;background:rgba(0,0,0,0.55);backdrop-filter:blur(4px)"></div>
+    <div class="mc-box" style="position:relative;max-width:420px;width:calc(100% - 28px);background:var(--sf);border-radius:20px;padding:28px 24px;box-shadow:0 20px 60px rgba(0,0,0,.5);animation:zin .25s;border:1px solid var(--br2)">
+      <div style="text-align:center;margin-bottom:18px">
+        <div style="font-size:56px;line-height:1;margin-bottom:10px" aria-hidden="true">🚀</div>
+        <div style="font-size:19px;font-weight:900;color:var(--tx);margin-bottom:6px">Nova atualização disponível</div>
+        <div style="font-size:13px;color:var(--t2);line-height:1.55">
+          Uma nova versão do PedePronto foi lançada com<br>melhorias e correções.<br>
+          <strong style="color:var(--gn)">Você pode continuar usando normalmente</strong> até decidir aplicar.
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <button class="btn bp bw" id="sw-upd-yes" style="padding:14px 16px;font-size:15px">
+          ${ppIcon('refresh',16,1.8)||'🔄'} Sim, atualizar agora
+        </button>
+        ${caixaAberto ? `
+        <button class="btn bb bw" id="sw-upd-caixa" style="padding:14px 16px;font-size:14px">
+          ${ppIcon('lock',16,1.7)||'🔒'} Lembrar ao fechar o caixa
+        </button>` : ''}
+        <button class="btn bs bw" id="sw-upd-no" style="padding:12px 16px;font-size:14px">
+          Não, mais tarde
+        </button>
+      </div>
+      <div style="margin-top:14px;padding:10px 12px;background:var(--s2);border-radius:10px;font-size:11px;color:var(--t3);line-height:1.5;text-align:center">
+        💡 A atualização leva 2 segundos e não perde dados.
+      </div>
+    </div>
+  `;
+  document.body.appendChild(mc);
+
+  // Bind dos botões
+  document.getElementById('sw-upd-yes').onclick = ()=>{
+    _swCloseModal();
+    _swApplyNow();
   };
-  document.body.appendChild(banner);
-  // Auto-aplica após 10 minutos se ignorar
+  document.getElementById('sw-upd-no').onclick = ()=>{
+    _swCloseModal();
+    _swDismissedAt = Date.now();
+    _swUpdatePending = false;
+    toast('Você será lembrado em 15 minutos', 'b', 3000);
+    // Re-mostra em 15 min
+    setTimeout(()=>{
+      if(_swWaitingReg && !_swUpdatePending && !_swRemindOnCaixa){
+        _swPromptUpdate(_swWaitingReg);
+      }
+    }, 15*60*1000);
+  };
+  const caixaBtn = document.getElementById('sw-upd-caixa');
+  if(caixaBtn){
+    caixaBtn.onclick = ()=>{
+      _swCloseModal();
+      _swRemindOnCaixa = true;
+      _swUpdatePending = false;
+      toast('✅ Vou te lembrar quando você fechar o caixa', 'g', 4000);
+      // Mostra pill na topbar como lembrete visual
+      _swShowPill();
+    };
+  }
+}
+function _swShowPill(){
+  const pill = document.getElementById('tb-update');
+  if(pill) pill.classList.add('on');
+}
+function _swHidePill(){
+  const pill = document.getElementById('tb-update');
+  if(pill) pill.classList.remove('on');
+}
+function _swForcePromptNow(){
+  // Reset de timers — usuário clicou ativamente no pill
+  _swDismissedAt = 0;
+  _swRemindOnCaixa = false;
+  _swUpdatePending = false;
+  _swHidePill();
+  if(_swWaitingReg){
+    _showSwUpdateModal();
+  } else {
+    toast('Nenhuma atualização pendente no momento', 'b', 3000);
+  }
+}
+
+function _swCloseModal(){
+  const mc = document.getElementById('mc-sw-update');
+  if(mc){
+    mc.style.animation = 'zin .2s reverse';
+    setTimeout(()=>mc.remove(), 200);
+  }
+}
+
+function _swApplyNow(){
+  toast('🔄 Atualizando...', 'b', 5000);
+  // Pequeno delay para o toast aparecer antes do reload
   setTimeout(()=>{
-    if(document.getElementById('sw-update-banner')){
-      try{reg.waiting?.postMessage({type:'SKIP_WAITING'});}catch(e){}
+    if(_swWaitingReg && _swWaitingReg.waiting){
+      try{_swWaitingReg.waiting.postMessage({type:'SKIP_WAITING'});}catch(e){
+        console.warn('[SW] falha skipWaiting:', e);
+        location.reload();
+      }
+      // O 'controllerchange' listener vai fazer reload automaticamente
+      // Mas garantimos com fallback de 3s
+      setTimeout(()=>location.reload(), 3000);
+    } else {
+      location.reload();
     }
-  },600000);
+  }, 400);
+}
+
+// Chamado quando o caixa é fechado — verifica se há update pendente
+function _swCheckOnCaixaClose(){
+  if(_swRemindOnCaixa && _swWaitingReg){
+    _swRemindOnCaixa = false;
+    _swUpdatePending = false;
+    setTimeout(()=>_showSwUpdateModal(), 800); // pequeno delay para não atropelar UI do caixa
+  }
 }
 
 // Função pública: força refresh do cache (útil em debug)
