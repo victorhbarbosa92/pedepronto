@@ -1412,6 +1412,33 @@ html.tam-g .tbtn,html.tam-g .tbtn-ico{font-size:17px;min-height:44px}
 .btn-confirm-order:active{transform:scale(.97)}
 .btn-confirm-order:disabled{opacity:.35;pointer-events:none;box-shadow:none}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+/* ── TABLET PAISAGEM (768-1024px, orientation:landscape) ── */
+@media (min-width:768px) and (max-width:1280px) and (orientation:landscape){
+  /* Sidebar fica visível com largura intermediária */
+  #sidebar{width:88px}
+  .sb-lbl{display:none}
+  .sb-item{justify-content:center;padding:14px 8px;margin:3px 6px;border-radius:var(--r-md)}
+  .sb-ico svg{width:22px;height:22px}
+  .sb-brand-area>div>div:not(.sb-brand-icon){display:none}
+  /* Grid produtos 4 colunas */
+  .prod-grid{grid-template-columns:repeat(4,1fr)}
+  .pos-prod-grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr))}
+  /* Topbar maior */
+  #topbar{height:60px}
+  #top-title{font-size:16px}
+  /* Esconde FABs no tablet paisagem (tem sidebar) */
+  #fab-back{display:none !important}
+  /* Botão menu também esconde — tem sidebar */
+  #tb-menu-btn{display:none !important}
+  #tb-logo{display:block}
+  /* Botão Fechar Caixa volta a mostrar texto */
+  #btn-fechar-caixa span{display:inline !important}
+  /* Cards mais respiráveis */
+  .card{padding:16px}
+  .pg{padding:16px}
+  /* Bottom margin do page volta normal (sem FAB) */
+  #page{padding-bottom:16px !important}
+}
 /* ── ONBOARDING ── */
 #pp-onboard-bg{position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(8px);z-index:var(--z-tooltip);display:none;align-items:center;justify-content:center;padding:20px;animation:zin var(--d-base)}
 #pp-onboard-bg.on{display:flex}
@@ -4291,6 +4318,557 @@ function confirmarAberturaCaixa(){
   anunciar('caixa_aberto',{operador:opNome});
 }
 // ═══════════════════════════════════════════════════════════════════
+//  PPHaptic — Vibração tática em ações importantes (Android only)
+// ═══════════════════════════════════════════════════════════════════
+window.PPHaptic = {
+  // Padrões: ms único OU array (vibra/pausa/vibra/...)
+  patterns: {
+    tap: 8,             // toque sutil
+    light: 15,          // ação confirmada (botão)
+    medium: 25,         // pedido enviado
+    success: [15, 50, 30],  // pagamento OK
+    warn: [40, 80, 40],     // aviso
+    error: [80, 50, 80, 50, 80], // erro forte
+    notify: [25, 100, 25],
+  },
+  enabled(){
+    if(!('vibrate' in navigator)) return false;
+    // Respeitar preferência do usuário (default: ativo)
+    return (ST.cfg && ST.cfg.haptic_off) ? false : true;
+  },
+  do(pattern){
+    if(!this.enabled()) return;
+    const p = this.patterns[pattern] || pattern;
+    try{ navigator.vibrate(p); }catch(e){}
+  },
+};
+// Atalho global
+function _vibrate(p){ if(window.PPHaptic) PPHaptic.do(p); }
+
+// Hookar em ações já existentes (monkey-patch defensivo)
+(function _hookHaptics(){
+  const tryHook = ()=>{
+    if(typeof window === 'undefined') return;
+    // toast já existe — adiciona vibração discreta por tipo
+    if(typeof toast === 'function' && !toast._hapticHooked){
+      const orig = toast;
+      window.toast = function(msg, type, dur){
+        try{
+          if(type === 'g') _vibrate('light');
+          else if(type === 'r') _vibrate('error');
+          else if(type === 'a') _vibrate('warn');
+        }catch(e){}
+        return orig.apply(this, arguments);
+      };
+      window.toast._hapticHooked = true;
+    }
+  };
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', tryHook);
+  else setTimeout(tryHook, 100);
+})();
+
+// ═══════════════════════════════════════════════════════════════════
+//  PPInsights — IA estatística: picos atípicos, combos, previsão demanda
+// ═══════════════════════════════════════════════════════════════════
+window.PPInsights = (function(){
+
+  // Detecta picos atípicos comparando hoje vs média histórica
+  function detectarPicos(){
+    const hoje = new Date();
+    const dia = hoje.getDay();
+    const hora = hoje.getHours();
+    const todayStart = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate()).getTime();
+    const pedHoje = ST.pedidos.filter(p => p.status==='pago' && p.pago_em && new Date(p.pago_em).getTime() >= todayStart);
+    const totalHoje = pedHoje.reduce((s,p) => s + (p.total||0), 0);
+
+    // Calcula média de mesmo dia da semana nos últimos 4 fechamentos
+    const ultimos = 4*7*86400000; // 4 semanas
+    const cutoff = Date.now() - ultimos;
+    const pedHist = ST.pedidos.filter(p => {
+      if(p.status !== 'pago' || !p.pago_em) return false;
+      const dt = new Date(p.pago_em);
+      return dt.getTime() >= cutoff && dt.getTime() < todayStart && dt.getDay() === dia;
+    });
+    // Agrupa por dia
+    const dias = {};
+    pedHist.forEach(p => {
+      const k = new Date(p.pago_em).toDateString();
+      dias[k] = (dias[k]||0) + (p.total||0);
+    });
+    const totais = Object.values(dias);
+    if(totais.length < 2) return null;
+    const media = totais.reduce((s,v)=>s+v,0) / totais.length;
+    if(media === 0) return null;
+
+    const variacao = ((totalHoje - media) / media) * 100;
+    const insights = [];
+    if(variacao > 30){
+      insights.push({tipo:'pico_bom', label:'Movimento acima do normal', detalhe: '+' + variacao.toFixed(0) + '% vs média de ' + ['domingo','segunda','terça','quarta','quinta','sexta','sábado'][dia] + 's', cor:'var(--gn)'});
+    } else if(variacao < -30){
+      insights.push({tipo:'pico_ruim', label:'Movimento abaixo do normal', detalhe: variacao.toFixed(0) + '% vs média histórica', cor:'var(--rd)'});
+    }
+
+    // Tempo médio de preparo (se atrasado, alerta)
+    const ativos = ST.pedidos.filter(p => p.status==='aberto' || p.status==='preparo');
+    const atrasados = ativos.filter(p => {
+      const mins = (Date.now() - new Date(p.created).getTime()) / 60000;
+      const tempoEst = Math.max(...(p.itens||[]).map(i => i.tempo||15), 15);
+      return mins > tempoEst * 1.5;
+    });
+    if(atrasados.length >= 3){
+      insights.push({tipo:'producao_lenta', label:'Produção lenta detectada', detalhe: atrasados.length + ' pedido(s) atrasados', cor:'var(--am)'});
+    }
+
+    // Categoria em alta hoje (vendendo o dobro)
+    const catTotaisHoje = {};
+    pedHoje.forEach(p => (p.itens||[]).forEach(it => {
+      const prod = ST.produtos.find(pr => pr.id === it.prod_id);
+      const cat = prod?.cat_id || 'outros';
+      catTotaisHoje[cat] = (catTotaisHoje[cat]||0) + (it.qty||1);
+    }));
+    const catMediaHist = {};
+    pedHist.forEach(p => (p.itens||[]).forEach(it => {
+      const prod = ST.produtos.find(pr => pr.id === it.prod_id);
+      const cat = prod?.cat_id || 'outros';
+      catMediaHist[cat] = (catMediaHist[cat]||0) + (it.qty||1);
+    }));
+    Object.keys(catTotaisHoje).forEach(cat => {
+      const hoje = catTotaisHoje[cat];
+      const mediaCat = (catMediaHist[cat] || 0) / Math.max(1, totais.length);
+      if(mediaCat > 5 && hoje > mediaCat * 2){
+        const catNome = ST.categorias.find(c => c.id === cat)?.nome || cat;
+        insights.push({tipo:'cat_alta', label:'Categoria em alta hoje', detalhe: catNome + ': ' + hoje + ' vendas (média ' + mediaCat.toFixed(0) + ')', cor:'var(--bl)'});
+      }
+    });
+
+    return insights;
+  }
+
+  // Sugestão de combo do dia: pares mais frequentes
+  function sugerirCombo(){
+    const pedidos = ST.pedidos.filter(p => p.status==='pago');
+    if(pedidos.length < 10) return null;
+    const pares = {};
+    pedidos.forEach(p => {
+      const nomes = (p.itens||[]).map(i => i.nome).filter(Boolean);
+      const unicos = [...new Set(nomes)];
+      for(let i = 0; i < unicos.length; i++){
+        for(let j = i+1; j < unicos.length; j++){
+          const k = [unicos[i], unicos[j]].sort().join(' + ');
+          pares[k] = (pares[k]||0) + 1;
+        }
+      }
+    });
+    const top = Object.entries(pares).sort((a,b) => b[1]-a[1])[0];
+    if(!top || top[1] < 3) return null;
+    const [combo, qtd] = top;
+    // Calcula preço médio e sugere desconto de 10%
+    const [n1, n2] = combo.split(' + ');
+    const p1 = ST.produtos.find(p => p.nome === n1);
+    const p2 = ST.produtos.find(p => p.nome === n2);
+    if(!p1 || !p2) return null;
+    const original = (p1.preco||0) + (p2.preco||0);
+    const sugerido = +(original * 0.9).toFixed(2);
+    return {combo, qtd, original, sugerido, n1, n2};
+  }
+
+  // Previsão de demanda para próximas horas (média móvel)
+  function preverDemanda(){
+    const agora = new Date();
+    const dia = agora.getDay();
+    const hora = agora.getHours();
+    // Últimas 4 semanas, mesmo dia
+    const cutoff = Date.now() - 4*7*86400000;
+    const pedHist = ST.pedidos.filter(p => {
+      if(p.status !== 'pago' || !p.pago_em) return false;
+      const dt = new Date(p.pago_em);
+      return dt.getTime() >= cutoff && dt.getDay() === dia;
+    });
+    // Conta por hora
+    const porHora = new Array(24).fill(0);
+    const contagemDias = new Set();
+    pedHist.forEach(p => {
+      const dt = new Date(p.pago_em);
+      porHora[dt.getHours()]++;
+      contagemDias.add(dt.toDateString());
+    });
+    const numDias = Math.max(1, contagemDias.size);
+    const mediaPorHora = porHora.map(c => c/numDias);
+    // Previsão para próximas 3h
+    const prox = [];
+    for(let i = 1; i <= 3; i++){
+      const h = (hora + i) % 24;
+      prox.push({hora: h, previsao: Math.round(mediaPorHora[h])});
+    }
+    return prox;
+  }
+
+  // Render: card de insights no dashboard
+  function renderInsightsCard(){
+    const picos = detectarPicos();
+    const combo = sugerirCombo();
+    const demanda = preverDemanda();
+    let html = '';
+    const anyData = (picos && picos.length) || combo || (demanda && demanda.some(d => d.previsao > 0));
+    if(!anyData) return '';
+    html += `<div class="card mb10" style="padding:14px;background:linear-gradient(135deg, var(--surface-1), var(--surface-2));border:1px solid var(--border-2)">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <span style="font-size:18px">🧠</span>
+        <span style="font-weight:800;font-size:14px">Insights de hoje</span>
+      </div>`;
+    if(picos && picos.length){
+      picos.forEach(p => {
+        html += `<div style="display:flex;align-items:center;gap:8px;padding:8px;background:var(--surface-2);border-radius:var(--r-sm);margin-bottom:6px;border-left:3px solid ${p.cor}">
+          <div style="flex:1;min-width:0">
+            <div class="fs12 bold">${esc(p.label)}</div>
+            <div class="fs11 t2">${esc(p.detalhe)}</div>
+          </div>
+        </div>`;
+      });
+    }
+    if(combo){
+      html += `<div style="padding:8px;background:var(--surface-2);border-radius:var(--r-sm);margin-bottom:6px;border-left:3px solid var(--ac)">
+        <div class="fs12 bold">💡 Combo sugerido</div>
+        <div class="fs11 t2"><b>${esc(combo.combo)}</b> · pedidos juntos ${combo.qtd}x · sugestão: ${fmtR(combo.sugerido)} <span class="t3" style="text-decoration:line-through">${fmtR(combo.original)}</span></div>
+      </div>`;
+    }
+    if(demanda && demanda.some(d => d.previsao > 0)){
+      html += `<div style="padding:8px;background:var(--surface-2);border-radius:var(--r-sm);border-left:3px solid var(--bl)">
+        <div class="fs12 bold">📈 Previsão próximas horas</div>
+        <div class="fs11 t2">${demanda.map(d => d.hora+'h: ~'+d.previsao+' ped').join(' · ')}</div>
+      </div>`;
+    }
+    html += `</div>`;
+    return html;
+  }
+
+  return { detectarPicos, sugerirCombo, preverDemanda, renderInsightsCard };
+})();
+
+// ═══════════════════════════════════════════════════════════════════
+//  PPCart — Operação diária: QR comanda, divisão inteligente, parcial
+// ═══════════════════════════════════════════════════════════════════
+window.PPCart = (function(){
+
+  // ── 1. QR Code para comanda do cliente ──
+  function gerarQRComandaUrl(pedido){
+    if(!pedido) return '';
+    const base = location.origin + location.pathname.replace(/[^/]*$/, '');
+    const estab = window._estabUid || '';
+    return base + '?comanda=' + encodeURIComponent(pedido.id) + (estab ? '&estab=' + encodeURIComponent(estab) : '');
+  }
+
+  function mostrarQRComanda(ped_id){
+    const ped = ST.pedidos.find(p => p.id === ped_id);
+    if(!ped){ toast('Pedido não encontrado','r'); return; }
+    const url = gerarQRComandaUrl(ped);
+    const qrApiUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=' + encodeURIComponent(url);
+    const body = `
+      <div style="text-align:center">
+        <div class="fs12 t2 mb10">Cliente lê este QR para acompanhar o pedido <b>${esc(ped.num)}</b> em tempo real</div>
+        <div style="background:#fff;padding:12px;border-radius:var(--r-md);display:inline-block;margin-bottom:12px">
+          <img src="${qrApiUrl}" alt="QR Code da comanda" style="width:240px;height:240px;display:block">
+        </div>
+        <div class="fs11 t3 mono mb10" style="word-break:break-all;padding:8px;background:var(--surface-2);border-radius:var(--r-sm)">${esc(url)}</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn bp" style="flex:1;min-width:120px" onclick="navigator.share?navigator.share({url:'${esc(url)}'}):navigator.clipboard?.writeText('${esc(url)}').then(()=>toast('Link copiado!','g'))">${ppIcon('send',14,1.7)} Compartilhar</button>
+          <button class="btn bb" style="flex:1;min-width:120px" onclick="PPCart.imprimirQRComanda('${ped_id}')">${ppIcon('printer',14,1.7)} Imprimir</button>
+        </div>
+      </div>
+    `;
+    showModal('mc-qr-comanda', '📲 QR da Comanda', body);
+  }
+
+  function imprimirQRComanda(ped_id){
+    const ped = ST.pedidos.find(p => p.id === ped_id);
+    if(!ped){ return; }
+    if(!BT || !BT.char){ toast('Impressora não conectada','r'); return; }
+    // Imprime cupom mínimo com QR usando ESC/POS QR Code commands (modelo 2)
+    try{
+      const url = gerarQRComandaUrl(ped);
+      const enc = new TextEncoder();
+      const t = s => [...enc.encode(s)];
+      const LF = [0x0A];
+      // QR ESC/POS para impressoras compatíveis
+      const qrModel = [0x1D,0x28,0x6B,0x04,0x00,0x31,0x41,0x32,0x00];
+      const qrSize = [0x1D,0x28,0x6B,0x03,0x00,0x31,0x43,0x08]; // size 8
+      const qrEcl = [0x1D,0x28,0x6B,0x03,0x00,0x31,0x45,0x31]; // M
+      // Store
+      const dataLen = url.length + 3;
+      const qrStore = [0x1D,0x28,0x6B,dataLen & 0xFF,(dataLen>>8)&0xFF,0x31,0x50,0x30,...t(url)];
+      const qrPrint = [0x1D,0x28,0x6B,0x03,0x00,0x31,0x51,0x30];
+      const cmds = [
+        ...[0x1B,0x40], // init
+        ...[0x1B,0x61,0x01], // center
+        ...[0x1B,0x21,0x30], // double size
+        ...t((ST.cfg.nome||'PedePronto').toUpperCase()), ...LF, ...LF,
+        ...[0x1B,0x21,0x00], // normal
+        ...t('Acompanhe seu pedido'), ...LF,
+        ...t(ped.num + ' · ' + (ped.cliente_nome||ped.mesa_label||'')), ...LF, ...LF,
+        ...qrModel, ...qrSize, ...qrEcl, ...qrStore, ...qrPrint, ...LF,
+        ...t('Aponte a camera do celular'), ...LF, ...LF,
+        ...[0x1B,0x64,0x05], // feed
+        ...[0x1D,0x56,0x01], // cut
+      ];
+      BT.write(new Uint8Array(cmds));
+      toast('🖨️ QR enviado para impressão','g',2500);
+    }catch(e){
+      toast('Erro ao imprimir QR: '+e.message,'r',4000);
+    }
+  }
+
+  // ── 2. Imprimir comanda PARCIAL (extrato durante consumo) ──
+  function imprimirComandaParcial(ped_id){
+    const ped = ST.pedidos.find(p => p.id === ped_id);
+    if(!ped){ return; }
+    if(!BT || !BT.char){ toast('Impressora não conectada','r'); return; }
+    try{
+      const enc = new TextEncoder();
+      const t = s => [...enc.encode(s)];
+      const LF = [0x0A];
+      const W = 32;
+      const sep = '-'.repeat(W);
+      const ctr = s => { const p = Math.max(0, Math.floor((W-s.length)/2)); return ' '.repeat(p)+s; };
+      const row = (l,r) => { l = l.substring(0,W-r.length-1); const sp = W-l.length-r.length; return l+' '.repeat(Math.max(1,sp))+r; };
+
+      const total = ped.itens.reduce((s,i)=>s+((i.preco||0)+(i.obs_extras||0))*(i.qty||1),0);
+      let lines = [
+        ...[0x1B,0x40], ...[0x1B,0x61,0x01], // center
+        ...[0x1B,0x21,0x30], // double
+        ...t((ST.cfg.nome||'PedePronto').toUpperCase()), ...LF,
+        ...[0x1B,0x21,0x00], ...LF,
+        ...t('COMANDA PARCIAL'), ...LF,
+        ...t('--- NAO E UM RECIBO ---'), ...LF, ...LF,
+        ...[0x1B,0x61,0x00], // left
+        ...t(ped.num + ' · ' + (ped.cliente_nome||ped.mesa_label||'')), ...LF,
+        ...t(new Date().toLocaleString('pt-BR')), ...LF,
+        ...t(sep), ...LF,
+      ];
+      ped.itens.forEach(it => {
+        const unit = (it.preco||0) + (it.obs_extras||0);
+        lines = lines.concat(t(row(it.qty+'x '+it.nome.substring(0,18), fmtR(unit*it.qty))), LF);
+        if(it.obs) lines = lines.concat(t('  > '+it.obs.substring(0,W-4)), LF);
+      });
+      lines = lines.concat(
+        t(sep), LF,
+        [0x1B,0x21,0x20], // double height
+        t(row('TOTAL ATE AGORA', fmtR(total))), LF,
+        [0x1B,0x21,0x00], LF,
+        [0x1B,0x61,0x01], // center
+        t('Continue aproveitando!'), LF,
+        t('Quando quiser fechar, chame'), LF, LF,
+        [0x1B,0x64,0x05], [0x1D,0x56,0x01]
+      );
+      BT.write(new Uint8Array(lines));
+      toast('🖨️ Comanda parcial impressa','g',2500);
+    }catch(e){
+      toast('Erro ao imprimir: '+e.message,'r',4000);
+    }
+  }
+
+  // ── 3. Divisão de conta inteligente (por item) ──
+  let _splitState = null;
+
+  function abrirDivisaoAvancada(ped_id){
+    const ped = ST.pedidos.find(p => p.id === ped_id);
+    if(!ped){ return; }
+    const itens = ped.itens || [];
+    _splitState = {
+      ped_id,
+      modo: 'igual', // 'igual' | 'item'
+      qtd: 2,
+      // Para modo item: map idx → array de pessoas que compartilham
+      assign: itens.map(() => []),
+      pessoas: 2,
+    };
+    _renderSplitModal();
+  }
+
+  function _renderSplitModal(){
+    const s = _splitState;
+    const ped = ST.pedidos.find(p => p.id === s.ped_id);
+    if(!ped){ return; }
+    const total = ped.total || 0;
+    let body = `
+      <div class="fs12 t2 mb10">Pedido <b>${esc(ped.num)}</b> · Total ${fmtR(total)}</div>
+      <div style="display:flex;gap:8px;margin-bottom:14px">
+        <button class="btn ${s.modo==='igual'?'bp':'bs'}" style="flex:1" onclick="PPCart._setSplitModo('igual')">Dividir igualmente</button>
+        <button class="btn ${s.modo==='item'?'bp':'bs'}" style="flex:1" onclick="PPCart._setSplitModo('item')">Por item</button>
+      </div>
+    `;
+    if(s.modo === 'igual'){
+      const val = +(total/s.qtd).toFixed(2);
+      body += `
+        <div class="fg">
+          <label class="fl">Dividir entre quantas pessoas?</label>
+          <div style="display:flex;align-items:center;gap:8px">
+            <button class="btn bs" style="width:46px;height:46px;padding:0;font-size:20px" onclick="PPCart._adjQtd(-1)">−</button>
+            <input type="number" class="inp" id="split-qtd" min="2" max="20" value="${s.qtd}" oninput="PPCart._setQtd(this.value)" style="text-align:center;font-size:20px;font-weight:800">
+            <button class="btn bs" style="width:46px;height:46px;padding:0;font-size:20px" onclick="PPCart._adjQtd(1)">+</button>
+          </div>
+        </div>
+        <div class="card mb14" style="text-align:center;padding:18px;background:var(--acbg)">
+          <div class="fs11 t2 mb4">Cada pessoa paga</div>
+          <div style="font-size:28px;font-weight:900;color:var(--ac);font-family:monospace">${fmtR(val)}</div>
+        </div>
+      `;
+    } else {
+      // Modo por item: cada item recebe N "bolinhas" de pessoas
+      body += `
+        <div class="fg">
+          <label class="fl">Quantas pessoas estão na mesa?</label>
+          <div style="display:flex;align-items:center;gap:8px">
+            <button class="btn bs" style="width:46px;height:46px;padding:0;font-size:20px" onclick="PPCart._adjPessoas(-1)">−</button>
+            <input type="number" class="inp" min="2" max="10" value="${s.pessoas}" oninput="PPCart._setPessoas(this.value)" style="text-align:center;font-size:20px;font-weight:800">
+            <button class="btn bs" style="width:46px;height:46px;padding:0;font-size:20px" onclick="PPCart._adjPessoas(1)">+</button>
+          </div>
+          <div class="fs11 t3 mt4">Toque nas bolinhas para marcar quem consumiu cada item</div>
+        </div>
+      `;
+      body += `<div class="sec-title mb8">Itens</div>`;
+      ped.itens.forEach((it, idx) => {
+        const unit = (it.preco||0) + (it.obs_extras||0);
+        const total_it = unit * (it.qty||1);
+        const ass = s.assign[idx] || [];
+        body += `<div class="card mb6" style="padding:10px">
+          <div class="rb mb6">
+            <span class="fs13 bold">${it.qty||1}x ${esc(it.nome)}</span>
+            <span class="mono bold am">${fmtR(total_it)}</span>
+          </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            ${Array.from({length: s.pessoas}).map((_, p) => {
+              const isOn = ass.includes(p);
+              return `<button class="btn ${isOn?'bp':'bs'}" style="width:38px;height:38px;padding:0;border-radius:var(--r-pill);font-weight:800" onclick="PPCart._toggleAssign(${idx}, ${p})">${p+1}</button>`;
+            }).join('')}
+          </div>
+        </div>`;
+      });
+      // Resumo por pessoa
+      const valores = Array(s.pessoas).fill(0);
+      ped.itens.forEach((it, idx) => {
+        const unit = (it.preco||0) + (it.obs_extras||0);
+        const total_it = unit * (it.qty||1);
+        const ass = s.assign[idx] || [];
+        if(!ass.length) return;
+        const v = total_it / ass.length;
+        ass.forEach(p => { valores[p] += v; });
+      });
+      body += `<div class="card mb14" style="padding:12px;background:var(--surface-2)">
+        <div class="sec-title mb6">Por pessoa</div>
+        ${valores.map((v,i)=>`<div class="rb mb4">
+          <span class="fs13"><b>Pessoa ${i+1}</b></span>
+          <span class="mono bold ${v>0?'gn':'t3'}">${fmtR(v)}</span>
+        </div>`).join('')}
+        <div class="rb mt6" style="padding-top:8px;border-top:1px solid var(--border-1)">
+          <span class="bold">Total alocado</span>
+          <span class="mono bold ${Math.abs(valores.reduce((s,v)=>s+v,0)-total)<0.01?'gn':'rd'}">${fmtR(valores.reduce((s,v)=>s+v,0))}</span>
+        </div>
+      </div>`;
+    }
+    body += `<button class="btn bp bw" onclick="PPCart._aplicarSplit()">${ppIcon('checkCircle',14,1.7)} Aplicar e adicionar parcelas</button>`;
+    showModal('mc-split-adv', '💰 Dividir Conta', body);
+  }
+
+  function _setSplitModo(m){ _splitState.modo = m; _renderSplitModal(); }
+  function _adjQtd(d){ _splitState.qtd = Math.max(2, Math.min(20, _splitState.qtd + d)); _renderSplitModal(); }
+  function _setQtd(v){ _splitState.qtd = Math.max(2, parseInt(v)||2); _renderSplitModal(); }
+  function _adjPessoas(d){
+    const np = Math.max(2, Math.min(10, _splitState.pessoas + d));
+    // Remove pessoas que foram embora
+    if(np < _splitState.pessoas){
+      _splitState.assign = _splitState.assign.map(arr => arr.filter(p => p < np));
+    }
+    _splitState.pessoas = np;
+    _renderSplitModal();
+  }
+  function _setPessoas(v){
+    const np = Math.max(2, parseInt(v)||2);
+    if(np < _splitState.pessoas){
+      _splitState.assign = _splitState.assign.map(arr => arr.filter(p => p < np));
+    }
+    _splitState.pessoas = np;
+    _renderSplitModal();
+  }
+  function _toggleAssign(itemIdx, pessoaIdx){
+    const ass = _splitState.assign[itemIdx];
+    const i = ass.indexOf(pessoaIdx);
+    if(i >= 0) ass.splice(i, 1);
+    else ass.push(pessoaIdx);
+    _renderSplitModal();
+  }
+
+  function _aplicarSplit(){
+    const s = _splitState;
+    const ped = ST.pedidos.find(p => p.id === s.ped_id);
+    if(!ped){ return; }
+    let valores;
+    let qtd;
+    if(s.modo === 'igual'){
+      qtd = s.qtd;
+      const v = +(ped.total/qtd).toFixed(2);
+      valores = Array(qtd).fill(v);
+    } else {
+      qtd = s.pessoas;
+      valores = Array(qtd).fill(0);
+      ped.itens.forEach((it, idx) => {
+        const unit = (it.preco||0) + (it.obs_extras||0);
+        const total_it = unit * (it.qty||1);
+        const ass = s.assign[idx] || [];
+        if(!ass.length) return;
+        const v = total_it / ass.length;
+        ass.forEach(p => { valores[p] += v; });
+      });
+      const totalAlocado = valores.reduce((s,v)=>s+v,0);
+      if(Math.abs(totalAlocado - ped.total) > 0.01){
+        toast('⚠️ Total alocado não bate. Distribua todos os itens.', 'r', 4000);
+        return;
+      }
+    }
+    // Abre próximo modal para escolher forma de pagamento por pessoa
+    closeMc('mc-split-adv');
+    _abrirEscolhaFormas(s.ped_id, valores);
+  }
+
+  function _abrirEscolhaFormas(ped_id, valores){
+    let html = `<div class="fs12 t2 mb10">Escolha a forma de pagamento de cada pessoa:</div>`;
+    valores.forEach((v, i) => {
+      html += `<div class="rb mb6" style="padding:10px;background:var(--surface-2);border-radius:var(--r-md)">
+        <div>
+          <div class="fs13 bold">Pessoa ${i+1}</div>
+          <div class="fs11 t2 mono">${fmtR(v)}</div>
+        </div>
+        <select class="inp" id="split-forma-${i}" style="max-width:160px;padding:8px 10px">
+          ${_PAG_FORMAS.filter(f => f.id !== 'voucher').map(f => `<option value="${f.id}">${f.lbl}</option>`).join('')}
+        </select>
+      </div>`;
+    });
+    html += `<button class="btn bp bw mt10" onclick="PPCart._aplicarFormasSplit('${ped_id}', ${JSON.stringify(valores).replace(/"/g, '&quot;')})">Aplicar parcelas</button>`;
+    showModal('mc-split-formas', 'Forma de pagamento de cada pessoa', html);
+  }
+
+  function _aplicarFormasSplit(ped_id, valores){
+    if(typeof valores === 'string') valores = JSON.parse(valores);
+    // Adiciona ao _pagParcelas
+    _pagCtxPed = ped_id;
+    valores.forEach((v, i) => {
+      const forma = document.getElementById('split-forma-'+i)?.value || 'dinheiro';
+      const fm = _PAG_FORMAS.find(f => f.id === forma) || _PAG_FORMAS[0];
+      _pagParcelas.push({forma, ico: fm.ico, lbl: fm.lbl + ' (pessoa ' + (i+1) + ')', valor: +v.toFixed(2), troco: 0});
+    });
+    closeMc('mc-split-formas');
+    if(typeof _renderPagScreen === 'function') _renderPagScreen();
+    toast(valores.length + ' parcelas adicionadas!', 'g');
+  }
+
+  return {
+    mostrarQRComanda, imprimirQRComanda, gerarQRComandaUrl,
+    imprimirComandaParcial,
+    abrirDivisaoAvancada,
+    _setSplitModo, _adjQtd, _setQtd, _adjPessoas, _setPessoas, _toggleAssign, _aplicarSplit, _aplicarFormasSplit
+  };
+})();
+
+// ═══════════════════════════════════════════════════════════════════
 //  PPOnboard — Tutorial de boas-vindas + checklist de setup
 // ═══════════════════════════════════════════════════════════════════
 window.PPOnboard = (function(){
@@ -5959,6 +6537,7 @@ function renderDash(){try{
     </div>
   </div>`:''}
   ${_renderDashStatusBar(_i)}
+  ${typeof PPInsights!=='undefined' && (ST.currentUser?.cargo==='dono'||_userCargo==='dono'||_userRole==='dono') ? PPInsights.renderInsightsCard() : ''}
   ${_renderSolicitacoesCancelamento(_i)}
   ${_renderDashProducao(_i,origemIco,origemLbl,origemCls)}`;
   // Lista de Pedidos Ativos foi REMOVIDA do dashboard (era poluição visual).
@@ -6657,9 +7236,20 @@ function renderFechar(ped_id){
   <button class="btn bp bw" style="padding:14px;font-size:15px" onclick="nav('pagamento','${ped.id}')">
     ${ppIcon('credit',14,1.7)} Ir para Pagamento · ${fmtR(ped.total)}
   </button>
-  <button class="btn bs bw mt8" style="padding:10px;font-size:12px" onclick="compartilharComanda('${ped.id}')">
-    ${ppIcon('send',12,1.7)} Compartilhar comanda com cliente
-  </button>`;
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px">
+    <button class="btn bs" style="padding:10px;font-size:12px" onclick="PPCart.imprimirComandaParcial('${ped.id}')">
+      ${ppIcon('printer',12,1.7)} Comanda parcial
+    </button>
+    <button class="btn bs" style="padding:10px;font-size:12px" onclick="PPCart.mostrarQRComanda('${ped.id}')">
+      📲 QR para cliente
+    </button>
+    <button class="btn bs" style="padding:10px;font-size:12px" onclick="PPCart.abrirDivisaoAvancada('${ped.id}')">
+      ${ppIcon('users',12,1.7)} Dividir conta
+    </button>
+    <button class="btn bs" style="padding:10px;font-size:12px" onclick="compartilharComanda('${ped.id}')">
+      ${ppIcon('send',12,1.7)} Compartilhar link
+    </button>
+  </div>`;
 }
 
 function aplicarDescPct(ped_id){
@@ -8730,6 +9320,8 @@ function _cfgMenuItems(){
   // ── Modos especiais ──
   items.push({id:'modo_garcom',icon:'users',label:'Modo Garçom',desc:'Tela cheia simplificada',group:'Sistema'});
   items.push({id:'notif',icon:'bell',label:'Notificações',desc:cfg.notif_pedidos?'Ativas':'Desativadas',group:'Sistema'});
+  items.push({id:'haptic',icon:'smartphone',label:'Vibração tática',desc:cfg.haptic_off?'Desativada':'Ativa',group:'Sistema'});
+  items.push({id:'atalhos',icon:'keyboard',label:'Atalhos de teclado',desc:'F1-F12 + Ctrl+B/M/D',group:'Sistema'});
   items.push({id:'backup',icon:'download',label:'Backup',desc:cfg.ultimo_backup?'Último: '+new Date(cfg.ultimo_backup).toLocaleDateString('pt-BR'):'Nunca',group:'Sistema'});
   items.push({id:'fechamento_cx',icon:'lock',label:'Fechamento de Caixa',desc:'Tolerância, sangria, reabertura',group:'Sistema'});
   // ── Ajuda ──
@@ -9396,6 +9988,45 @@ function _renderCfgSection(sec){
         <div><div class="fs13 bold">Notificar novos pedidos</div><div class="fs11 t2">Beep + popup quando aba estiver em background</div></div>
         <button class="sw ${cfg.notif_pedidos?'on':''}" onclick="ST.cfg.notif_pedidos=!ST.cfg.notif_pedidos;save('cfg');_renderCfgSection('notif')"></button>
       </div>
+    </div>`+_cfgFooter();
+    break;
+
+  case 'haptic':
+    h=_cfgHeader('Vibração tática')+`
+    <div class="card mb10">
+      <div class="fs12 t2 mb10" style="line-height:1.6">Vibração discreta em ações importantes (Android). Útil para confirmar toques quando o som está mudo.</div>
+      <div class="rb" style="padding:10px 0;border-bottom:1px solid var(--border-1)">
+        <div><div class="fs13 bold">Ativar vibração</div><div class="fs11 t2">${('vibrate' in navigator)?'Suportado neste dispositivo':'Não suportado neste navegador'}</div></div>
+        <button class="sw ${!cfg.haptic_off?'on':''}" onclick="(()=>{ST.cfg.haptic_off=!ST.cfg.haptic_off;save('cfg');_renderCfgSection('haptic');if(!ST.cfg.haptic_off)_vibrate('success');})()"></button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px">
+        <button class="btn bs bsm" onclick="_vibrate('light')">Testar leve</button>
+        <button class="btn bs bsm" onclick="_vibrate('medium')">Testar médio</button>
+        <button class="btn bs bsm" onclick="_vibrate('success')">Testar sucesso</button>
+        <button class="btn bs bsm" onclick="_vibrate('error')">Testar erro</button>
+      </div>
+    </div>`+_cfgFooter();
+    break;
+
+  case 'atalhos':
+    h=_cfgHeader('Atalhos de Teclado')+`
+    <div class="card mb10">
+      <div class="fs12 t2 mb10">Use teclado físico para navegação rápida (PC, tablet com teclado, maquininha com USB)</div>
+      <div class="sec-title mb6">Navegação</div>
+      ${[
+        ['F1','Novo pedido balcão'],['F2','Mesas'],['F3','Balcão'],['F4','Delivery'],['F5','Produção/Cozinha'],
+        ['F6','Cardápio'],['F7','Clientes'],['F8','Caixa'],['F9','Configurações'],['F10','Relatórios'],['F12','Início'],
+        ['Home','Voltar ao início'],['Esc','Fechar modal/sheet'],['/','Abrir busca global']
+      ].map(([k,d])=>`<div class="rb" style="padding:6px 0;border-bottom:1px solid var(--border-1);font-size:13px"><span>${esc(d)}</span><kbd style="background:var(--surface-2);padding:3px 9px;border-radius:var(--r-sm);font-family:var(--mono);font-size:11px;border:1px solid var(--border-2)">${k}</kbd></div>`).join('')}
+      <div class="sec-title mt12 mb6">Atalhos com Ctrl/Cmd</div>
+      ${[
+        ['Ctrl+K','Busca global / comandos'],
+        ['Ctrl+B','Novo pedido balcão'],
+        ['Ctrl+M','Mesas'],
+        ['Ctrl+D','Dashboard'],
+        ['Ctrl+P','Produção'],
+        ['Ctrl+/','Busca global']
+      ].map(([k,d])=>`<div class="rb" style="padding:6px 0;border-bottom:1px solid var(--border-1);font-size:13px"><span>${esc(d)}</span><kbd style="background:var(--surface-2);padding:3px 9px;border-radius:var(--r-sm);font-family:var(--mono);font-size:11px;border:1px solid var(--border-2)">${k}</kbd></div>`).join('')}
     </div>`+_cfgFooter();
     break;
 
@@ -13952,24 +14583,48 @@ function renderAlertaEstoque(){
 // ═══════════════════════════════════════════
 function _initAtalhos(){
   document.addEventListener('keydown',e=>{
-    // Ignora se estiver em input/textarea/contenteditable
+    // Ignora se estiver em input/textarea/contenteditable (mas mantém Esc)
     const tag=document.activeElement?.tagName;
-    if(tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT')return;
-    if(document.activeElement?.isContentEditable)return;
-    if(e.ctrlKey||e.metaKey||e.altKey)return;
-    // Só atalhos quando sistema está carregado
-    if(!window.ST||!ST.cfg)return;
-    if(e.key==='F1'){e.preventDefault();if(typeof novoBalcao==='function'&&typeof hasPermission==='function'&&hasPermission('pdv'))novoBalcao();}
-    else if(e.key==='F2'){e.preventDefault();nav('mesas');}
-    else if(e.key==='F3'){e.preventDefault();nav('dash');}
-    else if(e.key==='F4'){e.preventDefault();nav('caixa');}
-    else if(e.key==='F9'){e.preventDefault();nav('config');}
-    else if(e.key==='Escape'){
-      // Fecha modais abertos
-      document.querySelectorAll('.mc.open').forEach(el=>{
-        const id=el.id;if(id&&typeof closeMc==='function')closeMc(id);
+    const isEditable = tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT'||document.activeElement?.isContentEditable;
+    // Esc funciona em qualquer lugar
+    if(e.key==='Escape'){
+      document.querySelectorAll('.mc.open,.mc.on,.ov.on').forEach(el=>{
+        const id=el.id;if(id&&typeof closeMc==='function'){try{closeMc(id);}catch(_){try{closeOv(id);}catch(_){}}}
       });
+      return;
     }
+    if(isEditable)return;
+    if(!window.ST||!ST.cfg)return;
+
+    // ── Ctrl/Cmd combinações ──
+    if(e.ctrlKey||e.metaKey){
+      // Ctrl+K já tratado em PPSearch
+      if(e.key.toLowerCase()==='b' && hasPermission('pdv')){ e.preventDefault(); if(typeof novoBalcao==='function')novoBalcao(); }
+      else if(e.key.toLowerCase()==='m'){ e.preventDefault(); if(typeof nav==='function')nav('mesas'); }
+      else if(e.key.toLowerCase()==='d'){ e.preventDefault(); if(typeof nav==='function')nav('dash'); }
+      else if(e.key.toLowerCase()==='p'){ e.preventDefault(); if(typeof nav==='function')nav('producao'); }
+      else if(e.key==='/'){ e.preventDefault(); if(window.PPSearch)PPSearch.open(); }
+      return;
+    }
+
+    if(e.altKey)return;
+
+    // ── Teclas F (sem modifiers) ──
+    if(e.key==='F1'){e.preventDefault();if(typeof novoBalcao==='function'&&hasPermission('pdv'))novoBalcao();}
+    else if(e.key==='F2'){e.preventDefault();nav('mesas');}
+    else if(e.key==='F3'){e.preventDefault();if(hasPermission('pdv'))nav('balcao');}
+    else if(e.key==='F4'){e.preventDefault();if(hasPermission('pdv'))nav('delivery');}
+    else if(e.key==='F5'){e.preventDefault();if(hasPermission('producao'))nav('producao');}
+    else if(e.key==='F6'){e.preventDefault();nav('cardapio');}
+    else if(e.key==='F7'){e.preventDefault();nav('clientes');}
+    else if(e.key==='F8'){e.preventDefault();if(hasPermission('caixa_op'))nav('caixa');}
+    else if(e.key==='F9'){e.preventDefault();nav('config');}
+    else if(e.key==='F10'){e.preventDefault();nav('relatorio');}
+    else if(e.key==='F12'){e.preventDefault();nav('dash');}
+    // Tecla "/" abre busca global
+    else if(e.key==='/'){e.preventDefault(); if(window.PPSearch)PPSearch.open();}
+    // Home volta pro dashboard
+    else if(e.key==='Home'){e.preventDefault();nav('dash');}
   });
 }
 if(typeof window!=='undefined'){
