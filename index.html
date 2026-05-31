@@ -4107,26 +4107,708 @@ function confirmarAberturaCaixa(){
   _addAlerta(ppIcon('cash',16,1.7,'var(--gn)'),'Caixa aberto por '+opNome+' · '+turno+' · Fundo: '+fmtR(valor),'sucesso');
   anunciar('caixa_aberto',{operador:opNome});
 }
-function fecharCaixa(){
-  requireOwnerPin('Fechar Caixa',()=>{
-    const movs=ST.caixa.movs||[];
-    const saldo=movs.reduce((s,m)=>s+(['entrada','abertura','suprimento'].includes(m.tipo)?m.valor:-m.valor),0);
-    const pedsPagos=ST.pedidos.filter(p=>p.status==='pago'&&p.pago_em&&new Date(p.pago_em)>=new Date(ST.caixa.abertura||0));
-    const hist={...deepClone(ST.caixa),fechamento:now(),saldo_final:saldo,pedidos_ct:pedsPagos.length};
-    ST.caixa.historico=(ST.caixa.historico||[]);
+// ═══════════════════════════════════════════════════════════════════
+//  CXFLOW — Módulo de Conferência e Fechamento de Caixa Profissional
+//  Wizard de 4 etapas: Resumo → Conferência → Movimentações → Conclusão
+// ═══════════════════════════════════════════════════════════════════
+const CXFLOW = {
+  state: null,
+  bloqueiaCancelamentos: false, // flag global para bloquear cancelamentos durante fechamento
+
+  // Configurações com defaults
+  cfg(){
+    const c = (ST.cfg && ST.cfg.fechamento) || {};
+    return {
+      tolerancia_diff: c.tolerancia_diff ?? 0.50,
+      pct_justifica: c.pct_justifica ?? 5,
+      limite_sangria: c.limite_sangria ?? 500,
+      permite_reabrir: c.permite_reabrir !== false,
+      reabrir_janela_min: c.reabrir_janela_min ?? 60,
+      bloqueia_pedidos_abertos: c.bloqueia_pedidos_abertos === true,
+      auto_suprimento: c.auto_suprimento !== false,
+      mostrar_comissao: c.mostrar_comissao !== false,
+      sugestao_suprimento_min: c.sugestao_suprimento_min ?? 100,
+      sugestao_suprimento_max: c.sugestao_suprimento_max ?? 800,
+    };
+  },
+
+  // ── Cálculos auxiliares ──
+  // Pedidos pagos durante o turno atual
+  pedidosTurno(){
+    const ab = new Date(ST.caixa.abertura||0).getTime();
+    return ST.pedidos.filter(p => p.status==='pago' && p.pago_em && new Date(p.pago_em).getTime() >= ab);
+  },
+
+  // Calcula valor esperado por forma de pagamento
+  calcEsperadoPorForma(){
+    const peds = this.pedidosTurno();
+    const formas = {dinheiro:0, credito:0, debito:0, pix:0, voucher:0, maquininha:0};
+    const counts = {dinheiro:0, credito:0, debito:0, pix:0, voucher:0, maquininha:0};
+    peds.forEach(p => {
+      const parcs = p.parcelas || (p.forma_pag ? [{forma: this._normForma(p.forma_pag), valor: p.total||0}] : []);
+      parcs.forEach(pc => {
+        const f = this._normForma(pc.forma || pc.lbl || '');
+        if(formas.hasOwnProperty(f)){
+          formas[f] += pc.valor || 0;
+          counts[f]++;
+        }
+      });
+    });
+    return {formas, counts, totalPedidos: peds.length};
+  },
+
+  _normForma(f){
+    if(!f) return 'outros';
+    const s = String(f).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+    if(s.includes('dinheiro')) return 'dinheiro';
+    if(s.includes('credit')) return 'credito';
+    if(s.includes('debit')) return 'debito';
+    if(s.includes('pix')) return 'pix';
+    if(s.includes('voucher')) return 'voucher';
+    if(s.includes('maquin') || s.includes('mercado') || s.includes('mp ')) return 'maquininha';
+    return 'outros';
+  },
+
+  // Sugestão de suprimento para próximo turno (média dos últimos 5 fechamentos)
+  sugerirSuprimento(){
+    const hist = (ST.caixa.historico || []).slice(-5);
+    if(hist.length < 2) return this.cfg().sugestao_suprimento_min;
+    const medias = hist.map(h => {
+      // tenta extrair dinheiro inicial usado
+      return h.saldo_inicial || h.fundo_troco || 200;
+    });
+    const med = medias.reduce((s,v)=>s+v,0) / medias.length;
+    const c = this.cfg();
+    return Math.max(c.sugestao_suprimento_min, Math.min(c.sugestao_suprimento_max, Math.round(med/50)*50));
+  },
+
+  // Comparativo: faturamento atual vs último turno comparável
+  compararTurnoAnterior(){
+    const hist = (ST.caixa.historico || []).filter(h => h.turno === ST.caixa.turno);
+    if(!hist.length) return null;
+    const ant = hist[hist.length - 1];
+    const antTotal = (ant.conferencia?.totalSistema) || ant.saldo_final || 0;
+    const peds = this.pedidosTurno();
+    const totalAtual = peds.reduce((s,p) => s + (p.total||0), 0);
+    if(antTotal === 0) return null;
+    const pctVar = ((totalAtual - antTotal) / antTotal) * 100;
+    return {totalAtual, totalAnterior: antTotal, pctVar, label: ant.turno||'turno'};
+  },
+
+  // Sangrias do turno
+  sangrias(){
+    return (ST.caixa.movs||[]).filter(m => m.tipo === 'sangria');
+  },
+  suprimentos(){
+    return (ST.caixa.movs||[]).filter(m => m.tipo === 'suprimento');
+  },
+
+  // Alerta de sangria alta
+  alertaSangrias(){
+    const c = this.cfg();
+    const totalSang = this.sangrias().reduce((s,m)=>s+(m.valor||0),0);
+    if(totalSang > c.limite_sangria){
+      return {alta: true, total: totalSang, limite: c.limite_sangria};
+    }
+    return null;
+  },
+
+  // Detecta padrão suspeito: forma com diferença consistentemente negativa
+  detectarPadraoSuspeito(){
+    const hist = (ST.caixa.historico || []).slice(-5);
+    if(hist.length < 3) return null;
+    const suspeitos = [];
+    ['dinheiro','credito','debito','pix','maquininha'].forEach(f => {
+      const diffs = hist.map(h => h.conferencia?.diffs?.[f] ?? 0).filter(v => v !== 0);
+      if(diffs.length >= 3 && diffs.every(d => d < 0)){
+        const total = diffs.reduce((s,v)=>s+v,0);
+        suspeitos.push({forma: f, ocorrencias: diffs.length, total: Math.abs(total)});
+      }
+    });
+    return suspeitos.length ? suspeitos : null;
+  },
+
+  // Comissão por atendente no turno atual
+  comissaoPorAtendente(){
+    const c = this.cfg();
+    const pct = (ST.cfg.comissao_pct || 10);
+    const peds = this.pedidosTurno();
+    const agg = {};
+    peds.forEach(p => {
+      const a = p.atendente || p.operador || '—';
+      if(!agg[a]) agg[a] = {nome: a, vendas: 0, qtd: 0};
+      agg[a].vendas += p.total || 0;
+      agg[a].qtd++;
+    });
+    return Object.values(agg).map(a => ({...a, comissao: +(a.vendas * pct / 100).toFixed(2)})).sort((a,b)=>b.vendas-a.vendas);
+  },
+
+  // ── Wizard ──
+  start(){
+    const aberto = ST.caixa.aberto;
+    if(!aberto){ toast('Caixa já está fechado','a'); return; }
+    const c = this.cfg();
+    const ativos = ST.pedidos.filter(p => p.status==='aberto' || p.status==='preparo').length;
+    // Verifica pedidos abertos
+    if(ativos > 0){
+      if(c.bloqueia_pedidos_abertos){
+        toast('Existem '+ativos+' pedido(s) ainda em aberto. Finalize-os antes.','r',5000);
+        return;
+      }
+      // Modo aviso (não bloqueia)
+      confirm2('⚠️','Pedidos em aberto',
+        'Você ainda tem <b>'+ativos+' pedido(s)</b> não finalizados. Fechar o caixa mesmo assim?',
+        'Fechar mesmo assim','ba',()=> this._proceed());
+      return;
+    }
+    this._proceed();
+  },
+
+  _proceed(){
+    requireOwnerPin('Iniciar conferência de fechamento',()=>{
+      this.bloqueiaCancelamentos = true;
+      const esp = this.calcEsperadoPorForma();
+      const formasAtivas = Object.keys(esp.formas).filter(f => esp.formas[f] > 0);
+      this.state = {
+        step: 0,
+        esperado: esp.formas,
+        contagens: esp.counts,
+        totalPedidos: esp.totalPedidos,
+        formasAtivas,
+        conferidos: {},   // forma → valor digitado
+        justificativas: {}, // forma → texto
+        obs: '',
+        imprimir: !!(BT && BT.char),
+        passagemTurno: false,
+        proxOperador: '',
+        proxTurno: '',
+        proxSuprimento: this.sugerirSuprimento(),
+      };
+      // Pré-preenche com o valor do sistema (operador confirma se igual)
+      formasAtivas.forEach(f => { this.state.conferidos[f] = esp.formas[f]; });
+      this.render();
+    });
+  },
+
+  render(){
+    if(!this.state) return;
+    const s = this.state;
+    let body = '';
+    if(s.step === 0) body = this._renderStep1();
+    else if(s.step === 1) body = this._renderStep2();
+    else if(s.step === 2) body = this._renderStep3();
+    else if(s.step === 3) body = this._renderStep4();
+
+    const sh = document.getElementById('sh-obs');
+    sh.innerHTML = `
+      <div class="sh-handle"></div>
+      <div style="text-align:center;margin-bottom:14px">
+        <div style="font-size:11px;font-weight:800;color:var(--t3);letter-spacing:1.5px;text-transform:uppercase">Conferência de Fechamento</div>
+        <div style="display:flex;justify-content:center;gap:6px;margin-top:8px">
+          ${[0,1,2,3].map(i=>`<div style="width:34px;height:5px;border-radius:99px;background:${i<=s.step?'var(--ac)':'var(--s3)'};transition:background .3s"></div>`).join('')}
+        </div>
+        <div class="fs11 t2 mt6">Etapa ${s.step+1} de 4</div>
+      </div>
+      ${body}
+    `;
+    openOv('ov-obs');
+  },
+
+  _renderStep1(){
+    const ab = new Date(ST.caixa.abertura||Date.now());
+    const dur = Math.floor((Date.now() - ab.getTime()) / 60000);
+    const horas = Math.floor(dur/60), mins = dur%60;
+    const peds = this.pedidosTurno();
+    const bruto = peds.reduce((s,p)=>s+(p.total||0),0);
+    const ticket = peds.length ? bruto/peds.length : 0;
+    const sang = this.sangrias().reduce((s,m)=>s+(m.valor||0),0);
+    const supri = this.suprimentos().reduce((s,m)=>s+(m.valor||0),0);
+    const comp = this.compararTurnoAnterior();
+    const alertaSang = this.alertaSangrias();
+    return `
+      <div style="font-size:18px;font-weight:900;color:var(--tx);margin-bottom:4px">Resumo do turno</div>
+      <div class="fs12 t2 mb14">${esc(ST.caixa.operador)} · ${esc(ST.caixa.turno||'')} · ${horas}h${mins>0?' '+mins+'min':''}</div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+        <div class="card" style="padding:14px;text-align:center">
+          <div class="fs11 t2 mb4">Faturamento</div>
+          <div style="font-size:20px;font-weight:900;color:var(--gn);font-family:monospace">${fmtR(bruto)}</div>
+        </div>
+        <div class="card" style="padding:14px;text-align:center">
+          <div class="fs11 t2 mb4">Pedidos pagos</div>
+          <div style="font-size:20px;font-weight:900;color:var(--ac);font-family:monospace">${peds.length}</div>
+        </div>
+        <div class="card" style="padding:14px;text-align:center">
+          <div class="fs11 t2 mb4">Ticket médio</div>
+          <div style="font-size:16px;font-weight:800;color:var(--tx);font-family:monospace">${fmtR(ticket)}</div>
+        </div>
+        <div class="card" style="padding:14px;text-align:center">
+          <div class="fs11 t2 mb4">Saldo inicial</div>
+          <div style="font-size:16px;font-weight:800;color:var(--tx);font-family:monospace">${fmtR(ST.caixa.saldo_inicial||0)}</div>
+        </div>
+      </div>
+
+      ${comp ? `<div class="card mb10" style="padding:12px;background:${comp.pctVar>=0?'var(--gnbg)':'var(--rdbg)'};border-color:${comp.pctVar>=0?'var(--gnbr)':'var(--rdbr)'}">
+        <div class="fs11 t2">Comparativo com último turno (${esc(comp.label)})</div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
+          <span style="font-size:18px;font-weight:900;color:${comp.pctVar>=0?'var(--gn)':'var(--rd)'}">${comp.pctVar>=0?'↑':'↓'} ${Math.abs(comp.pctVar).toFixed(1)}%</span>
+          <span class="fs11 t3">${fmtR(comp.totalAtual)} vs ${fmtR(comp.totalAnterior)}</span>
+        </div>
+      </div>` : ''}
+
+      ${alertaSang ? `<div class="card mb10" style="padding:10px;background:var(--ambg);border-color:var(--ambr)">
+        <div class="fs12 bold am">⚠️ Sangria acima do limite</div>
+        <div class="fs11 t2 mt2">Sangrou <b>${fmtR(alertaSang.total)}</b> (limite configurado: ${fmtR(alertaSang.limite)})</div>
+      </div>` : ''}
+
+      <div style="display:flex;gap:10px;font-size:12px;margin-bottom:14px">
+        <div style="flex:1;padding:10px;background:var(--s2);border-radius:10px"><div class="t2">Sangrias</div><div class="bold rd mono">${fmtR(sang)}</div></div>
+        <div style="flex:1;padding:10px;background:var(--s2);border-radius:10px"><div class="t2">Suprimentos</div><div class="bold gn mono">${fmtR(supri)}</div></div>
+      </div>
+
+      <div style="display:flex;gap:8px">
+        <button class="btn bs bw" style="flex:1" onclick="CXFLOW.cancel()">Cancelar</button>
+        <button class="btn bp bw" style="flex:1" onclick="CXFLOW.next()">Próximo →</button>
+      </div>
+    `;
+  },
+
+  _renderStep2(){
+    const s = this.state;
+    const c = this.cfg();
+    const formaInfo = {
+      dinheiro:  {ico:'💵', lbl:'Dinheiro'},
+      credito:   {ico:'💳', lbl:'Crédito'},
+      debito:    {ico:'💳', lbl:'Débito'},
+      pix:       {ico:'📱', lbl:'PIX'},
+      voucher:   {ico:'🎟️', lbl:'Voucher'},
+      maquininha:{ico:'⚡', lbl:'Maquininha (MP)'},
+    };
+    if(!s.formasAtivas.length){
+      return `<div class="fs13 mb10" style="text-align:center;padding:30px;color:var(--t2)">
+        Nenhum pagamento registrado neste turno.
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn bs bw" style="flex:1" onclick="CXFLOW.back()">← Voltar</button>
+        <button class="btn bp bw" style="flex:1" onclick="CXFLOW.next()">Próximo →</button>
+      </div>`;
+    }
+    let html = `<div style="font-size:18px;font-weight:900;color:var(--tx);margin-bottom:4px">Conferência de Pagamentos</div>
+    <div class="fs12 t2 mb14">Confira valores recebidos vs sistema</div>`;
+
+    s.formasAtivas.forEach(f => {
+      const info = formaInfo[f] || {ico:'💰', lbl:f};
+      const esp = s.esperado[f];
+      const conf = s.conferidos[f] ?? esp;
+      const diff = +(conf - esp).toFixed(2);
+      const absDiff = Math.abs(diff);
+      const pctDiff = esp ? Math.abs(diff/esp*100) : 0;
+      const tolOk = absDiff <= c.tolerancia_diff;
+      const precisaJustifica = !tolOk && pctDiff > c.pct_justifica;
+      const cor = tolOk ? 'var(--gn)' : (precisaJustifica ? 'var(--rd)' : 'var(--am)');
+      const status = tolOk ? '✅ Confere' : (diff>0?'↑ Sobra de '+fmtR(absDiff):'↓ Falta de '+fmtR(absDiff));
+
+      html += `<div class="card mb10" style="padding:14px;border-left:4px solid ${cor}">
+        <div class="rb mb6">
+          <span style="font-size:14px;font-weight:800"><span style="font-size:18px;margin-right:6px" aria-hidden="true">${info.ico}</span>${info.lbl}</span>
+          <span class="fs11 t3">${s.contagens[f]||0} pedido(s)</span>
+        </div>
+        <div class="rb mb6">
+          <span class="fs12 t2">Sistema registrou</span>
+          <span class="bold mono" style="color:var(--ac)">${fmtR(esp)}</span>
+        </div>
+        <div style="display:flex;gap:6px;margin-bottom:6px">
+          <input type="number" step="0.01" class="inp" id="cx-conf-${f}" value="${conf.toFixed(2)}" oninput="CXFLOW.updateConferido('${f}',this.value)" style="flex:1;font-size:16px;font-weight:700;text-align:right" inputmode="decimal">
+          <button class="btn bs bsm" onclick="CXFLOW.igualSistema('${f}')" title="Usar valor do sistema" style="padding:0 12px;font-size:11px">= sist</button>
+        </div>
+        <div class="rb">
+          <span class="fs12" style="color:${cor};font-weight:700">${status}</span>
+          ${!tolOk?`<span class="fs11 t3">${pctDiff.toFixed(1)}% diferença</span>`:''}
+        </div>
+        ${precisaJustifica ? `<div style="margin-top:8px;padding-top:8px;border-top:1px dashed var(--br)">
+          <label class="fs11 t2 bold">⚠️ Justificativa obrigatória (>${c.pct_justifica}%)</label>
+          <textarea class="inp" id="cx-just-${f}" oninput="CXFLOW.state.justificativas['${f}']=this.value" rows="2" style="font-size:13px;margin-top:4px;min-height:50px" placeholder="Ex: cliente pagou em duas formas, troco incorreto...">${esc(s.justificativas[f]||'')}</textarea>
+        </div>` : ''}
+      </div>`;
+    });
+
+    // Total geral
+    const espTotal = Object.values(s.esperado).reduce((a,b)=>a+b,0);
+    const confTotal = Object.values(s.conferidos).reduce((a,b)=>a+(+b||0),0);
+    const diffTotal = +(confTotal - espTotal).toFixed(2);
+    html += `<div class="card mb14" style="padding:14px;background:var(--s2)">
+      <div class="rb"><span class="bold">Sistema total</span><span class="bold mono">${fmtR(espTotal)}</span></div>
+      <div class="rb"><span class="bold">Conferido total</span><span class="bold mono">${fmtR(confTotal)}</span></div>
+      <div class="rb mt6" style="padding-top:8px;border-top:1px solid var(--br)">
+        <span class="bold">Diferença</span>
+        <span class="bold mono" style="color:${Math.abs(diffTotal)<=c.tolerancia_diff?'var(--gn)':'var(--rd)'};font-size:16px">${diffTotal>=0?'+':''}${fmtR(diffTotal)}</span>
+      </div>
+    </div>`;
+
+    html += `<div style="display:flex;gap:8px">
+      <button class="btn bs bw" style="flex:1" onclick="CXFLOW.back()">← Voltar</button>
+      <button class="btn bp bw" style="flex:1" onclick="CXFLOW.next()">Próximo →</button>
+    </div>`;
+    return html;
+  },
+
+  _renderStep3(){
+    const s = this.state;
+    const sang = this.sangrias();
+    const supri = this.suprimentos();
+    const movs = [...sang, ...supri].sort((a,b) => new Date(b.created) - new Date(a.created));
+    let html = `<div style="font-size:18px;font-weight:900;color:var(--tx);margin-bottom:4px">Movimentações do Turno</div>
+    <div class="fs12 t2 mb14">Sangrias e suprimentos registrados</div>`;
+    if(!movs.length){
+      html += `<div class="card refined-empty">
+        <div class="refined-empty-ico">${ppIcon('package',38,1.3)}</div>
+        <div class="refined-empty-msg">Sem movimentações</div>
+        <div class="refined-empty-sub">Nenhuma sangria ou suprimento neste turno</div>
+      </div>`;
+    } else {
+      movs.forEach(m => {
+        const isSang = m.tipo === 'sangria';
+        html += `<div class="card mb6" style="padding:12px;border-left:4px solid ${isSang?'var(--rd)':'var(--gn)'}">
+          <div class="rb mb4">
+            <span class="bold fs13">${isSang?'↓ Sangria':'↑ Suprimento'}</span>
+            <span class="bold mono" style="color:${isSang?'var(--rd)':'var(--gn)'}">${isSang?'-':'+'}${fmtR(m.valor||0)}</span>
+          </div>
+          <div class="fs12 t2">${esc(m.desc||m.motivo||'—')}</div>
+          <div class="fs11 t3 mt2">${m.usr?esc(m.usr)+' · ':''}${fmtDH(m.created)}</div>
+        </div>`;
+      });
+      const totalSang = sang.reduce((s,m)=>s+(m.valor||0),0);
+      const totalSupri = supri.reduce((s,m)=>s+(m.valor||0),0);
+      html += `<div class="card mb14" style="padding:12px;background:var(--s2)">
+        <div class="rb"><span class="fs12 t2">Total sangrias</span><span class="bold mono rd">${fmtR(totalSang)}</span></div>
+        <div class="rb"><span class="fs12 t2">Total suprimentos</span><span class="bold mono gn">${fmtR(totalSupri)}</span></div>
+        <div class="rb mt4" style="padding-top:6px;border-top:1px solid var(--br)"><span class="bold">Saldo movimentações</span><span class="bold mono">${fmtR(totalSupri-totalSang)}</span></div>
+      </div>`;
+    }
+    html += `<div style="display:flex;gap:8px">
+      <button class="btn bs bw" style="flex:1" onclick="CXFLOW.back()">← Voltar</button>
+      <button class="btn bp bw" style="flex:1" onclick="CXFLOW.next()">Próximo →</button>
+    </div>`;
+    return html;
+  },
+
+  _renderStep4(){
+    const s = this.state;
+    const c = this.cfg();
+    const espTotal = Object.values(s.esperado).reduce((a,b)=>a+b,0);
+    const confTotal = Object.values(s.conferidos).reduce((a,b)=>a+(+b||0),0);
+    const diffTotal = +(confTotal - espTotal).toFixed(2);
+    const tolOk = Math.abs(diffTotal) <= c.tolerancia_diff;
+    const comissoes = c.mostrar_comissao ? this.comissaoPorAtendente() : [];
+    const sangSuspeita = this.detectarPadraoSuspeito();
+    const sugSupri = c.auto_suprimento ? this.sugerirSuprimento() : 0;
+
+    let html = `<div style="font-size:18px;font-weight:900;color:var(--tx);margin-bottom:4px">Conclusão</div>
+    <div class="fs12 t2 mb14">Revise e confirme o fechamento</div>
+
+    <div class="card mb10" style="padding:16px;text-align:center;background:${tolOk?'var(--gnbg)':'var(--rdbg)'};border-color:${tolOk?'var(--gnbr)':'var(--rdbr)'}">
+      <div class="fs12 t2 mb6">Diferença total do caixa</div>
+      <div style="font-size:30px;font-weight:900;color:${tolOk?'var(--gn)':'var(--rd)'};font-family:monospace">${diffTotal>=0?'+':''}${fmtR(diffTotal)}</div>
+      <div class="fs11 t3 mt4">${tolOk?'✅ Dentro da tolerância':'⚠️ Acima da tolerância de '+fmtR(c.tolerancia_diff)}</div>
+    </div>`;
+
+    if(sangSuspeita){
+      html += `<div class="card mb10" style="padding:12px;background:var(--ambg);border-color:var(--ambr)">
+        <div class="bold am mb4">🔍 Padrão suspeito detectado</div>
+        ${sangSuspeita.map(p=>`<div class="fs12 t2">${p.forma.toUpperCase()}: diferença negativa nos últimos ${p.ocorrencias} turnos (total ${fmtR(p.total)} faltando)</div>`).join('')}
+      </div>`;
+    }
+
+    if(comissoes.length){
+      html += `<div class="card mb10" style="padding:12px">
+        <div class="bold fs13 mb8">💰 Comissão do turno (${ST.cfg.comissao_pct||10}%)</div>
+        ${comissoes.map(a=>`<div class="rb mb4"><span class="fs12">${esc(a.nome)} <span class="t3">(${a.qtd}x)</span></span><span class="bold mono gn">${fmtR(a.comissao)}</span></div>`).join('')}
+      </div>`;
+    }
+
+    html += `<div class="fg">
+      <label class="fl">${tolOk?'Observações (opcional)':'⚠️ Observações (obrigatório por diferença)'}</label>
+      <textarea class="inp" id="cx-obs-final" oninput="CXFLOW.state.obs=this.value" rows="3" placeholder="Notas do turno, ocorrências, justificativas gerais...">${esc(s.obs)}</textarea>
+    </div>
+
+    <div class="rb mb10" style="padding:10px;background:var(--s2);border-radius:10px">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px">
+        <input type="checkbox" ${s.imprimir?'checked':''} onchange="CXFLOW.state.imprimir=this.checked" style="width:18px;height:18px;accent-color:var(--ac)">
+        Imprimir cupom de fechamento
+      </label>
+    </div>
+
+    <div class="rb mb10" style="padding:10px;background:var(--s2);border-radius:10px">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px">
+        <input type="checkbox" ${s.passagemTurno?'checked':''} onchange="CXFLOW.togglePassagemTurno(this.checked)" style="width:18px;height:18px;accent-color:var(--ac)">
+        Passagem de turno (já abre próximo)
+      </label>
+    </div>
+
+    <div id="cx-passagem-turno" style="display:${s.passagemTurno?'block':'none'};margin-bottom:10px">
+      <div class="fg" style="margin-bottom:8px">
+        <label class="fl">Próximo operador</label>
+        <input class="inp" id="cx-prox-op" oninput="CXFLOW.state.proxOperador=this.value" value="${esc(s.proxOperador||'')}" placeholder="Nome de quem assume">
+      </div>
+      <div class="rb" style="gap:8px;margin-bottom:8px">
+        <div class="fg" style="flex:1;margin:0">
+          <label class="fl">Turno</label>
+          <select class="inp" id="cx-prox-turno" oninput="CXFLOW.state.proxTurno=this.value">
+            <option value="">Selecione...</option>
+            <option value="manhã">Manhã</option>
+            <option value="tarde">Tarde</option>
+            <option value="noite">Noite</option>
+          </select>
+        </div>
+        <div class="fg" style="flex:1;margin:0">
+          <label class="fl">Fundo de troco</label>
+          <input class="inp" id="cx-prox-supri" type="number" step="10" value="${s.proxSuprimento}" oninput="CXFLOW.state.proxSuprimento=parseFloat(this.value)||0">
+        </div>
+      </div>
+      ${sugSupri ? `<div class="fs11 t3" style="text-align:right">💡 Sugestão: ${fmtR(sugSupri)} (média histórica)</div>` : ''}
+    </div>
+
+    <div style="display:flex;gap:8px">
+      <button class="btn bs bw" style="flex:1" onclick="CXFLOW.back()">← Voltar</button>
+      <button class="btn br_ bw" style="flex:2;font-size:15px;font-weight:900" onclick="CXFLOW.finalize()">🔒 Confirmar Fechamento</button>
+    </div>`;
+    return html;
+  },
+
+  // ── Ações ──
+  next(){ this.state.step++; if(this.state.step>3)this.state.step=3; this.render(); },
+  back(){ this.state.step--; if(this.state.step<0)this.state.step=0; this.render(); },
+  cancel(){
+    this.state = null;
+    this.bloqueiaCancelamentos = false;
+    closeOv('ov-obs');
+  },
+
+  updateConferido(forma, val){
+    const v = parseFloat(val) || 0;
+    this.state.conferidos[forma] = v;
+    // Re-render só do step 2 para atualizar diferença visual
+    this.render();
+    // Refocar no input
+    setTimeout(()=>{
+      const inp = document.getElementById('cx-conf-'+forma);
+      if(inp){ inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length); }
+    }, 50);
+  },
+
+  igualSistema(forma){
+    this.state.conferidos[forma] = this.state.esperado[forma];
+    this.render();
+  },
+
+  togglePassagemTurno(checked){
+    this.state.passagemTurno = checked;
+    document.getElementById('cx-passagem-turno').style.display = checked ? 'block' : 'none';
+  },
+
+  finalize(){
+    const s = this.state;
+    const c = this.cfg();
+    const espTotal = Object.values(s.esperado).reduce((a,b)=>a+b,0);
+    const confTotal = Object.values(s.conferidos).reduce((a,b)=>a+(+b||0),0);
+    const diffTotal = +(confTotal - espTotal).toFixed(2);
+    const tolOk = Math.abs(diffTotal) <= c.tolerancia_diff;
+
+    // Valida obs obrigatória
+    if(!tolOk && !(s.obs||'').trim()){
+      toast('Justifique a diferença no campo de observações','r',4000);
+      const obsEl = document.getElementById('cx-obs-final');
+      if(obsEl) obsEl.focus();
+      return;
+    }
+
+    // Valida justificativas por forma (>pct)
+    for(const f of s.formasAtivas){
+      const conf = s.conferidos[f] || 0;
+      const esp = s.esperado[f] || 0;
+      const pct = esp ? Math.abs((conf-esp)/esp*100) : 0;
+      if(pct > c.pct_justifica && !(s.justificativas[f]||'').trim()){
+        toast('Justifique a diferença em '+f.toUpperCase(),'r',4000);
+        this.state.step = 1;
+        this.render();
+        return;
+      }
+    }
+
+    // Valida passagem de turno
+    if(s.passagemTurno && (!s.proxOperador?.trim() || !s.proxTurno)){
+      toast('Preencha operador e turno para a passagem','r',3000);
+      return;
+    }
+
+    // Calcula diffs por forma (pra histórico)
+    const diffs = {};
+    s.formasAtivas.forEach(f => {
+      diffs[f] = +((s.conferidos[f]||0) - s.esperado[f]).toFixed(2);
+    });
+
+    // Saldo final = saldo em dinheiro (não conta cartão/pix que vão direto)
+    const dinheiroConf = s.conferidos['dinheiro'] || 0;
+    const supri = this.suprimentos().reduce((a,m)=>a+(m.valor||0),0);
+    const sang = this.sangrias().reduce((a,m)=>a+(m.valor||0),0);
+    const saldoFinalDinheiro = (ST.caixa.saldo_inicial||0) + dinheiroConf + supri - sang;
+
+    // Salva histórico
+    const conferencia = {
+      esperado: s.esperado, conferido: s.conferidos, diffs, diffTotal,
+      totalSistema: espTotal, totalConferido: confTotal,
+      tolerancia: c.tolerancia_diff, justificativas: s.justificativas,
+      obs: s.obs, totalPedidos: s.totalPedidos,
+      comissoes: this.comissaoPorAtendente(),
+      sangrias: this.sangrias().length, suprimentos: this.suprimentos().length,
+      fechadoEm: Date.now(), fechadoPor: ST.currentUser?.nome || ST.caixa.operador,
+    };
+    const hist = {
+      ...deepClone(ST.caixa),
+      fechamento: now(),
+      saldo_final: saldoFinalDinheiro,
+      pedidos_ct: s.totalPedidos,
+      conferencia,
+    };
+    ST.caixa.historico = ST.caixa.historico || [];
     ST.caixa.historico.push(hist);
-    ST.caixa.aberto=false;ST.caixa.fechamento=now();ST.caixa.saldo_final=saldo;
-    ST.caixa.movs.push({id:uid(),tipo:'fechamento',valor:saldo,desc:'Fechamento: '+ST.caixa.operador,created:now()});
-    ST.pedido_seq=1; DB.set('pedido_seq',1);
+
+    // Marca caixa fechado
+    ST.caixa.aberto = false;
+    ST.caixa.fechamento = now();
+    ST.caixa.saldo_final = saldoFinalDinheiro;
+    ST.caixa.fundo_troco = ST.caixa.saldo_inicial || 0;
+    ST.caixa.movs.push({
+      id: uid(), tipo: 'fechamento', valor: saldoFinalDinheiro,
+      desc: 'Fechamento (diff '+(diffTotal>=0?'+':'')+fmtR(diffTotal)+'): '+ST.caixa.operador,
+      created: now()
+    });
+    ST.pedido_seq = 1; DB.set('pedido_seq', 1);
     save('caixa');
-    anunciar('caixa_fechado',{pedidos:pedsPagos.length,total:saldo});
-    if(BT.char)setTimeout(()=>BT.printFechamento(),500);
-    renderCaixa();updateSbOperador();
-    _addAlerta(ppIcon('lock',16,1.7,'var(--am)'),'Caixa fechado · '+pedsPagos.length+' pedidos · Saldo: '+fmtR(saldo),'info');
-    toast('Caixa fechado. Saldo: '+fmtR(saldo),'a',5000);
-    // ── Hook auto-update: se usuário escolheu "lembrar ao fechar caixa", dispara agora ──
-    try{if(typeof _swCheckOnCaixaClose==='function')_swCheckOnCaixaClose();}catch(e){}
-  });
+
+    anunciar('caixa_fechado', {pedidos: s.totalPedidos, total: saldoFinalDinheiro});
+    if(s.imprimir && BT.char) setTimeout(()=>BT.printFechamento(), 500);
+    _addAlerta(ppIcon('lock',16,1.7),'Caixa fechado · '+s.totalPedidos+' pedidos · Diff '+fmtR(diffTotal),tolOk?'info':'warn');
+    toast(tolOk?'✅ Caixa fechado corretamente':'⚠️ Caixa fechado com diferença de '+fmtR(diffTotal),tolOk?'g':'a',5000);
+
+    // Hook auto-update SW
+    try{ if(typeof _swCheckOnCaixaClose === 'function') _swCheckOnCaixaClose(); }catch(e){}
+
+    // Passagem de turno
+    if(s.passagemTurno){
+      this._abrirNovoTurno(s.proxOperador, s.proxTurno, s.proxSuprimento);
+    } else {
+      this.state = null;
+      this.bloqueiaCancelamentos = false;
+      closeOv('ov-obs');
+      renderCaixa();
+      updateSbOperador();
+    }
+  },
+
+  _abrirNovoTurno(operador, turno, valor){
+    this.state = null;
+    this.bloqueiaCancelamentos = false;
+    closeOv('ov-obs');
+    ST.caixa = {
+      aberto: true, abertura: now(), operador, turno, obs_turno: 'Passagem de turno',
+      saldo_inicial: valor,
+      movs: [{id: uid(), tipo: 'abertura', valor, desc: 'Abertura (passagem): '+operador+' ('+turno+')', created: now()}],
+      historico: ST.caixa.historico || []
+    };
+    save('caixa');
+    renderCaixa();
+    updateSbOperador();
+    toast('🔄 Passagem de turno OK — '+operador+' ('+turno+')','g',4000);
+    anunciar('caixa_aberto',{operador,turno});
+  },
+
+  // ── Reabrir caixa em janela configurável ──
+  reabrirCaixa(){
+    const c = this.cfg();
+    if(!c.permite_reabrir){ toast('Reabertura desativada nas configurações','r'); return; }
+    const last = (ST.caixa.historico || []).slice(-1)[0];
+    if(!last){ toast('Sem fechamento recente','a'); return; }
+    const minutosAtras = (Date.now() - new Date(last.fechamento).getTime()) / 60000;
+    if(minutosAtras > c.reabrir_janela_min){
+      toast('Janela de reabertura expirou ('+c.reabrir_janela_min+'min)','r',4000);
+      return;
+    }
+    confirm2('🔓','Reabrir caixa fechado?',
+      `Última fechamento há ${Math.floor(minutosAtras)}min por <b>${esc(last.operador||'')}</b>. <br>Diferença registrada: <b>${fmtR(last.conferencia?.diffTotal||0)}</b>`,
+      'Reabrir','ba',()=>{
+        requireOwnerPin('Reabrir caixa',()=>{
+          // Restaura o caixa pelo histórico
+          ST.caixa = {...last, aberto: true};
+          delete ST.caixa.fechamento;
+          delete ST.caixa.saldo_final;
+          delete ST.caixa.conferencia;
+          ST.caixa.movs.push({id:uid(),tipo:'abertura',valor:0,desc:'Reabertura por '+(ST.currentUser?.nome||'admin'),created:now()});
+          // Remove do histórico
+          ST.caixa.historico = (ST.caixa.historico||[]).filter(h => h !== last);
+          save('caixa');
+          renderCaixa();
+          updateSbOperador();
+          toast('🔓 Caixa reaberto','g',3000);
+        });
+      });
+  },
+
+  // ── Exportar PDF (usa window.print() com layout dedicado) ──
+  exportarPDF(hist){
+    const w = window.open('','_blank','width=800,height=900');
+    if(!w){ toast('Permita pop-ups para exportar','r',5000); return; }
+    const conf = hist.conferencia || {};
+    const ab = new Date(hist.abertura);
+    const fc = new Date(hist.fechamento);
+    w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Fechamento ${ab.toLocaleDateString('pt-BR')}</title>
+    <style>
+      *{margin:0;padding:0;box-sizing:border-box;font-family:'Helvetica Neue',Arial,sans-serif}
+      body{padding:30px;color:#222;line-height:1.5;font-size:13px}
+      h1{font-size:22px;margin-bottom:8px;color:#D97757}
+      h2{font-size:15px;margin:18px 0 8px;color:#555;border-bottom:1px solid #eee;padding-bottom:4px}
+      table{width:100%;border-collapse:collapse;margin:8px 0}
+      th,td{padding:6px 8px;text-align:left;border-bottom:1px solid #eee;font-size:12px}
+      th{background:#f5f5f5;font-weight:700}
+      .mono{font-family:'Courier New',monospace}
+      .right{text-align:right}
+      .ok{color:#2ea868}
+      .err{color:#d45a4f;font-weight:700}
+      .badge{display:inline-block;padding:2px 8px;border-radius:99px;background:#f0f0f0;font-size:10px;font-weight:700}
+      .footer{margin-top:30px;padding-top:14px;border-top:1px solid #ddd;text-align:center;font-size:10px;color:#999}
+      @media print{body{padding:14px}}
+    </style></head><body>
+    <h1>Fechamento de Caixa — ${esc(ST.cfg.nome||'PedePronto')}</h1>
+    <div style="color:#777;font-size:12px">${ab.toLocaleString('pt-BR')} → ${fc.toLocaleString('pt-BR')}</div>
+    <h2>Operação</h2>
+    <table>
+      <tr><th>Operador</th><td>${esc(hist.operador||'—')}</td></tr>
+      <tr><th>Turno</th><td>${esc(hist.turno||'—')}</td></tr>
+      <tr><th>Pedidos pagos</th><td class="mono">${hist.pedidos_ct||0}</td></tr>
+      <tr><th>Saldo inicial</th><td class="mono right">${fmtR(hist.saldo_inicial||0)}</td></tr>
+      <tr><th>Saldo final (dinheiro)</th><td class="mono right">${fmtR(hist.saldo_final||0)}</td></tr>
+    </table>
+    <h2>Conferência por Forma de Pagamento</h2>
+    <table><tr><th>Forma</th><th class="right">Sistema</th><th class="right">Conferido</th><th class="right">Diferença</th></tr>
+    ${Object.keys(conf.esperado||{}).map(f => {
+      const e = conf.esperado[f]||0, c = conf.conferido?.[f]||0, d = (c-e);
+      const cls = Math.abs(d) <= (conf.tolerancia||0.5) ? 'ok' : 'err';
+      return `<tr><td>${f.toUpperCase()}</td><td class="mono right">${fmtR(e)}</td><td class="mono right">${fmtR(c)}</td><td class="mono right ${cls}">${d>=0?'+':''}${fmtR(d)}</td></tr>`;
+    }).join('')}
+    </table>
+    <p style="margin-top:8px;font-size:13px"><b>Diferença total:</b> <span class="${Math.abs(conf.diffTotal||0)<=0.5?'ok':'err'} mono">${(conf.diffTotal||0)>=0?'+':''}${fmtR(conf.diffTotal||0)}</span></p>
+    ${conf.obs ? `<h2>Observações</h2><p style="background:#fffbeb;padding:10px;border-left:4px solid #f59e0b;border-radius:4px">${esc(conf.obs)}</p>` : ''}
+    ${conf.justificativas && Object.keys(conf.justificativas).length ? `<h2>Justificativas</h2>${Object.entries(conf.justificativas).map(([f,j])=>j?`<p><b>${f.toUpperCase()}:</b> ${esc(j)}</p>`:'').join('')}` : ''}
+    ${conf.comissoes && conf.comissoes.length ? `<h2>Comissões</h2><table><tr><th>Atendente</th><th class="right">Vendas</th><th class="right">Pedidos</th><th class="right">Comissão</th></tr>${conf.comissoes.map(a=>`<tr><td>${esc(a.nome)}</td><td class="mono right">${fmtR(a.vendas)}</td><td class="mono right">${a.qtd}</td><td class="mono right ok">${fmtR(a.comissao)}</td></tr>`).join('')}</table>` : ''}
+    <div class="footer">Fechado por ${esc(conf.fechadoPor||hist.operador||'—')} em ${new Date(conf.fechadoEm||hist.fechamento).toLocaleString('pt-BR')} · PedePronto PDV v${window.PP_VERSION||'3.0'}</div>
+    <script>window.onload=()=>setTimeout(()=>window.print(),500);<\/script>
+    </body></html>`);
+    w.document.close();
+  }
+};
+
+function fecharCaixa(){
+  CXFLOW.start();
 }
 function updateSbOperador(){
   const el=document.getElementById('sb-op');
@@ -6813,12 +7495,75 @@ function renderCaixa(){
       </div>
     </div>
   </div>`).join('')}
-  ${(ST.caixa.historico||[]).length?`<div class="sec-title mt12">Histórico de turnos</div>
-  ${ST.caixa.historico.slice().reverse().slice(0,3).map(h=>`<div class="card mb6">
-    <div class="rb"><div><div class="fs13 bold">${h.operador||'—'} · ${h.turno||'—'}</div>
-    <div class="fs11 t2">${fmtDH(h.abertura||h.created||now())} → ${fmtDH(h.fechamento||now())}</div></div>
-    <div class="bold gn mono">${fmtR(h.saldo_final||0)}</div></div>
-  </div>`).join('')}`:''}`;
+  ${(ST.caixa.historico||[]).length?`<div class="sec-title mt12">Histórico de fechamentos</div>
+  ${ST.caixa.historico.slice().reverse().slice(0,5).map((h,idx)=>{
+    const conf = h.conferencia;
+    const diff = conf?.diffTotal || 0;
+    const tol = conf?.tolerancia || 0.5;
+    const tolOk = Math.abs(diff) <= tol;
+    const corDiff = tolOk ? 'var(--gn)' : (Math.abs(diff) > 5 ? 'var(--rd)' : 'var(--am)');
+    const histIdx = ST.caixa.historico.length - 1 - idx;
+    const recente = idx === 0; // primeiro = mais recente
+    const minAtras = h.fechamento ? (Date.now() - new Date(h.fechamento).getTime()) / 60000 : 0;
+    const reabrirOk = recente && minAtras <= ((ST.cfg.fechamento?.reabrir_janela_min)||60);
+    return `<div class="card mb8" style="padding:14px;border-left:4px solid ${corDiff}">
+      <div class="rb mb6">
+        <div style="min-width:0;flex:1">
+          <div class="bold fs13">${esc(h.operador||'—')} · ${esc(h.turno||'—')}</div>
+          <div class="fs11 t2">${fmtDH(h.abertura||h.created||now())} → ${fmtDH(h.fechamento||now())}</div>
+        </div>
+        <div style="text-align:right">
+          <div class="fs11 t3">Pedidos: ${h.pedidos_ct||0}</div>
+          <div class="bold mono" style="color:${corDiff};font-size:13px">${diff>=0?'+':''}${fmtR(diff)}</div>
+        </div>
+      </div>
+      ${conf ? `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+        ${Object.entries(conf.diffs||{}).filter(([,v])=>v!==0).map(([f,v]) => {
+          const cor = Math.abs(v)<=tol?'var(--gn)':(Math.abs(v)>5?'var(--rd)':'var(--am)');
+          return `<span class="bdg" style="background:rgba(0,0,0,0.05);color:${cor};font-size:10px;border:1px solid ${cor}">${f}: ${v>=0?'+':''}${fmtR(v)}</span>`;
+        }).join('')}
+      </div>
+      ${conf.obs ? `<div class="fs11 t2 mb6" style="padding:6px 8px;background:var(--s2);border-radius:6px;border-left:3px solid var(--am)"><b>Obs:</b> ${esc(conf.obs)}</div>` : ''}
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="btn bb bxs" onclick="CXFLOW.exportarPDF(ST.caixa.historico[${histIdx}])">${ppIcon('download',12,1.7)} PDF</button>
+        ${reabrirOk?`<button class="btn ba bxs" onclick="CXFLOW.reabrirCaixa()" title="Reabrir este caixa">${ppIcon('refresh',12,1.7)} Reabrir</button>`:''}
+        <button class="btn bs bxs" onclick="_verDetalhesFechamento(${histIdx})">${ppIcon('search',12,1.7)} Detalhes</button>
+      </div>` : `<div class="fs11 t3">Fechamento sem conferência detalhada</div>`}
+    </div>`;
+  }).join('')}`:''}`;
+}
+
+// Modal de detalhes de fechamento
+function _verDetalhesFechamento(idx){
+  const h = ST.caixa.historico[idx];
+  if(!h) return;
+  const conf = h.conferencia || {};
+  let html = `<div class="fs12 t2 mb10">${esc(h.operador||'—')} · ${esc(h.turno||'—')}<br>${fmtDH(h.abertura)} → ${fmtDH(h.fechamento)}</div>`;
+  if(conf.esperado){
+    html += '<div class="sec-title mb8">Conferência por forma</div>';
+    Object.keys(conf.esperado).forEach(f => {
+      const e = conf.esperado[f]||0, c = conf.conferido?.[f]||0, d = c-e;
+      const tol = conf.tolerancia||0.5;
+      const cor = Math.abs(d)<=tol?'var(--gn)':'var(--rd)';
+      html += `<div class="rb mb4" style="padding:8px;background:var(--s2);border-radius:8px">
+        <span class="fs13 bold">${f.toUpperCase()}</span>
+        <div style="text-align:right">
+          <div class="fs11 t2">Sist ${fmtR(e)} · Conf ${fmtR(c)}</div>
+          <div class="bold mono" style="color:${cor}">${d>=0?'+':''}${fmtR(d)}</div>
+        </div>
+      </div>`;
+      if(conf.justificativas?.[f]) html += `<div class="fs11 t3 mb6" style="padding:4px 8px"><i>"${esc(conf.justificativas[f])}"</i></div>`;
+    });
+  }
+  if(conf.comissoes?.length){
+    html += '<div class="sec-title mt12 mb8">Comissões</div>';
+    conf.comissoes.forEach(a => {
+      html += `<div class="rb mb4"><span class="fs12">${esc(a.nome)} <span class="t3">(${a.qtd}x)</span></span><span class="bold mono gn">${fmtR(a.comissao)}</span></div>`;
+    });
+  }
+  if(conf.obs) html += `<div class="card mt10" style="background:var(--ambg);padding:10px"><div class="fs11 bold am mb4">Observações</div><div class="fs12">${esc(conf.obs)}</div></div>`;
+  html += `<button class="btn bp bw mt12" onclick="CXFLOW.exportarPDF(ST.caixa.historico[${idx}])">${ppIcon('download',14,1.7)} Exportar PDF completo</button>`;
+  showModal('mc-detfech', 'Detalhes do Fechamento', html);
 }
 // ── Sangria/Suprimento Wizard (in-page, sem prompt()) ──
 let _cxFlow={tipo:null,step:0,valor:'',motivo:''};
@@ -6909,11 +7654,21 @@ function _cxFlowConfirm(){
   if(!v||v<=0){toast('Valor inválido','r');return;}
   const mot=f.motivo.trim()||(f.tipo==='sangria'?'Sangria':'Suprimento');
   const tipo=f.tipo;
-  ST.caixa.movs.push({id:uid(),tipo,valor:v,desc:(tipo==='sangria'?'Sangria':'Suprimento')+': '+mot,created:now()});
+  ST.caixa.movs.push({id:uid(),tipo,valor:v,desc:(tipo==='sangria'?'Sangria':'Suprimento')+': '+mot,created:now(),usr:ST.currentUser?.nome||ST.caixa.operador||'—'});
   save('caixa');
   _cxFlow={tipo:null,step:0,valor:'',motivo:''};
   nav('caixa');
   toast((tipo==='sangria'?'Sangria':'Suprimento')+' de '+fmtR(v),tipo==='sangria'?'a':'g');
+  // ── Alerta de sangria alta acumulada ──
+  if(tipo==='sangria' && window.CXFLOW){
+    const al = CXFLOW.alertaSangrias();
+    if(al && al.alta){
+      setTimeout(()=>{
+        _addAlerta('⚠️','Sangrias acumuladas: '+fmtR(al.total)+' (limite '+fmtR(al.limite)+')','warn');
+        toast('⚠️ Sangrias acima do limite ('+fmtR(al.total)+')','a',6000);
+      }, 400);
+    }
+  }
 }
 
 // ═══════════════════════════════════════════
@@ -7159,6 +7914,7 @@ function _cfgMenuItems(){
   items.push({id:'modo_garcom',icon:'users',label:'Modo Garçom',desc:'Tela cheia simplificada',group:'Sistema'});
   items.push({id:'notif',icon:'bell',label:'Notificações',desc:cfg.notif_pedidos?'Ativas':'Desativadas',group:'Sistema'});
   items.push({id:'backup',icon:'download',label:'Backup',desc:cfg.ultimo_backup?'Último: '+new Date(cfg.ultimo_backup).toLocaleDateString('pt-BR'):'Nunca',group:'Sistema'});
+  items.push({id:'fechamento_cx',icon:'lock',label:'Fechamento de Caixa',desc:'Tolerância, sangria, reabertura',group:'Sistema'});
   // ── Ajuda ──
   items.push({id:'ajuda',icon:'book',label:'Ajuda',desc:'Manual do usuario',group:'Ajuda'});
   if(hasPermission('config_editar')) items.push({id:'sistema',icon:'alertTriangle',label:'Sistema',desc:'Salvar, resetar, backup',group:'Ajuda'});
@@ -7825,6 +8581,61 @@ function _renderCfgSection(sec){
       </div>
     </div>`+_cfgFooter();
     break;
+
+  case 'fechamento_cx': {
+    const fc = (cfg.fechamento || {});
+    h = _cfgHeader('Fechamento de Caixa') + `
+    <div class="card mb10">
+      <div class="fs12 t2 mb10" style="line-height:1.6">Configure como será a conferência do fechamento de caixa.</div>
+
+      <div class="fg">
+        <label class="fl">Tolerância de diferença (R$)</label>
+        <input class="inp" type="number" step="0.10" value="${fc.tolerancia_diff??0.50}" oninput="ST.cfg.fechamento=ST.cfg.fechamento||{};ST.cfg.fechamento.tolerancia_diff=parseFloat(this.value)||0;save('cfg')">
+        <div class="fs11 t3 mt4">Diferenças até esse valor são consideradas "OK" (não pedem justificativa).</div>
+      </div>
+
+      <div class="fg">
+        <label class="fl">% para justificativa obrigatória</label>
+        <input class="inp" type="number" step="0.5" min="0" max="100" value="${fc.pct_justifica??5}" oninput="ST.cfg.fechamento=ST.cfg.fechamento||{};ST.cfg.fechamento.pct_justifica=parseFloat(this.value)||0;save('cfg')">
+        <div class="fs11 t3 mt4">Acima desse percentual de diferença em uma forma de pagamento, exige justificativa.</div>
+      </div>
+
+      <div class="fg">
+        <label class="fl">Limite de sangria por turno (R$)</label>
+        <input class="inp" type="number" step="50" min="0" value="${fc.limite_sangria??500}" oninput="ST.cfg.fechamento=ST.cfg.fechamento||{};ST.cfg.fechamento.limite_sangria=parseFloat(this.value)||0;save('cfg')">
+        <div class="fs11 t3 mt4">Acima desse total de sangrias, mostra alerta no fechamento.</div>
+      </div>
+
+      <div class="rb" style="padding:10px 0;border-top:1px solid var(--br)">
+        <div><div class="fs13 bold">Permite reabrir caixa</div><div class="fs11 t2">Em até X minutos após fechar</div></div>
+        <button class="sw ${fc.permite_reabrir!==false?'on':''}" onclick="(()=>{ST.cfg.fechamento=ST.cfg.fechamento||{};ST.cfg.fechamento.permite_reabrir=!(ST.cfg.fechamento.permite_reabrir!==false);save('cfg');_renderCfgSection('fechamento_cx');})()"></button>
+      </div>
+      ${fc.permite_reabrir!==false ? `<div class="fg">
+        <label class="fl">Janela para reabertura (minutos)</label>
+        <input class="inp" type="number" min="5" max="480" value="${fc.reabrir_janela_min??60}" oninput="ST.cfg.fechamento=ST.cfg.fechamento||{};ST.cfg.fechamento.reabrir_janela_min=parseInt(this.value)||60;save('cfg')">
+      </div>` : ''}
+
+      <div class="rb" style="padding:10px 0;border-top:1px solid var(--br)">
+        <div><div class="fs13 bold">Bloquear se houver pedidos abertos</div><div class="fs11 t2">Se desativado, apenas avisa</div></div>
+        <button class="sw ${fc.bloqueia_pedidos_abertos===true?'on':''}" onclick="(()=>{ST.cfg.fechamento=ST.cfg.fechamento||{};ST.cfg.fechamento.bloqueia_pedidos_abertos=!(ST.cfg.fechamento.bloqueia_pedidos_abertos===true);save('cfg');_renderCfgSection('fechamento_cx');})()"></button>
+      </div>
+
+      <div class="rb" style="padding:10px 0;border-top:1px solid var(--br)">
+        <div><div class="fs13 bold">Sugerir fundo de troco</div><div class="fs11 t2">Calcula baseado em fechamentos anteriores</div></div>
+        <button class="sw ${fc.auto_suprimento!==false?'on':''}" onclick="(()=>{ST.cfg.fechamento=ST.cfg.fechamento||{};ST.cfg.fechamento.auto_suprimento=!(ST.cfg.fechamento.auto_suprimento!==false);save('cfg');_renderCfgSection('fechamento_cx');})()"></button>
+      </div>
+      ${fc.auto_suprimento!==false ? `<div class="rb" style="gap:10px;align-items:flex-start">
+        <div class="fg" style="flex:1"><label class="fl">Mínimo (R$)</label><input class="inp" type="number" step="50" value="${fc.sugestao_suprimento_min??100}" oninput="ST.cfg.fechamento.sugestao_suprimento_min=parseFloat(this.value)||0;save('cfg')"></div>
+        <div class="fg" style="flex:1"><label class="fl">Máximo (R$)</label><input class="inp" type="number" step="50" value="${fc.sugestao_suprimento_max??800}" oninput="ST.cfg.fechamento.sugestao_suprimento_max=parseFloat(this.value)||0;save('cfg')"></div>
+      </div>` : ''}
+
+      <div class="rb" style="padding:10px 0;border-top:1px solid var(--br)">
+        <div><div class="fs13 bold">Mostrar comissão no fechamento</div><div class="fs11 t2">Calcula automaticamente por atendente</div></div>
+        <button class="sw ${fc.mostrar_comissao!==false?'on':''}" onclick="(()=>{ST.cfg.fechamento=ST.cfg.fechamento||{};ST.cfg.fechamento.mostrar_comissao=!(ST.cfg.fechamento.mostrar_comissao!==false);save('cfg');_renderCfgSection('fechamento_cx');})()"></button>
+      </div>
+    </div>` + _cfgFooter();
+    break;
+  }
 
   case 'backup':
     h=_cfgHeader('Backup')+`
@@ -9345,6 +10156,7 @@ function limparAlertas(){
 
 // Dono/Gerente: cancela direto com motivo obrigatório
 function _cancelarPedidoComMotivo(pid){
+  if(window.CXFLOW&&CXFLOW.bloqueiaCancelamentos){toast('Conferência de fechamento em andamento. Aguarde finalizar.','r',5000);return;}
   const p=ST.pedidos.find(x=>x.id===pid);if(!p)return;
   const sh=document.getElementById('sh-obs');
   sh.innerHTML=`
@@ -9394,6 +10206,7 @@ function _confirmarCancelamento(pid){
 
 // Caixa/Cozinha: solicita cancelamento → gera notificação para dono/gerente
 function _solicitarCancelamento(pid){
+  if(window.CXFLOW&&CXFLOW.bloqueiaCancelamentos){toast('Conferência de fechamento em andamento. Aguarde finalizar.','r',5000);return;}
   const p=ST.pedidos.find(x=>x.id===pid);if(!p)return;
   const sh=document.getElementById('sh-obs');
   sh.innerHTML=`
