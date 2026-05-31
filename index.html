@@ -3184,7 +3184,7 @@ const fmtDH=d=>fmtD(d)+' '+fmtH(d);
 const now=()=>new Date().toISOString();
 const addMin=(iso,m)=>new Date(new Date(iso).getTime()+m*60000).toISOString();
 const elapsed=ms=>{const m=Math.floor(ms/60000);return m<1?'<1min':m+'min'};
-const esc=s=>(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 const deepClone=o=>JSON.parse(JSON.stringify(o));
 const isMobile=()=>window.innerWidth<=768;
 
@@ -3578,7 +3578,9 @@ function nav(pg,extra){
   if(mod&&!_modAtivo(mod)){toast('Módulo desativado pelo administrador','a',3000);return;}
   const prevPg=ST.curNav;
   const isPageChange=pg!==prevPg;
-  if(!['pedido','fechar','pagamento'].includes(pg))ST.backNav=prevPg;
+  // FIX: backNav deve sempre apontar pra página ANTERIOR (não a atual).
+  // Para páginas-modal (pedido/fechar/pagamento), também atualiza pra voltar à origem correta.
+  if(prevPg && prevPg !== pg) ST.backNav = prevPg;
   ST.curNav=pg;
   document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
   const el=document.getElementById('pg-'+pg);if(el)el.classList.add('on');
@@ -7019,8 +7021,11 @@ function openObsSheet(cartIdx){
 }
 
 function cartQty(idx,delta){
-  ST.novoPedido.cart[idx].qty=Math.max(0,ST.novoPedido.cart[idx].qty+delta);
-  if(ST.novoPedido.cart[idx].qty===0)ST.novoPedido.cart.splice(idx,1);
+  // FIX: proteger contra idx inválido
+  const cart = ST.novoPedido && ST.novoPedido.cart;
+  if(!cart || !cart[idx]){ console.warn('[cartQty] item invalido', idx); return; }
+  cart[idx].qty = Math.max(0, (cart[idx].qty||0) + delta);
+  if(cart[idx].qty === 0) cart.splice(idx, 1);
   renderPedido();
 }
 // 6.2 qty direto no modal de obs (sem fechar)
@@ -7691,6 +7696,7 @@ function novoBalcao(){
 // ── Wizard render ──
 function renderPedidoWizard(){
   const np=ST.novoPedido;
+  if(!np){ nav('dash'); return; } // guard: estado limpo retorna pro dash
   const step=np._wizStep||0;
   const totalSteps=5; // 0-4: Nome, Telefone, Local/Viagem, Cardápio, Revisão
   const total=np.cart.reduce((s,i)=>s+(i.preco+(i.obs_extras||0))*i.qty,0);
