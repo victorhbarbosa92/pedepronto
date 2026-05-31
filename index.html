@@ -34,7 +34,77 @@
   --r:10px;--sh:0 6px 24px rgba(0,0,0,.45);
   --font:'Geist','Inter',system-ui,sans-serif;
   --mono:'Geist Mono','JetBrains Mono',ui-monospace,monospace;
+
+  /* ═══ DESIGN TOKENS v3 ═══ */
+  /* Spacing scale (escala 4px) */
+  --s-0: 0; --s-1: 4px; --s-2: 8px; --s-3: 12px;
+  --s-4: 16px; --s-5: 20px; --s-6: 24px; --s-8: 32px;
+  --s-10: 40px; --s-12: 48px; --s-16: 64px;
+
+  /* Border radius */
+  --r-xs: 4px; --r-sm: 8px; --r-md: 12px;
+  --r-lg: 16px; --r-xl: 20px; --r-2xl: 28px;
+  --r-pill: 9999px; --r-full: 50%;
+
+  /* Elevation (sombras semânticas) */
+  --e-0: none;
+  --e-1: 0 1px 3px rgba(0,0,0,.12);
+  --e-2: 0 4px 12px rgba(0,0,0,.16);
+  --e-3: 0 8px 24px rgba(0,0,0,.20);
+  --e-4: 0 16px 40px rgba(0,0,0,.25);
+
+  /* Type scale */
+  --t-xs: 11px; --t-sm: 13px; --t-md: 15px;
+  --t-lg: 18px; --t-xl: 22px; --t-2xl: 28px; --t-3xl: 36px;
+
+  /* Touch targets */
+  --touch-min: 44px; --touch-md: 52px; --touch-lg: 64px;
+
+  /* Animation easing */
+  --ease-snap: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-spring: cubic-bezier(0.34, 1.05, 0.64, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+
+  /* Animation duration */
+  --d-fast: 120ms; --d-base: 180ms; --d-slow: 280ms;
+
+  /* Z-index scale */
+  --z-base: 1; --z-sticky: 20; --z-fab: 150;
+  --z-modal: 200; --z-toast: 9000; --z-tooltip: 9500;
+
+  /* Semantic aliases (preferir esses em código novo) */
+  --surface-1: var(--sf);    /* Cards, painéis */
+  --surface-2: var(--s2);    /* Insets, inputs */
+  --surface-3: var(--s3);    /* Hover state */
+  --text-1: var(--tx);       /* Texto principal */
+  --text-2: var(--t2);       /* Texto secundário */
+  --text-3: var(--t3);       /* Texto desabilitado */
+  --border-1: var(--br);     /* Borda sutil */
+  --border-2: var(--br2);    /* Borda padrão */
+  --border-3: var(--br3);    /* Borda forte */
 }
+
+/* ═══ UTILITIES CSS — preferir essas classes no código novo ═══ */
+/* Spacing */
+.p-0{padding:var(--s-0)} .p-1{padding:var(--s-1)} .p-2{padding:var(--s-2)} .p-3{padding:var(--s-3)} .p-4{padding:var(--s-4)} .p-5{padding:var(--s-5)} .p-6{padding:var(--s-6)}
+.m-0{margin:var(--s-0)} .m-2{margin:var(--s-2)} .m-3{margin:var(--s-3)} .m-4{margin:var(--s-4)}
+.mt-2{margin-top:var(--s-2)} .mt-3{margin-top:var(--s-3)} .mt-4{margin-top:var(--s-4)} .mt-6{margin-top:var(--s-6)}
+.mb-2{margin-bottom:var(--s-2)} .mb-3{margin-bottom:var(--s-3)} .mb-4{margin-bottom:var(--s-4)} .mb-6{margin-bottom:var(--s-6)}
+.gap-1{gap:var(--s-1)} .gap-2{gap:var(--s-2)} .gap-3{gap:var(--s-3)} .gap-4{gap:var(--s-4)}
+/* Radius */
+.r-sm{border-radius:var(--r-sm)} .r-md{border-radius:var(--r-md)} .r-lg{border-radius:var(--r-lg)} .r-xl{border-radius:var(--r-xl)} .r-pill{border-radius:var(--r-pill)}
+/* Flex */
+.flex{display:flex} .flex-col{display:flex;flex-direction:column} .items-center{align-items:center} .justify-between{justify-content:space-between} .justify-center{justify-content:center} .flex-1{flex:1} .flex-shrink-0{flex-shrink:0}
+/* Text */
+.txt-xs{font-size:var(--t-xs)} .txt-sm{font-size:var(--t-sm)} .txt-md{font-size:var(--t-md)} .txt-lg{font-size:var(--t-lg)} .txt-xl{font-size:var(--t-xl)} .txt-2xl{font-size:var(--t-2xl)}
+.fw-500{font-weight:500} .fw-600{font-weight:600} .fw-700{font-weight:700} .fw-800{font-weight:800} .fw-900{font-weight:900}
+/* Surfaces */
+.surface-1{background:var(--surface-1)} .surface-2{background:var(--surface-2)} .surface-3{background:var(--surface-3)}
+/* Elevation */
+.e-1{box-shadow:var(--e-1)} .e-2{box-shadow:var(--e-2)} .e-3{box-shadow:var(--e-3)}
+/* Cursor */
+.pointer{cursor:pointer} .touch-none{touch-action:none}
 /* ── MODO CLARO ── */
 html.light{
   --bg:#F7F7F8;--sf:#FFFFFF;--s2:#FAFAFB;--s3:#ECECEE;--s4:#DFDFE3;
@@ -965,20 +1035,50 @@ html.tam-g .tbtn,html.tam-g .tbtn-ico{font-size:17px;min-height:44px}
 
   .pos-right {
     position: fixed; bottom: 0; left: 0; right: 0; width: 100%; height: auto;
-    max-height: 75vh; border-radius: 28px 28px 0 0;
+    max-height: 75vh; border-radius: var(--r-2xl) var(--r-2xl) 0 0;
     border: 1px solid var(--pos-border); border-bottom: none;
-    box-shadow: 0 -10px 40px rgba(0,0,0,0.3); z-index: 200;
+    box-shadow: var(--e-4); z-index: var(--z-modal);
     background: var(--pos-bg-card);
-    transform: translateY(120%); transition: transform 0.4s cubic-bezier(0.34, 1.05, 0.64, 1);
+    transform: translateY(120%); transition: transform var(--d-slow) var(--ease-spring), max-height var(--d-base) var(--ease-snap);
+    touch-action: pan-y; /* permite scroll vertical mas captura swipe controlado */
+    user-select: none; -webkit-user-select: none;
   }
   .pos-right.has-items { transform: translateY(0); }
-
-  .cart-panel-head { padding-top: 12px; }
+  .pos-right.swiping { transition: none; } /* desativa transition durante drag */
+  .pos-right.expanded { max-height: 92vh; }
+  /* Backdrop dinâmico — escurece tela conforme gaveta abre */
+  .pos-right-backdrop {
+    position: fixed; inset: 0; background: rgba(0,0,0,0); z-index: 199;
+    pointer-events: none; transition: background var(--d-slow) var(--ease-snap);
+  }
+  .pos-right-backdrop.on {
+    background: rgba(0,0,0,.35); pointer-events: auto;
+  }
+  /* Handle visual — grip "arrastável" */
+  .cart-panel-head { padding-top: 12px; position: relative; }
   .cart-panel-head::before {
     content: ''; display: block; width: 48px; height: 6px;
-    background: var(--br3); border-radius: 99px; margin: 0 auto 12px;
+    background: var(--border-3); border-radius: var(--r-pill); margin: 0 auto 12px;
+    transition: background var(--d-fast);
   }
+  .pos-right.swiping .cart-panel-head::before { background: var(--ac); }
+  /* Botão X de fechar (fallback acessível ao swipe) */
+  .pos-right-close {
+    position: absolute; top: 14px; right: 14px;
+    width: 36px; height: 36px; border-radius: var(--r-pill);
+    background: var(--surface-2); border: 1px solid var(--border-2);
+    color: var(--text-2); font-size: 18px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all var(--d-fast); z-index: 2;
+  }
+  .pos-right-close:hover { background: var(--surface-3); color: var(--text-1); }
+  .pos-right-close:active { transform: scale(.9); }
   #pg-pedido.on{top:56px}
+}
+/* Desktop não mostra controle de swipe nem botão close */
+@media(min-width:681px){
+  .pos-right-backdrop { display: none; }
+  .pos-right-close { display: none; }
 }
 
 /* ── POS TOP BAR (dentro do pg-pedido) ── */
@@ -1312,6 +1412,64 @@ html.tam-g .tbtn,html.tam-g .tbtn-ico{font-size:17px;min-height:44px}
 .btn-confirm-order:active{transform:scale(.97)}
 .btn-confirm-order:disabled{opacity:.35;pointer-events:none;box-shadow:none}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+/* ── ONBOARDING ── */
+#pp-onboard-bg{position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(8px);z-index:var(--z-tooltip);display:none;align-items:center;justify-content:center;padding:20px;animation:zin var(--d-base)}
+#pp-onboard-bg.on{display:flex}
+#pp-onboard-box{width:100%;max-width:520px;background:var(--surface-1);border:1px solid var(--border-2);border-radius:var(--r-xl);padding:28px 24px;box-shadow:var(--e-4);max-height:90vh;overflow-y:auto}
+.pp-ob-hero{text-align:center;margin-bottom:20px}
+.pp-ob-hero-emoji{font-size:56px;line-height:1;margin-bottom:12px}
+.pp-ob-hero-title{font-size:24px;font-weight:900;color:var(--text-1);margin-bottom:4px}
+.pp-ob-hero-sub{font-size:14px;color:var(--text-2);line-height:1.5}
+.pp-ob-progress{display:flex;gap:6px;margin-bottom:20px;justify-content:center}
+.pp-ob-dot{width:36px;height:5px;border-radius:99px;background:var(--surface-3);transition:background var(--d-base)}
+.pp-ob-dot.done{background:var(--ac)}
+.pp-ob-checklist{display:flex;flex-direction:column;gap:8px;margin-bottom:20px}
+.pp-ob-check-item{display:flex;align-items:center;gap:12px;padding:14px;border-radius:var(--r-md);background:var(--surface-2);border:2px solid var(--border-1);cursor:pointer;transition:all var(--d-fast)}
+.pp-ob-check-item:hover{border-color:var(--ac);transform:translateX(2px)}
+.pp-ob-check-item.done{background:var(--gnbg);border-color:var(--gnbr);opacity:.7}
+.pp-ob-check-ico{width:32px;height:32px;border-radius:var(--r-pill);background:var(--surface-3);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px}
+.pp-ob-check-item.done .pp-ob-check-ico{background:var(--gn);color:#fff}
+.pp-ob-check-text{flex:1;min-width:0}
+.pp-ob-check-title{font-size:14px;font-weight:700;color:var(--text-1)}
+.pp-ob-check-sub{font-size:11px;color:var(--text-2);margin-top:2px}
+.pp-ob-actions{display:flex;gap:8px;margin-top:16px}
+/* Persona cards */
+.pp-ob-persona-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+@media(max-width:480px){.pp-ob-persona-grid{grid-template-columns:1fr}}
+.pp-ob-persona{padding:18px 12px;text-align:center;border-radius:var(--r-md);background:var(--surface-2);border:2px solid var(--border-1);cursor:pointer;transition:all var(--d-fast)}
+.pp-ob-persona:hover{border-color:var(--ac);transform:translateY(-2px);box-shadow:var(--e-2)}
+.pp-ob-persona.selected{border-color:var(--ac);background:var(--acbg)}
+.pp-ob-persona-emoji{font-size:36px;margin-bottom:8px}
+.pp-ob-persona-name{font-size:14px;font-weight:800;color:var(--text-1)}
+.pp-ob-persona-desc{font-size:11px;color:var(--text-2);margin-top:4px;line-height:1.4}
+/* ── COMMAND PALETTE / BUSCA GLOBAL ── */
+#pp-search-bg{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(6px);z-index:var(--z-tooltip);display:none;align-items:flex-start;justify-content:center;padding:80px 16px 16px;animation:zin var(--d-base) var(--ease-snap)}
+#pp-search-bg.on{display:flex}
+#pp-search-box{width:100%;max-width:640px;background:var(--surface-1);border:1px solid var(--border-2);border-radius:var(--r-lg);box-shadow:var(--e-4);overflow:hidden;display:flex;flex-direction:column;max-height:80vh}
+#pp-search-input-wrap{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--border-1)}
+#pp-search-input-wrap svg{color:var(--text-2);flex-shrink:0}
+#pp-search-input{flex:1;background:transparent;border:none;outline:none;color:var(--text-1);font-size:16px;font-weight:500;font-family:inherit}
+#pp-search-input::placeholder{color:var(--text-3)}
+#pp-search-kbd{font-size:11px;color:var(--text-3);background:var(--surface-2);padding:3px 8px;border-radius:var(--r-sm);border:1px solid var(--border-2);font-family:var(--mono)}
+#pp-search-results{flex:1;overflow-y:auto;padding:8px 0}
+.pp-search-group{padding:6px 0}
+.pp-search-group-title{font-size:10px;font-weight:800;color:var(--text-3);text-transform:uppercase;letter-spacing:1.2px;padding:6px 16px;font-family:var(--mono)}
+.pp-search-item{display:flex;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;transition:background var(--d-fast);border-left:3px solid transparent}
+.pp-search-item:hover,.pp-search-item.active{background:var(--surface-2);border-left-color:var(--ac)}
+.pp-search-item-ico{width:36px;height:36px;border-radius:var(--r-sm);background:var(--surface-2);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px}
+.pp-search-item.active .pp-search-item-ico{background:var(--acbg);color:var(--ac)}
+.pp-search-item-text{flex:1;min-width:0}
+.pp-search-item-title{font-size:14px;font-weight:700;color:var(--text-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pp-search-item-sub{font-size:11px;color:var(--text-2);margin-top:2px}
+.pp-search-item-kbd{font-size:10px;color:var(--text-3);background:var(--surface-2);padding:2px 6px;border-radius:var(--r-sm);font-family:var(--mono)}
+.pp-search-empty{padding:40px 16px;text-align:center;color:var(--text-3)}
+.pp-search-empty-ico{font-size:42px;opacity:.5;margin-bottom:8px}
+.pp-search-footer{display:flex;align-items:center;gap:14px;padding:10px 16px;border-top:1px solid var(--border-1);font-size:11px;color:var(--text-3);background:var(--surface-2)}
+.pp-search-footer-hint{display:flex;align-items:center;gap:5px}
+@media(max-width:600px){
+  #pp-search-bg{padding:0;align-items:stretch}
+  #pp-search-box{max-width:none;max-height:none;height:100%;border-radius:0;border:none}
+}
 .tb-offline-pill{background:var(--am);color:#1a1b22;padding:4px 10px;border-radius:99px;font-size:10px;font-weight:800;gap:4px;align-items:center;letter-spacing:.3px;animation:pulse 2s ease-in-out infinite}
 html.light .tb-offline-pill{color:#fff;background:#c4860a}
 /* ── Pill de update pendente (quando usuário escolheu "lembrar ao fechar caixa") ── */
@@ -1401,6 +1559,7 @@ const _PP_PUBKEY_JWK={"crv":"P-256","ext":true,"key_ops":["verify"],"kty":"EC","
     <div id="tb-offline" class="tb-offline-pill" style="display:none" title="Sem conexão — operando offline">📡 OFFLINE</div>
     <button id="tb-update" class="tb-update-pill" type="button" onclick="_swForcePromptNow()" title="Atualização disponível — toque para aplicar agora" aria-label="Atualização disponível">🚀 ATUALIZAR</button>
     <div class="tb-icons">
+      <button class="tbtn-ico" id="btn-search" onclick="window.PPSearch&&PPSearch.open()" title="Busca global (Ctrl+K)" aria-label="Abrir busca global"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></button>
       <button id="btn-theme" onclick="toggleTheme()" title="Alternar tema" aria-label="Alternar tema claro/escuro"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg></button>
       <button class="tbtn-ico" id="alerta-bell" onclick="openAlertas()" title="Alertas" aria-label="Abrir notificações"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg><span class="alerta-dot" id="alerta-dot" aria-hidden="true"></span></button>
       <button class="tbtn-ico" id="btn-bt" onclick="openMc('mc-bt')" title="Impressora" aria-label="Configurar impressora Bluetooth"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6z"/></svg></button>
@@ -1540,6 +1699,30 @@ const _PP_PUBKEY_JWK={"crv":"P-256","ext":true,"key_ops":["verify"],"kty":"EC","
 
 <!-- ══════════ TOAST ══════════ -->
 <div id="toast-w"></div>
+
+<!-- ══════════ ONBOARDING ══════════ -->
+<div id="pp-onboard-bg" role="dialog" aria-modal="true" aria-label="Boas-vindas">
+  <div id="pp-onboard-box"></div>
+</div>
+
+<!-- ══════════ COMMAND PALETTE / BUSCA GLOBAL ══════════ -->
+<div id="pp-search-bg" role="dialog" aria-modal="true" aria-label="Busca global">
+  <div id="pp-search-box">
+    <div id="pp-search-input-wrap">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+      <input id="pp-search-input" type="text" placeholder="Buscar produtos, clientes, comandos..." autocomplete="off">
+      <span id="pp-search-kbd">ESC</span>
+    </div>
+    <div id="pp-search-results"></div>
+    <div class="pp-search-footer">
+      <span class="pp-search-footer-hint"><span class="pp-search-item-kbd">↑↓</span> navegar</span>
+      <span class="pp-search-footer-hint"><span class="pp-search-item-kbd">Enter</span> selecionar</span>
+      <span class="pp-search-footer-hint"><span class="pp-search-item-kbd">/</span> produtos</span>
+      <span class="pp-search-footer-hint"><span class="pp-search-item-kbd">&gt;</span> comandos</span>
+      <span class="pp-search-footer-hint"><span class="pp-search-item-kbd">@</span> clientes</span>
+    </div>
+  </div>
+</div>
 
 <!-- ══════════ OVERLAYS ══════════ -->
 
@@ -4108,6 +4291,637 @@ function confirmarAberturaCaixa(){
   anunciar('caixa_aberto',{operador:opNome});
 }
 // ═══════════════════════════════════════════════════════════════════
+//  PPOnboard — Tutorial de boas-vindas + checklist de setup
+// ═══════════════════════════════════════════════════════════════════
+window.PPOnboard = (function(){
+  let state = { step: 0, persona: null, force: false };
+  const STEPS_COUNT = 4;
+
+  function isDone(){ return !!(ST.cfg && ST.cfg.onboard_done); }
+  function setDone(){ ST.cfg = ST.cfg||{}; ST.cfg.onboard_done = true; ST.cfg.onboard_completed_at = Date.now(); save('cfg'); }
+
+  function checklistStatus(){
+    return [
+      {
+        id: 'config_nome',
+        title: 'Configurar nome do estabelecimento',
+        sub: 'Aparece no cupom e nos relatórios',
+        done: !!(ST.cfg.nome && ST.cfg.nome.trim()),
+        action: ()=>{ close(); nav('config'); setTimeout(()=>_renderCfgSection('estabelecimento'), 200); }
+      },
+      {
+        id: 'tem_categoria',
+        title: 'Criar pelo menos 1 categoria',
+        sub: 'Lanches, bebidas, sobremesas...',
+        done: (ST.categorias||[]).length > 0,
+        action: ()=>{ close(); nav('cardapio'); ST._cardTab='cats'; }
+      },
+      {
+        id: 'tem_produto',
+        title: 'Cadastrar pelo menos 1 produto',
+        sub: 'Comece com seu produto mais vendido',
+        done: (ST.produtos||[]).length > 0,
+        action: ()=>{ close(); nav('cardapio'); ST._cardTab='prods'; }
+      },
+      {
+        id: 'caixa_aberto',
+        title: 'Abrir o caixa',
+        sub: 'Necessário antes de criar pedidos',
+        done: !!(ST.caixa && ST.caixa.aberto),
+        action: ()=>{ close(); nav('caixa'); setTimeout(()=>pedirAberturaCaixa(), 200); }
+      },
+      {
+        id: 'primeiro_pedido',
+        title: 'Criar seu primeiro pedido',
+        sub: 'Teste o fluxo do balcão ou mesa',
+        done: (ST.pedidos||[]).length > 0,
+        action: ()=>{ close(); if(ST.caixa.aberto){novoBalcao();} else {toast('Abra o caixa primeiro','a');} }
+      },
+    ];
+  }
+
+  function render(){
+    const box = document.getElementById('pp-onboard-box');
+    if(!box) return;
+    let html = '';
+    if(state.step === 0) html = renderStep1();
+    else if(state.step === 1) html = renderStep2();
+    else if(state.step === 2) html = renderStep3();
+    else if(state.step === 3) html = renderStep4();
+    box.innerHTML = `
+      <div class="pp-ob-progress">
+        ${Array.from({length:STEPS_COUNT}).map((_,i)=>`<div class="pp-ob-dot ${i<=state.step?'done':''}"></div>`).join('')}
+      </div>
+      ${html}
+    `;
+  }
+
+  function renderStep1(){
+    return `
+      <div class="pp-ob-hero">
+        <div class="pp-ob-hero-emoji">👋</div>
+        <div class="pp-ob-hero-title">Bem-vindo ao PedePronto!</div>
+        <div class="pp-ob-hero-sub">Sistema completo de PDV para bares, lanchonetes e restaurantes.<br>Vamos configurar em 4 passos rápidos?</div>
+      </div>
+      <div class="pp-ob-actions">
+        <button class="btn bs bw" onclick="PPOnboard.skip()">Pular</button>
+        <button class="btn bp bw" onclick="PPOnboard.next()">Começar 🚀</button>
+      </div>
+    `;
+  }
+
+  function renderStep2(){
+    const personas = [
+      {id:'dono', emoji:'👔', nome:'Sou o dono', desc:'Quero ver tudo: cardápio, financeiro, equipe'},
+      {id:'garcom', emoji:'🍽️', nome:'Sou garçom', desc:'Quero atender mesas e fazer pedidos rápido'},
+      {id:'caixa', emoji:'💰', nome:'Sou caixa', desc:'Quero focar em receber pagamentos'},
+      {id:'cozinha', emoji:'👨‍🍳', nome:'Sou cozinheiro', desc:'Quero ver pedidos prontos para preparar'},
+    ];
+    return `
+      <div class="pp-ob-hero">
+        <div class="pp-ob-hero-emoji">🎯</div>
+        <div class="pp-ob-hero-title">Qual o seu perfil?</div>
+        <div class="pp-ob-hero-sub">Vamos personalizar a experiência</div>
+      </div>
+      <div class="pp-ob-persona-grid">
+        ${personas.map(p=>`<div class="pp-ob-persona ${state.persona===p.id?'selected':''}" onclick="PPOnboard.selectPersona('${p.id}')">
+          <div class="pp-ob-persona-emoji">${p.emoji}</div>
+          <div class="pp-ob-persona-name">${p.nome}</div>
+          <div class="pp-ob-persona-desc">${p.desc}</div>
+        </div>`).join('')}
+      </div>
+      <div class="pp-ob-actions">
+        <button class="btn bs bw" onclick="PPOnboard.back()">← Voltar</button>
+        <button class="btn bp bw" onclick="PPOnboard.next()" ${!state.persona?'disabled':''}>Próximo →</button>
+      </div>
+    `;
+  }
+
+  function renderStep3(){
+    const items = checklistStatus();
+    const total = items.length;
+    const done = items.filter(i => i.done).length;
+    return `
+      <div class="pp-ob-hero">
+        <div class="pp-ob-hero-emoji">✅</div>
+        <div class="pp-ob-hero-title">Checklist de configuração</div>
+        <div class="pp-ob-hero-sub">${done}/${total} concluídos · Toque em qualquer item para configurar</div>
+      </div>
+      <div class="pp-ob-checklist">
+        ${items.map(it=>`<div class="pp-ob-check-item ${it.done?'done':''}" data-onb-id="${it.id}" onclick="PPOnboard._invokeAction(this.dataset.onbId)">
+          <div class="pp-ob-check-ico">${it.done?'✓':'○'}</div>
+          <div class="pp-ob-check-text">
+            <div class="pp-ob-check-title">${esc(it.title)}</div>
+            <div class="pp-ob-check-sub">${esc(it.sub)}</div>
+          </div>
+        </div>`).join('')}
+      </div>
+      <div class="pp-ob-actions">
+        <button class="btn bs bw" onclick="PPOnboard.back()">← Voltar</button>
+        <button class="btn bp bw" onclick="PPOnboard.next()">Próximo →</button>
+      </div>
+    `;
+  }
+
+  function renderStep4(){
+    const tips = {
+      dono: [
+        '⌨️ Pressione <b>Ctrl+K</b> em qualquer tela para buscar tudo',
+        '📊 Use <b>Análises</b> para ver heatmap de horários e curva ABC',
+        '🎓 Configure <b>Coach IA</b> em Agente IA para receber dicas diárias',
+        '🔐 Crie um <b>PIN do dono</b> em Configurações → Segurança',
+      ],
+      garcom: [
+        '👆 Toque na mesa para abrir comanda nova',
+        '⚡ Use <b>Venda Direta</b> para vendas rápidas no balcão',
+        '👨‍🍳 Use <b>Modo Garçom</b> para interface ultra-simplificada',
+        '📱 No celular, arraste o carrinho pra baixo para esconder',
+      ],
+      caixa: [
+        '💵 Pressione <b>Ctrl+K</b> e digite "novo pedido" para começar rápido',
+        '🔒 No fim do turno, faça <b>conferência por forma de pagamento</b>',
+        '📄 Exporte fechamento como <b>PDF</b> para relatórios',
+        '🔓 Pode <b>reabrir o caixa</b> em até 1h se esqueceu algo',
+      ],
+      cozinha: [
+        '🍳 Use <b>Produção</b> para ver pedidos por destino (cozinha/bar)',
+        '✅ Marque itens como concluídos conforme prepara',
+        '🔔 Quando todos os itens estiverem prontos, clique em "Chamar"',
+        '⏱ Pedidos atrasados aparecem em vermelho',
+      ],
+    };
+    const dicas = tips[state.persona] || tips.dono;
+    return `
+      <div class="pp-ob-hero">
+        <div class="pp-ob-hero-emoji">🎉</div>
+        <div class="pp-ob-hero-title">Pronto para começar!</div>
+        <div class="pp-ob-hero-sub">Dicas rápidas para o seu perfil:</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px">
+        ${dicas.map(t=>`<div style="padding:12px 14px;background:var(--surface-2);border-radius:var(--r-md);border-left:3px solid var(--ac);font-size:13px;line-height:1.5">${t}</div>`).join('')}
+      </div>
+      <div class="pp-ob-actions">
+        <button class="btn bs bw" onclick="PPOnboard.back()">← Voltar</button>
+        <button class="btn bp bw" onclick="PPOnboard.finish()">Concluir 🎉</button>
+      </div>
+    `;
+  }
+
+  // ── Actions ──
+  function open(force){
+    state = { step: 0, persona: ST.cfg?.onboard_persona || null, force: !!force };
+    document.getElementById('pp-onboard-bg').classList.add('on');
+    render();
+  }
+  function close(){ document.getElementById('pp-onboard-bg').classList.remove('on'); }
+  function next(){ state.step++; if(state.step >= STEPS_COUNT) state.step = STEPS_COUNT-1; render(); }
+  function back(){ state.step--; if(state.step < 0) state.step = 0; render(); }
+  function skip(){
+    confirm2('🤔','Pular configuração?','Você pode acessar depois em <b>Configurações → Ajuda → Refazer tour</b>','Pular','bs',()=>{
+      setDone();
+      close();
+    });
+  }
+  function selectPersona(p){
+    state.persona = p;
+    ST.cfg = ST.cfg||{};
+    ST.cfg.onboard_persona = p;
+    save('cfg');
+    render();
+  }
+  function _invokeAction(itemId){
+    const items = checklistStatus();
+    const it = items.find(x => x.id === itemId);
+    if(it && it.action) it.action();
+  }
+  function finish(){
+    setDone();
+    close();
+    toast('🎉 Bem-vindo ao PedePronto!','g',4000);
+  }
+  function start(force){
+    if(!force && isDone()) return;
+    setTimeout(()=>open(force), 1500); // pequeno delay pra UI inicializar
+  }
+
+  return { open, close, next, back, skip, selectPersona, finish, start, _invokeAction };
+})();
+
+// ═══════════════════════════════════════════════════════════════════
+//  PPSearch — Command Palette / Busca Global (Ctrl+K)
+// ═══════════════════════════════════════════════════════════════════
+window.PPSearch = (function(){
+  let isOpen = false;
+  let selectedIdx = 0;
+  let currentResults = [];
+
+  // Histórico de buscas recentes
+  function getHistory(){ try{return JSON.parse(localStorage.getItem('pp_search_hist')||'[]');}catch{return [];} }
+  function addToHistory(item){
+    const hist = getHistory().filter(h => h.title !== item.title);
+    hist.unshift({title: item.title, type: item.type, ts: Date.now()});
+    localStorage.setItem('pp_search_hist', JSON.stringify(hist.slice(0,8)));
+  }
+
+  // ── Fuzzy match simples ──
+  function fuzzyMatch(query, text){
+    if(!query) return 1;
+    const q = query.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+    const t = String(text||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+    if(t.includes(q)) return 10; // match direto = melhor score
+    // letras em ordem (xbcn → x-bacon)
+    let qi = 0;
+    for(let i = 0; i < t.length && qi < q.length; i++){
+      if(t[i] === q[qi]) qi++;
+    }
+    return qi === q.length ? 5 : 0;
+  }
+
+  // ── Coleta de itens buscáveis ──
+  function collectAll(){
+    const items = [];
+    // Produtos
+    (ST.produtos||[]).filter(p => p.ativo !== false).forEach(p => {
+      items.push({
+        type: 'produto',
+        title: p.nome,
+        subtitle: 'Produto · ' + fmtR(p.preco),
+        ico: p.ico || '🍽️',
+        keywords: p.nome + ' ' + (p.desc||'') + ' ' + (_getCatName?.(p.cat_id)||''),
+        action: () => { ST._prodFilter = p.cat_id; nav('cardapio'); }
+      });
+    });
+    // Clientes
+    (ST.clientes||[]).forEach(c => {
+      items.push({
+        type: 'cliente',
+        title: c.nome,
+        subtitle: 'Cliente · ' + (c.wa||c.telefone||'sem telefone') + (c.pontos?' · '+c.pontos+'pts':''),
+        ico: '👤',
+        keywords: c.nome + ' ' + (c.wa||'') + ' ' + (c.telefone||''),
+        action: () => { ST._cliSearch = c.nome; nav('clientes'); }
+      });
+    });
+    // Pedidos ativos
+    (ST.pedidos||[]).filter(p => p.status==='aberto'||p.status==='preparo').forEach(p => {
+      items.push({
+        type: 'pedido',
+        title: p.num + ' · ' + (p.cliente_nome||p.mesa_label||''),
+        subtitle: 'Pedido · ' + fmtR(p.total||0) + ' · ' + (p.itens?.length||0) + ' item(ns)',
+        ico: '📋',
+        keywords: p.num + ' ' + (p.cliente_nome||'') + ' ' + (p.mesa_label||''),
+        action: () => nav('fechar', p.id)
+      });
+    });
+    // Mesas
+    const totMesas = ST.cfg.mesas_total||0;
+    for(let i = 1; i <= totMesas; i++){
+      const mesa_id = 'm'+i;
+      const ocupada = ST.pedidos.some(p => p.mesa_id===mesa_id && (p.status==='aberto'||p.status==='preparo'));
+      items.push({
+        type: 'mesa',
+        title: 'Mesa '+i,
+        subtitle: ocupada ? 'Mesa · Ocupada' : 'Mesa · Livre',
+        ico: '🪑',
+        keywords: 'mesa '+i,
+        action: () => nav('mesas')
+      });
+    }
+    // Páginas/seções
+    const paginas = [
+      {pg:'dash', nome:'Início', ico:'🏠'},
+      {pg:'mesas', nome:'Mesas', ico:'🪑'},
+      {pg:'balcao', nome:'Balcão', ico:'🛒'},
+      {pg:'delivery', nome:'Delivery', ico:'🛵'},
+      {pg:'producao', nome:'Produção / Cozinha', ico:'👨‍🍳'},
+      {pg:'cardapio', nome:'Cardápio / Produtos', ico:'📖'},
+      {pg:'clientes', nome:'Clientes', ico:'👥'},
+      {pg:'caixa', nome:'Caixa', ico:'💰'},
+      {pg:'relatorio', nome:'Relatórios', ico:'📊'},
+      {pg:'relav', nome:'Análises Avançadas', ico:'📈'},
+      {pg:'despesas', nome:'Despesas', ico:'📄'},
+      {pg:'comissao', nome:'Comissão', ico:'💵'},
+      {pg:'promos', nome:'Promoções', ico:'🏷️'},
+      {pg:'funcionarios', nome:'Funcionários', ico:'👔'},
+      {pg:'config', nome:'Configurações', ico:'⚙️'},
+    ];
+    paginas.forEach(p => {
+      items.push({
+        type: 'pagina',
+        title: 'Ir para: ' + p.nome,
+        subtitle: 'Página',
+        ico: p.ico,
+        keywords: p.nome,
+        action: () => nav(p.pg)
+      });
+    });
+    // ── Ações rápidas (comandos) ──
+    const comandos = [
+      {nome:'Novo Pedido (Balcão)', ico:'⚡', cond:()=>ST.caixa.aberto, act:()=>novoBalcao()},
+      {nome:'Nova Venda Direta', ico:'⚡', cond:()=>ST.caixa.aberto, act:()=>novoVendaDireta()},
+      {nome:'Novo Delivery', ico:'🛵', cond:()=>ST.caixa.aberto, act:()=>novoDelivery()},
+      {nome:'Abrir Caixa', ico:'🔓', cond:()=>!ST.caixa.aberto, act:()=>pedirAberturaCaixa()},
+      {nome:'Fechar Caixa', ico:'🔒', cond:()=>ST.caixa.aberto, act:()=>fecharCaixa()},
+      {nome:'Reabrir último caixa', ico:'🔓', cond:()=>!ST.caixa.aberto, act:()=>CXFLOW.reabrirCaixa()},
+      {nome:'Sangria', ico:'↓', cond:()=>ST.caixa.aberto, act:()=>askSangria()},
+      {nome:'Suprimento', ico:'↑', cond:()=>ST.caixa.aberto, act:()=>askSuprimento()},
+      {nome:'Imprimir teste', ico:'🖨', cond:()=>true, act:()=>BT.printTeste&&BT.printTeste()},
+      {nome:'Conectar impressora Bluetooth', ico:'🖨', cond:()=>true, act:()=>openMc('mc-bt')},
+      {nome:'Alternar tema claro/escuro', ico:'🌓', cond:()=>true, act:()=>toggleTheme()},
+      {nome:'Backup agora (download)', ico:'💾', cond:()=>true, act:()=>exportarBackup()},
+      {nome:'Forçar atualização do app', ico:'🔄', cond:()=>true, act:()=>forcarAtualizacao()},
+      {nome:'Modo Garçom', ico:'👨‍🍳', cond:()=>true, act:()=>ativarModoGarcom()},
+      {nome:'Refazer tour de boas-vindas', ico:'🎓', cond:()=>typeof PPOnboard!=='undefined', act:()=>PPOnboard.start(true)},
+    ];
+    comandos.filter(c=>c.cond()).forEach(c => {
+      items.push({
+        type: 'comando',
+        title: c.nome,
+        subtitle: 'Ação rápida',
+        ico: c.ico,
+        keywords: c.nome,
+        action: c.act
+      });
+    });
+    return items;
+  }
+
+  // ── Filtrar e ordenar ──
+  function search(query){
+    let q = (query||'').trim();
+    let filterType = null;
+    // Prefixos
+    if(q.startsWith('/')){ filterType = 'produto'; q = q.substring(1).trim(); }
+    else if(q.startsWith('>')){ filterType = 'comando'; q = q.substring(1).trim(); }
+    else if(q.startsWith('@')){ filterType = 'cliente'; q = q.substring(1).trim(); }
+    else if(q.startsWith('#')){ filterType = 'pedido'; q = q.substring(1).trim(); }
+    const all = collectAll();
+    const filtered = filterType ? all.filter(i => i.type === filterType) : all;
+    if(!q){
+      // Sem query — mostra histórico + comandos populares + páginas
+      const hist = getHistory();
+      const histItems = hist.map(h => filtered.find(i => i.title === h.title)).filter(Boolean);
+      const comandos = filtered.filter(i => i.type === 'comando').slice(0, 6);
+      const paginas = filtered.filter(i => i.type === 'pagina').slice(0, 6);
+      return [...histItems, ...comandos, ...paginas];
+    }
+    // Com query — fuzzy match e ordena
+    const scored = filtered.map(i => ({item: i, score: fuzzyMatch(q, i.keywords||i.title)}))
+      .filter(x => x.score > 0)
+      .sort((a,b) => b.score - a.score)
+      .slice(0, 30);
+    return scored.map(x => x.item);
+  }
+
+  function render(){
+    const cont = document.getElementById('pp-search-results');
+    if(!cont) return;
+    const q = document.getElementById('pp-search-input').value;
+    currentResults = search(q);
+    if(!currentResults.length){
+      cont.innerHTML = `<div class="pp-search-empty">
+        <div class="pp-search-empty-ico">🔍</div>
+        <div>Nada encontrado para "${esc(q)}"</div>
+        <div class="fs11 t3 mt6">Tente buscar pelo nome do produto, cliente ou ação</div>
+      </div>`;
+      return;
+    }
+    // Agrupa por tipo
+    const groups = {};
+    currentResults.forEach(it => {
+      const k = it.type || 'outros';
+      if(!groups[k]) groups[k] = [];
+      groups[k].push(it);
+    });
+    const labels = {pedido:'Pedidos',produto:'Produtos',cliente:'Clientes',mesa:'Mesas',pagina:'Páginas',comando:'Ações',outros:'Outros'};
+    const order = ['comando','pedido','cliente','produto','mesa','pagina','outros'];
+    let html = '';
+    let globalIdx = 0;
+    order.forEach(k => {
+      if(!groups[k]) return;
+      html += `<div class="pp-search-group"><div class="pp-search-group-title">${labels[k]||k}</div>`;
+      groups[k].forEach(it => {
+        const isActive = globalIdx === selectedIdx;
+        html += `<div class="pp-search-item ${isActive?'active':''}" data-idx="${globalIdx}" onclick="PPSearch.selectByIdx(${globalIdx})">
+          <div class="pp-search-item-ico">${it.ico||'•'}</div>
+          <div class="pp-search-item-text">
+            <div class="pp-search-item-title">${esc(it.title)}</div>
+            <div class="pp-search-item-sub">${esc(it.subtitle||'')}</div>
+          </div>
+          ${isActive?'<span class="pp-search-item-kbd">↵</span>':''}
+        </div>`;
+        globalIdx++;
+      });
+      html += '</div>';
+    });
+    cont.innerHTML = html;
+    // Scroll para o ativo
+    const active = cont.querySelector('.pp-search-item.active');
+    if(active) active.scrollIntoView({block:'nearest'});
+  }
+
+  function open(){
+    if(isOpen) return;
+    isOpen = true;
+    selectedIdx = 0;
+    document.getElementById('pp-search-bg').classList.add('on');
+    const inp = document.getElementById('pp-search-input');
+    inp.value = '';
+    setTimeout(()=>inp.focus(), 50);
+    render();
+  }
+  function close(){
+    if(!isOpen) return;
+    isOpen = false;
+    document.getElementById('pp-search-bg').classList.remove('on');
+  }
+  function selectByIdx(idx){
+    const item = currentResults[idx];
+    if(!item) return;
+    addToHistory(item);
+    close();
+    try{ item.action(); }catch(e){ console.warn('[PPSearch] action erro:', e); }
+  }
+
+  // ── Bindings ──
+  function init(){
+    const inp = document.getElementById('pp-search-input');
+    const bg = document.getElementById('pp-search-bg');
+    if(!inp || !bg) return;
+    // Input change
+    inp.addEventListener('input', () => { selectedIdx = 0; render(); });
+    // Teclas
+    inp.addEventListener('keydown', e => {
+      if(e.key === 'Escape'){ close(); }
+      else if(e.key === 'ArrowDown'){ e.preventDefault(); selectedIdx = Math.min(selectedIdx+1, currentResults.length-1); render(); }
+      else if(e.key === 'ArrowUp'){ e.preventDefault(); selectedIdx = Math.max(0, selectedIdx-1); render(); }
+      else if(e.key === 'Enter'){ e.preventDefault(); selectByIdx(selectedIdx); }
+    });
+    // Click no backdrop fecha
+    bg.addEventListener('click', e => { if(e.target === bg) close(); });
+    // Atalho global Ctrl+K / Cmd+K
+    document.addEventListener('keydown', e => {
+      if((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k'){
+        e.preventDefault();
+        if(isOpen) close(); else open();
+      }
+    });
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded', init);
+  else init();
+
+  return { open, close, selectByIdx };
+})();
+
+// ═══════════════════════════════════════════════════════════════════
+//  CART DRAWER — Swipe to dismiss + snap points (mobile only)
+// ═══════════════════════════════════════════════════════════════════
+window._cartDrawer = (function(){
+  let drawer=null, backdrop=null;
+  let startY=0, currentY=0, startTime=0;
+  let isDragging=false, hasTriggered=false;
+  let drawerHeight=0;
+
+  // Threshold em px ou velocidade pra dismiss
+  const DISMISS_THRESHOLD_PCT = 0.30;  // arrastou >30% da altura = dismiss
+  const VELOCITY_THRESHOLD = 0.5;       // px/ms — swipe rápido sempre dismiss
+  const EXPAND_THRESHOLD_PCT = -0.15;   // arrastou >15% pra cima = expandir
+
+  function bind(){
+    drawer = document.getElementById('pos-right-drawer');
+    backdrop = document.querySelector('.pos-right-backdrop');
+    if(!drawer || drawer.dataset.swipeBound) return;
+    drawer.dataset.swipeBound = '1';
+
+    // Só ativa em mobile
+    if(window.innerWidth > 680) return;
+
+    const head = drawer.querySelector('.cart-panel-head');
+    if(!head) return;
+
+    head.addEventListener('touchstart', onStart, {passive: true});
+    head.addEventListener('touchmove', onMove, {passive: false});
+    head.addEventListener('touchend', onEnd, {passive: true});
+    head.addEventListener('touchcancel', onEnd, {passive: true});
+
+    // Mouse (debug em desktop simulando mobile)
+    head.addEventListener('mousedown', onMouseStart);
+  }
+
+  function onStart(e){
+    if(!drawer.classList.contains('has-items')) return;
+    const t = e.touches[0];
+    startY = t.clientY;
+    currentY = startY;
+    startTime = Date.now();
+    isDragging = true;
+    hasTriggered = false;
+    drawerHeight = drawer.offsetHeight;
+    drawer.classList.add('swiping');
+  }
+
+  function onMove(e){
+    if(!isDragging) return;
+    const t = e.touches[0];
+    currentY = t.clientY;
+    const dy = currentY - startY;
+
+    // Bloqueia scroll padrão durante drag
+    if(Math.abs(dy) > 5) e.preventDefault();
+
+    if(dy > 0){
+      // Arrastando pra BAIXO — dismiss em andamento
+      drawer.style.transform = `translateY(${dy}px)`;
+      // Backdrop perde opacidade conforme arrasta
+      if(backdrop){
+        const pct = Math.min(1, dy / drawerHeight);
+        backdrop.style.background = `rgba(0,0,0,${0.35 * (1 - pct)})`;
+      }
+      // Vibration ao cruzar threshold (uma vez só)
+      if(!hasTriggered && dy / drawerHeight > DISMISS_THRESHOLD_PCT){
+        hasTriggered = true;
+        try{ if(navigator.vibrate) navigator.vibrate(15); }catch(e){}
+      }
+    } else if(dy < -20){
+      // Arrastando pra CIMA — expandir
+      drawer.classList.add('expanded');
+    }
+  }
+
+  function onEnd(e){
+    if(!isDragging) return;
+    isDragging = false;
+    drawer.classList.remove('swiping');
+    drawer.style.transform = ''; // remove inline pra deixar CSS decidir
+    if(backdrop) backdrop.style.background = '';
+
+    const dy = currentY - startY;
+    const elapsed = Date.now() - startTime;
+    const velocity = Math.abs(dy) / Math.max(1, elapsed);
+    const pctDragged = dy / drawerHeight;
+
+    // Dismiss condições: arrastou >30% pra baixo OU velocidade alta pra baixo
+    if(pctDragged > DISMISS_THRESHOLD_PCT || (dy > 50 && velocity > VELOCITY_THRESHOLD)){
+      dismiss();
+    } else if(pctDragged < EXPAND_THRESHOLD_PCT){
+      // arrastou pra cima — mantém expandido
+      drawer.classList.add('expanded');
+    } else {
+      // volta pro estado normal
+      drawer.classList.remove('expanded');
+    }
+  }
+
+  // Mouse para debug em desktop (não vai chegar em produção)
+  function onMouseStart(e){
+    if(window.innerWidth > 680) return;
+    if(!drawer.classList.contains('has-items')) return;
+    startY = e.clientY; currentY = startY; startTime = Date.now();
+    isDragging = true; hasTriggered = false;
+    drawerHeight = drawer.offsetHeight;
+    drawer.classList.add('swiping');
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+    e.preventDefault();
+  }
+  function onMouseMove(e){ if(!isDragging) return; currentY = e.clientY; const dy=currentY-startY; if(dy>0){drawer.style.transform=`translateY(${dy}px)`;} }
+  function onMouseUp(e){
+    if(!isDragging) return;
+    document.removeEventListener('mousemove', onMouseMove);
+    document.removeEventListener('mouseup', onMouseUp);
+    onEnd(e);
+  }
+
+  function dismiss(){
+    if(!drawer) return;
+    drawer.classList.remove('has-items', 'expanded');
+    if(backdrop) backdrop.classList.remove('on');
+    try{ if(navigator.vibrate) navigator.vibrate(10); }catch(e){}
+  }
+
+  function show(){
+    if(!drawer) return;
+    drawer.classList.add('has-items');
+    if(backdrop) backdrop.classList.add('on');
+  }
+
+  // Re-bind sempre que renderPedido roda (DOM novo)
+  return { bind, dismiss, show };
+})();
+
+// Auto-bind ao trocar de tela
+(function(){
+  if(typeof window==='undefined')return;
+  const obs = new MutationObserver(()=>{
+    if(window._cartDrawer) window._cartDrawer.bind();
+  });
+  document.addEventListener('DOMContentLoaded', ()=>{
+    const target = document.getElementById('pg-pedido');
+    if(target) obs.observe(target, {childList: true, subtree: false});
+  });
+})();
+
+// ═══════════════════════════════════════════════════════════════════
 //  CXFLOW — Módulo de Conferência e Fechamento de Caixa Profissional
 //  Wizard de 4 etapas: Resumo → Conferência → Movimentações → Conclusão
 // ═══════════════════════════════════════════════════════════════════
@@ -5498,8 +6312,11 @@ function renderPedido(){
       </div>
     </div>
 
+    <!-- ── Backdrop da gaveta (mobile only) — escurece tela conforme abre ── -->
+    <div class="pos-right-backdrop ${np.cart.length > 0 ? 'on' : ''}" onclick="window._cartDrawer&&window._cartDrawer.dismiss()"></div>
     <!-- ── RIGHT: cart panel (gaveta no mobile) ── -->
-    <div class="pos-right ${np.cart.length > 0 ? 'has-items' : ''}">
+    <div class="pos-right ${np.cart.length > 0 ? 'has-items' : ''}" id="pos-right-drawer">
+      <button class="pos-right-close" type="button" onclick="window._cartDrawer&&window._cartDrawer.dismiss()" aria-label="Fechar carrinho" title="Esconder carrinho">✕</button>
       <div class="cart-panel-head">
         <div class="cart-panel-title">Pedido atual</div>
         <div class="cart-panel-order">${esc(np.cliente_nome||np.mesa_label||'—')}</div>
@@ -8662,8 +9479,14 @@ function _renderCfgSection(sec){
   case 'ajuda':
     h=_cfgHeader('Ajuda')+`
     <div class="card mb10">
-      <button class="btn bb bw" onclick="abrirManual()" style="gap:6px">${ppIcon('book',14,1.7)} Manual do Operador</button>
-      <div class="fs11 t3 mt6">Como usar o sistema no dia a dia</div>
+      <button class="btn bb bw mb10" onclick="abrirManual()" style="gap:6px">${ppIcon('book',14,1.7)} Manual do Operador</button>
+      <div class="fs11 t3 mt2 mb10">Como usar o sistema no dia a dia</div>
+      <button class="btn ba bw mb6" onclick="PPOnboard&&PPOnboard.start(true)" style="gap:6px">${ppIcon('star',14,1.7)} Refazer tour de boas-vindas</button>
+      <div class="fs11 t3 mt2">Checklist de configuração + dicas por perfil</div>
+    </div>
+    <div class="card mb10">
+      <button class="btn bg bw" onclick="PPSearch&&PPSearch.open()" style="gap:6px">${ppIcon('search',14,1.7)} Abrir busca global (Ctrl+K)</button>
+      <div class="fs11 t3 mt6">Busca produtos, clientes, pedidos, comandos rápidos</div>
     </div>
     ${isSuperAdmin()?`<div class="card mb10">
       <button class="btn bw" onclick="abrirManualAdmin()" style="gap:6px;color:#f59e0b;border:2px solid #f59e0b;font-weight:700">${ppIcon('settings',14,1.7)} Manual do Administrador</button>
@@ -15607,6 +16430,8 @@ _bootWithData=function(){
   _origBootWithData.apply(this,arguments);
   // Coach diário para donos
   setTimeout(()=>_checkDailyCoach(),3000);
+  // Tour de boas-vindas se primeira vez
+  try{ if(typeof PPOnboard !== 'undefined') PPOnboard.start(false); }catch(e){}
 };
 
 // ═══════════════════════════════════════════════════════════════
