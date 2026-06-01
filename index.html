@@ -1662,25 +1662,38 @@ const _PP_PUBKEY_JWK={"crv":"P-256","ext":true,"key_ops":["verify"],"kty":"EC","
         </div>
       </div>
     </div>
-    <div class="sb-sec">Operações</div>
+    <!-- ── 1. OPERAÇÃO (dia a dia) ── -->
+    <div class="sb-sec">Operação</div>
     <button class="sb-item on" id="sbm-dash" title="Início" onclick="nav('dash')"><span class="sb-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8M5 10v10h14V10"/></svg></span><span class="sb-lbl">Início</span></button>
     <button class="sb-item" id="sbm-mesas" title="Mesas" onclick="nav('mesas')"><span class="sb-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 12h18M8 6V4M16 6V4M8 18v2M16 18v2"/></svg></span><span class="sb-lbl">Mesas</span><span class="sb-bdg" id="sb-mesa-bdg" style="display:none">0</span></button>
     <button class="sb-item" id="sbm-balcao" title="Balcão" onclick="nav('balcao')"><span class="sb-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h18l-1 4H4zM5 12v8h14v-8M9 16h6"/></svg></span><span class="sb-lbl">Balcão</span><span class="sb-bdg" id="sb-bal-bdg" style="display:none">0</span></button>
     <button class="sb-item" id="sbm-delivery" title="Delivery" onclick="nav('delivery')"><span class="sb-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="17" r="3"/><circle cx="18" cy="17" r="3"/><path d="M9 17h6l-3-8h-2M14 9l2-4h3"/></svg></span><span class="sb-lbl">Delivery</span><span class="sb-bdg" id="sb-del-bdg" style="display:none">0</span></button>
     <button class="sb-item" id="sbm-producao" title="Produção" onclick="nav('producao')"><span class="sb-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="14" rx="2"/><path d="M8 22h8M12 18v4"/></svg></span><span class="sb-lbl">Produção</span></button>
-    <div class="sb-sec">Gestão</div>
-    <button class="sb-item" id="sbm-dados" title="Dados" onclick="nav('dados')"><span class="sb-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18M7 15l4-4 3 3 5-6"/></svg></span><span class="sb-lbl">Dados</span></button>
+
+    <!-- ── 2. CADASTROS ── -->
+    <div class="sb-sec">Cadastros</div>
     <button class="sb-item" id="sbm-cardapio" title="Cardápio" onclick="nav('cardapio')"><span class="sb-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg></span><span class="sb-lbl">Cardápio</span></button>
     <button class="sb-item" id="sbm-clientes" title="Clientes" onclick="nav('clientes')"><span class="sb-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="4"/><path d="M2 21c0-4 3-6 7-6s7 2 7 6M17 11a4 4 0 100-8M22 21c0-3-2-5-5-5.5"/></svg></span><span class="sb-lbl">Clientes</span></button>
+    <button class="sb-item" id="sbm-funcionarios" title="Funcionários" onclick="nav('funcionarios')"><span class="sb-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="4"/><path d="M2 21c0-4 3-6 7-6s7 2 7 6"/></svg></span><span class="sb-lbl">Funcionários</span></button>
+
+    <!-- ── 3. FINANCEIRO ── -->
+    <div class="sb-sec">Financeiro</div>
     <button class="sb-item" id="sbm-caixa" title="Caixa" onclick="nav('caixa')"><span class="sb-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M6 9v6M18 9v6"/></svg></span><span class="sb-lbl">Caixa</span></button>
-    <button class="sb-item" id="sbm-relatorio" title="Relatórios" onclick="nav('relatorio')"><span class="sb-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M22 7l-9 9-4-4-7 7M16 7h6v6"/></svg></span><span class="sb-lbl">Relatórios</span></button>
-    <div class="sb-sec">Gestão</div>
-    <button class="sb-item" id="sbm-relav" title="Análises avançadas" onclick="nav('relav')"><span class="sb-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18M7 14l4-4 4 4 5-5"/></svg></span><span class="sb-lbl">Análises</span></button>
     <button class="sb-item" id="sbm-despesas" title="Despesas e contas" onclick="nav('despesas')"><span class="sb-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h6"/></svg></span><span class="sb-lbl">Despesas</span></button>
     <button class="sb-item" id="sbm-comissao" title="Comissão de garçons" onclick="nav('comissao')"><span class="sb-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01"/></svg></span><span class="sb-lbl">Comissão</span></button>
+
+    <!-- ── 4. ANÁLISES ── -->
+    <div class="sb-sec">Análises</div>
+    <button class="sb-item" id="sbm-dados" title="Dados" onclick="nav('dados')"><span class="sb-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18M7 15l4-4 3 3 5-6"/></svg></span><span class="sb-lbl">Dados</span></button>
+    <button class="sb-item" id="sbm-relatorio" title="Relatórios" onclick="nav('relatorio')"><span class="sb-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M22 7l-9 9-4-4-7 7M16 7h6v6"/></svg></span><span class="sb-lbl">Relatórios</span></button>
+    <button class="sb-item" id="sbm-relav" title="Análises avançadas" onclick="nav('relav')"><span class="sb-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18M7 14l4-4 4 4 5-5"/></svg></span><span class="sb-lbl">Avançadas</span></button>
+
+    <!-- ── 5. MARKETING ── -->
+    <div class="sb-sec">Marketing</div>
     <button class="sb-item" id="sbm-promos" title="Promoções automáticas" onclick="nav('promos')"><span class="sb-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20.6 13.4L13.4 20.6a2 2 0 01-2.8 0L2 12V2h10l8.6 8.6a2 2 0 010 2.8z"/><circle cx="7" cy="7" r="1.5"/></svg></span><span class="sb-lbl">Promoções</span></button>
+
+    <!-- ── 6. SISTEMA ── -->
     <div class="sb-sec">Sistema</div>
-    <button class="sb-item" id="sbm-funcionarios" title="Funcionários" onclick="nav('funcionarios')"><span class="sb-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="4"/><path d="M2 21c0-4 3-6 7-6s7 2 7 6"/></svg></span><span class="sb-lbl">Funcionários</span></button>
     <button class="sb-item" id="sbm-agente" title="Agente IA" onclick="nav('agente')" style="display:none"><span class="sb-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a4 4 0 014 4v2H8V6a4 4 0 014-4zM5 12h14v7a3 3 0 01-3 3H8a3 3 0 01-3-3v-7zM8 8v4M16 8v4M9 16h6"/></svg></span><span class="sb-lbl">Agente IA</span></button>
     <button class="sb-item" id="sbm-config" title="Configurações" onclick="nav('config')"><span class="sb-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 01-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 01-4 0v-.1a1.7 1.7 0 00-1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 01-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 010-4h.1a1.7 1.7 0 001.5-1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 012.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 014 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 012.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 010 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg></span><span class="sb-lbl">Configurações</span></button>
     <button class="sb-item" id="sbm-admin" title="Super Admin" onclick="nav('admin')" style="display:none;color:#f59e0b"><span class="sb-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 7.2H22l-6 4.8 2.4 7.2L12 16.4 5.6 21.2 8 14 2 9.2h7.6z"/></svg></span><span class="sb-lbl">Super Admin</span></button>
@@ -3678,24 +3691,44 @@ function openMenuSheet(){
   const mIco=function(name,s){return ppIcon(name,s||18,1.7);};
   var sa=isSuperAdmin();
   var ag=hasPermission('config_editar')||!!(ST.cfg&&ST.cfg.ai_agent&&ST.cfg.ai_agent.ativo);
-  // Grid principal de itens
-  var items=[['delivery','bike','Delivery'],['cardapio','menu','Cardápio'],['clientes','users','Clientes'],['caixa','cash','Caixa'],['relatorio','chart','Relatórios'],['funcionarios','users','Equipe'],['config','settings','Config']];
-  if(ag) items.push(['agente','bot','Agente IA']);
-  var gridHtml='';
-  for(var i=0;i<items.length;i++){
-    var it=items[i];
-    gridHtml+='<button class="btn bs bw" style="justify-content:flex-start;gap:8px;padding:13px;align-items:center" onclick="closeOv(\'ov-menu\');nav(\''+it[0]+'\')">'+mIco(it[1])+' '+it[2]+'</button>';
-  }
-  // Botão de ação inferior
-  var bottomHtml='<button class="btn ba bw" style="flex:1;align-items:center;gap:6px" onclick="closeOv(\'ov-menu\');openMc(\'mc-bt\')">'+mIco('printer')+' Impressora</button>';
-  if(sa){
-    bottomHtml+='<button class="btn bw" style="flex:1;align-items:center;gap:6px;color:#f59e0b;border:2px solid #f59e0b;font-weight:700" onclick="closeOv(\'ov-menu\');nav(\'admin\')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 7.2H22l-6 4.8 2.4 7.2L12 16.4 5.6 21.2 8 14 2 9.2h7.6z"/></svg> Super Admin</button>';
-  }
-  sh.innerHTML='<div class="sh-handle"></div>'
-    +'<div style="font-size:15px;font-weight:800;margin-bottom:14px;display:flex;align-items:center;gap:8px">'+mIco('menu')+' PedePronto — Menu</div>'
-    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'+gridHtml+'</div>'
-    +'<div class="divider mt12 mb12"></div>'
-    +'<div style="display:flex;gap:8px">'+bottomHtml+'</div>';
+  // Espelha sidebar: 6 seções organizadas
+  var sections = [
+    {nome:'Operação', items:[
+      ['dash','home','Início'],['mesas','table','Mesas'],['balcao','counter','Balcão'],
+      ['delivery','bike','Delivery'],['producao','monitor','Produção']
+    ]},
+    {nome:'Cadastros', items:[
+      ['cardapio','menu','Cardápio'],['clientes','users','Clientes'],['funcionarios','user','Funcionários']
+    ]},
+    {nome:'Financeiro', items:[
+      ['caixa','cash','Caixa'],['despesas','fileText','Despesas'],['comissao','smile','Comissão']
+    ]},
+    {nome:'Análises', items:[
+      ['dados','chart','Dados'],['relatorio','chart','Relatórios'],['relav','barChart','Avançadas']
+    ]},
+    {nome:'Marketing', items:[
+      ['promos','tag','Promoções']
+    ]},
+    {nome:'Sistema', items:[
+      ['config','settings','Configurações']
+    ].concat(ag?[['agente','bot','Agente IA']]:[]).concat(sa?[['admin','star','Super Admin']]:[])}
+  ];
+  var html = '<div class="sh-handle"></div>';
+  html += '<div style="font-size:15px;font-weight:800;margin-bottom:14px;display:flex;align-items:center;gap:8px">'+mIco('menu')+' PedePronto — Menu</div>';
+  sections.forEach(function(sec){
+    if(!sec.items.length) return;
+    html += '<div style="font-size:10px;font-weight:800;color:var(--text-3);letter-spacing:1.2px;text-transform:uppercase;padding:8px 4px 4px;font-family:var(--mono)">'+sec.nome+'</div>';
+    html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px">';
+    sec.items.forEach(function(it){
+      var isAdmin = it[0]==='admin';
+      var style = isAdmin ? ';color:#f59e0b;border-color:#f59e0b' : '';
+      html += '<button class="btn bs bw" style="justify-content:flex-start;gap:8px;padding:11px;align-items:center;font-size:13px'+style+'" onclick="closeOv(\'ov-menu\');nav(\''+it[0]+'\')">'+mIco(it[1],16)+' '+it[2]+'</button>';
+    });
+    html += '</div>';
+  });
+  html += '<div class="divider mt8 mb12"></div>';
+  html += '<button class="btn ba bw" style="align-items:center;gap:6px" onclick="closeOv(\'ov-menu\');openMc(\'mc-bt\')">'+mIco('printer')+' Impressora</button>';
+  sh.innerHTML = html;
   openOv('ov-menu');
 }
 
