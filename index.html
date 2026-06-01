@@ -4915,6 +4915,179 @@ window.PPCart = (function(){
 })();
 
 // ═══════════════════════════════════════════════════════════════════
+//  LicCloud — Controle remoto de licença via Firestore
+//  Super admin liga/desliga em tempo real cada estabelecimento
+// ═══════════════════════════════════════════════════════════════════
+window.LicCloud = (function(){
+  const COLLECTION = 'cloud_licenses';
+  // Defaults durante BETA — TODOS clientes liberados
+  const DEFAULT_LICENSE = {
+    status: 'active',     // 'active' | 'suspended' | 'blocked' | 'expired'
+    plan: 'beta_free',    // 'beta_free' | 'monthly' | 'annual' | 'lifetime' | 'trial'
+    expires_at: null,     // null = sem expiração (beta_free, lifetime)
+    set_by: 'system_default',
+    set_at: Date.now(),
+    note: 'Beta gratuito — auto-criado',
+    history: []
+  };
+
+  let _cached = null;
+  let _listener = null;
+
+  // Cria default se não existir (durante BETA todos liberados automaticamente)
+  async function ensureExists(uid){
+    if(!window.fbDB || !uid) return null;
+    const docRef = fbDB.collection(COLLECTION).doc(uid);
+    const doc = await docRef.get();
+    if(doc.exists) return doc.data();
+    // Cria com defaults — durante beta = active/beta_free
+    const data = { ...DEFAULT_LICENSE, created_at: Date.now() };
+    await docRef.set(data);
+    return data;
+  }
+
+  // Listener em tempo real — se super admin desativa, cliente nota na hora
+  function listen(uid, callback){
+    if(!window.fbDB || !uid) return;
+    if(_listener) _listener();
+    _listener = fbDB.collection(COLLECTION).doc(uid).onSnapshot(snap => {
+      if(!snap.exists){ return; }
+      const data = snap.data();
+      _cached = data;
+      if(callback) callback(data);
+      _applyStatus(data);
+    });
+  }
+
+  function stop(){ if(_listener){ _listener(); _listener = null; } }
+
+  function getCached(){ return _cached; }
+
+  // Verifica estado e bloqueia se necessário
+  function _applyStatus(lic){
+    if(!lic) return;
+    const status = lic.status || 'active';
+    // Auto-expira se passou data
+    if(lic.expires_at && Date.now() > lic.expires_at){
+      _showBlockScreen('expired', lic);
+      return;
+    }
+    if(status === 'suspended'){
+      _showBlockScreen('suspended', lic);
+    } else if(status === 'blocked'){
+      _showBlockScreen('blocked', lic);
+    } else if(status === 'active'){
+      _hideBlockScreen();
+    }
+  }
+
+  function _showBlockScreen(reason, lic){
+    let el = document.getElementById('lic-block-overlay');
+    if(!el){
+      el = document.createElement('div');
+      el.id = 'lic-block-overlay';
+      el.style.cssText = 'position:fixed;inset:0;background:rgba(10,10,18,.96);backdrop-filter:blur(8px);z-index:9999;display:flex;align-items:center;justify-content:center;padding:24px;font-family:var(--font,system-ui)';
+      document.body.appendChild(el);
+    }
+    const titles = {
+      suspended: { ico: '⏸️', title: 'Acesso suspenso', sub: 'Sua licença está temporariamente suspensa.', color: 'var(--am)' },
+      blocked:   { ico: '🚫', title: 'Acesso bloqueado', sub: 'Entre em contato com o suporte.', color: 'var(--rd)' },
+      expired:   { ico: '⏰', title: 'Licença expirada', sub: 'Sua licença venceu. Renove para continuar.', color: 'var(--rd)' },
+    };
+    const t = titles[reason] || titles.blocked;
+    const supportNumber = (window.PPBeta && PPBeta.SUPPORT_WHATSAPP) || '5569991110000';
+    const note = lic?.note ? String(lic.note).substring(0, 200) : '';
+    el.innerHTML = `
+      <div style="max-width:480px;width:100%;background:#1a1b22;border:1px solid #2a2f4a;border-radius:18px;padding:32px 24px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.6)">
+        <div style="font-size:64px;line-height:1;margin-bottom:14px">${t.ico}</div>
+        <div style="font-size:22px;font-weight:900;color:${t.color};margin-bottom:8px">${esc(t.title)}</div>
+        <div style="font-size:14px;color:#aaa;line-height:1.6;margin-bottom:18px">${esc(t.sub)}</div>
+        ${note ? `<div style="padding:12px;background:#22232c;border-radius:10px;font-size:12px;color:#ccc;text-align:left;margin-bottom:16px"><b style="color:${t.color}">Observação:</b> ${esc(note)}</div>` : ''}
+        <button style="width:100%;padding:14px;background:linear-gradient(135deg,#5ec99a,#4aa37e);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:800;cursor:pointer;margin-bottom:8px" onclick="window.open('https://wa.me/${supportNumber}?text='+encodeURIComponent('Ola, meu acesso ao PedePronto esta ${reason}. Pode ajudar?'),'_blank')">💬 Falar com suporte no WhatsApp</button>
+        <button style="width:100%;padding:12px;background:transparent;color:#888;border:1px solid #2a2f4a;border-radius:12px;font-size:13px;font-weight:600;cursor:pointer" onclick="location.reload()">🔄 Tentar novamente</button>
+        <div style="font-size:11px;color:#555;margin-top:14px;font-family:monospace">ID: ${esc(window._estabUid||'?')}</div>
+      </div>
+    `;
+    el.style.display = 'flex';
+  }
+  function _hideBlockScreen(){
+    const el = document.getElementById('lic-block-overlay');
+    if(el) el.style.display = 'none';
+  }
+
+  // Inicializa após login
+  async function init(){
+    if(!window.fbDB || !window._estabUid){
+      // Re-tenta quando ficar disponível
+      setTimeout(init, 5000); return;
+    }
+    try{
+      const lic = await ensureExists(_estabUid);
+      _cached = lic;
+      _applyStatus(lic);
+      // Listener em tempo real
+      listen(_estabUid, _applyStatus);
+    }catch(e){ console.warn('[LicCloud] init falhou:', e); }
+  }
+
+  // ── Super Admin actions ──
+  async function adminSetStatus(uid, status, note, plan, expiresAt){
+    if(!window.fbDB) throw new Error('fbDB não disponível');
+    const adminEmail = (fbAuth && fbAuth.currentUser?.email) || 'admin';
+    const docRef = fbDB.collection(COLLECTION).doc(uid);
+    const doc = await docRef.get();
+    const current = doc.exists ? doc.data() : { ...DEFAULT_LICENSE };
+    const history = current.history || [];
+    history.push({
+      action: status, by: adminEmail, at: Date.now(),
+      note: note || '', plan: plan || current.plan
+    });
+    const update = {
+      status,
+      set_by: adminEmail,
+      set_at: Date.now(),
+      note: note || '',
+      history: history.slice(-20), // mantém últimas 20
+    };
+    if(plan) update.plan = plan;
+    if(expiresAt !== undefined) update.expires_at = expiresAt;
+    await docRef.set(update, { merge: true });
+    return true;
+  }
+
+  async function adminListAll(){
+    if(!window.fbDB) return [];
+    const snap = await fbDB.collection(COLLECTION).get();
+    return snap.docs.map(d => ({ uid: d.id, ...d.data() }));
+  }
+
+  async function adminGet(uid){
+    if(!window.fbDB) return null;
+    const doc = await fbDB.collection(COLLECTION).doc(uid).get();
+    return doc.exists ? doc.data() : null;
+  }
+
+  return {
+    init, listen, stop, getCached, ensureExists,
+    adminSetStatus, adminListAll, adminGet,
+  };
+})();
+
+// Boot: chama LicCloud.init após Firebase + uid disponíveis
+(function(){
+  if(typeof window === 'undefined') return;
+  const tryInit = () => {
+    if(!window.LicCloud) return;
+    if(window._estabUid && window.fbDB){
+      LicCloud.init();
+    } else {
+      setTimeout(tryInit, 3000);
+    }
+  };
+  setTimeout(tryInit, 5000);
+})();
+
+// ═══════════════════════════════════════════════════════════════════
 //  PPBeta — Sistema de segurança para período de testes
 //  Banner + Termo + Lockout PIN + Reportar bug + Contato suporte
 // ═══════════════════════════════════════════════════════════════════
@@ -10670,6 +10843,7 @@ function renderAdmin(){
   const tabs=[
     {id:'dashboard',icon:'chart',label:'Dashboard'},
     {id:'estabs',icon:'store',label:'Estabelecimentos'},
+    {id:'beta_ctrl',icon:'zap',label:'Controle Beta'},
     {id:'licencas',icon:'ticket',label:'Licencas'},
     {id:'users',icon:'users',label:'Usuarios'},
     {id:'acoes',icon:'settings',label:'Acoes'}
@@ -10694,9 +10868,247 @@ function renderAdmin(){
   switch(_adminTab){
     case 'dashboard':_adminRenderDashboard(tc);break;
     case 'estabs':_adminRenderEstabs(tc);break;
+    case 'beta_ctrl':_adminRenderBetaCtrl(tc);break;
     case 'licencas':_adminRenderLicencas(tc);break;
     case 'users':_adminRenderUsers(tc);break;
     case 'acoes':_adminRenderAcoes(tc);break;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  Painel: Controle Beta (toggle ativo/suspenso/bloqueado em tempo real)
+// ═══════════════════════════════════════════════════════════════════
+let _betaCtrlCache = [];
+let _betaCtrlFilter = 'all';
+let _betaCtrlSearch = '';
+
+async function _adminRenderBetaCtrl(tc){
+  tc.innerHTML = `<div class="fs12 t2">⌛ Carregando licenças cloud...</div>`;
+  if(!fbDB){ tc.innerHTML = '<div class="fs12 rd">Firebase não conectado</div>'; return; }
+
+  try{
+    // Carrega licenças + estabelecimentos
+    const [licList, estabSnap] = await Promise.all([
+      LicCloud.adminListAll(),
+      fbDB.collection('estabelecimentos').get(),
+    ]);
+    // Mapa de nome por uid
+    const nomes = {};
+    estabSnap.forEach(d => {
+      const data = d.data();
+      nomes[d.id] = data.nome || data.cfg?.nome || '(sem nome)';
+    });
+    // Cruza: para cada estab que não tem licença, cria entrada virtual
+    const merged = estabSnap.docs.map(d => {
+      const uid = d.id;
+      const lic = licList.find(l => l.uid === uid);
+      return {
+        uid,
+        nome: nomes[uid] || '(sem nome)',
+        status: lic?.status || 'no_license',
+        plan: lic?.plan || 'unknown',
+        expires_at: lic?.expires_at || null,
+        set_at: lic?.set_at || null,
+        set_by: lic?.set_by || '?',
+        note: lic?.note || '',
+        history_count: (lic?.history || []).length,
+      };
+    });
+    _betaCtrlCache = merged;
+    _adminRenderBetaCtrlList(tc);
+  }catch(e){
+    tc.innerHTML = `<div class="card mb10" style="background:var(--rdbg);color:var(--rd);padding:14px">❌ Erro ao carregar: ${esc(e.message)}</div>`;
+  }
+}
+
+function _adminRenderBetaCtrlList(tc){
+  const list = _betaCtrlCache;
+  const counts = {
+    all: list.length,
+    active: list.filter(l => l.status === 'active').length,
+    suspended: list.filter(l => l.status === 'suspended').length,
+    blocked: list.filter(l => l.status === 'blocked').length,
+    no_license: list.filter(l => l.status === 'no_license').length,
+  };
+  const filtered = list.filter(l => {
+    if(_betaCtrlFilter !== 'all' && l.status !== _betaCtrlFilter) return false;
+    if(_betaCtrlSearch){
+      const q = _betaCtrlSearch.toLowerCase();
+      return l.nome.toLowerCase().includes(q) || l.uid.toLowerCase().includes(q);
+    }
+    return true;
+  });
+  const statusColors = {
+    active: 'var(--gn)', suspended: 'var(--am)', blocked: 'var(--rd)', no_license: 'var(--t3)',
+  };
+  const statusLabels = {
+    active: '✅ Ativo', suspended: '⏸️ Suspenso', blocked: '🚫 Bloqueado', no_license: '⚠️ Sem licença'
+  };
+  const planLabels = {
+    beta_free: '🚧 Beta Grátis', monthly: '📅 Mensal', annual: '🗓️ Anual',
+    lifetime: '♾️ Vitalício', trial: '🆓 Trial', unknown: '❓'
+  };
+
+  tc.innerHTML = `
+    <div class="card mb10" style="padding:14px;background:linear-gradient(135deg,var(--blbg),var(--surface-2));border-color:var(--blbr)">
+      <div class="fs13 bold mb6">⚡ Controle de Licenças em Tempo Real</div>
+      <div class="fs12 t2 mb6" style="line-height:1.6">Mude o status de qualquer cliente. A mudança é aplicada IMEDIATAMENTE no app dele (via Firestore listener).</div>
+      <div class="fs11 t3">${counts.all} estabelecimentos · ${counts.active} ativos · ${counts.suspended} suspensos · ${counts.blocked} bloqueados${counts.no_license?' · '+counts.no_license+' sem licença':''}</div>
+    </div>
+
+    <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">
+      ${['all','active','suspended','blocked','no_license'].map(f=>`<button class="btn ${_betaCtrlFilter===f?'bp':'bs'} bsm" onclick="_betaCtrlFilter='${f}';_adminRenderBetaCtrlList(document.getElementById('admin-tab-content'))">${({all:'Todos',active:'Ativos',suspended:'Suspensos',blocked:'Bloqueados',no_license:'Sem lic'})[f]} (${counts[f]||0})</button>`).join('')}
+    </div>
+    <div class="fg" style="margin-bottom:10px">
+      <input class="inp" placeholder="🔍 Buscar por nome ou UID..." value="${esc(_betaCtrlSearch)}" oninput="_betaCtrlSearch=this.value;_adminRenderBetaCtrlList(document.getElementById('admin-tab-content'))">
+    </div>
+    <div class="fg" style="margin-bottom:14px">
+      <button class="btn bp bw" onclick="_betaCtrlBulkAction('activate_all_beta')">${ppIcon('checkCircle',14,1.7)} Ativar TODOS como Beta Grátis</button>
+    </div>
+
+    ${filtered.length===0?`<div class="card refined-empty">
+      <div class="refined-empty-ico">📋</div>
+      <div class="refined-empty-msg">Nenhum estabelecimento</div>
+      <div class="refined-empty-sub">Ajuste o filtro acima ou aguarde clientes se cadastrarem</div>
+    </div>`:filtered.map(l => {
+      const dt = l.set_at ? new Date(l.set_at).toLocaleString('pt-BR') : '—';
+      const exp = l.expires_at ? new Date(l.expires_at).toLocaleDateString('pt-BR') : 'sem expiração';
+      return `<div class="card mb6" style="padding:12px;border-left:4px solid ${statusColors[l.status]||'var(--t3)'}">
+        <div class="rb mb6">
+          <div style="min-width:0;flex:1">
+            <div class="bold fs13" style="word-break:break-word">${esc(l.nome)}</div>
+            <div class="fs10 t3 mono" style="word-break:break-all">${esc(l.uid)}</div>
+          </div>
+          <div style="text-align:right">
+            <div class="bold fs12" style="color:${statusColors[l.status]||'var(--t3)'}">${statusLabels[l.status]||l.status}</div>
+            <div class="fs10 t3">${planLabels[l.plan]||l.plan}</div>
+          </div>
+        </div>
+        ${l.expires_at ? `<div class="fs10 t3 mb4">Expira: ${esc(exp)}</div>` : ''}
+        ${l.note ? `<div class="fs11 t2 mb6" style="padding:6px 8px;background:var(--surface-2);border-radius:6px;border-left:3px solid var(--am)">${esc(l.note)}</div>` : ''}
+        ${dt !== '—' ? `<div class="fs10 t3 mb6">Última mudança: ${esc(dt)} por <i>${esc(l.set_by)}</i>${l.history_count?` · ${l.history_count} alterações`:''}</div>` : ''}
+        <div style="display:flex;gap:4px;flex-wrap:wrap">
+          ${l.status !== 'active' ? `<button class="btn bg bxs" onclick="_betaCtrlAction('${l.uid}','activate')">✅ Ativar</button>` : ''}
+          ${l.status !== 'suspended' ? `<button class="btn ba bxs" onclick="_betaCtrlAction('${l.uid}','suspend')">⏸️ Suspender</button>` : ''}
+          ${l.status !== 'blocked' ? `<button class="btn br_ bxs" onclick="_betaCtrlAction('${l.uid}','block')">🚫 Bloquear</button>` : ''}
+          <button class="btn bs bxs" onclick="_betaCtrlAction('${l.uid}','configure')">⚙️ Configurar</button>
+          ${l.history_count > 0 ? `<button class="btn bs bxs" onclick="_betaCtrlAction('${l.uid}','history')">📜 Histórico</button>` : ''}
+        </div>
+      </div>`;
+    }).join('')}
+  `;
+}
+
+async function _betaCtrlAction(uid, action){
+  const item = _betaCtrlCache.find(l => l.uid === uid);
+  if(!item){ toast('Estabelecimento não encontrado','r'); return; }
+
+  if(action === 'history'){
+    const lic = await LicCloud.adminGet(uid);
+    const hist = (lic?.history || []).slice().reverse();
+    if(!hist.length){ toast('Sem histórico','b'); return; }
+    const body = `
+      <div class="fs12 t2 mb10">Últimas mudanças em <b>${esc(item.nome)}</b></div>
+      ${hist.map(h => `<div class="card mb6" style="padding:10px;font-size:12px">
+        <div class="rb mb4">
+          <b>${esc(h.action||'?')}</b>
+          <span class="t3 fs10">${new Date(h.at).toLocaleString('pt-BR')}</span>
+        </div>
+        <div class="fs11 t2">por <i>${esc(h.by||'?')}</i>${h.plan?' · plano: '+esc(h.plan):''}</div>
+        ${h.note?`<div class="fs11 t3 mt4" style="padding:4px 6px;background:var(--surface-2);border-radius:4px">${esc(h.note)}</div>`:''}
+      </div>`).join('')}
+    `;
+    showModal('mc-bc-hist', `📜 Histórico — ${item.nome}`, body);
+    return;
+  }
+
+  if(action === 'configure'){
+    const lic = await LicCloud.adminGet(uid) || { plan: 'beta_free', expires_at: null, note: '' };
+    const expDate = lic.expires_at ? new Date(lic.expires_at).toISOString().slice(0,10) : '';
+    const body = `
+      <div class="fs12 t2 mb10">Configurar <b>${esc(item.nome)}</b></div>
+      <div class="fg">
+        <label class="fl">Status</label>
+        <select class="inp" id="bc-status">
+          <option value="active" ${lic.status==='active'?'selected':''}>✅ Ativo</option>
+          <option value="suspended" ${lic.status==='suspended'?'selected':''}>⏸️ Suspenso</option>
+          <option value="blocked" ${lic.status==='blocked'?'selected':''}>🚫 Bloqueado</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label class="fl">Plano</label>
+        <select class="inp" id="bc-plan">
+          <option value="beta_free" ${lic.plan==='beta_free'?'selected':''}>🚧 Beta Grátis (sem expiração)</option>
+          <option value="trial" ${lic.plan==='trial'?'selected':''}>🆓 Trial</option>
+          <option value="monthly" ${lic.plan==='monthly'?'selected':''}>📅 Mensal</option>
+          <option value="annual" ${lic.plan==='annual'?'selected':''}>🗓️ Anual</option>
+          <option value="lifetime" ${lic.plan==='lifetime'?'selected':''}>♾️ Vitalício</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label class="fl">Data de expiração (vazio = sem expiração)</label>
+        <input class="inp" type="date" id="bc-exp" value="${expDate}">
+        <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:6px">
+          <button class="btn bs bxs" onclick="document.getElementById('bc-exp').value=''">∞ Limpar</button>
+          <button class="btn bs bxs" onclick="(()=>{const d=new Date();d.setDate(d.getDate()+30);document.getElementById('bc-exp').value=d.toISOString().slice(0,10);})()">+30d</button>
+          <button class="btn bs bxs" onclick="(()=>{const d=new Date();d.setDate(d.getDate()+90);document.getElementById('bc-exp').value=d.toISOString().slice(0,10);})()">+90d</button>
+          <button class="btn bs bxs" onclick="(()=>{const d=new Date();d.setFullYear(d.getFullYear()+1);document.getElementById('bc-exp').value=d.toISOString().slice(0,10);})()">+1a</button>
+        </div>
+      </div>
+      <div class="fg">
+        <label class="fl">Observação (visível para o cliente se suspenso/bloqueado)</label>
+        <textarea class="inp" id="bc-note" rows="3" placeholder="Ex: Aguardando confirmação de pagamento, contas em atraso...">${esc(lic.note||'')}</textarea>
+      </div>
+      <button class="btn bp bw" onclick="_betaCtrlSave('${uid}')">${ppIcon('save',14,1.7)} Salvar e Aplicar</button>
+    `;
+    showModal('mc-bc-config', `⚙️ Configurar`, body);
+    return;
+  }
+
+  // Ações rápidas (activate/suspend/block) com prompt de nota
+  const labels = { activate: 'Ativar', suspend: 'Suspender', block: 'Bloquear' };
+  const note = prompt('Observação (opcional, mas recomendado):\n\n' + labels[action] + ' o estabelecimento "' + item.nome + '"', '');
+  if(note === null) return;
+  const statusMap = { activate: 'active', suspend: 'suspended', block: 'blocked' };
+  try{
+    await LicCloud.adminSetStatus(uid, statusMap[action], note);
+    toast('✅ ' + labels[action] + ' aplicado em tempo real','g',3500);
+    _adminRenderBetaCtrl(document.getElementById('admin-tab-content'));
+  }catch(e){
+    toast('Erro: ' + e.message,'r');
+  }
+}
+
+async function _betaCtrlSave(uid){
+  const status = document.getElementById('bc-status').value;
+  const plan = document.getElementById('bc-plan').value;
+  const expStr = document.getElementById('bc-exp').value;
+  const note = document.getElementById('bc-note').value;
+  const expires_at = expStr ? new Date(expStr+'T23:59:59').getTime() : null;
+  try{
+    await LicCloud.adminSetStatus(uid, status, note, plan, expires_at);
+    closeMc('mc-bc-config');
+    toast('✅ Salvo e aplicado em tempo real','g',3500);
+    _adminRenderBetaCtrl(document.getElementById('admin-tab-content'));
+  }catch(e){
+    toast('Erro: ' + e.message,'r');
+  }
+}
+
+async function _betaCtrlBulkAction(action){
+  if(action === 'activate_all_beta'){
+    if(!confirm('Ativar TODOS os ' + _betaCtrlCache.length + ' estabelecimentos como Beta Grátis (sem expiração)?\n\nEssa ação NÃO desfaz outros planos pagos — só ativa quem está suspenso/bloqueado/sem licença.')) return;
+    const targets = _betaCtrlCache.filter(l => l.status !== 'active');
+    if(!targets.length){ toast('Todos já estão ativos!','g'); return; }
+    let ok = 0, err = 0;
+    for(const t of targets){
+      try{
+        await LicCloud.adminSetStatus(t.uid, 'active', 'Ativação em massa - Beta Grátis', 'beta_free', null);
+        ok++;
+      }catch(e){ err++; }
+    }
+    toast(`✅ ${ok} ativados${err?', '+err+' falharam':''}`,'g',5000);
+    _adminRenderBetaCtrl(document.getElementById('admin-tab-content'));
   }
 }
 // ── Dashboard ──
