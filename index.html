@@ -1439,6 +1439,22 @@ html.tam-g .tbtn,html.tam-g .tbtn-ico{font-size:17px;min-height:44px}
   /* Bottom margin do page volta normal (sem FAB) */
   #page{padding-bottom:16px !important}
 }
+/* ── BETA BAR (faixa permanente de aviso) ── */
+#pp-beta-bar{display:none;align-items:center;gap:10px;padding:7px 14px;background:linear-gradient(135deg,#7a3e0f,#a85e2a);color:#fff;font-size:12px;font-weight:700;border-bottom:1px solid rgba(0,0,0,.3);position:relative;z-index:25;flex-shrink:0}
+#pp-beta-bar.on{display:flex}
+#pp-beta-bar .lbl{flex:1;text-align:center;letter-spacing:.4px}
+#pp-beta-bar .btn-beta-info{background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.3);color:#fff;font-weight:800;padding:3px 10px;border-radius:var(--r-pill);font-size:11px;cursor:pointer;font-family:inherit;transition:background .15s}
+#pp-beta-bar .btn-beta-info:hover{background:rgba(255,255,255,.3)}
+@media(max-width:480px){
+  #pp-beta-bar{font-size:11px;padding:6px 10px;gap:6px}
+  #pp-beta-bar .lbl{font-size:10px}
+}
+/* ── LOCKOUT PIN MODAL ── */
+.pin-lockout{padding:30px 20px;text-align:center;color:var(--text-1)}
+.pin-lockout-ico{font-size:54px;line-height:1;margin-bottom:14px}
+.pin-lockout-title{font-size:18px;font-weight:900;margin-bottom:8px;color:var(--rd)}
+.pin-lockout-msg{font-size:13px;color:var(--text-2);line-height:1.5;margin-bottom:16px}
+.pin-lockout-timer{font-size:32px;font-weight:900;color:var(--rd);font-family:var(--mono);background:var(--rdbg);border:2px solid var(--rdbr);padding:14px 24px;border-radius:var(--r-md);display:inline-block}
 /* ── ONBOARDING ── */
 #pp-onboard-bg{position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(8px);z-index:var(--z-tooltip);display:none;align-items:center;justify-content:center;padding:20px;animation:zin var(--d-base)}
 #pp-onboard-bg.on{display:flex}
@@ -1567,6 +1583,12 @@ const _PP_PUBKEY_JWK={"crv":"P-256","ext":true,"key_ops":["verify"],"kty":"EC","
 </head>
 <body>
 <div id="app">
+
+<!-- ══════════ BETA BAR ══════════ -->
+<div id="pp-beta-bar" role="status">
+  <span class="lbl">🚧 <b>BETA</b> · Faça backup diário · Reporte bugs</span>
+  <button class="btn-beta-info" type="button" onclick="window.PPBeta&&PPBeta.openInfoModal()">Saiba mais</button>
+</div>
 
 <!-- ══════════ TOPBAR v3 ══════════ -->
 <div id="topbar">
@@ -3222,6 +3244,11 @@ function swVal(id){return!!document.getElementById(id)?.classList.contains('on')
 // ═══════════════════════════════════════════
 let _pinBuf='',_pinCb=null;
 function askPin(title,sub,cb){
+  // Lockout: bloqueia se passou muito tempo errando
+  if(window.PPBeta && PPBeta.isLocked()){
+    PPBeta.showLockoutModal();
+    return;
+  }
   _pinBuf='';_pinCb=cb;
   document.getElementById('pin-ttl').textContent=title||'PIN';
   document.getElementById('pin-sub').textContent=sub||'Digite o PIN de 4 dígitos';
@@ -3237,9 +3264,26 @@ function pinKey(k){
 }
 function updatePinDots(){for(let i=0;i<4;i++){const d=document.getElementById('pd'+i);if(d)d.className='pin-dot'+(i<_pinBuf.length?' f':'')}}
 function checkPin(){
-  if(_pinBuf===ST.cfg.pin){closeMc('mc-pin');if(_pinCb)_pinCb();}
+  if(_pinBuf===ST.cfg.pin){
+    if(window.PPBeta) PPBeta.recordSuccess();
+    closeMc('mc-pin');
+    if(_pinCb)_pinCb();
+  }
   else{
-    toast('PIN incorreto!','r');_pinBuf='';updatePinDots();
+    // Registra tentativa errada + verifica lockout
+    let lockMsg = '';
+    if(window.PPBeta){
+      const res = PPBeta.recordWrongAttempt();
+      if(res.locked){
+        closeMc('mc-pin');
+        PPBeta.showLockoutModal();
+        return;
+      } else if(res.attemptsLeft <= 2){
+        lockMsg = ' (restam ' + res.attemptsLeft + ' tentativas)';
+      }
+    }
+    toast('PIN incorreto!' + lockMsg, 'r');
+    _pinBuf='';updatePinDots();
     const el=document.getElementById('mc-pin');
     if(el){el.style.animation='shake .4s';setTimeout(()=>{if(el)el.style.animation=''},400);}
   }
@@ -4868,6 +4912,448 @@ window.PPCart = (function(){
     abrirDivisaoAvancada,
     _setSplitModo, _adjQtd, _setQtd, _adjPessoas, _setPessoas, _toggleAssign, _aplicarSplit, _aplicarFormasSplit
   };
+})();
+
+// ═══════════════════════════════════════════════════════════════════
+//  PPBeta — Sistema de segurança para período de testes
+//  Banner + Termo + Lockout PIN + Reportar bug + Contato suporte
+// ═══════════════════════════════════════════════════════════════════
+window.PPBeta = (function(){
+  // Configuração centralizada do beta — fácil mudar quando sair de beta
+  const SUPPORT_WHATSAPP = '5569991110000'; // troque para seu número real
+  const SUPPORT_EMAIL = 'suporte@pedepronto.com';
+  const BETA_VERSION = window.PP_VERSION || '3.0.0';
+
+  function init(){
+    // Mostra barra
+    const bar = document.getElementById('pp-beta-bar');
+    if(bar) bar.classList.add('on');
+    // Termo de aceite na primeira vez
+    setTimeout(() => {
+      if(!hasAccepted()){
+        showAcceptanceModal();
+      } else {
+        // Avisa se passou >1 dia sem backup
+        warnIfNoBackup();
+      }
+    }, 2500);
+  }
+
+  function hasAccepted(){
+    return !!(ST.cfg && ST.cfg.beta_accepted_at);
+  }
+
+  function showAcceptanceModal(){
+    const body = `
+      <div style="text-align:center;padding:8px 0 14px">
+        <div style="font-size:54px;margin-bottom:10px">🚧</div>
+        <div style="font-size:18px;font-weight:900;color:var(--text-1);margin-bottom:6px">Bem-vindo ao PedePronto Beta</div>
+        <div style="font-size:13px;color:var(--text-2);line-height:1.6">Versão ${esc(BETA_VERSION)} · Por favor leia antes de usar.</div>
+      </div>
+      <div style="background:var(--surface-2);border-radius:var(--r-md);padding:14px;margin-bottom:14px;line-height:1.7;font-size:13px;color:var(--text-1)">
+        <div style="font-weight:800;color:var(--ac);margin-bottom:8px">⚠️ Avisos importantes</div>
+        <div style="margin-bottom:6px">• Este sistema está em <b>fase de testes</b> (Beta).</div>
+        <div style="margin-bottom:6px">• Pode haver bugs ou comportamentos inesperados.</div>
+        <div style="margin-bottom:6px">• <b>Faça backup diário</b> (Configurações → Backup).</div>
+        <div style="margin-bottom:6px">• Não nos responsabilizamos por perda de dados ou prejuízos.</div>
+        <div style="margin-bottom:6px">• Você ajuda a melhorar o sistema reportando bugs.</div>
+        <div>• Suporte beta: WhatsApp / email · respondemos em até 24h em horário comercial.</div>
+      </div>
+      <div style="background:var(--blbg);border:1px solid var(--blbr);border-radius:var(--r-md);padding:12px;margin-bottom:14px;font-size:12px;line-height:1.6">
+        <b style="color:var(--bl)">💡 Para sua segurança:</b><br>
+        Recomendamos manter um <b>caderno ou planilha paralela</b> com os pedidos durante os primeiros dias de uso. Se algo der errado, você não perde nada.
+      </div>
+      <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;padding:10px;background:var(--surface-2);border-radius:var(--r-md);margin-bottom:14px">
+        <input type="checkbox" id="beta-accept-chk" style="width:20px;height:20px;flex-shrink:0;margin-top:2px;accent-color:var(--ac)" onchange="document.getElementById('beta-accept-btn').disabled=!this.checked">
+        <span style="font-size:13px;line-height:1.5">Li, entendi os riscos do beta e <b>aceito utilizar o sistema</b> com a consciência de que devo fazer backup diário.</span>
+      </label>
+      <button class="btn bp bw" id="beta-accept-btn" disabled onclick="PPBeta.accept()" style="padding:14px;font-size:15px">${ppIcon('checkCircle',16,1.7)} Começar a usar o PedePronto Beta</button>
+    `;
+    showModal('mc-beta-accept', 'Termo de Uso Beta', body);
+    // Não pode fechar com X — força aceite
+    setTimeout(() => {
+      const xBtn = document.querySelector('#mc-beta-accept .mc-x');
+      if(xBtn){ xBtn.style.display = 'none'; }
+      const bg = document.querySelector('#mc-beta-accept .mc-bg');
+      if(bg){ bg.onclick = (e) => { e.stopPropagation(); toast('Por favor, leia e aceite o termo antes de continuar','a',3000); }; }
+    }, 100);
+  }
+
+  function accept(){
+    ST.cfg = ST.cfg || {};
+    ST.cfg.beta_accepted_at = Date.now();
+    ST.cfg.beta_accepted_version = BETA_VERSION;
+    save('cfg');
+    closeMc('mc-beta-accept');
+    toast('✅ Bem-vindo! Bom trabalho 🚀', 'g', 4000);
+  }
+
+  function openInfoModal(){
+    const aceitouEm = ST.cfg.beta_accepted_at ? new Date(ST.cfg.beta_accepted_at).toLocaleDateString('pt-BR') : 'agora';
+    const ultBackup = ST.cfg.ultimo_backup ? new Date(ST.cfg.ultimo_backup).toLocaleDateString('pt-BR') : '⚠️ NUNCA';
+    const ultBackupAuto = ST.cfg.ultimo_backup_auto ? new Date(ST.cfg.ultimo_backup_auto).toLocaleDateString('pt-BR') : 'aguardando';
+    const body = `
+      <div style="text-align:center;margin-bottom:14px">
+        <div style="font-size:48px;line-height:1;margin-bottom:8px">🚧</div>
+        <div style="font-size:16px;font-weight:900">PedePronto Beta ${esc(BETA_VERSION)}</div>
+        <div class="fs12 t2 mt2">Aceito em ${aceitouEm}</div>
+      </div>
+      <div class="card mb10" style="padding:14px">
+        <div class="sec-title mb8">📦 Status do backup</div>
+        <div class="rb mb4"><span class="fs12">Último backup manual</span><span class="bold mono ${ST.cfg.ultimo_backup?'gn':'rd'}">${ultBackup}</span></div>
+        <div class="rb mb6"><span class="fs12">Último backup automático</span><span class="bold mono ${ST.cfg.ultimo_backup_auto?'gn':'am'}">${ultBackupAuto}</span></div>
+        <button class="btn bp bw mt6" onclick="closeMc('mc-beta-info');exportarBackup()">${ppIcon('download',14,1.7)} Baixar backup AGORA</button>
+      </div>
+      <div class="card mb10" style="padding:14px">
+        <div class="sec-title mb8">💬 Suporte</div>
+        <button class="btn bg bw mb6" onclick="PPBeta.openWhatsApp()">${ppIcon('send',14,1.7)} Falar no WhatsApp</button>
+        <button class="btn bb bw mb6" onclick="closeMc('mc-beta-info');PPBeta.openReportBug()">${ppIcon('alertTriangle',14,1.7)} Reportar bug</button>
+        <div class="fs11 t3 mt4">Respondemos em até 24h em horário comercial.</div>
+      </div>
+      <div class="fs11 t3" style="text-align:center;line-height:1.6">
+        Sistema em fase de testes. Reporte bugs para ajudar a melhorar 🙏
+      </div>
+    `;
+    showModal('mc-beta-info', '🚧 PedePronto Beta', body);
+  }
+
+  function openWhatsApp(){
+    const msg = encodeURIComponent('Olá! Sou usuário Beta do PedePronto v' + BETA_VERSION + '. Preciso de suporte.');
+    const url = 'https://wa.me/' + SUPPORT_WHATSAPP + '?text=' + msg;
+    window.open(url, '_blank');
+  }
+
+  function openReportBug(){
+    const body = `
+      <div class="fs12 t2 mb10" style="line-height:1.6">Descreva o que aconteceu. Tente incluir:<br>• O que estava fazendo<br>• O que esperava que acontecesse<br>• O que aconteceu de fato</div>
+      <div class="fg">
+        <label class="fl">Título curto</label>
+        <input class="inp" id="bug-titulo" placeholder="Ex: Botão fechar caixa não responde" maxlength="100">
+      </div>
+      <div class="fg">
+        <label class="fl">Descrição detalhada</label>
+        <textarea class="inp" id="bug-desc" rows="6" placeholder="Descreva passo a passo..." maxlength="2000"></textarea>
+      </div>
+      <div class="fg">
+        <label class="fl">Severidade</label>
+        <select class="inp" id="bug-sev">
+          <option value="baixo">🟢 Baixa — incômodo, não bloqueia uso</option>
+          <option value="medio" selected>🟡 Média — atrapalha mas tem como contornar</option>
+          <option value="alto">🟠 Alta — bloqueia uma função importante</option>
+          <option value="critico">🔴 Crítica — sistema parou de funcionar</option>
+        </select>
+      </div>
+      <div class="card mb10" style="padding:10px;background:var(--surface-2);font-size:11px;color:var(--text-2);line-height:1.6">
+        Vamos enviar automaticamente: versão (${esc(BETA_VERSION)}), navegador, página atual, últimos erros do console. Sem dados de cliente.
+      </div>
+      <button class="btn bp bw" onclick="PPBeta._enviarBug()">${ppIcon('send',14,1.7)} Enviar reporte</button>
+    `;
+    showModal('mc-report-bug', '🐛 Reportar Bug', body);
+  }
+
+  async function _enviarBug(){
+    const titulo = (document.getElementById('bug-titulo')?.value||'').trim();
+    const desc = (document.getElementById('bug-desc')?.value||'').trim();
+    const sev = document.getElementById('bug-sev')?.value || 'medio';
+    if(!titulo){ toast('Informe um título','r'); return; }
+    if(desc.length < 10){ toast('Descreva com mais detalhes','r'); return; }
+    const ctx = {
+      titulo, desc, severidade: sev,
+      version: BETA_VERSION,
+      url: location.href,
+      pagina_atual: ST.curNav || '?',
+      navegador: navigator.userAgent.substring(0, 200),
+      tela: window.innerWidth + 'x' + window.innerHeight,
+      caixa_aberto: !!(ST.caixa && ST.caixa.aberto),
+      ultimos_erros: (window._ppErrorLog || []).slice(-5),
+      ts: Date.now(),
+      data: new Date().toLocaleString('pt-BR'),
+      estab: window._estabUid || 'local',
+      operador: ST.currentUser?.nome || ST.caixa?.operador || 'anônimo',
+    };
+    try{
+      if(window.fbDB){
+        await fbDB.collection('bug_reports').add(ctx);
+        toast('🐛 Bug reportado, obrigado! Vamos investigar.', 'g', 5000);
+      } else {
+        // Sem firebase: copia para clipboard pra user mandar manualmente
+        const txt = JSON.stringify(ctx, null, 2);
+        if(navigator.clipboard) await navigator.clipboard.writeText(txt);
+        toast('Sem conexão. Conteúdo copiado para mandar via WhatsApp.', 'a', 6000);
+        setTimeout(() => openWhatsApp(), 1500);
+      }
+      closeMc('mc-report-bug');
+    }catch(e){
+      toast('Erro ao enviar: '+e.message, 'r', 4000);
+    }
+  }
+
+  function warnIfNoBackup(){
+    const ult = Math.max(ST.cfg.ultimo_backup||0, ST.cfg.ultimo_backup_auto||0);
+    if(!ult){
+      toast('⚠️ Faça o primeiro backup em Configurações → Backup', 'a', 5000);
+      return;
+    }
+    const diasSemBackup = (Date.now() - ult) / 86400000;
+    if(diasSemBackup > 2){
+      toast('⚠️ Backup vencido há ' + Math.floor(diasSemBackup) + ' dias. Faça agora.', 'a', 6000);
+    }
+  }
+
+  // ── LOCKOUT DE PIN ──
+  // Estado em sessionStorage (limpa ao recarregar = soft reset)
+  const LOCKOUT_KEY = 'pp_pin_lockout';
+  const PIN_ATTEMPTS_KEY = 'pp_pin_attempts';
+
+  function getAttempts(){
+    try{ return JSON.parse(sessionStorage.getItem(PIN_ATTEMPTS_KEY)||'{"count":0,"firstAt":0}'); }
+    catch{ return {count:0,firstAt:0}; }
+  }
+  function setAttempts(a){
+    try{ sessionStorage.setItem(PIN_ATTEMPTS_KEY, JSON.stringify(a)); }catch{}
+  }
+  function getLockout(){
+    try{ return JSON.parse(sessionStorage.getItem(LOCKOUT_KEY)||'null'); }
+    catch{ return null; }
+  }
+  function setLockout(until){
+    try{ sessionStorage.setItem(LOCKOUT_KEY, JSON.stringify({until})); }catch{}
+  }
+  function clearLockout(){
+    try{ sessionStorage.removeItem(LOCKOUT_KEY); sessionStorage.removeItem(PIN_ATTEMPTS_KEY); }catch{}
+  }
+
+  function isLocked(){
+    const l = getLockout();
+    if(!l) return false;
+    if(Date.now() >= l.until){
+      clearLockout();
+      return false;
+    }
+    return true;
+  }
+
+  function secondsRemaining(){
+    const l = getLockout();
+    if(!l) return 0;
+    return Math.max(0, Math.ceil((l.until - Date.now()) / 1000));
+  }
+
+  // Registra tentativa errada e retorna se deve bloquear
+  function recordWrongAttempt(){
+    const a = getAttempts();
+    a.count++;
+    if(a.firstAt === 0) a.firstAt = Date.now();
+    setAttempts(a);
+    if(a.count >= 10){
+      // 10 tentativas → 1h
+      setLockout(Date.now() + 60*60*1000);
+      return {locked: true, duration: '1 hora'};
+    } else if(a.count >= 5){
+      // 5 tentativas → 5min
+      setLockout(Date.now() + 5*60*1000);
+      return {locked: true, duration: '5 minutos'};
+    }
+    return {locked: false, attemptsLeft: 5 - a.count};
+  }
+
+  function recordSuccess(){
+    clearLockout();
+  }
+
+  function showLockoutModal(){
+    const secs = secondsRemaining();
+    const mm = Math.floor(secs/60), ss = secs%60;
+    const tt = mm+':'+String(ss).padStart(2,'0');
+    const body = `
+      <div class="pin-lockout">
+        <div class="pin-lockout-ico">🔒</div>
+        <div class="pin-lockout-title">PIN bloqueado</div>
+        <div class="pin-lockout-msg">Muitas tentativas erradas. Aguarde para tentar novamente.</div>
+        <div class="pin-lockout-timer" id="pin-lockout-timer">${tt}</div>
+        <div class="fs11 t3 mt12">Se for o dono e perdeu o PIN, fale com o suporte.</div>
+        <button class="btn bs bw mt12" onclick="PPBeta.openWhatsApp()">💬 Falar com suporte</button>
+      </div>
+    `;
+    showModal('mc-pin-lockout', '🔒 Acesso bloqueado', body);
+    // Tick para atualizar timer
+    const iv = setInterval(() => {
+      const el = document.getElementById('pin-lockout-timer');
+      if(!el){ clearInterval(iv); return; }
+      const s = secondsRemaining();
+      if(s <= 0){ clearInterval(iv); closeMc('mc-pin-lockout'); return; }
+      const m = Math.floor(s/60), ss = s%60;
+      el.textContent = m+':'+String(ss).padStart(2,'0');
+    }, 1000);
+  }
+
+  return {
+    init, accept, openInfoModal, openWhatsApp, openReportBug, _enviarBug,
+    isLocked, secondsRemaining, recordWrongAttempt, recordSuccess, showLockoutModal,
+  };
+})();
+
+// Boot do beta system
+(function(){
+  if(typeof window === 'undefined') return;
+  const tryInit = () => {
+    if(!window.ST || !ST.cfg){ setTimeout(tryInit, 500); return; }
+    PPBeta.init();
+  };
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => setTimeout(tryInit, 1500));
+  else setTimeout(tryInit, 1500);
+})();
+
+// ═══════════════════════════════════════════════════════════════════
+//  PPErrorLog — Captura erros para Firestore (light Sentry)
+// ═══════════════════════════════════════════════════════════════════
+window._ppErrorLog = []; // mantém últimos N erros em memória
+
+(function(){
+  if(typeof window === 'undefined') return;
+  const MAX_LOCAL = 20;
+  const MAX_SEND = 50; // não envia mais que isso por sessão pra não spammar
+
+  let sentCount = 0;
+
+  function record(type, msg, extra){
+    const entry = {
+      type, msg: String(msg||'').substring(0, 500),
+      stack: extra?.stack ? String(extra.stack).substring(0, 1500) : '',
+      url: location.href,
+      pagina: (window.ST && ST.curNav) || '?',
+      ts: Date.now(),
+      data: new Date().toLocaleString('pt-BR'),
+      version: window.PP_VERSION || '?',
+      ua: navigator.userAgent.substring(0, 200),
+      estab: window._estabUid || 'local',
+    };
+    window._ppErrorLog.push(entry);
+    if(window._ppErrorLog.length > MAX_LOCAL) window._ppErrorLog.shift();
+
+    // Envia para Firestore (best-effort)
+    if(sentCount >= MAX_SEND) return;
+    sentCount++;
+    setTimeout(() => {
+      try{
+        if(window.fbDB){
+          fbDB.collection('errors').add(entry).catch(()=>{/* silencioso */});
+        }
+      }catch(e){}
+    }, 50);
+  }
+
+  window.addEventListener('error', e => {
+    if(!e) return;
+    record('error', e.message || 'Erro desconhecido', {stack: e.error?.stack});
+  });
+  window.addEventListener('unhandledrejection', e => {
+    record('promise_reject', e.reason?.message || String(e.reason||'Promise rejeitada'), {stack: e.reason?.stack});
+  });
+})();
+
+// ═══════════════════════════════════════════════════════════════════
+//  Backup Automático para Firestore (diário)
+// ═══════════════════════════════════════════════════════════════════
+async function _backupAutoFirestore(){
+  if(!window.fbDB || !window._estabUid){ return; }
+  const ult = ST.cfg.ultimo_backup_auto || 0;
+  const horasDesdeUlt = (Date.now() - ult) / 3600000;
+  if(horasDesdeUlt < 20){ return; } // 1x por dia (~20h)
+  try{
+    const data = {
+      cfg: ST.cfg, produtos: ST.produtos, categorias: ST.categorias,
+      clientes: ST.clientes, vouchers: ST.vouchers, despesas: ST.despesas,
+      funcionarios: ST.funcionarios,
+      pedidos: (ST.pedidos||[]).slice(-300), // últimos 300
+      caixa_historico: (ST.caixa?.historico || []).slice(-30),
+      backup_em: Date.now(),
+      backup_versao: window.PP_VERSION || '?',
+    };
+    const key = new Date().toISOString().slice(0,10); // YYYY-MM-DD
+    await fbDB.collection('estabelecimentos').doc(_estabUid).collection('backups').doc(key).set(data);
+    ST.cfg.ultimo_backup_auto = Date.now();
+    save('cfg');
+    console.log('[Backup Auto] OK em', key);
+
+    // Mantém só últimos 7 backups
+    try{
+      const snap = await fbDB.collection('estabelecimentos').doc(_estabUid).collection('backups')
+        .orderBy('backup_em','desc').get();
+      const docs = snap.docs;
+      if(docs.length > 7){
+        const toDelete = docs.slice(7);
+        await Promise.all(toDelete.map(d => d.ref.delete()));
+        console.log('[Backup Auto] limpou', toDelete.length, 'antigos');
+      }
+    }catch(e){ console.warn('[Backup Auto] cleanup falhou:', e); }
+  }catch(e){
+    console.warn('[Backup Auto] falhou:', e);
+    if(window._ppErrorLog) window._ppErrorLog.push({type:'backup_fail',msg:e.message,ts:Date.now()});
+  }
+}
+
+async function _renderListaBackupsCloud(){
+  const el = document.getElementById('lista-backups-cloud');
+  if(!el) return;
+  el.innerHTML = '<div class="t3">⌛ Carregando...</div>';
+  const lista = await _listarBackupsCloud();
+  if(!lista.length){
+    el.innerHTML = '<div class="t3">Nenhum backup ainda. O primeiro é feito 30s após login.</div>';
+    return;
+  }
+  el.innerHTML = lista.map(b => {
+    const dt = new Date(b.backup_em);
+    const tamProd = (b.produtos||[]).length;
+    const tamPed = (b.pedidos||[]).length;
+    return `<div class="rb mb4" style="padding:10px;background:var(--surface-2);border-radius:var(--r-sm);text-align:left">
+      <div style="min-width:0;flex:1">
+        <div class="bold fs12">${esc(b.id)}</div>
+        <div class="fs11 t2">${dt.toLocaleString('pt-BR')} · ${tamProd}p ${tamPed}ped</div>
+      </div>
+      <button class="btn ba bxs" onclick="_restaurarBackupCloud('${esc(b.id)}')">${ppIcon('upload',12,1.7)} Restaurar</button>
+    </div>`;
+  }).join('');
+}
+
+async function _listarBackupsCloud(){
+  if(!window.fbDB || !window._estabUid) return [];
+  try{
+    const snap = await fbDB.collection('estabelecimentos').doc(_estabUid).collection('backups')
+      .orderBy('backup_em','desc').limit(10).get();
+    return snap.docs.map(d => ({id: d.id, ...d.data()}));
+  }catch(e){ return []; }
+}
+
+async function _restaurarBackupCloud(id){
+  if(!window.fbDB || !window._estabUid) return;
+  try{
+    const doc = await fbDB.collection('estabelecimentos').doc(_estabUid).collection('backups').doc(id).get();
+    if(!doc.exists){ toast('Backup não encontrado','r'); return; }
+    const data = doc.data();
+    confirm2('⚠️','Restaurar backup?',
+      `Backup de <b>${esc(id)}</b><br>Isso vai SOBRESCREVER os dados atuais!`,
+      'Restaurar','br_', () => {
+        ['cfg','produtos','categorias','clientes','vouchers','despesas','funcionarios','pedidos'].forEach(k => {
+          if(data[k]) { ST[k] = data[k]; save(k); }
+        });
+        if(data.caixa_historico){ ST.caixa.historico = data.caixa_historico; save('caixa'); }
+        toast('✅ Backup restaurado! Recarregando...','g',3000);
+        setTimeout(() => location.reload(), 1500);
+      });
+  }catch(e){ toast('Erro: '+e.message,'r'); }
+}
+
+// Agenda backup auto
+(function(){
+  if(typeof window === 'undefined') return;
+  const tryBackup = () => {
+    if(!window.fbDB || !window._estabUid){ setTimeout(tryBackup, 30000); return; }
+    _backupAutoFirestore();
+    // Re-roda a cada 4h
+    setInterval(_backupAutoFirestore, 4*3600*1000);
+  };
+  setTimeout(tryBackup, 30000); // 30s após boot
 })();
 
 // ═══════════════════════════════════════════════════════════════════
@@ -10091,27 +10577,42 @@ function _renderCfgSection(sec){
     break;
   }
 
-  case 'backup':
+  case 'backup': {
+    const ultBkpManual = cfg.ultimo_backup ? new Date(cfg.ultimo_backup) : null;
+    const ultBkpAuto = cfg.ultimo_backup_auto ? new Date(cfg.ultimo_backup_auto) : null;
     h=_cfgHeader('Backup')+`
+    <div class="card mb10" style="padding:14px;background:linear-gradient(135deg,var(--gnbg),var(--surface-2));border-color:var(--gnbr)">
+      <div class="rb mb6"><span class="bold fs13">☁️ Backup automático em nuvem</span><span class="bdg bg-g">ATIVO</span></div>
+      <div class="fs12 t2 mb4">Salva diariamente em Firestore. Mantém os 7 últimos.</div>
+      <div class="fs11 t3 mb10">Último: <b>${ultBkpAuto?ultBkpAuto.toLocaleString('pt-BR'):'aguardando primeiro envio (até 30s)'}</b></div>
+      <button class="btn bg bw" onclick="_backupAutoFirestore().then(()=>{toast('☁️ Backup enviado','g');_renderCfgSection('backup');})">${ppIcon('cloud',14,1.7)} Fazer backup cloud agora</button>
+    </div>
     <div class="card mb10">
-      <div class="fs12 t2 mb10" style="line-height:1.6">Baixe um arquivo JSON com todos os seus dados. Guarde em local seguro (Google Drive, Dropbox, e-mail, etc.).</div>
-      <button class="btn bp bw mb8" onclick="exportarBackup()">${ppIcon('download',14,1.7)} Baixar backup agora</button>
+      <div class="fs12 t2 mb10" style="line-height:1.6">Backup local: arquivo JSON para guardar (Drive, Dropbox, email).</div>
+      <button class="btn bp bw mb8" onclick="exportarBackup();setTimeout(()=>_renderCfgSection('backup'),500)">${ppIcon('download',14,1.7)} Baixar backup local agora</button>
+      ${ultBkpManual?`<div class="fs11 t3 mb6" style="text-align:center">Último download: ${ultBkpManual.toLocaleString('pt-BR')}</div>`:''}
       <div class="rb" style="padding:8px 0;border-top:1px solid var(--br)">
-        <div><div class="fs13 bold">Lembrete de backup</div><div class="fs11 t2">Toast a cada N dias se passar do prazo</div></div>
+        <div><div class="fs13 bold">Lembrete de backup manual</div><div class="fs11 t2">Toast a cada N dias</div></div>
         <button class="sw ${cfg.backup_auto?'on':''}" onclick="ST.cfg.backup_auto=!ST.cfg.backup_auto;save('cfg');_renderCfgSection('backup')"></button>
       </div>
       ${cfg.backup_auto?`<div class="fg"><label class="fl">Lembrar a cada (dias)</label>
       <input class="inp" type="number" min="1" max="90" value="${cfg.backup_dias||7}" oninput="ST.cfg.backup_dias=parseInt(this.value)||7;save('cfg')"></div>`:''}
       <div class="divider mt10 mb10"></div>
-      <div class="fs12 bold mb6">Restaurar de backup</div>
+      <div class="fs12 bold mb6">Restaurar de backup local (.json)</div>
       <div class="fs11 t3 mb8">⚠️ Sobrescreve dados atuais</div>
       <label class="btn ba bw" style="cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
         ${ppIcon('upload',14,1.7)} Selecionar arquivo .json
         <input type="file" accept=".json" style="display:none" onchange="importarBackup(this)">
       </label>
-      ${cfg.ultimo_backup?`<div class="fs11 t3 mt8" style="text-align:center">Último backup: ${new Date(cfg.ultimo_backup).toLocaleString('pt-BR')}</div>`:''}
+    </div>
+    <div class="card mb10">
+      <div class="fs12 bold mb8">☁️ Backups na nuvem (últimos 10)</div>
+      <button class="btn bb bw bsm mb8" onclick="_renderListaBackupsCloud()">${ppIcon('refresh',14,1.7)} Carregar lista</button>
+      <div id="lista-backups-cloud" class="fs12 t3" style="text-align:center;padding:10px">Toque em "Carregar lista" para ver</div>
     </div>`+_cfgFooter();
+    setTimeout(()=>_renderListaBackupsCloud(),100);
     break;
+  }
 
   case 'ajuda':
     h=_cfgHeader('Ajuda')+`
@@ -10124,6 +10625,12 @@ function _renderCfgSection(sec){
     <div class="card mb10">
       <button class="btn bg bw" onclick="PPSearch&&PPSearch.open()" style="gap:6px">${ppIcon('search',14,1.7)} Abrir busca global (Ctrl+K)</button>
       <div class="fs11 t3 mt6">Busca produtos, clientes, pedidos, comandos rápidos</div>
+    </div>
+    <div class="card mb10" style="background:linear-gradient(135deg,var(--blbg),var(--surface-2));border-color:var(--blbr)">
+      <div class="fs13 bold mb6">💬 Suporte Beta</div>
+      <button class="btn bg bw mb6" onclick="PPBeta&&PPBeta.openWhatsApp()" style="gap:6px">${ppIcon('send',14,1.7)} Falar no WhatsApp</button>
+      <button class="btn ba bw" onclick="PPBeta&&PPBeta.openReportBug()" style="gap:6px">${ppIcon('alertTriangle',14,1.7)} Reportar bug</button>
+      <div class="fs11 t3 mt8">Respondemos em até 24h em horário comercial</div>
     </div>
     ${isSuperAdmin()?`<div class="card mb10">
       <button class="btn bw" onclick="abrirManualAdmin()" style="gap:6px;color:#f59e0b;border:2px solid #f59e0b;font-weight:700">${ppIcon('settings',14,1.7)} Manual do Administrador</button>
