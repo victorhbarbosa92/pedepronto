@@ -7920,6 +7920,18 @@ function renderFechar(ped_id){
       <button class="btn br_ bxs" style="margin-left:6px;flex-shrink:0" onclick="cancelarItemDireto('${ped.id}',${i})" title="Remover item" aria-label="Remover ${esc(it.nome)}">✕</button>
     </div>`;
     }).join('')}
+    ${(ped.itens_cancelados||[]).length?`
+    <div style="margin-top:10px;padding-top:10px;border-top:1px dashed var(--br)">
+      <div class="fs11 bold t3 mb6" style="text-transform:uppercase;letter-spacing:.5px">Itens removidos</div>
+      ${ped.itens_cancelados.map(it=>`
+      <div style="display:flex;align-items:flex-start;gap:8px;padding:5px 0;opacity:0.65">
+        <div style="flex:1">
+          <div class="fs12" style="text-decoration:line-through;color:var(--t2)">${it.ico||''} ${esc(it.nome)} · ${it.qty}x ${fmtR(it.preco*it.qty)}</div>
+          <div class="fs11 t3">Motivo: <b>${esc(it.motivo)}</b> · ${esc(it.cancelado_cargo)} ${esc(it.cancelado_por)}</div>
+        </div>
+        <span style="font-size:18px;flex-shrink:0">🗑️</span>
+      </div>`).join('')}
+    </div>`:''}
     <div style="border-top:1px solid var(--br);padding-top:8px;margin-top:4px">
       <div class="rb"><span class="fs12 t2">Subtotal</span><span class="bold mono am">${fmtR(ped.total_bruto)}</span></div>
       ${ped.desconto?`<div class="rb"><span class="fs12 rd">Desconto</span><span class="fs12 rd mono">-${fmtR(ped.desconto)}</span></div>`:''}
@@ -8016,12 +8028,72 @@ function aplicarDescPctDireto(ped_id,pct){
 }
 function cancelarItemDireto(ped_id,idx){
   const ped=ST.pedidos.find(p=>p.id===ped_id);if(!ped)return;
-  const nome=ped.itens[idx]?.nome||'item';
-  requireAdmin('Remover item',()=>{
+  const item=ped.itens[idx];if(!item)return;
+  const nome=item.nome||'item';
+  // Pede motivo antes do PIN
+  showModal('mc-cancel-item','Remover item do pedido',`
+    <div style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--rdbg,#fee2e2);border-radius:10px;margin-bottom:14px">
+      <span style="font-size:24px;flex-shrink:0">🗑️</span>
+      <div>
+        <div class="bold fs14">${esc(nome)}</div>
+        <div class="fs12 t2">${item.qty}x · ${fmtR((item.preco||0)*item.qty)}</div>
+      </div>
+    </div>
+    <div class="fg">
+      <label class="fl bold">Motivo da remoção <span style="color:var(--rd)">*</span></label>
+      <select class="inp mb8" id="ci-motivo-sel" onchange="document.getElementById('ci-motivo-outro').style.display=this.value==='outro'?'block':'none'">
+        <option value="">Selecione o motivo...</option>
+        <option value="Erro no pedido">Erro no pedido</option>
+        <option value="Produto indisponível">Produto indisponível</option>
+        <option value="Cliente desistiu">Cliente desistiu</option>
+        <option value="Lançamento duplicado">Lançamento duplicado</option>
+        <option value="outro">Outro (descrever)</option>
+      </select>
+      <textarea class="inp" id="ci-motivo-outro" rows="2" placeholder="Descreva o motivo..." style="display:none;resize:vertical;font-size:13px"></textarea>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:4px">
+      <button class="btn br_ bw" style="flex:1" onclick="_confirmarCancelItem('${esc(ped_id)}',${idx})">${ppIcon('xCircle',14,1.7)} Confirmar remoção</button>
+      <button class="btn bs bw" style="flex:1" onclick="closeMc('mc-cancel-item')">Cancelar</button>
+    </div>
+  `,null,'420px');
+}
+
+function _confirmarCancelItem(ped_id,idx){
+  const sel=document.getElementById('ci-motivo-sel');
+  const outro=document.getElementById('ci-motivo-outro');
+  let motivo=sel?.value||'';
+  if(motivo==='outro') motivo=(outro?.value||'').trim();
+  if(!motivo){toast('Informe o motivo da remoção','a');return;}
+  closeMc('mc-cancel-item');
+  const ped=ST.pedidos.find(p=>p.id===ped_id);if(!ped)return;
+  const item=ped.itens[idx];if(!item)return;
+  const nome=item.nome||'item';
+  requireAdmin('Confirmar remoção de item',()=>{
+    const operador=ST.currentUser?.nome||fbAuth?.currentUser?.email||'Desconhecido';
+    const cargo=_CARGO_LABELS?.[_userCargo]||_userCargo||'Dono';
+    const registro={
+      nome:item.nome,ico:item.ico||'',qty:item.qty,preco:item.preco||0,
+      obs:item.obs||'',obs_extras:item.obs_extras||0,
+      motivo,cancelado_por:operador,cancelado_cargo:cargo,
+      cancelado_em:now(),ped_num:ped.num
+    };
+    // Guarda no histórico do pedido
+    if(!ped.itens_cancelados) ped.itens_cancelados=[];
+    ped.itens_cancelados.push(registro);
+    // Remove o item
     ped.itens.splice(idx,1);
     recalcPedido(ped);save('pedidos');renderFechar(ped_id);
-    toast(''+nome+' removido do pedido','a',3000);
-    _addAlerta(ppIcon('xCircle',16,1.7),'Item removido: '+nome+' ('+ped.num+')','info');
+    toast(nome+' removido — motivo registrado','a',3000);
+    _addAlerta(ppIcon('xCircle',16,1.7,'var(--am)'),'Item removido: '+nome+' ('+ped.num+'). Motivo: '+motivo+' por '+cargo+' '+operador,'cancelado');
+    // Log global no Firestore para visibilidade do super admin
+    if(fbDB&&_estabUid){
+      fbDB.collection('cancelamentos_itens').add({
+        estab_uid:_estabUid,estab_nome:ST.cfg?.nome||'',
+        ped_num:ped.num,ped_id:ped.id,
+        item_nome:item.nome,item_qty:item.qty,item_preco:item.preco||0,
+        motivo,operador,cargo,cancelado_em:new Date().toISOString()
+      }).catch(()=>{});
+    }
   });
 }
 function waiveTaxaServico(ped_id){
@@ -11310,8 +11382,65 @@ async function _adminRenderDashboard(tc){
           </tr>`).join('')}</tbody>
         </table>
       </div>
-    </div>`;
+    </div>
+
+    <div id="sa-cancelamentos-section"><div class="fs12 t3" style="text-align:center;padding:10px">⌛ Carregando cancelamentos...</div></div>`;
+
+  // Carrega cancelamentos de forma assíncrona para não travar o dashboard
+  _adminLoadCancelamentos();
   }catch(e){tc.innerHTML=`<div class="fs12" style="color:var(--rd)">Erro: ${esc(e.message)}</div>`;}
+}
+
+async function _adminLoadCancelamentos(){
+  const el=document.getElementById('sa-cancelamentos-section');
+  if(!el||!fbDB)return;
+  try{
+    const snap=await fbDB.collection('cancelamentos_itens')
+      .orderBy('cancelado_em','desc').limit(30).get();
+    if(snap.empty){
+      el.innerHTML=`<div class="card mt12" style="padding:14px;text-align:center">
+        <div class="fs12 t3">Nenhum cancelamento de item registrado ainda.</div>
+        <div class="fs11 t3 mt4">Os cancelamentos aparecerão aqui assim que forem realizados pelos clientes.</div>
+      </div>`;
+      return;
+    }
+    const rows=[];
+    snap.forEach(d=>rows.push({id:d.id,...d.data()}));
+    el.innerHTML=`
+    <div class="card mt12" style="padding:16px">
+      <div class="bold fs13 mb10" style="display:flex;align-items:center;justify-content:space-between">
+        <span>${ppIcon('xCircle',14,1.7,'var(--rd)')} Cancelamentos de Itens — Todos os Estabelecimentos</span>
+        <span class="fs11 t3">${rows.length} registros</span>
+      </div>
+      <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:12px">
+          <thead><tr style="border-bottom:2px solid var(--br);text-align:left;color:var(--t3)">
+            <th style="padding:6px 8px">Horário</th>
+            <th style="padding:6px 8px">Estabelecimento</th>
+            <th style="padding:6px 8px">Pedido</th>
+            <th style="padding:6px 8px">Item</th>
+            <th style="padding:6px 8px">Motivo</th>
+            <th style="padding:6px 8px">Operador</th>
+          </tr></thead>
+          <tbody>
+          ${rows.map(r=>{
+            const dt=r.cancelado_em?new Date(r.cancelado_em).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'—';
+            return`<tr style="border-bottom:1px solid var(--br)">
+              <td style="padding:6px 8px;white-space:nowrap;color:var(--t3)">${dt}</td>
+              <td style="padding:6px 8px;font-weight:700">${esc(r.estab_nome||'—')}</td>
+              <td style="padding:6px 8px;color:var(--t2)">#${esc(String(r.ped_num||'?'))}</td>
+              <td style="padding:6px 8px">${esc(r.item_nome||'?')} <span class="t3">${r.item_qty||1}x</span></td>
+              <td style="padding:6px 8px"><span style="padding:2px 8px;background:var(--rdbg,#fee2e2);color:var(--rd);border-radius:6px;font-size:11px">${esc(r.motivo||'—')}</span></td>
+              <td style="padding:6px 8px;color:var(--t2)">${esc(r.cargo||'')} ${esc(r.operador||'—')}</td>
+            </tr>`;
+          }).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+  }catch(e){
+    el.innerHTML=`<div class="card mt12" style="padding:14px"><div class="fs12 t3">Cancelamentos: ${esc(e.message)}</div></div>`;
+  }
 }
 // ── Firestore License Sync ──
 async function _adminLoadLicCloud(){
