@@ -11362,10 +11362,18 @@ async function _adminLoadEstabs(){
     const snap=await fbDB.collection('estabelecimentos').get();
     if(snap.empty){el.innerHTML='<div class="fs12 t3" style="text-align:center;padding:20px">Nenhum estabelecimento encontrado.</div>';return;}
     _adminEstabCache=[];
+    // Carrega licenças para exibir badge de status
+    const licMap={};
+    try{
+      const lics=await fbDB.collection('cloud_licenses').get();
+      lics.forEach(d=>licMap[d.id]=d.data());
+    }catch(e){}
+    const licStatusLabel={active:'Ativo',suspended:'Suspenso',blocked:'Bloqueado',no_license:'Sem licença'};
+    const licStatusColor={active:'var(--gn)',suspended:'var(--am)',blocked:'var(--rd)',no_license:'var(--t3)'};
     let html='';
     for(const doc of snap.docs){
       const uid=doc.id;
-      let nome='(sem dados)',produtos=0,pedidos=0,mesas=0;
+      let nome='(sem dados)',produtos=0,pedidos=0,mesas=0,clientes=0;
       try{
         const sub=await fbDB.collection('estabelecimentos').doc(uid).collection('dados').doc('principal').get();
         if(sub.exists){
@@ -11374,23 +11382,33 @@ async function _adminLoadEstabs(){
           produtos=d.produtos?.length||0;
           pedidos=d.pedidos?.length||0;
           mesas=d.cfg?.mesas_total||0;
+          clientes=d.clientes?.length||0;
           _adminEstabCache.push({uid,nome,data:d});
         }
       }catch(e){}
+      const lic=licMap[uid];
+      const licStatus=lic?.status||'no_license';
+      const licPlan=lic?.plan||'';
+      const planLabel={beta_free:'Beta Grátis',monthly:'Mensal',annual:'Anual',lifetime:'Vitalício',trial:'Trial'};
+      // Iniciais do nome para avatar
+      const initials=nome.split(' ').slice(0,2).map(w=>w[0]?.toUpperCase()||'').join('');
       html+=`
-      <div class="card mb8" style="padding:14px">
-        <div style="display:flex;align-items:center;gap:10px">
-          <span style="width:36px;height:36px;border-radius:10px;background:var(--s2);display:flex;align-items:center;justify-content:center">${ppIcon('store',18,1.7)}</span>
+      <div class="card mb8" style="padding:14px;cursor:pointer" onclick="_adminViewEstab('${esc(uid)}')">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,var(--ac),var(--pu));display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:900;color:#fff;flex-shrink:0">${esc(initials||'?')}</div>
           <div style="flex:1;min-width:0">
-            <div class="bold fs14">${esc(nome)}</div>
-            <div class="fs11 t3 mono" style="word-break:break-all">${esc(uid)}</div>
+            <div class="bold fs14" style="margin-bottom:3px">${esc(nome)}</div>
+            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+              <span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:${licStatusColor[licStatus]}22;color:${licStatusColor[licStatus]};border:1px solid ${licStatusColor[licStatus]}55">● ${licStatusLabel[licStatus]||licStatus}${licPlan?' · '+(planLabel[licPlan]||licPlan):''}</span>
+            </div>
           </div>
-          <button class="btn bs" style="padding:8px 12px;font-size:12px" onclick="_adminViewEstab('${esc(uid)}')">${ppIcon('search',13,1.7)} Ver</button>
+          <div style="color:var(--t3)">${ppIcon('chevronRight',16,1.5)}</div>
         </div>
-        <div style="display:flex;gap:12px;margin-top:8px;padding-top:8px;border-top:1px solid var(--br)">
-          <span class="fs11 t2">${ppIcon('menu',11,1.5)} ${produtos} produtos</span>
-          <span class="fs11 t2">${ppIcon('receipt',11,1.5)} ${pedidos} pedidos</span>
-          <span class="fs11 t2">${ppIcon('grid',11,1.5)} ${mesas} mesas</span>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:10px;padding-top:10px;border-top:1px solid var(--br)">
+          <div style="text-align:center"><div class="bold fs13">${produtos}</div><div class="fs10 t3">produtos</div></div>
+          <div style="text-align:center"><div class="bold fs13">${pedidos}</div><div class="fs10 t3">pedidos</div></div>
+          <div style="text-align:center"><div class="bold fs13">${clientes}</div><div class="fs10 t3">clientes</div></div>
+          <div style="text-align:center"><div class="bold fs13">${mesas}</div><div class="fs10 t3">mesas</div></div>
         </div>
       </div>`;
     }
@@ -11399,50 +11417,137 @@ async function _adminLoadEstabs(){
 }
 async function _adminViewEstab(uid){
   if(!fbDB)return;
+  // Mostra modal de carregamento imediatamente
+  showModal('mc-admin-view','Carregando...','<div class="fs12 t2" style="padding:20px;text-align:center">⌛ Buscando dados...</div>',null,'600px');
   try{
     const doc=await fbDB.collection('estabelecimentos').doc(uid).collection('dados').doc('principal').get();
-    if(!doc.exists){toast('Documento principal nao encontrado','a');return;}
+    if(!doc.exists){toast('Documento principal não encontrado','a');return;}
     const d=doc.data();
     const nome=d.cfg?.nome||'(sem nome)';
-    // Buscar licença do estab
-    let licInfo='<span class="t3">Sem licenca ativa</span>';
+    const initials=nome.split(' ').slice(0,2).map(w=>w[0]?.toUpperCase()||'').join('');
+
+    // Licença cloud
+    let licStatus='no_license',licPlan='',licNote='',licExp='';
     try{
-      const licDoc=await fbDB.collection('estabelecimentos').doc(uid).get();
-      if(licDoc.exists){
-        const ld=licDoc.data();
-        if(ld.licenca_plano) licInfo=`<span style="color:var(--gn)">${esc(ld.licenca_plano)}</span> (val: ${esc(ld.licenca_validade||'?')})`;
-      }
+      const licDoc=await fbDB.collection('cloud_licenses').doc(uid).get();
+      if(licDoc.exists){const ld=licDoc.data();licStatus=ld.status||'no_license';licPlan=ld.plan||'';licNote=ld.note||'';licExp=ld.expires_at?new Date(ld.expires_at).toLocaleDateString('pt-BR'):'';}
     }catch(e){}
-    // Buscar usuarios vinculados
-    let usersHtml='';
+    const licStatusLabel={active:'Ativo',suspended:'Suspenso',blocked:'Bloqueado',no_license:'Sem licença'};
+    const licStatusColor={active:'var(--gn)',suspended:'var(--am)',blocked:'var(--rd)',no_license:'var(--t3)'};
+    const planLabel={beta_free:'Beta Grátis',monthly:'Mensal',annual:'Anual',lifetime:'Vitalício',trial:'Trial'};
+    const cargoColor={dono:'#7c3aed',gerente:'#2563eb',caixa:'#16a34a',chefe_cozinha:'#d97706',cozinha:'#ea580c',admin:'#7c3aed',bot:'#64748b'};
+    const cargoLabel={dono:'Dono',gerente:'Gerente',caixa:'Caixa',chefe_cozinha:'Chef Cozinha',cozinha:'Cozinha',admin:'Admin',bot:'Bot'};
+    const cargoIcon={dono:'👑',gerente:'🔑',caixa:'💰',chefe_cozinha:'👨‍🍳',cozinha:'🍳',admin:'⚙️',bot:'🤖'};
+
+    // Funcionários (com nome) do array local
+    const funcs=d.funcionarios||[];
+
+    // Usuários vinculados via user_map (identificação por email)
+    const userMapEntries=[];
     try{
       const uSnap=await fbDB.collection('user_map').where('estab_uid','==',uid).get();
       uSnap.forEach(u=>{
         const ud=u.data();
-        usersHtml+=`<div class="fs11 t2" style="padding:2px 0">👤 ${esc(u.id)} — ${esc(ud.cargo||ud.role||'?')}</div>`;
+        const identifier=u.id; // email ou UID dependendo de como foi salvo
+        const isEmail=identifier.includes('@');
+        userMapEntries.push({identifier,isEmail,cargo:ud.cargo||ud.role||'?'});
       });
     }catch(e){}
-    showModal('mc-admin-view',esc(nome),`
-      <div class="fs13" style="line-height:2">
-        <b>UID:</b> <span class="mono fs11">${esc(uid)}</span><br>
-        <b>Nome:</b> ${esc(nome)}<br>
-        <b>Licenca:</b> ${licInfo}<br>
-        <b>Produtos:</b> ${d.produtos?.length||0}<br>
-        <b>Categorias:</b> ${d.categorias?.length||0}<br>
-        <b>Pedidos:</b> ${d.pedidos?.length||0}<br>
-        <b>Clientes:</b> ${d.clientes?.length||0}<br>
-        <b>Funcionarios:</b> ${d.funcionarios?.length||0}<br>
-        <b>Vouchers:</b> ${d.vouchers?.length||0}<br>
-        <b>Mesas:</b> ${d.cfg?.mesas_total||0}<br>
-        <b>PIX:</b> ${d.cfg?.pix_chave?'Configurado':'Nao'}<br>
-        <b>Maquininha:</b> ${d.cfg?.maquininha?.provider||'Nenhuma'}
+
+    // Badge de cargo
+    const cargoBadge=c=>`<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:${(cargoColor[c]||'#64748b')}22;color:${cargoColor[c]||'#64748b'};border:1px solid ${(cargoColor[c]||'#64748b')}55">${cargoIcon[c]||'👤'} ${cargoLabel[c]||c}</span>`;
+
+    // Monta seção de equipe: funcionários com nome + vinculações sem nome
+    let equipeSections='';
+    if(funcs.length){
+      equipeSections+=funcs.map(f=>`
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--br)">
+          <div style="width:34px;height:34px;border-radius:50%;background:${(cargoColor[f.cargo]||'#64748b')}22;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">${cargoIcon[f.cargo]||'👤'}</div>
+          <div style="flex:1;min-width:0">
+            <div class="bold fs13" style="margin-bottom:2px">${esc(f.nome||'(sem nome)')}</div>
+            <div class="fs11 t3">${f.ativo===false?'⚠️ Inativo':'✅ Ativo'}</div>
+          </div>
+          ${cargoBadge(f.cargo)}
+        </div>`).join('');
+    }
+
+    // Vinculações Firebase Auth (email/uid)
+    let vinculacoesHtml='';
+    if(userMapEntries.length){
+      vinculacoesHtml=userMapEntries.map(u=>`
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--br)">
+          <div style="width:34px;height:34px;border-radius:50%;background:var(--s2);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">${u.isEmail?'📧':'🔑'}</div>
+          <div style="flex:1;min-width:0;overflow:hidden">
+            <div class="fs12 bold" style="margin-bottom:2px;word-break:break-all">${esc(u.identifier)}</div>
+            <div class="fs10 t3">${u.isEmail?'Firebase Auth — Email':'Firebase Auth — UID'}</div>
+          </div>
+          ${cargoBadge(u.cargo)}
+        </div>`).join('');
+    }
+
+    const mcContent=`
+      <!-- Cabeçalho -->
+      <div style="display:flex;align-items:center;gap:14px;padding-bottom:14px;border-bottom:1px solid var(--br);margin-bottom:14px">
+        <div style="width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,var(--ac),var(--pu));display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;color:#fff;flex-shrink:0">${esc(initials||'?')}</div>
+        <div style="flex:1;min-width:0">
+          <div class="bold fs16">${esc(nome)}</div>
+          <div class="fs11 t3 mono" style="word-break:break-all;margin-top:2px">${esc(uid)}</div>
+        </div>
+        <button title="Copiar UID" class="btn bxs bs" style="padding:6px 10px;flex-shrink:0" onclick="navigator.clipboard.writeText('${esc(uid)}');toast('UID copiado!','g')">${ppIcon('copy',13,1.5)}</button>
       </div>
-      ${usersHtml?`<div class="mt8"><b class="fs12">Usuarios vinculados:</b>${usersHtml}</div>`:''}
-      <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn bb" style="flex:1" onclick="_adminGerarConvite('${esc(uid)}','${esc(nome)}')">🔗 Gerar convite</button>
-        <button class="btn bs" style="flex:1" onclick="navigator.clipboard.writeText(JSON.stringify(${esc(JSON.stringify(d))}));toast('JSON copiado!','g')">📋 Copiar JSON</button>
+
+      <!-- Licença -->
+      <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;background:${licStatusColor[licStatus]}15;border:1px solid ${licStatusColor[licStatus]}44;margin-bottom:14px">
+        <div style="font-size:18px">${{active:'✅',suspended:'⏸️',blocked:'🚫',no_license:'⚠️'}[licStatus]||'❓'}</div>
+        <div style="flex:1">
+          <div class="bold fs13" style="color:${licStatusColor[licStatus]}">${licStatusLabel[licStatus]||licStatus}${licPlan?' · '+(planLabel[licPlan]||licPlan):''}</div>
+          ${licExp?`<div class="fs11 t3">Expira em: ${licExp}</div>`:''}
+          ${licNote?`<div class="fs11 t2 mt2" style="font-style:italic">"${esc(licNote)}"</div>`:''}
+        </div>
+        <button class="btn bxs bs" style="font-size:11px;padding:5px 10px;flex-shrink:0" onclick="closeMc('mc-admin-view');_adminTab='beta_ctrl';renderAdmin()">Gerenciar</button>
       </div>
-    `,null,'600px');
+
+      <!-- Estatísticas -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px">
+        ${[
+          {ico:'🛍️',val:d.produtos?.length||0,label:'Produtos'},
+          {ico:'📋',val:d.pedidos?.length||0,label:'Pedidos'},
+          {ico:'👥',val:d.clientes?.length||0,label:'Clientes'},
+          {ico:'🪑',val:d.cfg?.mesas_total||0,label:'Mesas'},
+          {ico:'🏷️',val:d.vouchers?.length||0,label:'Vouchers'},
+          {ico:'💳',val:d.cfg?.pix_chave?'✅':'—',label:'PIX'},
+        ].map(s=>`<div style="text-align:center;padding:10px 6px;background:var(--s2);border-radius:10px">
+          <div style="font-size:18px;margin-bottom:2px">${s.ico}</div>
+          <div class="bold fs14">${s.val}</div>
+          <div class="fs10 t3">${s.label}</div>
+        </div>`).join('')}
+      </div>
+
+      <!-- Equipe (funcionários com nome) -->
+      ${funcs.length?`
+      <div class="bold fs12 mb8" style="display:flex;align-items:center;gap:6px">${ppIcon('users',13,1.5)} Equipe (${funcs.length})</div>
+      <div style="margin-bottom:14px">${equipeSections}</div>`:''}
+
+      <!-- Vinculações Firebase Auth -->
+      ${userMapEntries.length?`
+      <div class="bold fs12 mb8" style="display:flex;align-items:center;gap:6px">${ppIcon('key',13,1.5)} Acessos vinculados (${userMapEntries.length})</div>
+      <div style="margin-bottom:14px">${vinculacoesHtml}</div>`:
+      `<div class="fs12 t3 mb14" style="text-align:center;padding:10px">Nenhum acesso vinculado encontrado</div>`}
+
+      <!-- Ações -->
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn bp" style="flex:1;min-width:130px" onclick="closeMc('mc-admin-view');_adminGerarConvite('${esc(uid)}','${esc(nome)}')">${ppIcon('send',13,1.7)} Gerar convite</button>
+        <button class="btn bs" style="flex:1;min-width:130px" onclick="closeMc('mc-admin-view');_adminTab='beta_ctrl';renderAdmin()">${ppIcon('zap',13,1.7)} Controle Beta</button>
+      </div>`;
+
+    // Atualiza o modal já aberto
+    const mcBody=document.querySelector('#mc-admin-view .mc-body, #mc-admin-view [class*="mc-b"]');
+    const mcEl=document.getElementById('mc-admin-view');
+    if(mcEl){
+      const titleEl=mcEl.querySelector('.bold.fs16,.mc-title,[class*="title"]');
+      // Reusa o modal já aberto re-chamando showModal
+    }
+    showModal('mc-admin-view',esc(nome),mcContent,null,'620px');
   }catch(e){toast('Erro ao ler: '+e.message,'r');}
 }
 function _adminNovoEstab(){
@@ -11474,18 +11579,35 @@ function _adminNovoEstab(){
 }
 async function _adminGerarConvite(uid,nome){
   if(!fbDB)return;
-  showModal('mc-cargo-conv','Cargo do Funcionário',`
-    <div class="fs13 t2 mb12">Selecione o cargo para o convite de <b>${esc(nome)}</b>:</div>
-    <div style="display:flex;flex-direction:column;gap:8px">
-      ${['caixa','cozinha','gerente'].map(c=>`<button class="btn bs bw" style="justify-content:flex-start;gap:8px" onclick="closeMc('mc-cargo-conv');_finishGerarConvite('${uid}','${esc(nome)}','${c}')">
-        ${c==='caixa'?'💰':c==='cozinha'?'👨‍🍳':'🔑'} ${c.charAt(0).toUpperCase()+c.slice(1)}</button>`).join('')}
+  const cargos=[
+    {id:'gerente',ico:'🔑',label:'Gerente',desc:'Operação completa: PDV, caixa, relatórios. Não edita preços nem configurações.'},
+    {id:'caixa',ico:'💰',label:'Caixa',desc:'PDV e caixa. Sem acesso a relatórios, cardápio ou configurações.'},
+    {id:'chefe_cozinha',ico:'👨‍🍳',label:'Chefe de Cozinha',desc:'Tela de produção fullscreen + pode editar o cardápio.'},
+    {id:'cozinha',ico:'🍳',label:'Cozinha / Bar',desc:'Apenas a tela de produção (KDS). Sem acesso ao PDV.'},
+  ];
+  showModal('mc-cargo-conv','Selecionar cargo',`
+    <div class="fs12 t2 mb12" style="padding:10px 12px;background:var(--s2);border-radius:8px;line-height:1.5">
+      ${ppIcon('send',13,1.5)} Gerando convite para <b>${esc(nome)}</b>.<br>Escolha o nível de acesso do novo membro:
     </div>
-    <button class="btn bs bw mt10" onclick="closeMc('mc-cargo-conv')">Cancelar</button>`);
+    <div style="display:flex;flex-direction:column;gap:8px">
+      ${cargos.map(c=>`
+        <button class="btn bs bw" style="display:flex;align-items:center;gap:12px;padding:12px 14px;text-align:left" onclick="closeMc('mc-cargo-conv');_finishGerarConvite('${uid}','${esc(nome)}','${c.id}')">
+          <span style="font-size:24px;flex-shrink:0">${c.ico}</span>
+          <div>
+            <div class="bold fs13">${c.label}</div>
+            <div class="fs11 t3" style="margin-top:2px;line-height:1.4">${c.desc}</div>
+          </div>
+        </button>`).join('')}
+    </div>
+    <button class="btn bs bw mt10 bw" onclick="closeMc('mc-cargo-conv')">Cancelar</button>
+  `,null,'460px');
 }
 async function _finishGerarConvite(uid,nome,cargo){
   if(!cargo)return;
   const code=Math.random().toString(36).slice(2,8).toUpperCase();
   const exp=new Date();exp.setHours(exp.getHours()+48);
+  const cargoLabel={gerente:'Gerente',caixa:'Caixa',chefe_cozinha:'Chefe de Cozinha',cozinha:'Cozinha / Bar'};
+  const cargoIco={gerente:'🔑',caixa:'💰',chefe_cozinha:'👨‍🍳',cozinha:'🍳'};
   try{
     await fbDB.collection('convites').doc(code).set({
       estab_uid:uid,estab_nome:nome,cargo:cargo,
@@ -11493,22 +11615,45 @@ async function _finishGerarConvite(uid,nome,cargo){
       criado_em:new Date().toISOString(),expira_em:exp.toISOString(),usado:false
     });
     const link=window.location.origin+window.location.pathname+'?convite='+code;
-    showModal('mc-admin-convite','Convite Gerado',`
-      <div class="fs13" style="line-height:2">
-        <b>Estabelecimento:</b> ${esc(nome)}<br>
-        <b>Cargo:</b> ${esc(cargo)}<br>
-        <b>Codigo:</b> <span class="mono bold" style="color:var(--ac)">${esc(code)}</span><br>
-        <b>Expira em:</b> 48 horas<br>
+    const waText=encodeURIComponent('Olá! Você foi convidado para acessar o PedePronto como '+( cargoLabel[cargo]||cargo)+' de "'+nome+'".\n\nAcesse o link abaixo para vincular seu dispositivo:\n'+link);
+    showModal('mc-admin-convite','Convite gerado!',`
+      <!-- Cabeçalho do convite -->
+      <div style="text-align:center;padding:16px 0 12px">
+        <div style="font-size:40px;margin-bottom:8px">🎉</div>
+        <div class="bold fs15 mb4">Convite criado com sucesso</div>
+        <div class="fs12 t2">Válido por <b>48 horas</b> · Uso único</div>
       </div>
-      <div class="card mt8" style="padding:12px">
-        <div class="fs11 t2 mb4">Link de convite:</div>
-        <div class="mono fs11" style="word-break:break-all;color:var(--ac)">${esc(link)}</div>
+
+      <!-- Info do convite -->
+      <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+        <div style="flex:1;min-width:120px;padding:10px 12px;background:var(--s2);border-radius:10px">
+          <div class="fs10 t3 mb2">ESTABELECIMENTO</div>
+          <div class="bold fs13">${esc(nome)}</div>
+        </div>
+        <div style="flex:1;min-width:120px;padding:10px 12px;background:var(--s2);border-radius:10px">
+          <div class="fs10 t3 mb2">CARGO</div>
+          <div class="bold fs13">${cargoIco[cargo]||'👤'} ${cargoLabel[cargo]||cargo}</div>
+        </div>
       </div>
-      <div style="margin-top:12px;display:flex;gap:8px">
-        <button class="btn bp" style="flex:1" onclick="navigator.clipboard.writeText('${esc(link)}');toast('Link copiado!','g')">📋 Copiar link</button>
-        <button class="btn bs" style="flex:1" onclick="window.open('https://wa.me/?text='+encodeURIComponent('Convite PedePronto (${esc(nome)}):\\n${esc(link)}'),'_blank')">💬 WhatsApp</button>
+
+      <!-- Código -->
+      <div style="text-align:center;margin-bottom:14px;padding:14px;background:var(--s2);border-radius:12px">
+        <div class="fs10 t3 mb6">CÓDIGO DO CONVITE</div>
+        <div class="mono bold" style="font-size:28px;letter-spacing:6px;color:var(--ac)">${esc(code)}</div>
       </div>
-    `,null,'500px');
+
+      <!-- Link -->
+      <div style="margin-bottom:14px;padding:10px 12px;background:var(--s2);border-radius:10px">
+        <div class="fs10 t3 mb4">LINK DIRETO</div>
+        <div class="mono fs11" style="word-break:break-all;color:var(--ac);line-height:1.5">${esc(link)}</div>
+      </div>
+
+      <!-- Botões -->
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn bp" style="flex:1;min-width:120px" onclick="navigator.clipboard.writeText('${esc(link)}');toast('Link copiado!','g')">${ppIcon('copy',13,1.7)} Copiar link</button>
+        <button class="btn bs" style="flex:1;min-width:120px;background:#25d366;color:#fff;border-color:#25d366" onclick="window.open('https://wa.me/?text=${waText}','_blank')">💬 WhatsApp</button>
+      </div>
+    `,null,'480px');
   }catch(e){toast('Erro ao criar convite: '+e.message,'r');}
 }
 // ── Tab: Licencas ──
