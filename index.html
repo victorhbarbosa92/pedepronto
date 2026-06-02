@@ -490,6 +490,34 @@ html{-webkit-overflow-scrolling:touch}
   #page { padding-bottom: calc(90px + env(safe-area-inset-bottom, 0px)); }
 }
 
+/* ── GUIA FAB ── */
+#pp-guide-fab {
+  position: fixed;
+  bottom: 20px;
+  right: 16px;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #7c3aed, #4f46e5);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  z-index: 155;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(124,58,237,.45), 0 2px 6px rgba(0,0,0,.3);
+  transition: transform .2s var(--ease-snap), box-shadow .2s;
+  font-size: 20px;
+  font-weight: 900;
+  line-height: 1;
+  user-select: none;
+}
+#pp-guide-fab:hover { transform: scale(1.1); box-shadow: 0 8px 24px rgba(124,58,237,.55), 0 4px 10px rgba(0,0,0,.3); }
+#pp-guide-fab:active { transform: scale(.9); }
+@media(max-width:768px){
+  #pp-guide-fab { bottom: 86px; } /* sobe acima do FAB voltar em mobile */
+}
 /* ── PAGES ── */
 .pg{display:none;padding:14px;animation:fi .18s ease}
 .pg.on{display:block}
@@ -1756,6 +1784,8 @@ const _PP_PUBKEY_JWK={"crv":"P-256","ext":true,"key_ops":["verify"],"kty":"EC","
         <path d="M19 12H5M12 19l-7-7 7-7"/>
       </svg>
     </button>
+    <!-- FAB: Guia IA -->
+    <button id="pp-guide-fab" type="button" aria-label="Guia do PedePronto" title="Guia IA — Como usar o app" onclick="_toggleGuiaChat()">?</button>
   </div>
 </div>
 
@@ -18194,6 +18224,410 @@ Voce tambem e um COACH DE MARKETING. Alem de vender, ajude o dono com:
   return prompt;
 };
 
+// ═══════════════════════════════════════════════════════════════════
+//  PP GUIDE — Guia IA de navegação (não executa ações, só orienta)
+// ═══════════════════════════════════════════════════════════════════
+
+let _guiaMsgs = [];
+let _guiaLoading = false;
+
+function _buildGuideSystemPrompt() {
+  const role = _userRole || _userCargo || 'dono';
+  const estabNome = ST.cfg?.nome || 'seu estabelecimento';
+  return `# PAPEL
+Você é o Guia do PedePronto, assistente de navegação do sistema PDV.
+Responda APENAS perguntas sobre como usar o aplicativo — onde encontrar funções, passo a passo para tarefas.
+NÃO execute ações, NÃO altere dados, NÃO dê conselhos de negócio ou análises de vendas.
+Responda em português BR, claro e direto. Use passos numerados para tutoriais.
+Se não souber algo com certeza, diga — não invente telas nem botões que não existem.
+
+# CONTEXTO DO USUÁRIO
+- Estabelecimento: ${esc(estabNome)}
+- Cargo: ${role}
+
+# COMO NAVEGAR NO APP
+- Sidebar esquerda: links de navegação (no tablet vira slim com só ícones a 88px)
+- Mobile (<768px): botão verde "Menu" no canto superior esquerdo abre a sidebar
+- Ctrl+K ou /: busca global (command palette — encontra qualquer função por nome)
+
+# PÁGINAS — CAMINHO E FUNÇÕES
+
+## Início (Dashboard)
+Caminho: Sidebar → "Início"
+Conteúdo: resumo do dia, pedidos ativos, KPIs (faturamento, ticket médio), acesso rápido ao Agente IA e CXFLOW.
+
+## Mesas
+Caminho: Sidebar → "Mesas"
+Cores das mesas: verde = livre · laranja = ocupada · vermelho = atrasada (mais de X min).
+Criar pedido de mesa: toque na mesa livre → adicione itens do cardápio → confirme.
+Ver pedido ativo: toque na mesa ocupada → vê os itens e pode adicionar mais.
+Fechar conta (cobrar): toque na mesa ocupada → "Fechar conta" → escolha forma de pagamento.
+Divisão de conta: ao fechar → "Dividir" → igualmente OU por item.
+Comanda parcial (extrato durante consumo): dentro do pedido → "Imprimir comanda".
+Comanda cliente QR: dentro do pedido → botão QR → cliente lê e acompanha em tempo real no celular.
+
+## Balcão
+Caminho: Sidebar → "Balcão"
+Uso: pedidos avulsos de balcão (consumo local ou para viagem).
+Criar pedido: "Novo Pedido" → tipo (local/viagem) → adicione itens → finalize com pagamento.
+
+## Delivery
+Caminho: Sidebar → "Delivery"
+Fases: Preparo → Em rota → Entregue.
+Criar pedido: "Novo Pedido" → dados do cliente + endereço → itens → confirme.
+
+## Produção (KDS)
+Caminho: Sidebar → "Produção"
+Uso: cozinha e bar veem itens para preparar, com timer de tempo de espera.
+Tabs: Cozinha | Bar (separados pelo destino configurado em cada produto).
+Marcar item como pronto: toque no item → "Pronto".
+
+## Cardápio
+Caminho: Sidebar → "Cardápio"
+Adicionar produto: botão "+" → preencha nome, preço, categoria, destino (Cozinha/Bar), tempo de preparo, foto.
+Editar produto: toque no produto → edite os campos → salvar.
+Ativar/desativar produto: toggle no card do produto (desativado não aparece no PDV).
+Nova categoria: botão "Nova categoria" → nome e ícone.
+Grupos de obs/adicionais: aba "Grupos" → "Novo grupo" → adicione opções (ex: pontos da carne).
+Horário de disponibilidade: dentro do produto → campo "Disponível das X às Y".
+
+## Clientes
+Caminho: Sidebar → "Clientes"
+Cadastrar: "Novo cliente" → nome, telefone, email.
+Ver histórico de pedidos: toque no cliente → aba "Pedidos".
+Ver pontos de fidelidade e tier: toque no cliente → aba "Fidelidade".
+Tiers: Pintinho → Bronze → Prata → Ouro (conforme total gasto configurado em Config → Fidelidade).
+Roleta premiada: cliente com pontos acumulados pode girar.
+
+## Funcionários
+Caminho: Sidebar → "Funcionários"
+Ver lista de membros vinculados: lista na tela.
+Convidar/vincular novo dispositivo ou funcionário:
+  1. Sidebar → "Configurações" → seção "Dispositivos vinculados"
+  2. Selecione o cargo: Gerente / Caixa / Chefe de Cozinha / Cozinha
+  3. Clique "Gerar convite"
+  4. Compartilhe o link ou QR Code com o funcionário
+  5. O funcionário abre o link em qualquer dispositivo, faz login (Google ou email) e aceita o vínculo
+  O convite é válido por 7 dias e pode ser usado por múltiplos dispositivos.
+Revogar convite: Configurações → Dispositivos vinculados → "Revogar".
+Permissões por cargo:
+  • Dono — acesso total
+  • Gerente — operação completa, sem editar preços/config
+  • Caixa — PDV e caixa, sem relatórios
+  • Chefe de Cozinha — produção fullscreen + cardápio
+  • Cozinha — apenas tela de produção
+
+## Caixa
+Caminho: Sidebar → "Caixa"
+Abrir caixa: o sistema solicita automaticamente ao entrar no app. Informe o valor inicial (troco em mãos).
+Sangria (retirada de dinheiro): Caixa → "Sangria" → informe valor e motivo.
+Suprimento (entrada de dinheiro): Caixa → "Suprimento" → informe valor e motivo.
+Ver movimentações do dia: lista na página Caixa.
+Fechar caixa — CXFLOW (4 etapas):
+  1. Clique no botão vermelho "Fechar Caixa" na barra superior OU Caixa → "Fechar"
+  2. Etapa 1 — Resumo: total do dia por forma de pagamento (calculado pelo sistema)
+  3. Etapa 2 — Conferência: informe quanto tem fisicamente em cada forma (dinheiro, PIX, cartão…)
+  4. Etapa 3 — Movimentações: revise sangrias e suprimentos registrados
+  5. Etapa 4 — Conclusão: diferença destacada, opção de gerar PDF, assinar e fechar
+Reabrir caixa: disponível em até 60 min após fechar (configurável em Config → Caixa).
+Histórico de fechamentos: Caixa → aba "Histórico".
+
+## Despesas
+Caminho: Sidebar → "Despesas"
+Cadastrar: "Nova despesa" → descrição, valor, data, categoria.
+
+## Comissão
+Caminho: Sidebar → "Comissão"
+Configura percentual por atendente. Vê relatório de comissões do período.
+
+## Dados / Análises
+Caminho: Sidebar → "Dados"
+KPIs do período, gráficos de vendas. Filtros por dia/semana/mês.
+
+## Relatórios
+Caminho: Sidebar → "Relatórios"
+Faturamento por período, ranking de produtos mais vendidos, histórico de caixas fechados com diferenças.
+
+## Avançadas
+Caminho: Sidebar → "Avançadas"
+Heatmap de horário de pico, análise ABC de produtos, comparativo de períodos.
+
+## Promoções / Marketing
+Caminho: Sidebar → "Promoções"
+Happy hour: configure horário + desconto automático nos produtos selecionados.
+Vouchers: crie e gerencie códigos promocionais com desconto fixo ou percentual.
+
+## Configurações
+Caminho: Sidebar → "Configurações"
+Seções disponíveis (menu lateral dentro de Config):
+  • Geral — nome, logo, endereço, PIN do dono (4 dígitos), tema
+  • Mesas — quantidade total, layout visual
+  • Pagamentos — chave PIX, formas aceitas, tempo de reabrir caixa
+  • Dispositivos vinculados — gerar convite para funcionários, ver e revogar membros
+  • Agente IA — provedor (Groq/OpenAI/Anthropic/OpenRouter/Custom), chave de API, modelo, temperatura
+  • Fidelidade & Roleta — tiers de gasto, prêmios da roleta
+  • Impressora — parear impressora Bluetooth ESC/POS térmica
+  • Maquininha — configurar Mercado Pago Point (requer Cloudflare Worker configurado)
+  • Modo Garçom — ativa interface simplificada (só mesas + novo pedido, sai segurando logo 2s + PIN)
+  • Notificações — preferências de alertas sonoros e visuais
+  • WhatsApp Delivery IA — configurar agente de pedidos pelo WhatsApp (Meta Business API)
+  • Vitrine Digital — cardápio público em modo carrossel ou grid (URL: ?menu=1)
+  • Ajuda — manual do sistema
+
+## Agente IA (CRM/Consultor)
+Caminho: Sidebar → "Agente IA"
+Uso: consultor de vendas com dados reais do negócio (ticket médio, combos, clientes VIP, inativos).
+Diferente do Guia: o Agente IA faz análises de negócio, não ensina a usar o app.
+Requer: API configurada em Configurações → Agente IA.
+
+# ATALHOS DE TECLADO
+Ctrl+K ou /: busca global (encontra qualquer função, página ou cliente por nome)
+F1: Início · F2: Mesas · F3: Balcão · F4: Delivery · F5: Produção
+Ctrl+B: Balcão · Ctrl+M: Mesas · Ctrl+D: Delivery · Ctrl+P: Produção
+
+# FORMAS DE PAGAMENTO DISPONÍVEIS
+Dinheiro, PIX (QR automático se chave configurada), Cartão Débito, Cartão Crédito, Voucher, Maquininha (MP Point).
+Pagamento misto: é possível dividir uma conta em múltiplas formas na mesma operação.
+
+# IMPRESSÃO
+Requer impressora Bluetooth ESC/POS térmica.
+Configurar: Configurações → Impressora → "Parear impressora".
+Imprimir: botão de impressão dentro de qualquer pedido ou no fechamento de caixa (PDF).
+
+# RESTRIÇÕES DE CARGO
+Se uma função não aparecer ou estiver bloqueada, provavelmente é restrição do seu cargo.
+Funções que exigem cargo Dono ou Gerente: editar cardápio, ver relatórios, acessar config.
+Para verificar: Configurações → Funcionários → seu nome.`;
+}
+
+function _buildSuperAdminGuideExtra() {
+  return `
+
+# ═══════════════════════════════════════════════════════
+# SUPER ADMIN — SEÇÃO EXCLUSIVA (só visível para você)
+# ═══════════════════════════════════════════════════════
+Acesso: Sidebar → "Super Admin" (item visível apenas para o email do super admin)
+
+## Dashboard (Super Admin)
+Caminho: Super Admin → aba "Dashboard"
+Conteúdo: total de estabelecimentos cadastrados, pedidos globais, faturamento agregado, usuários Firebase.
+
+## Estabelecimentos
+Caminho: Super Admin → aba "Estabelecimentos"
+Lista todos os clientes cadastrados no sistema com nome, UID e dados.
+Ações por cliente (botões no card):
+  • Ver detalhes completos
+  • Gerar convite — cria link/QR para vincular um dispositivo ao estabelecimento desse cliente
+  • Ver licença atual do cliente
+
+## Controle Beta ⚡ (painel principal — use diariamente)
+Caminho: Super Admin → aba "Controle Beta"
+Controla o acesso de cada cliente em TEMPO REAL via Firestore onSnapshot.
+A mudança é aplicada instantaneamente — o cliente vê bloqueio/ativação sem recarregar.
+
+Filtros: Todos | Ativos | Suspensos | Bloqueados | Sem licença
+Busca: por nome do estabelecimento ou UID.
+
+Ações rápidas por cliente (botões no card de cada estabelecimento):
+  • ✅ Ativar — libera acesso total
+  • ⏸️ Suspender — exibe overlay bloqueante no app do cliente com a observação que você escrever
+  • 🚫 Bloquear — bloqueio permanente até você desfazer manualmente
+  • ⚙️ Configurar — abre modal completo com:
+      - Status: Ativo / Suspenso / Bloqueado
+      - Plano: Beta Grátis / Trial / Mensal / Anual / Vitalício
+      - Data de expiração (ou sem expiração)
+      - Observação (texto que o cliente vê quando suspenso/bloqueado)
+      - Botões de atalho de prazo: +30d, +90d, +1 ano
+  • 📜 Ver histórico — log completo de mudanças (quem alterou, quando, motivo)
+Ação em massa: botão "Ativar TODOS como Beta Grátis" → ativa todos que estão suspensos/bloqueados/sem licença.
+
+Planos disponíveis:
+  🚧 beta_free — Beta Grátis sem expiração
+  🆓 trial — Trial com data limite
+  📅 monthly — Mensal
+  🗓️ annual — Anual
+  ♾️ lifetime — Vitalício sem expiração
+
+## Licenças (ECDSA criptográfico)
+Caminho: Super Admin → aba "Licenças"
+Emite licenças assinadas com par de chaves ECDSA (alternativa ao Controle Beta para licenças offline).
+Emitir: informe UID + plano + validade → sistema assina com sua chave privada local.
+⚠️ A chave privada fica no IndexedDB deste browser — nunca é enviada ao servidor.
+
+## Usuários
+Caminho: Super Admin → aba "Usuários"
+Lista a coleção /user_map do Firestore: todos os emails cadastrados com cargo e estabelecimento vinculado.
+
+## Ações (Backup e Chaves)
+Caminho: Super Admin → aba "Ações"
+  • "Exportar todos os estabelecimentos (JSON)" — baixa backup completo de todos os clientes em JSON
+  • "Gerar novo par de chaves ECDSA" — gera chave pública/privada para sistema de licenças
+    ⚠️ CRÍTICO: após gerar, faça backup imediato da chave privada — ela não pode ser recuperada!
+
+# COLEÇÕES FIRESTORE (referência para debug e suporte)
+/estabelecimentos/{uid}/dados/principal — ST completo do cliente
+/cloud_licenses/{uid}                   — licença e status (modificado pelo Controle Beta)
+/errors                                 — erros capturados automaticamente (window.onerror)
+/bug_reports                            — reportes enviados pelos clientes pelo app
+/invites/{token}                        — convites de funcionários ativos (validade 7 dias)
+/user_map/{email}                       — mapa email → uid + cargo
+/estabelecimentos/{uid}/backups/{data}  — backups automáticos diários (mantém últimos 7 dias)
+
+# ROTINA DE MONITORAMENTO (recomendada durante beta)
+1. Firebase Console → coleção /errors: erros que clientes não reportaram
+2. Firebase Console → coleção /bug_reports: reportes enviados pelos clientes
+3. Super Admin → Dashboard: novos cadastros do dia
+4. Super Admin → Controle Beta → filtro "Sem licença": recém-cadastrados aguardando ativação`;
+}
+
+function _toggleGuiaChat() {
+  if(document.getElementById('pp-guia-panel')) {
+    _closeGuiaChat();
+  } else {
+    _openGuiaChat();
+  }
+}
+
+function _openGuiaChat() {
+  const isSA = isSuperAdmin();
+  const cfg = ST.cfg?.ai_agent || {};
+  const hasAPI = !!(cfg.endpoint && cfg.api_key);
+
+  const existing = document.getElementById('pp-guia-panel');
+  if(existing) existing.remove();
+
+  const quickBtns = [
+    ['🏠','Como criar um pedido de mesa?'],
+    ['💳','Como fechar o caixa corretamente?'],
+    ['👥','Como convidar um funcionário?'],
+    ['🍔','Como cadastrar um novo produto no cardápio?'],
+    ['💰','Como fazer uma sangria?'],
+    ['📊','Onde vejo os relatórios de vendas?'],
+    ['🎯','Como configurar o PIX?'],
+    ['🖨️','Como conectar a impressora Bluetooth?'],
+  ];
+  const saQuickBtns = isSA ? [
+    ['⚡','Como suspender um cliente no Controle Beta?'],
+    ['🔑','Como gerar um par de chaves ECDSA?'],
+    ['📦','Como exportar backup de todos os clientes?'],
+    ['📜','Como ver o histórico de mudanças de uma licença?'],
+  ] : [];
+  const allQuick = [...quickBtns, ...saQuickBtns];
+
+  const renderMsg = m => {
+    const isUser = m.role === 'user';
+    return `<div style="display:flex;justify-content:${isUser?'flex-end':'flex-start'}">
+      <div style="max-width:88%;padding:10px 14px;border-radius:${isUser?'14px 14px 4px 14px':'14px 14px 14px 4px'};background:${isUser?'linear-gradient(135deg,#7c3aed,#4f46e5)':'var(--s2)'};color:${isUser?'#fff':'var(--tx)'};font-size:13px;line-height:1.65;white-space:pre-wrap">${isUser?esc(m.content):m.content}</div>
+    </div>`;
+  };
+
+  const emptyState = `
+    <div style="text-align:center;padding:16px 8px;color:var(--t3)">
+      <div style="font-size:36px;margin-bottom:8px">❓</div>
+      <div class="fs13 bold mb4" style="color:var(--tx)">Guia do PedePronto${isSA?' · Super Admin':''}</div>
+      <div class="fs12 t2" style="line-height:1.6;margin-bottom:14px">Pergunte como usar qualquer função do sistema.</div>
+      ${!hasAPI?`<div style="padding:10px 12px;background:var(--s2);border:1px solid var(--am,#f59e0b);border-radius:10px;font-size:12px;color:var(--tx);margin-bottom:12px;text-align:left;line-height:1.5">
+        ⚠️ <b>Nenhuma IA configurada.</b><br>Vá em <b>Configurações → Agente IA</b> e preencha provedor + chave de API para ativar o guia.
+      </div>`:''}
+      <div style="display:flex;flex-direction:column;gap:6px;text-align:left">
+        <div class="fs11 bold t2 mb2">💡 Perguntas frequentes</div>
+        ${allQuick.map(([ico,q])=>`<button class="btn bs bsm" style="justify-content:flex-start;text-align:left;font-size:12px;gap:8px;padding:9px 12px" onclick="_guiaSend(${JSON.stringify(q)})"><span style="font-size:15px">${ico}</span>${esc(q)}</button>`).join('')}
+      </div>
+    </div>`;
+
+  const panel = document.createElement('div');
+  panel.id = 'pp-guia-panel';
+  panel.innerHTML = `
+    <div onclick="_closeGuiaChat()" style="position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:590;backdrop-filter:blur(3px)"></div>
+    <div style="position:fixed;bottom:0;right:0;width:min(430px,100vw);height:min(650px,100dvh);background:var(--sf);border-radius:16px 0 0 0;z-index:591;display:flex;flex-direction:column;box-shadow:-4px -4px 32px rgba(0,0,0,.4);border-top:1px solid var(--br2);border-left:1px solid var(--br2)">
+      <div style="display:flex;align-items:center;gap:10px;padding:13px 14px;border-bottom:1px solid var(--br);flex-shrink:0">
+        <div style="width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#7c3aed,#4f46e5);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0">❓</div>
+        <div style="flex:1;min-width:0">
+          <div class="bold fs14">Guia PedePronto${isSA?' <span style="font-size:10px;background:#7c3aed;color:#fff;padding:2px 6px;border-radius:4px;margin-left:4px">SUPER ADMIN</span>':''}</div>
+          <div class="fs11 t3">Orientação de uso — sem executar ações</div>
+        </div>
+        <button class="btn bxs bs" style="flex-shrink:0;padding:5px 9px;font-size:11px" onclick="_guiaClearChat()" title="Limpar conversa">${ppIcon('trash',12,1.5)}</button>
+        <button class="btn bxs bs" style="flex-shrink:0;padding:5px 9px;font-weight:700" onclick="_closeGuiaChat()">✕</button>
+      </div>
+      <div id="pp-guia-msgs" style="flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:10px">
+        ${_guiaMsgs.length===0 ? emptyState : _guiaMsgs.map(renderMsg).join('')}
+        ${_guiaLoading?'<div style="display:flex"><div style="padding:10px 14px;border-radius:14px 14px 14px 4px;background:var(--s2);font-size:13px;color:var(--t3)">Consultando guia...</div></div>':''}
+      </div>
+      <div style="display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--br);flex-shrink:0">
+        <input class="inp" id="pp-guia-input" placeholder="Como faço para...?" style="flex:1;font-size:13px" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();_guiaSendFromInput()}">
+        <button style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#7c3aed,#4f46e5);color:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;opacity:${_guiaLoading?'0.5':'1'}" onclick="_guiaSendFromInput()" ${_guiaLoading?'disabled':''}>${ppIcon('send',15,1.6)}</button>
+      </div>
+    </div>`;
+  document.body.appendChild(panel);
+  setTimeout(()=>{
+    const msgs = document.getElementById('pp-guia-msgs');
+    if(msgs) msgs.scrollTop = msgs.scrollHeight;
+    const inp = document.getElementById('pp-guia-input');
+    if(inp && _guiaMsgs.length > 0) inp.focus();
+  }, 40);
+}
+
+function _closeGuiaChat() {
+  const p = document.getElementById('pp-guia-panel');
+  if(p) p.remove();
+}
+
+function _guiaClearChat() {
+  _guiaMsgs = [];
+  _openGuiaChat();
+}
+
+function _guiaSendFromInput() {
+  const inp = document.getElementById('pp-guia-input');
+  if(!inp || !inp.value.trim()) return;
+  _guiaSend(inp.value.trim());
+  inp.value = '';
+}
+
+async function _guiaSend(text) {
+  if(_guiaLoading) return;
+  _guiaMsgs.push({role:'user', content:text});
+
+  const cfg = ST.cfg?.ai_agent || {};
+  if(!cfg.endpoint || !cfg.api_key) {
+    _guiaMsgs.push({role:'assistant', content:'⚠️ Nenhuma IA configurada.\n\nVá em <b>Configurações → Agente IA</b>, selecione um provedor (ex: Groq gratuito) e preencha a chave de API. Depois volte aqui.'});
+    _openGuiaChat(); return;
+  }
+
+  _guiaLoading = true;
+  _openGuiaChat();
+
+  const isSA = isSuperAdmin();
+  const systemPrompt = _buildGuideSystemPrompt() + (isSA ? _buildSuperAdminGuideExtra() : '');
+
+  try {
+    const isAnthropic = (cfg.endpoint||'').includes('anthropic');
+    const temp = 0.25;
+    const maxTok = 900;
+    const msgs = [{role:'system', content:systemPrompt}, ..._guiaMsgs];
+    const body = isAnthropic
+      ? {model:cfg.model||'claude-3-5-haiku-20241022', messages:_guiaMsgs, system:systemPrompt, max_tokens:maxTok, temperature:temp}
+      : {messages:msgs, model:cfg.model||'gpt-4o-mini', temperature:temp, max_tokens:maxTok};
+    const headers = {'Content-Type':'application/json'};
+    if(isAnthropic){headers['x-api-key']=cfg.api_key;headers['anthropic-version']='2023-06-01';}
+    else headers['Authorization'] = 'Bearer '+cfg.api_key;
+
+    const res = await fetch(cfg.endpoint, {method:'POST', headers, body:JSON.stringify(body)});
+    const data = await res.json();
+    const raw = data.choices?.[0]?.message?.content || data.content?.[0]?.text || data.response || 'Sem resposta.';
+    // Formata markdown básico para HTML
+    const formatted = raw
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/\*\*(.*?)\*\*/g,'<b>$1</b>')
+      .replace(/`(.*?)`/g,'<code style="background:var(--s3);padding:1px 5px;border-radius:4px;font-size:12px">$1</code>')
+      .replace(/\n/g,'<br>');
+    _guiaMsgs.push({role:'assistant', content:formatted});
+  } catch(e) {
+    _guiaMsgs.push({role:'assistant', content:'❌ Erro ao conectar com a IA: <b>'+esc(e.message)+'</b>\n\nVerifique o endpoint e chave em Configurações → Agente IA.'});
+  }
+  _guiaLoading = false;
+  _openGuiaChat();
+}
 </script>
 </body>
 </html>
