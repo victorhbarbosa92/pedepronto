@@ -12070,17 +12070,21 @@ async function _adminLoadUsers(){
       g.users.forEach(u=>{
         const cargo=u.cargo||u.role||'?';
         const perfil=perfilMap[u.uid]||{};
-        const email=perfil.email||u.email||'';
-        const nome=perfil.nome||perfil.displayName||u.nome||'';
+        const email=perfil.email||u.email||u.uid||'';
+        const nomeExib=perfil.nome||perfil.displayName||u.nome||'';
+        const isDono=cargo==='dono';
         const ico=roleIcon[cargo]||'user';
         const cor=roleCor[cargo]||'var(--t2)';
+        // u.uid aqui é o doc ID do user_map (email ou UID dependendo de como foi criado)
+        const userMapKey=u.uid;
         html+=`<div style="display:flex;align-items:center;gap:10px;padding:8px 4px;border-bottom:1px solid var(--br2)">
           <span style="width:32px;height:32px;border-radius:8px;background:${cor}15;color:${cor};display:flex;align-items:center;justify-content:center">${ppIcon(ico,14,1.7)}</span>
-          <div style="flex:1;min-width:0">
-            <div class="fs12">${nome?'<b>'+esc(nome)+'</b>':'<span class="t3">(sem nome)</span>'} ${email?'<span class="t3">· '+esc(email)+'</span>':''}</div>
-            <div class="fs11 t3 mono">${esc(u.uid.slice(0,20))}...</div>
+          <div style="flex:1;min-width:0;overflow:hidden">
+            <div class="fs12">${nomeExib?'<b>'+esc(nomeExib)+'</b>':'<span class="t3">(sem nome)</span>'} ${email&&email!==userMapKey?'<span class="t3">· '+esc(email)+'</span>':''}</div>
+            <div class="fs11 t3" style="word-break:break-all">${esc(userMapKey)}</div>
           </div>
-          <span class="fs11 bold" style="color:${cor};background:${cor}15;padding:2px 10px;border-radius:99px">${esc(cargo)}</span>
+          <span class="fs11 bold" style="color:${cor};background:${cor}15;padding:2px 8px;border-radius:99px;white-space:nowrap">${esc(cargo)}</span>
+          <button class="btn bxs" style="flex-shrink:0;padding:5px 8px;background:var(--rdbg,#fee2e2);color:var(--rd);border:1px solid var(--rdbr,#fca5a5)" title="${isDono?'Excluir estabelecimento e dono':'Remover usuário'}" onclick="_adminConfirmarExclusao(${JSON.stringify(userMapKey)},${JSON.stringify(cargo)},${JSON.stringify(g.estabUid)},${JSON.stringify(g.estabNome||'')})">🗑️</button>
         </div>`;
       });
       html+=`</div></div>`;
@@ -13786,62 +13790,227 @@ function _renderLoginContent(){
 
 function hideLoginScreen(){if(_loginEl){_loginEl.remove();_loginEl=null;}}
 
-// ── Tela de Cadastro ──
+// ── Tela de Cadastro — Wizard ──
 function _hasPendingInvite(){return!!sessionStorage.getItem('pp_pending_invite');}
 
 function showRegisterScreen(){
   hideLoginScreen();
   if(_registerEl)return;
-  const isInvite=_hasPendingInvite();
   _registerEl=document.createElement('div');
   _registerEl.style.cssText='position:fixed;inset:0;z-index:9000;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto';
-  _registerEl.innerHTML=isInvite
-  ?`<div style="background:var(--sf);border:1px solid var(--br2);border-radius:20px;padding:32px 28px;max-width:420px;width:100%">
-    <div style="text-align:center;margin-bottom:6px">${ppIcon('users',42,1.2)}</div>
-    <div style="text-align:center;font-size:20px;font-weight:900;color:var(--ac);font-family:monospace;margin-bottom:4px">Cadastro de funcionário</div>
-    <div style="text-align:center;font-size:13px;color:var(--t2);margin-bottom:20px;line-height:1.6">Crie sua conta para acessar o estabelecimento</div>
-    <div id="reg-err" style="display:none;color:var(--rd);font-size:12px;padding:8px 12px;background:var(--rdbg);border:1px solid var(--rdbr);border-radius:8px;margin-bottom:12px;text-align:left"></div>
-    <div style="display:grid;gap:10px">
-      <div class="fg"><label class="fl">Seu nome *</label><input class="inp" id="reg-nome" placeholder="Ex: João Silva" autocomplete="name"></div>
-      <div class="fg"><label class="fl">E-mail *</label><input class="inp" id="reg-email" type="email" placeholder="seu@email.com" autocomplete="email"></div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-        <div class="fg"><label class="fl">Senha *</label><input class="inp" id="reg-pass" type="password" placeholder="Min. 6 caracteres" autocomplete="new-password"></div>
-        <div class="fg"><label class="fl">Confirmar senha *</label><input class="inp" id="reg-pass2" type="password" placeholder="Repita a senha" autocomplete="new-password"></div>
-      </div>
-    </div>
-    <button id="reg-btn" onclick="_doRegister()" class="btn bp" style="width:100%;padding:14px;font-size:15px;border-radius:12px;margin-top:18px">${ppIcon('check',16,2)} Criar conta</button>
-    <div style="text-align:center;margin-top:14px;font-size:13px;color:var(--t2)">Já tem conta? <a href="#" onclick="hideRegisterScreen();showLoginScreen();return false" style="color:var(--ac);text-decoration:none;font-weight:700">Entrar</a></div>
-  </div>`
-  :`<div style="background:var(--sf);border:1px solid var(--br2);border-radius:20px;padding:32px 28px;max-width:420px;width:100%">
-    <div style="text-align:center;margin-bottom:6px">${ppIcon('store',42,1.2)}</div>
-    <div style="text-align:center;font-size:20px;font-weight:900;color:var(--ac);font-family:monospace;margin-bottom:4px">Criar conta</div>
-    <div style="text-align:center;font-size:13px;color:var(--t2);margin-bottom:20px;line-height:1.6">Cadastre seu estabelecimento</div>
-    <div id="reg-err" style="display:none;color:var(--rd);font-size:12px;padding:8px 12px;background:var(--rdbg);border:1px solid var(--rdbr);border-radius:8px;margin-bottom:12px;text-align:left"></div>
-    <div style="display:grid;gap:10px">
-      <div class="fg"><label class="fl">Nome do estabelecimento *</label><input class="inp" id="reg-nome" placeholder="Ex: Bar do Zé" autocomplete="organization"></div>
-      <div class="fg"><label class="fl">CNPJ</label><input class="inp" id="reg-cnpj" placeholder="00.000.000/0000-00" autocomplete="off"></div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-        <div class="fg"><label class="fl">WhatsApp</label><input class="inp" id="reg-wa" placeholder="(00) 00000-0000" type="tel" autocomplete="tel"></div>
-        <div class="fg"><label class="fl">Telefone fixo</label><input class="inp" id="reg-tel" placeholder="(00) 0000-0000" type="tel"></div>
-      </div>
-      <div class="fg"><label class="fl">Endereço</label><input class="inp" id="reg-end" placeholder="Rua, nº, bairro, cidade" autocomplete="street-address"></div>
-      <div style="height:1px;background:var(--br2);margin:6px 0"></div>
-      <div class="fg"><label class="fl">E-mail *</label><input class="inp" id="reg-email" type="email" placeholder="seu@email.com" autocomplete="email"></div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-        <div class="fg"><label class="fl">Senha *</label><input class="inp" id="reg-pass" type="password" placeholder="Min. 6 caracteres" autocomplete="new-password"></div>
-        <div class="fg"><label class="fl">Confirmar senha *</label><input class="inp" id="reg-pass2" type="password" placeholder="Repita a senha" autocomplete="new-password"></div>
-      </div>
-    </div>
-    <button id="reg-btn" onclick="_doRegister()" class="btn bp" style="width:100%;padding:14px;font-size:15px;border-radius:12px;margin-top:18px">${ppIcon('check',16,2)} Criar conta</button>
-    <div style="text-align:center;margin-top:14px;font-size:13px;color:var(--t2)">Já tem conta? <a href="#" onclick="hideRegisterScreen();showLoginScreen();return false" style="color:var(--ac);text-decoration:none;font-weight:700">Entrar</a></div>
-  </div>`;
   document.body.appendChild(_registerEl);
-  // Enter submits
+  // Se já tem convite pendente na URL, vai direto pro formulário de funcionário
+  if(_hasPendingInvite()){
+    _renderRegisterForm('convite');
+  } else {
+    _renderRegisterChoice();
+  }
+}
+
+function _renderRegisterChoice(){
+  if(!_registerEl)return;
+  _registerEl.innerHTML=`
+  <div style="background:var(--sf);border:1px solid var(--br2);border-radius:20px;padding:32px 28px;max-width:440px;width:100%">
+    <div style="text-align:center;margin-bottom:24px">
+      <div style="display:inline-flex;width:56px;height:56px;border-radius:16px;background:linear-gradient(135deg,var(--ac),var(--pu));align-items:center;justify-content:center;margin-bottom:12px">${ppIcon('utensils',28,1.2)}</div>
+      <div style="font-size:22px;font-weight:900;color:var(--ac);font-family:monospace;margin-bottom:4px">PedePronto PDV</div>
+      <div style="font-size:13px;color:var(--t2);line-height:1.6">Como você vai usar o sistema?</div>
+    </div>
+
+    <!-- Opção 1: Convite -->
+    <button onclick="_renderRegisterConviteStep()" style="width:100%;display:flex;align-items:center;gap:16px;padding:18px 20px;background:var(--s2);border:2px solid var(--br2);border-radius:14px;cursor:pointer;text-align:left;margin-bottom:12px;transition:border-color .15s;font-family:inherit" onmouseover="this.style.borderColor='var(--ac)'" onmouseout="this.style.borderColor='var(--br2)'">
+      <div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#2563eb,#4f46e5);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">👥</div>
+      <div>
+        <div style="font-size:15px;font-weight:800;color:var(--tx);margin-bottom:2px">Tenho um convite</div>
+        <div style="font-size:12px;color:var(--t2);line-height:1.4">Fui convidado para trabalhar em um estabelecimento como funcionário, caixa ou cozinheiro.</div>
+      </div>
+    </button>
+
+    <!-- Opção 2: Licença -->
+    <button onclick="_renderRegisterLicencaStep()" style="width:100%;display:flex;align-items:center;gap:16px;padding:18px 20px;background:var(--s2);border:2px solid var(--br2);border-radius:14px;cursor:pointer;text-align:left;margin-bottom:20px;transition:border-color .15s;font-family:inherit" onmouseover="this.style.borderColor='var(--ac)'" onmouseout="this.style.borderColor='var(--br2)'">
+      <div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#d97706,#ea580c);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">🏪</div>
+      <div>
+        <div style="font-size:15px;font-weight:800;color:var(--tx);margin-bottom:2px">Sou dono de restaurante</div>
+        <div style="font-size:12px;color:var(--t2);line-height:1.4">Tenho uma licença PedePronto e quero cadastrar meu estabelecimento.</div>
+      </div>
+    </button>
+
+    <div style="text-align:center;font-size:13px;color:var(--t2)">
+      Já tem conta? <a href="#" onclick="hideRegisterScreen();showLoginScreen();return false" style="color:var(--ac);text-decoration:none;font-weight:700">Entrar</a>
+    </div>
+  </div>`;
+}
+
+function _renderRegisterConviteStep(){
+  if(!_registerEl)return;
+  _registerEl.innerHTML=`
+  <div style="background:var(--sf);border:1px solid var(--br2);border-radius:20px;padding:32px 28px;max-width:420px;width:100%">
+    <button onclick="_renderRegisterChoice()" style="background:none;border:none;color:var(--t2);cursor:pointer;font-size:13px;margin-bottom:16px;padding:0;font-family:inherit">← Voltar</button>
+    <div style="text-align:center;margin-bottom:20px">
+      <div style="font-size:36px;margin-bottom:8px">👥</div>
+      <div style="font-size:20px;font-weight:900;color:var(--ac);font-family:monospace;margin-bottom:4px">Entrar com convite</div>
+      <div style="font-size:13px;color:var(--t2);line-height:1.6">Digite o código que você recebeu ou cole o link completo</div>
+    </div>
+    <div id="conv-err" style="display:none;color:var(--rd);font-size:12px;padding:8px 12px;background:var(--rdbg);border:1px solid var(--rdbr);border-radius:8px;margin-bottom:12px"></div>
+    <div class="fg" style="margin-bottom:16px">
+      <label class="fl">Código do convite</label>
+      <input class="inp" id="conv-code" placeholder="Ex: AB12CD ou cole o link completo" autocomplete="off" style="font-family:monospace;letter-spacing:1px;text-transform:uppercase">
+      <div class="fs11 t3 mt4">O dono do estabelecimento te enviou um código de 6 letras ou um link.</div>
+    </div>
+    <button class="btn bp bw" onclick="_validarConviteCadastro()" style="width:100%;padding:14px;font-size:15px;border-radius:12px;margin-bottom:12px">${ppIcon('arrowRight',16,1.8)} Continuar</button>
+    <div style="text-align:center;font-size:13px;color:var(--t2)">Já tem conta? <a href="#" onclick="hideRegisterScreen();showLoginScreen();return false" style="color:var(--ac);text-decoration:none;font-weight:700">Entrar</a></div>
+  </div>`;
   setTimeout(()=>{
+    const inp=document.getElementById('conv-code');
+    if(inp){inp.focus();inp.addEventListener('keydown',e=>{if(e.key==='Enter')_validarConviteCadastro();});}
+  },50);
+}
+
+async function _validarConviteCadastro(){
+  const inp=document.getElementById('conv-code');
+  const err=document.getElementById('conv-err');
+  if(!inp||!err)return;
+  let valor=(inp.value||'').trim();
+  // Extrai código do link se colou o link inteiro
+  const mInvite=valor.match(/[?&]invite=([^&]+)/i);
+  const mConvite=valor.match(/[?&]convite=([^&]+)/i);
+  if(mInvite) valor=mInvite[1];
+  else if(mConvite) valor=mConvite[1];
+  valor=valor.toUpperCase().replace(/[^A-Z0-9]/g,'');
+  if(!valor){err.textContent='Digite o código do convite.';err.style.display='block';return;}
+  err.style.display='none';
+  inp.disabled=true;
+  // Tenta validar no Firestore (coleção convites — legada de 6 chars)
+  try{
+    if(fbDB){
+      // Tenta coleção "convites" (super admin)
+      let doc=await fbDB.collection('convites').doc(valor).get();
+      if(doc.exists){
+        const d=doc.data();
+        if(d.usado){err.textContent='Este convite já foi utilizado.';err.style.display='block';inp.disabled=false;return;}
+        if(d.expira_em&&new Date(d.expira_em)<new Date()){err.textContent='Este convite expirou.';err.style.display='block';inp.disabled=false;return;}
+        // Salva token legado no sessionStorage e prossegue
+        sessionStorage.setItem('pp_pending_convite_legacy',valor);
+        sessionStorage.setItem('pp_pending_invite_estab',d.estab_uid||'');
+        sessionStorage.setItem('pp_pending_invite_nome',d.estab_nome||'');
+        _renderRegisterForm('convite');
+        return;
+      }
+      // Tenta coleção "invites" (dono — token longo)
+      doc=await fbDB.collection('invites').doc(valor).get();
+      if(doc.exists){
+        const d=doc.data();
+        if(d.status==='revoked'){err.textContent='Este convite foi revogado.';err.style.display='block';inp.disabled=false;return;}
+        if(d.expires_at&&new Date(d.expires_at)<new Date()){err.textContent='Este convite expirou.';err.style.display='block';inp.disabled=false;return;}
+        sessionStorage.setItem('pp_pending_invite',valor);
+        _renderRegisterForm('convite');
+        return;
+      }
+      err.textContent='Código não encontrado. Verifique com quem enviou o convite.';
+      err.style.display='block';inp.disabled=false;
+    } else {
+      // Sem Firebase, aceita o código e tenta na hora do login
+      sessionStorage.setItem('pp_pending_invite',valor);
+      _renderRegisterForm('convite');
+    }
+  }catch(e){
+    err.textContent='Erro ao verificar: '+e.message;err.style.display='block';inp.disabled=false;
+  }
+}
+
+function _renderRegisterLicencaStep(){
+  if(!_registerEl)return;
+  _registerEl.innerHTML=`
+  <div style="background:var(--sf);border:1px solid var(--br2);border-radius:20px;padding:32px 28px;max-width:420px;width:100%">
+    <button onclick="_renderRegisterChoice()" style="background:none;border:none;color:var(--t2);cursor:pointer;font-size:13px;margin-bottom:16px;padding:0;font-family:inherit">← Voltar</button>
+    <div style="text-align:center;margin-bottom:20px">
+      <div style="font-size:36px;margin-bottom:8px">🏪</div>
+      <div style="font-size:20px;font-weight:900;color:var(--ac);font-family:monospace;margin-bottom:4px">Ativar licença</div>
+      <div style="font-size:13px;color:var(--t2);line-height:1.6">Cole o código de licença que você recebeu do administrador</div>
+    </div>
+    <div id="lic-err" style="display:none;color:var(--rd);font-size:12px;padding:8px 12px;background:var(--rdbg);border:1px solid var(--rdbr);border-radius:8px;margin-bottom:12px"></div>
+    <div class="fg" style="margin-bottom:16px">
+      <label class="fl">Código de licença</label>
+      <textarea class="inp" id="lic-code" rows="3" placeholder="Cole aqui o código que começa com PP-..." style="font-family:monospace;font-size:12px;resize:vertical"></textarea>
+    </div>
+    <button class="btn bp bw" onclick="_validarLicencaCadastro()" style="width:100%;padding:14px;font-size:15px;border-radius:12px;margin-bottom:12px">${ppIcon('arrowRight',16,1.8)} Verificar e continuar</button>
+    <div style="text-align:center;font-size:13px;color:var(--t2)">Já tem conta? <a href="#" onclick="hideRegisterScreen();showLoginScreen();return false" style="color:var(--ac);text-decoration:none;font-weight:700">Entrar</a></div>
+  </div>`;
+  setTimeout(()=>document.getElementById('lic-code')?.focus(),50);
+}
+
+async function _validarLicencaCadastro(){
+  const inp=document.getElementById('lic-code');
+  const err=document.getElementById('lic-err');
+  if(!inp||!err)return;
+  const code=(inp.value||'').trim();
+  if(!code.startsWith('PP-')){err.textContent='Código inválido. Deve começar com PP-';err.style.display='block';return;}
+  err.style.display='none';
+  inp.disabled=true;
+  try{
+    const licObj=JSON.parse(decodeURIComponent(escape(atob(code.replace('PP-','')))));
+    const valida=await _verificarAssinatura(licObj);
+    if(!valida){err.textContent='Assinatura inválida. Este código não é oficial.';err.style.display='block';inp.disabled=false;return;}
+    if(licObj.validade&&new Date(licObj.validade)<new Date()){err.textContent='Esta licença expirou em '+licObj.validade;err.style.display='block';inp.disabled=false;return;}
+    // Licença válida — salva e avança para cadastro
+    localStorage.setItem('pp_licenca',code);
+    _renderRegisterForm('licenca');
+  }catch(e){
+    err.textContent='Código corrompido ou inválido: '+e.message;err.style.display='block';inp.disabled=false;
+  }
+}
+
+function _renderRegisterForm(modo){
+  // modo: 'convite' | 'licenca'
+  if(!_registerEl)return;
+  const isConvite=modo==='convite';
+  const estabNome=sessionStorage.getItem('pp_pending_invite_nome')||'';
+  const confirmacaoConvite=estabNome
+    ?`<div style="padding:10px 14px;background:var(--s2);border-radius:10px;margin-bottom:14px;font-size:13px;display:flex;align-items:center;gap:10px">
+        <span style="font-size:20px">✅</span>
+        <div>Convite válido para <b>${esc(estabNome)}</b>.<br><span class="t3 fs11">Crie sua conta para acessar o estabelecimento.</span></div>
+       </div>`
+    :'';
+  _registerEl.innerHTML=`
+  <div style="background:var(--sf);border:1px solid var(--br2);border-radius:20px;padding:32px 28px;max-width:420px;width:100%">
+    <div style="text-align:center;margin-bottom:6px">
+      <div style="font-size:32px;margin-bottom:8px">${isConvite?'👥':'🏪'}</div>
+      <div style="font-size:20px;font-weight:900;color:var(--ac);font-family:monospace;margin-bottom:4px">${isConvite?'Cadastro de funcionário':'Cadastrar estabelecimento'}</div>
+      <div style="font-size:13px;color:var(--t2);margin-bottom:16px;line-height:1.6">${isConvite?'Crie sua conta para acessar o estabelecimento':'Crie a conta do seu restaurante'}</div>
+    </div>
+    ${confirmacaoConvite}
+    <div id="reg-err" style="display:none;color:var(--rd);font-size:12px;padding:8px 12px;background:var(--rdbg);border:1px solid var(--rdbr);border-radius:8px;margin-bottom:12px;text-align:left"></div>
+    <div style="display:grid;gap:10px">
+      ${isConvite?`
+        <div class="fg"><label class="fl">Seu nome *</label><input class="inp" id="reg-nome" placeholder="Ex: João Silva" autocomplete="name"></div>
+      `:`
+        <div class="fg"><label class="fl">Nome do estabelecimento *</label><input class="inp" id="reg-nome" placeholder="Ex: Bar do Zé" autocomplete="organization"></div>
+        <div class="fg"><label class="fl">CNPJ</label><input class="inp" id="reg-cnpj" placeholder="00.000.000/0000-00" autocomplete="off"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div class="fg"><label class="fl">WhatsApp</label><input class="inp" id="reg-wa" placeholder="(00) 00000-0000" type="tel" autocomplete="tel"></div>
+          <div class="fg"><label class="fl">Telefone fixo</label><input class="inp" id="reg-tel" placeholder="(00) 0000-0000" type="tel"></div>
+        </div>
+        <div class="fg"><label class="fl">Endereço</label><input class="inp" id="reg-end" placeholder="Rua, nº, bairro, cidade" autocomplete="street-address"></div>
+        <div style="height:1px;background:var(--br2);margin:2px 0"></div>
+      `}
+      <div class="fg"><label class="fl">E-mail *</label><input class="inp" id="reg-email" type="email" placeholder="seu@email.com" autocomplete="email"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="fg"><label class="fl">Senha *</label><input class="inp" id="reg-pass" type="password" placeholder="Mín. 6 caracteres" autocomplete="new-password"></div>
+        <div class="fg"><label class="fl">Confirmar senha *</label><input class="inp" id="reg-pass2" type="password" placeholder="Repita a senha" autocomplete="new-password"></div>
+      </div>
+    </div>
+    <button id="reg-btn" onclick="_doRegister()" class="btn bp" style="width:100%;padding:14px;font-size:15px;border-radius:12px;margin-top:18px">${ppIcon('check',16,2)} Criar conta</button>
+    <div style="text-align:center;margin-top:14px;font-size:13px;color:var(--t2)">
+      Já tem conta? <a href="#" onclick="hideRegisterScreen();showLoginScreen();return false" style="color:var(--ac);text-decoration:none;font-weight:700">Entrar</a>
+    </div>
+  </div>`;
+  setTimeout(()=>{
+    document.getElementById('reg-nome')?.focus();
     const p2=document.getElementById('reg-pass2');
     if(p2)p2.addEventListener('keydown',e=>{if(e.key==='Enter')_doRegister();});
   },50);
 }
+
 function hideRegisterScreen(){if(_registerEl){_registerEl.remove();_registerEl=null;}}
 
 // ── Sistema de Convites + Gestão de Membros ──
@@ -18497,6 +18666,87 @@ Voce tambem e um COACH DE MARKETING. Alem de vender, ajude o dono com:
 
   return prompt;
 };
+
+// ═══════════════════════════════════════════════════════════════════
+//  SUPER ADMIN — Exclusão de usuários e estabelecimentos
+// ═══════════════════════════════════════════════════════════════════
+
+function _adminConfirmarExclusao(userMapKey, cargo, estabUid, estabNome){
+  if(!fbDB)return;
+  const isDono = cargo==='dono';
+  const aviso = isDono
+    ? `<div style="padding:12px;background:var(--rdbg,#fee2e2);border:1px solid var(--rdbr,#fca5a5);border-radius:10px;margin-bottom:14px;font-size:13px;line-height:1.6">
+        ⚠️ <b>Atenção:</b> Excluir o dono apagará <b>todos os dados</b> do estabelecimento <b>"${esc(estabNome)}"</b> do Firestore (pedidos, produtos, clientes, configurações e licença).<br><br>
+        A conta Firebase Auth <b>não será excluída</b> (requer acesso admin ao servidor).
+       </div>`
+    : `<div style="padding:10px;background:var(--s2);border-radius:10px;margin-bottom:14px;font-size:13px">
+        Remove o vínculo de <b>${esc(userMapKey)}</b> como <b>${esc(cargo)}</b> do estabelecimento <b>"${esc(estabNome)}"</b>.<br>
+        A conta Firebase Auth não é excluída.
+       </div>`;
+
+  const confirmInput = isDono
+    ? `<div class="fg mt10">
+        <label class="fl">Digite o nome do estabelecimento para confirmar:</label>
+        <input class="inp" id="del-confirm-nome" placeholder="${esc(estabNome)}" autocomplete="off">
+       </div>`
+    : '';
+
+  showModal('mc-del-user', isDono ? '⚠️ Excluir estabelecimento' : 'Remover usuário', `
+    ${aviso}
+    <div style="font-size:12px;color:var(--t2);margin-bottom:6px">Usuário / chave: <code style="font-size:11px">${esc(userMapKey)}</code></div>
+    ${confirmInput}
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button class="btn" style="flex:1;background:var(--rd);color:#fff;border:none" onclick="_adminExecutarExclusao(${JSON.stringify(userMapKey)},${JSON.stringify(cargo)},${JSON.stringify(estabUid)},${JSON.stringify(estabNome)})">
+        🗑️ ${isDono?'Excluir tudo':'Remover acesso'}
+      </button>
+      <button class="btn bs" style="flex:1" onclick="closeMc('mc-del-user')">Cancelar</button>
+    </div>
+  `, null, '460px');
+}
+
+async function _adminExecutarExclusao(userMapKey, cargo, estabUid, estabNome){
+  const isDono = cargo==='dono';
+  // Validação do nome para donos
+  if(isDono){
+    const inp = document.getElementById('del-confirm-nome');
+    if(!inp || inp.value.trim() !== estabNome){
+      toast('Nome do estabelecimento não confere','r'); return;
+    }
+  }
+  closeMc('mc-del-user');
+  const loading = ()=>toast('Processando exclusão...','b',8000);
+  loading();
+  try{
+    // 1. Remove user_map
+    await fbDB.collection('user_map').doc(userMapKey).delete();
+
+    if(isDono && estabUid){
+      // 2. Remove licença cloud
+      try{ await fbDB.collection('cloud_licenses').doc(estabUid).delete(); }catch(e){}
+      // 3. Remove dados principais do estabelecimento
+      try{ await fbDB.collection('estabelecimentos').doc(estabUid).collection('dados').doc('principal').delete(); }catch(e){}
+      // 4. Remove backups
+      try{
+        const bkSnap = await fbDB.collection('estabelecimentos').doc(estabUid).collection('backups').get();
+        for(const b of bkSnap.docs) await b.ref.delete();
+      }catch(e){}
+      // 5. Remove doc raiz do estabelecimento
+      try{ await fbDB.collection('estabelecimentos').doc(estabUid).delete(); }catch(e){}
+      // 6. Remove outros user_map do mesmo estab
+      try{
+        const membros = await fbDB.collection('user_map').where('estab_uid','==',estabUid).get();
+        for(const m of membros.docs) await m.ref.delete();
+      }catch(e){}
+      toast('Estabelecimento "'+estabNome+'" excluído completamente','g',5000);
+    } else {
+      toast('Usuário removido do sistema','g',3000);
+    }
+    // Recarrega lista
+    _adminLoadUsers();
+  }catch(e){
+    toast('Erro ao excluir: '+e.message,'r',5000);
+  }
+}
 
 // ═══════════════════════════════════════════════════════════════════
 //  PP GUIDE — Guia IA de navegação (não executa ações, só orienta)
