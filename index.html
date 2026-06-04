@@ -15019,8 +15019,11 @@ function _renderPublicCarousel(cfg,prods,catsComProd,_esc,_isImg){
     .play-overlay-icon{width:120px;height:120px;border-radius:50%;background:linear-gradient(135deg,#f7e38b,#e6b800);display:flex;align-items:center;justify-content:center;margin-bottom:24px;box-shadow:0 0 60px rgba(247,227,139,.5);animation:pulse 2s infinite}
     @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
     .play-overlay-text{font-size:24px;color:#fff;font-weight:700;margin-bottom:6px}
-    .play-overlay-sub{font-size:14px;color:#8b949e}
-    .spotify-embed{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+    .play-overlay-sub{font-size:14px;color:#8b949e;max-width:480px;line-height:1.5}
+    .spotify-mini-player{position:fixed;bottom:20px;left:20px;width:300px;z-index:50;border-radius:12px;overflow:hidden;box-shadow:0 8px 30px rgba(0,0,0,.6);border:1px solid rgba(247,227,139,.3);background:#000}
+    .spotify-mini-player iframe{display:block;width:100%;height:80px;border:0}
+    .spotify-mini-hint{position:absolute;top:-32px;left:0;background:rgba(247,227,139,.95);color:#1a1a1a;font-size:11px;font-weight:700;padding:4px 10px;border-radius:6px;white-space:nowrap;animation:fadeOut 6s 4s forwards}
+    @keyframes fadeOut{to{opacity:0;transform:translateY(-8px)}}
   `;
 
   const renderSlide=(s,idx)=>{
@@ -15060,11 +15063,15 @@ function _renderPublicCarousel(cfg,prods,catsComProd,_esc,_isImg){
     </div>`;
   };
 
-  // Música: spotify embed (iframe oculto) ou audio URL
+  // Música: Spotify (widget visível — política deles bloqueia autoplay) ou audio URL (autoplay total)
   let musicaHtml='';
-  if(musica.tipo==='spotify'&&musica.spotify_url){
+  const usaSpotify=musica.tipo==='spotify'&&musica.spotify_url;
+  if(usaSpotify){
     const spotEmbed=musica.spotify_url.replace('open.spotify.com/','open.spotify.com/embed/');
-    musicaHtml=`<iframe class="spotify-embed" src="${_esc(spotEmbed)}?utm_source=generator&autoplay=1" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>`;
+    musicaHtml=`<div class="spotify-mini-player" id="spotify-mini">
+      <div class="spotify-mini-hint">▶️ Toque PLAY abaixo para iniciar a música</div>
+      <iframe src="${_esc(spotEmbed)}?utm_source=generator" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+    </div>`;
   } else if(musica.tipo==='url'&&musica.url){
     musicaHtml=`<audio id="vitrine-audio" src="${_esc(musica.url)}" loop preload="auto"></audio>`;
   }
@@ -15075,7 +15082,7 @@ function _renderPublicCarousel(cfg,prods,catsComProd,_esc,_isImg){
         <svg width="56" height="56" viewBox="0 0 24 24" fill="#1a1a1a"><path d="M8 5v14l11-7z"/></svg>
       </div>
       <div class="play-overlay-text">Toque para iniciar a vitrine</div>
-      <div class="play-overlay-sub">${seq.length} slides · ${musica.tipo!=='off'&&musica.tipo?'com música de fundo':'sem música'}</div>
+      <div class="play-overlay-sub">${seq.length} slides${usaSpotify?' · 🎵 Após iniciar, clique no PLAY do widget Spotify que aparece no canto inferior esquerdo':(musica.tipo==='url'?' · 🎵 Com música de fundo':'')}</div>
     </div>
 
     <div class="carousel-root">
@@ -17441,7 +17448,11 @@ _renderCfgSection=function(sec){
       ${mus.tipo==='spotify'?`
       <div class="fg"><label class="fl">Link da playlist Spotify</label>
       <input class="inp" value="${esc(mus.spotify_url||'')}" oninput="ST.cfg.vitrine_musica.spotify_url=this.value;save('cfg')" placeholder="https://open.spotify.com/playlist/..."></div>
-      <div class="fs11 t3">Cole o link de compartilhamento da playlist do Spotify.</div>`:''}
+      <div class="fs11 t3">Cole o link de compartilhamento da playlist do Spotify.</div>
+      <div style="margin-top:8px;padding:10px 12px;background:var(--rdbg,#fee2e2);border:1px solid var(--rdbr,#fca5a5);border-radius:8px;font-size:11px;line-height:1.5;color:var(--tx)">
+        ⚠️ <b>Limitação do Spotify:</b> a política oficial deles bloqueia autoplay. Na vitrine vai aparecer o widget Spotify no canto inferior esquerdo — você precisa <b>clicar PLAY uma vez</b> para iniciar a música. Depois ela toca infinito.<br><br>
+        💡 <b>Quer autoplay automático?</b> Use a opção <b>"URL de áudio (MP3/stream)"</b> em vez do Spotify — funciona 100% sem clique.
+      </div>`:''}
       ${mus.tipo==='url'?`
       <div class="fg"><label class="fl">URL do audio</label>
       <input class="inp" value="${esc(mus.url||'')}" oninput="ST.cfg.vitrine_musica.url=this.value;save('cfg')" placeholder="https://.../background.mp3"></div>`:''}
