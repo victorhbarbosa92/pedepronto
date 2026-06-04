@@ -4671,21 +4671,46 @@ window.PPCart = (function(){
     const ped = ST.pedidos.find(p => p.id === ped_id);
     if(!ped){ toast('Pedido não encontrado','r'); return; }
     const url = gerarQRComandaUrl(ped);
-    const qrApiUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=' + encodeURIComponent(url);
+    const qrApiUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=' + encodeURIComponent(url);
+    const nomeEstab = ST.cfg.nome || 'PedePronto';
+    const cliente = ped.cliente_nome || ped.mesa_label || ped.tipo || '';
+    const waMsg = encodeURIComponent('Olá! Acompanhe seu pedido #'+ped.num+' em '+nomeEstab+' em tempo real:\n'+url);
     const body = `
-      <div style="text-align:center">
-        <div class="fs12 t2 mb10">Cliente lê este QR para acompanhar o pedido <b>${esc(ped.num)}</b> em tempo real</div>
-        <div style="background:#fff;padding:12px;border-radius:var(--r-md);display:inline-block;margin-bottom:12px">
-          <img src="${qrApiUrl}" alt="QR Code da comanda" style="width:240px;height:240px;display:block">
-        </div>
-        <div class="fs11 t3 mono mb10" style="word-break:break-all;padding:8px;background:var(--surface-2);border-radius:var(--r-sm)">${esc(url)}</div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button class="btn bp" style="flex:1;min-width:120px" onclick="navigator.share?navigator.share({url:'${esc(url)}'}):navigator.clipboard?.writeText('${esc(url)}').then(()=>toast('Link copiado!','g'))">${ppIcon('send',14,1.7)} Compartilhar</button>
-          <button class="btn bb" style="flex:1;min-width:120px" onclick="PPCart.imprimirQRComanda('${ped_id}')">${ppIcon('printer',14,1.7)} Imprimir</button>
+      <!-- Cabeçalho do pedido -->
+      <div style="display:flex;align-items:center;gap:10px;padding-bottom:12px;border-bottom:1px solid var(--br);margin-bottom:14px">
+        <div style="width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,var(--ac),var(--pu));display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">📲</div>
+        <div style="flex:1;min-width:0">
+          <div class="bold fs14">Pedido ${esc(ped.num)}</div>
+          <div class="fs11 t3">${esc(cliente)} · cliente acompanha em tempo real</div>
         </div>
       </div>
+
+      <!-- QR + link -->
+      <div style="display:flex;gap:14px;margin-bottom:14px;flex-wrap:wrap;align-items:center">
+        <div style="background:#fff;padding:8px;border-radius:10px;flex-shrink:0;margin:0 auto">
+          <img src="${qrApiUrl}" alt="QR Code do pedido ${esc(ped.num)}" style="display:block;width:140px;height:140px">
+        </div>
+        <div style="flex:1;min-width:200px;display:flex;flex-direction:column;gap:8px">
+          <div style="background:var(--surface-2);border:1px solid var(--br2);border-radius:8px;padding:8px 10px;font-family:monospace;font-size:11px;word-break:break-all;color:var(--ac);line-height:1.5;max-height:80px;overflow-y:auto">${esc(url)}</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+            <button class="btn bp bsm" onclick="navigator.clipboard.writeText('${esc(url)}').then(()=>toast('Link copiado!','g'))">${ppIcon('copy',13,1.7)} Copiar</button>
+            <button class="btn bs bsm" onclick="window.open('${esc(url)}','_blank')">${ppIcon('eye',13,1.7)} Visualizar</button>
+            <button class="btn bs bsm" onclick="PPCart.imprimirQRComanda('${ped_id}')">${ppIcon('printer',13,1.7)} Cupom 58mm</button>
+            <button class="btn bsm" style="background:#25d366;color:#fff;border-color:#25d366" onclick="window.open('https://wa.me/?text=${waMsg}','_blank')">💬 WhatsApp</button>
+          </div>
+          ${navigator.share?`<button class="btn bb bsm bw" onclick="navigator.share({title:'Pedido ${esc(ped.num)}',text:'Acompanhe seu pedido em tempo real',url:'${esc(url)}'}).catch(()=>{})">📤 Compartilhar (sistema)</button>`:''}
+        </div>
+      </div>
+
+      <!-- Dica -->
+      <div style="padding:10px 12px;background:var(--surface-2);border-radius:8px;font-size:11px;color:var(--t2);line-height:1.6">
+        💡 <b>Como usar:</b><br>
+        • <b>Cupom 58mm:</b> imprime o QR na impressora térmica para entregar ao cliente<br>
+        • <b>WhatsApp:</b> envia o link direto pelo zap do cliente<br>
+        • <b>Visualizar:</b> abre a comanda como o cliente verá (preview)
+      </div>
     `;
-    showModal('mc-qr-comanda', '📲 QR da Comanda', body);
+    showModal('mc-qr-comanda', 'QR da Comanda', body, null, '520px');
   }
 
   function imprimirQRComanda(ped_id){
