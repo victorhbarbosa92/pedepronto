@@ -11522,8 +11522,8 @@ async function _adminLoadEstabs(){
       // Iniciais do nome para avatar
       const initials=nome.split(' ').slice(0,2).map(w=>w[0]?.toUpperCase()||'').join('');
       html+=`
-      <div class="card mb8" style="padding:14px;cursor:pointer" onclick="_adminViewEstab('${esc(uid)}')">
-        <div style="display:flex;align-items:center;gap:12px">
+      <div class="card mb8" style="padding:14px;position:relative">
+        <div style="display:flex;align-items:center;gap:12px;cursor:pointer" onclick="_adminViewEstab('${esc(uid)}')">
           <div style="width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,var(--ac),var(--pu));display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:900;color:#fff;flex-shrink:0">${esc(initials||'?')}</div>
           <div style="flex:1;min-width:0">
             <div class="bold fs14" style="margin-bottom:3px">${esc(nome)}</div>
@@ -11531,7 +11531,7 @@ async function _adminLoadEstabs(){
               <span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:${licStatusColor[licStatus]}22;color:${licStatusColor[licStatus]};border:1px solid ${licStatusColor[licStatus]}55">● ${licStatusLabel[licStatus]||licStatus}${licPlan?' · '+(planLabel[licPlan]||licPlan):''}</span>
             </div>
           </div>
-          <div style="color:var(--t3)">${ppIcon('chevronRight',16,1.5)}</div>
+          <button class="btn bxs" style="padding:6px 9px;background:var(--rdbg,#fee2e2);color:var(--rd);border:1px solid var(--rdbr,#fca5a5);flex-shrink:0" title="Excluir estabelecimento" onclick="event.stopPropagation();_adminDelEstab(this)" data-estab-uid="${esc(uid)}" data-estab-nome="${esc(nome)}">🗑️</button>
         </div>
         <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:10px;padding-top:10px;border-top:1px solid var(--br)">
           <div style="text-align:center"><div class="bold fs13">${produtos}</div><div class="fs10 t3">produtos</div></div>
@@ -11664,10 +11664,11 @@ async function _adminViewEstab(uid){
       `<div class="fs12 t3 mb14" style="text-align:center;padding:10px">Nenhum acesso vinculado encontrado</div>`}
 
       <!-- Ações -->
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
         <button class="btn bp" style="flex:1;min-width:130px" onclick="closeMc('mc-admin-view');_adminGerarConvite('${esc(uid)}','${esc(nome)}')">${ppIcon('send',13,1.7)} Gerar convite</button>
         <button class="btn bs" style="flex:1;min-width:130px" onclick="closeMc('mc-admin-view');_adminTab='beta_ctrl';renderAdmin()">${ppIcon('zap',13,1.7)} Controle Beta</button>
-      </div>`;
+      </div>
+      <button class="btn bw" style="width:100%;background:var(--rdbg,#fee2e2);color:var(--rd);border:1px solid var(--rdbr,#fca5a5);padding:10px;font-size:13px" onclick="closeMc('mc-admin-view');_adminDelEstab(this)" data-estab-uid="${esc(uid)}" data-estab-nome="${esc(nome)}">🗑️ Excluir estabelecimento permanentemente</button>`;
 
     // Atualiza o modal já aberto
     const mcBody=document.querySelector('#mc-admin-view .mc-body, #mc-admin-view [class*="mc-b"]');
@@ -12084,7 +12085,7 @@ async function _adminLoadUsers(){
             <div class="fs11 t3" style="word-break:break-all">${esc(userMapKey)}</div>
           </div>
           <span class="fs11 bold" style="color:${cor};background:${cor}15;padding:2px 8px;border-radius:99px;white-space:nowrap">${esc(cargo)}</span>
-          <button class="btn bxs" style="flex-shrink:0;padding:5px 8px;background:var(--rdbg,#fee2e2);color:var(--rd);border:1px solid var(--rdbr,#fca5a5)" title="${isDono?'Excluir estabelecimento e dono':'Remover usuário'}" onclick="_adminConfirmarExclusao(${JSON.stringify(userMapKey)},${JSON.stringify(cargo)},${JSON.stringify(g.estabUid)},${JSON.stringify(g.estabNome||'')})">🗑️</button>
+          <button class="btn bxs" style="flex-shrink:0;padding:5px 8px;background:var(--rdbg,#fee2e2);color:var(--rd);border:1px solid var(--rdbr,#fca5a5)" title="${isDono?'Excluir estabelecimento e dono':'Remover usuário'}" onclick="_adminDelUser(this)" data-user="${esc(userMapKey)}" data-cargo="${esc(cargo)}" data-estab-uid="${esc(g.estabUid)}" data-estab-nome="${esc(g.estabNome||'')}">🗑️</button>
         </div>`;
       });
       html+=`</div></div>`;
@@ -18671,13 +18672,42 @@ Voce tambem e um COACH DE MARKETING. Alem de vender, ajude o dono com:
 //  SUPER ADMIN — Exclusão de usuários e estabelecimentos
 // ═══════════════════════════════════════════════════════════════════
 
-function _adminConfirmarExclusao(userMapKey, cargo, estabUid, estabNome){
+// Lê data-attributes do botão e dispara o modal — robusto contra qualquer caractere especial
+function _adminDelUser(btn){
+  const ds = btn.dataset;
+  _adminConfirmarExclusao({
+    userMapKey: ds.user || '',
+    cargo: ds.cargo || '',
+    estabUid: ds.estabUid || '',
+    estabNome: ds.estabNome || '',
+    modo: 'user'
+  });
+}
+
+function _adminDelEstab(btn){
+  const ds = btn.dataset;
+  _adminConfirmarExclusao({
+    userMapKey: '',
+    cargo: 'dono',
+    estabUid: ds.estabUid || '',
+    estabNome: ds.estabNome || '',
+    modo: 'estab'
+  });
+}
+
+// Armazena o alvo atual em window para ser acessado pelo modal sem precisar passar args via onclick
+let _adminDelTarget = null;
+
+function _adminConfirmarExclusao(target){
   if(!fbDB)return;
-  const isDono = cargo==='dono';
+  _adminDelTarget = target;
+  const {userMapKey, cargo, estabUid, estabNome, modo} = target;
+  const isDono = cargo==='dono' || modo==='estab';
+
   const aviso = isDono
     ? `<div style="padding:12px;background:var(--rdbg,#fee2e2);border:1px solid var(--rdbr,#fca5a5);border-radius:10px;margin-bottom:14px;font-size:13px;line-height:1.6">
-        ⚠️ <b>Atenção:</b> Excluir o dono apagará <b>todos os dados</b> do estabelecimento <b>"${esc(estabNome)}"</b> do Firestore (pedidos, produtos, clientes, configurações e licença).<br><br>
-        A conta Firebase Auth <b>não será excluída</b> (requer acesso admin ao servidor).
+        ⚠️ <b>Atenção:</b> Esta ação apagará <b>todos os dados</b> do estabelecimento <b>"${esc(estabNome)}"</b> do Firestore: pedidos, produtos, clientes, configurações, licença e todos os funcionários vinculados.<br><br>
+        A conta Firebase Auth <b>não será excluída</b> (requer Admin SDK no servidor).
        </div>`
     : `<div style="padding:10px;background:var(--s2);border-radius:10px;margin-bottom:14px;font-size:13px">
         Remove o vínculo de <b>${esc(userMapKey)}</b> como <b>${esc(cargo)}</b> do estabelecimento <b>"${esc(estabNome)}"</b>.<br>
@@ -18686,17 +18716,21 @@ function _adminConfirmarExclusao(userMapKey, cargo, estabUid, estabNome){
 
   const confirmInput = isDono
     ? `<div class="fg mt10">
-        <label class="fl">Digite o nome do estabelecimento para confirmar:</label>
+        <label class="fl">Digite <b>${esc(estabNome)}</b> para confirmar:</label>
         <input class="inp" id="del-confirm-nome" placeholder="${esc(estabNome)}" autocomplete="off">
        </div>`
     : '';
 
+  const idInfo = userMapKey
+    ? `<div style="font-size:12px;color:var(--t2);margin-bottom:6px">Usuário / chave: <code style="font-size:11px;word-break:break-all">${esc(userMapKey)}</code></div>`
+    : `<div style="font-size:12px;color:var(--t2);margin-bottom:6px">UID: <code style="font-size:11px;word-break:break-all">${esc(estabUid)}</code></div>`;
+
   showModal('mc-del-user', isDono ? '⚠️ Excluir estabelecimento' : 'Remover usuário', `
     ${aviso}
-    <div style="font-size:12px;color:var(--t2);margin-bottom:6px">Usuário / chave: <code style="font-size:11px">${esc(userMapKey)}</code></div>
+    ${idInfo}
     ${confirmInput}
     <div style="display:flex;gap:8px;margin-top:14px">
-      <button class="btn" style="flex:1;background:var(--rd);color:#fff;border:none" onclick="_adminExecutarExclusao(${JSON.stringify(userMapKey)},${JSON.stringify(cargo)},${JSON.stringify(estabUid)},${JSON.stringify(estabNome)})">
+      <button class="btn" style="flex:1;background:var(--rd);color:#fff;border:none" onclick="_adminExecutarExclusao()">
         🗑️ ${isDono?'Excluir tudo':'Remover acesso'}
       </button>
       <button class="btn bs" style="flex:1" onclick="closeMc('mc-del-user')">Cancelar</button>
@@ -18704,8 +18738,11 @@ function _adminConfirmarExclusao(userMapKey, cargo, estabUid, estabNome){
   `, null, '460px');
 }
 
-async function _adminExecutarExclusao(userMapKey, cargo, estabUid, estabNome){
-  const isDono = cargo==='dono';
+async function _adminExecutarExclusao(){
+  const t = _adminDelTarget;
+  if(!t){toast('Alvo inválido','r');return;}
+  const {userMapKey, cargo, estabUid, estabNome, modo} = t;
+  const isDono = cargo==='dono' || modo==='estab';
   // Validação do nome para donos
   if(isDono){
     const inp = document.getElementById('del-confirm-nome');
@@ -18714,35 +18751,45 @@ async function _adminExecutarExclusao(userMapKey, cargo, estabUid, estabNome){
     }
   }
   closeMc('mc-del-user');
-  const loading = ()=>toast('Processando exclusão...','b',8000);
-  loading();
+  toast('Processando exclusão...','b',8000);
   try{
-    // 1. Remove user_map
-    await fbDB.collection('user_map').doc(userMapKey).delete();
-
     if(isDono && estabUid){
-      // 2. Remove licença cloud
+      // 1. Remove licença cloud
       try{ await fbDB.collection('cloud_licenses').doc(estabUid).delete(); }catch(e){}
-      // 3. Remove dados principais do estabelecimento
+      // 2. Remove dados principais do estabelecimento
       try{ await fbDB.collection('estabelecimentos').doc(estabUid).collection('dados').doc('principal').delete(); }catch(e){}
-      // 4. Remove backups
+      // 3. Remove backups
       try{
         const bkSnap = await fbDB.collection('estabelecimentos').doc(estabUid).collection('backups').get();
         for(const b of bkSnap.docs) await b.ref.delete();
       }catch(e){}
+      // 4. Remove pedidos públicos da comanda QR
+      try{
+        const pedSnap = await fbDB.collection('estabelecimentos').doc(estabUid).collection('pedidos').get();
+        for(const p of pedSnap.docs) await p.ref.delete();
+      }catch(e){}
       // 5. Remove doc raiz do estabelecimento
       try{ await fbDB.collection('estabelecimentos').doc(estabUid).delete(); }catch(e){}
-      // 6. Remove outros user_map do mesmo estab
+      // 6. Remove TODOS user_map vinculados a esse estab
       try{
         const membros = await fbDB.collection('user_map').where('estab_uid','==',estabUid).get();
         for(const m of membros.docs) await m.ref.delete();
       }catch(e){}
+      // 7. Remove o próprio user_map do dono (se informado e ainda não removido acima)
+      if(userMapKey){
+        try{ await fbDB.collection('user_map').doc(userMapKey).delete(); }catch(e){}
+      }
       toast('Estabelecimento "'+estabNome+'" excluído completamente','g',5000);
-    } else {
+    } else if(userMapKey) {
+      // Remove apenas vínculo do membro
+      await fbDB.collection('user_map').doc(userMapKey).delete();
       toast('Usuário removido do sistema','g',3000);
     }
-    // Recarrega lista
-    _adminLoadUsers();
+    _adminDelTarget = null;
+    // Recarrega aba ativa
+    if(_adminTab==='users') _adminLoadUsers();
+    else if(_adminTab==='estabs') _adminLoadEstabs();
+    else if(_adminTab==='dashboard') renderAdmin();
   }catch(e){
     toast('Erro ao excluir: '+e.message,'r',5000);
   }
