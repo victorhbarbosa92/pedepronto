@@ -14814,38 +14814,113 @@ function _atualizarBadgeLicenca(){
 //  CARDÁPIO DIGITAL PÚBLICO
 // ═══════════════════════════════════════════
 function _renderPublicMenu(){
-  // Carregar dados do localStorage (se disponível)
+  // Carregar dados do localStorage
   const cfg=DB.get('cfg',{nome:'Restaurante',logo:'🍔'});
   const prods=(DB.get('produtos')||[]).filter(p=>p.ativo);
   const cats=DB.get('categorias')||[];
   const catsComProd=cats.filter(c=>prods.some(p=>p.cat_id===c.id));
-  document.body.style.background='#0d1117';
-  document.body.innerHTML=`
-    <div style="max-width:500px;margin:0 auto;padding:16px;font-family:system-ui,-apple-system,sans-serif;color:#e6edf3">
-      <div style="text-align:center;padding:20px 0;border-bottom:1px solid rgba(255,255,255,.1)">
-        <div style="font-size:48px;margin-bottom:8px">${cfg.logo||'🍔'}</div>
-        <div style="font-size:22px;font-weight:900;color:#f7e38b">${_esc(cfg.nome||'Cardápio')}</div>
-        ${cfg.slogan?'<div style="font-size:13px;color:#8b949e;margin-top:4px">'+_esc(cfg.slogan)+'</div>':''}
-      </div>
-      ${catsComProd.map(c=>`
-        <div style="margin-top:20px">
-          <div style="font-size:16px;font-weight:700;margin-bottom:10px;color:#f0e6d3">${c.emoji||'📂'} ${_esc(c.nome)}</div>
-          ${prods.filter(p=>p.cat_id===c.id).map(p=>`
-            <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.06)">
-              <div style="flex:1;min-width:0">
-                <div style="font-size:14px;font-weight:600">${p.ico||'🍽️'} ${_esc(p.nome)}</div>
-                ${p.desc?'<div style="font-size:11px;color:#8b949e;margin-top:2px">'+_esc(p.desc)+'</div>':''}
-              </div>
-              <div style="font-size:15px;font-weight:700;color:#f7e38b;margin-left:12px;white-space:nowrap">R$ ${(p.preco||0).toFixed(2).replace('.',',')}</div>
-            </div>`).join('')}
-        </div>`).join('')}
-      ${!catsComProd.length?'<div style="text-align:center;padding:40px 0;color:#8b949e">Cardápio não disponível no momento.</div>':''}
-      <div style="text-align:center;padding:24px 0;margin-top:20px;border-top:1px solid rgba(255,255,255,.1)">
-        <div style="font-size:12px;color:#8b949e">${_esc(cfg.footer||'Obrigado pela preferência!')}</div>
-        <div style="font-size:10px;color:#484f58;margin-top:6px">PedePronto PDV</div>
-      </div>
-    </div>`;
+
   function _esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+  // Detecta se o logo é uma imagem (data URL / http url) ou um emoji
+  function _isImg(v){return typeof v==='string'&&(v.startsWith('data:image')||v.startsWith('http')||v.startsWith('/'));}
+  const logoHtml=cfg.logo
+    ?(_isImg(cfg.logo)
+      ?`<img src="${_esc(cfg.logo)}" alt="${_esc(cfg.nome||'Logo')}" style="width:84px;height:84px;border-radius:50%;object-fit:cover;border:3px solid rgba(247,227,139,.4);box-shadow:0 4px 20px rgba(0,0,0,.4)">`
+      :`<div style="font-size:60px;line-height:1">${_esc(cfg.logo)}</div>`)
+    :`<div style="font-size:60px;line-height:1">🍔</div>`;
+
+  // CSS interno para tornar o cardápio bonito
+  const css=`
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;background:#0d1117;color:#e6edf3;-webkit-font-smoothing:antialiased}
+    .menu-wrap{max-width:760px;margin:0 auto;padding:0 16px 60px}
+    .menu-hero{position:relative;text-align:center;padding:36px 16px 28px;margin:0 -16px 8px;background:linear-gradient(180deg,rgba(247,227,139,.08) 0%,transparent 100%);border-bottom:1px solid rgba(255,255,255,.06)}
+    .menu-logo{margin-bottom:12px;display:flex;justify-content:center}
+    .menu-nome{font-size:26px;font-weight:900;color:#f7e38b;letter-spacing:-.02em;line-height:1.1}
+    .menu-slogan{font-size:13px;color:#8b949e;margin-top:6px;font-style:italic}
+    .menu-nav{position:sticky;top:0;background:rgba(13,17,23,.95);backdrop-filter:blur(10px);padding:10px 0;margin:0 -16px 16px;border-bottom:1px solid rgba(255,255,255,.06);z-index:5;display:flex;gap:6px;overflow-x:auto;scroll-behavior:smooth;padding-left:16px;padding-right:16px}
+    .menu-nav::-webkit-scrollbar{display:none}
+    .menu-nav-chip{flex-shrink:0;padding:7px 14px;border-radius:99px;background:rgba(255,255,255,.05);color:#c9d1d9;font-size:12px;font-weight:600;text-decoration:none;border:1px solid rgba(255,255,255,.06);white-space:nowrap;transition:all .15s}
+    .menu-nav-chip:hover,.menu-nav-chip:active{background:rgba(247,227,139,.15);color:#f7e38b;border-color:rgba(247,227,139,.4)}
+    .menu-cat-title{display:flex;align-items:center;gap:8px;font-size:18px;font-weight:800;color:#f0e6d3;margin:24px 0 14px;padding-bottom:6px;border-bottom:2px solid rgba(247,227,139,.2);scroll-margin-top:60px}
+    .menu-cat-emoji{font-size:22px}
+    .menu-grid{display:grid;grid-template-columns:1fr;gap:10px}
+    @media(min-width:600px){.menu-grid{grid-template-columns:1fr 1fr}}
+    .menu-card{display:flex;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:14px;overflow:hidden;transition:transform .15s,border-color .15s;min-height:104px}
+    .menu-card:hover{transform:translateY(-2px);border-color:rgba(247,227,139,.3)}
+    .menu-card-img{width:104px;flex-shrink:0;background:rgba(255,255,255,.03);display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative}
+    .menu-card-img img{width:100%;height:100%;object-fit:cover;display:block}
+    .menu-card-img-emoji{font-size:42px;opacity:.65}
+    .menu-card-body{flex:1;padding:11px 13px;display:flex;flex-direction:column;justify-content:space-between;min-width:0}
+    .menu-card-nome{font-size:14px;font-weight:700;color:#e6edf3;line-height:1.25;margin-bottom:4px}
+    .menu-card-desc{font-size:11.5px;color:#8b949e;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:6px}
+    .menu-card-foot{display:flex;align-items:center;justify-content:space-between;gap:8px}
+    .menu-card-preco{font-size:15px;font-weight:900;color:#f7e38b;white-space:nowrap}
+    .menu-card-tempo{font-size:10px;color:#8b949e;display:flex;align-items:center;gap:3px;background:rgba(255,255,255,.05);padding:2px 8px;border-radius:99px}
+    .menu-empty{text-align:center;padding:60px 20px;color:#8b949e}
+    .menu-empty-emoji{font-size:48px;margin-bottom:12px;opacity:.5}
+    .menu-foot{text-align:center;padding:28px 0 16px;margin-top:30px;border-top:1px solid rgba(255,255,255,.08)}
+    .menu-foot-msg{font-size:13px;color:#c9d1d9}
+    .menu-foot-brand{font-size:10px;color:#484f58;margin-top:8px;letter-spacing:.5px;text-transform:uppercase}
+  `;
+  // Render
+  document.body.innerHTML=`<style>${css}</style>
+    <div class="menu-wrap">
+      <header class="menu-hero">
+        <div class="menu-logo">${logoHtml}</div>
+        <h1 class="menu-nome">${_esc(cfg.nome||'Cardápio')}</h1>
+        ${cfg.slogan?`<div class="menu-slogan">${_esc(cfg.slogan)}</div>`:'<div class="menu-slogan">Bem-vindo!</div>'}
+      </header>
+
+      ${catsComProd.length?`
+      <nav class="menu-nav">
+        ${catsComProd.map(c=>`<a href="#cat-${_esc(c.id)}" class="menu-nav-chip">${_esc(c.emoji||'📂')} ${_esc(c.nome)}</a>`).join('')}
+      </nav>
+      `:''}
+
+      ${catsComProd.map(c=>`
+        <section id="cat-${_esc(c.id)}">
+          <h2 class="menu-cat-title"><span class="menu-cat-emoji">${_esc(c.emoji||'📂')}</span> ${_esc(c.nome)}</h2>
+          <div class="menu-grid">
+            ${prods.filter(p=>p.cat_id===c.id).map(p=>{
+              const temFoto=p.foto&&_isImg(p.foto);
+              const tempo=p.tempo_preparo||p.tempo;
+              return `
+              <article class="menu-card">
+                <div class="menu-card-img">
+                  ${temFoto
+                    ?`<img src="${_esc(p.foto)}" alt="${_esc(p.nome)}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+                      <div class="menu-card-img-emoji" style="display:none;position:absolute;inset:0;align-items:center;justify-content:center">${_esc(p.ico||'🍽️')}</div>`
+                    :`<div class="menu-card-img-emoji">${_esc(p.ico||'🍽️')}</div>`}
+                </div>
+                <div class="menu-card-body">
+                  <div>
+                    <div class="menu-card-nome">${_esc(p.nome)}</div>
+                    ${p.desc?`<div class="menu-card-desc">${_esc(p.desc)}</div>`:''}
+                  </div>
+                  <div class="menu-card-foot">
+                    <span class="menu-card-preco">R$ ${(p.preco||0).toFixed(2).replace('.',',')}</span>
+                    ${tempo?`<span class="menu-card-tempo">⏱ ${tempo} min</span>`:''}
+                  </div>
+                </div>
+              </article>`;
+            }).join('')}
+          </div>
+        </section>`).join('')}
+
+      ${!catsComProd.length?`
+      <div class="menu-empty">
+        <div class="menu-empty-emoji">📋</div>
+        <div>Cardápio não disponível no momento.</div>
+      </div>`:''}
+
+      <footer class="menu-foot">
+        <div class="menu-foot-msg">${_esc(cfg.footer||'Obrigado pela preferência! 🙏')}</div>
+        <div class="menu-foot-brand">PedePronto PDV</div>
+      </footer>
+    </div>`;
+  document.body.style.background='#0d1117';
+  document.body.style.margin='0';
 }
 function _printQRCardapio(){
   const url=window.location.origin+window.location.pathname+'?menu=1';
