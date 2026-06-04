@@ -15063,17 +15063,20 @@ function _renderPublicCarousel(cfg,prods,catsComProd,_esc,_isImg){
     </div>`;
   };
 
-  // Música: Spotify (widget visível — política deles bloqueia autoplay) ou audio URL (autoplay total)
+  // Música: Spotify (widget visível — política deles limita a 30s) ou audio URL/Rádio (autoplay total)
   let musicaHtml='';
   const usaSpotify=musica.tipo==='spotify'&&musica.spotify_url;
+  const usaAudio=(musica.tipo==='url'||musica.tipo==='radio')&&musica.url;
   if(usaSpotify){
     const spotEmbed=musica.spotify_url.replace('open.spotify.com/','open.spotify.com/embed/');
     musicaHtml=`<div class="spotify-mini-player" id="spotify-mini">
-      <div class="spotify-mini-hint">▶️ Toque PLAY abaixo para iniciar a música</div>
+      <div class="spotify-mini-hint">▶️ Toque PLAY abaixo (preview 30s)</div>
       <iframe src="${_esc(spotEmbed)}?utm_source=generator" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
     </div>`;
-  } else if(musica.tipo==='url'&&musica.url){
-    musicaHtml=`<audio id="vitrine-audio" src="${_esc(musica.url)}" loop preload="auto"></audio>`;
+  } else if(usaAudio){
+    // loop só para MP3s simples; rádios streaming não precisam pois são contínuas
+    const loopAttr=musica.tipo==='radio'?'':'loop';
+    musicaHtml=`<audio id="vitrine-audio" src="${_esc(musica.url)}" ${loopAttr} preload="auto" crossorigin="anonymous"></audio>`;
   }
 
   document.body.innerHTML=`<style>${css}</style>
@@ -15082,7 +15085,7 @@ function _renderPublicCarousel(cfg,prods,catsComProd,_esc,_isImg){
         <svg width="56" height="56" viewBox="0 0 24 24" fill="#1a1a1a"><path d="M8 5v14l11-7z"/></svg>
       </div>
       <div class="play-overlay-text">Toque para iniciar a vitrine</div>
-      <div class="play-overlay-sub">${seq.length} slides${usaSpotify?' · 🎵 Após iniciar, clique no PLAY do widget Spotify que aparece no canto inferior esquerdo':(musica.tipo==='url'?' · 🎵 Com música de fundo':'')}</div>
+      <div class="play-overlay-sub">${seq.length} slides${usaSpotify?' · 🎵 Após iniciar, clique no PLAY do widget Spotify (preview 30s)':(musica.tipo==='radio'&&musica.radio_nome?' · 🎙️ Rádio: '+_esc(musica.radio_nome):(musica.tipo==='url'?' · 🎵 Com música de fundo':''))}</div>
     </div>
 
     <div class="carousel-root">
@@ -17441,21 +17444,57 @@ _renderCfgSection=function(sec){
       <div class="fg"><label class="fl">Fonte</label>
         <select class="inp" onchange="ST.cfg.vitrine_musica=ST.cfg.vitrine_musica||{};ST.cfg.vitrine_musica.tipo=this.value;save('cfg');_renderCfgSection('vitrine')">
           <option value="off" ${(!mus.tipo||mus.tipo==='off')?'selected':''}>Desligado</option>
-          <option value="spotify" ${mus.tipo==='spotify'?'selected':''}>Spotify (Embed)</option>
-          <option value="url" ${mus.tipo==='url'?'selected':''}>URL de audio (MP3/stream)</option>
+          <option value="radio" ${mus.tipo==='radio'?'selected':''}>🎙️ Rádio Web (Grátis) — recomendado</option>
+          <option value="spotify" ${mus.tipo==='spotify'?'selected':''}>Spotify (Preview 30s)</option>
+          <option value="url" ${mus.tipo==='url'?'selected':''}>URL de áudio (MP3/stream)</option>
         </select>
       </div>
+      ${mus.tipo==='radio'?(function(){
+        const radios=[
+          {id:'groovesalad',  nome:'Groove Salad',     genero:'Chill / Downtempo',  ico:'🛋️', url:'https://ice1.somafm.com/groovesalad-128-mp3'},
+          {id:'secretagent',  nome:'Secret Agent',     genero:'Lounge / Jazz Spy',  ico:'🕴️', url:'https://ice1.somafm.com/secretagent-128-mp3'},
+          {id:'illstreet',    nome:'Illinois Lounge',  genero:'Lounge Clássico',    ico:'🥃', url:'https://ice1.somafm.com/illstreet-128-mp3'},
+          {id:'sonicuniverse',nome:'Sonic Universe',   genero:'Jazz Moderno',       ico:'🎷', url:'https://ice1.somafm.com/sonicuniverse-128-mp3'},
+          {id:'indiepop',     nome:'Indie Pop Rocks',  genero:'Indie / Pop',        ico:'🎸', url:'https://ice1.somafm.com/indiepop-128-mp3'},
+          {id:'poptron',      nome:'PopTron',          genero:'Electropop',         ico:'💿', url:'https://ice1.somafm.com/poptron-128-mp3'},
+          {id:'u80s',         nome:'Underground 80s',  genero:'Synth / Anos 80',    ico:'📻', url:'https://ice1.somafm.com/u80s-128-mp3'},
+          {id:'seventies',    nome:'Left Coast 70s',   genero:'Rock dos Anos 70',   ico:'🎶', url:'https://ice1.somafm.com/seventies-128-mp3'},
+          {id:'lush',         nome:'Lush',             genero:'Dream Pop / Vocal',  ico:'🌙', url:'https://ice1.somafm.com/lush-128-mp3'},
+          {id:'bossa',        nome:'Bossa Beyond',     genero:'Bossa Nova',         ico:'🎼', url:'https://ice1.somafm.com/bossa-128-mp3'},
+          {id:'reggae',       nome:'Boot Liquor',      genero:'Country / Roots',    ico:'🌾', url:'https://ice1.somafm.com/bootliquor-128-mp3'},
+          {id:'folk',         nome:'Folk Forward',     genero:'Folk Acústico',      ico:'🪕', url:'https://ice1.somafm.com/folkfwd-128-mp3'},
+        ];
+        return `
+        <div class="fs12 t2 mb8" style="padding:10px 12px;background:var(--gnbg,#d1fae5);border:1px solid var(--gn);border-radius:8px;line-height:1.5;color:var(--tx)">
+          ✅ <b>Autoplay total · Grátis para sempre · Sem login</b><br>
+          12 rádios curadas para ambiente comercial. Tocam 24/7, em loop infinito. Sem anúncios.
+        </div>
+        <div class="fs12 bold mb8">Escolha o gênero ambiente:</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;margin-bottom:10px">
+          ${radios.map(r=>`
+            <button class="btn bsm" style="display:flex;align-items:center;gap:10px;padding:10px 12px;text-align:left;height:auto;border:2px solid ${mus.radio_id===r.id?'var(--ac)':'var(--br2)'};background:${mus.radio_id===r.id?'var(--acbg)':'var(--s2)'}"
+              onclick="ST.cfg.vitrine_musica=Object.assign(ST.cfg.vitrine_musica||{},{tipo:'radio',radio_id:'${r.id}',radio_nome:'${esc(r.nome)}',url:'${r.url}'});save('cfg');_renderCfgSection('vitrine');toast('Rádio: ${esc(r.nome)}','g',2000)">
+              <span style="font-size:22px;flex-shrink:0">${r.ico}</span>
+              <div style="min-width:0;flex:1">
+                <div class="bold fs12" style="color:${mus.radio_id===r.id?'var(--ac)':'var(--tx)'}">${esc(r.nome)}</div>
+                <div class="fs10 t3">${esc(r.genero)}</div>
+              </div>
+            </button>`).join('')}
+        </div>
+        ${mus.radio_id?`<div class="fs11 t3" style="padding:6px 10px;background:var(--s2);border-radius:6px">▶️ Tocando: <b>${esc(mus.radio_nome||'')}</b> · Stream SomaFM (organização sem fins lucrativos, ouvinte-suportada)</div>`:'<div class="fs11 t3">👆 Clique numa rádio acima para selecionar</div>'}
+      `;})():''}
       ${mus.tipo==='spotify'?`
       <div class="fg"><label class="fl">Link da playlist Spotify</label>
       <input class="inp" value="${esc(mus.spotify_url||'')}" oninput="ST.cfg.vitrine_musica.spotify_url=this.value;save('cfg')" placeholder="https://open.spotify.com/playlist/..."></div>
       <div class="fs11 t3">Cole o link de compartilhamento da playlist do Spotify.</div>
       <div style="margin-top:8px;padding:10px 12px;background:var(--rdbg,#fee2e2);border:1px solid var(--rdbr,#fca5a5);border-radius:8px;font-size:11px;line-height:1.5;color:var(--tx)">
-        ⚠️ <b>Limitação do Spotify:</b> a política oficial deles bloqueia autoplay. Na vitrine vai aparecer o widget Spotify no canto inferior esquerdo — você precisa <b>clicar PLAY uma vez</b> para iniciar a música. Depois ela toca infinito.<br><br>
-        💡 <b>Quer autoplay automático?</b> Use a opção <b>"URL de áudio (MP3/stream)"</b> em vez do Spotify — funciona 100% sem clique.
+        ⚠️ <b>Limitação oficial do Spotify:</b> o embed iframe toca apenas <b>previews de 30 segundos</b>, independente de Premium ou login. Política deles, não tem como burlar.<br><br>
+        💡 <b>Para música completa:</b> use a opção <b>"🎙️ Rádio Web (Grátis)"</b> acima — autoplay total, sem login.
       </div>`:''}
       ${mus.tipo==='url'?`
-      <div class="fg"><label class="fl">URL do audio</label>
-      <input class="inp" value="${esc(mus.url||'')}" oninput="ST.cfg.vitrine_musica.url=this.value;save('cfg')" placeholder="https://.../background.mp3"></div>`:''}
+      <div class="fg"><label class="fl">URL do áudio</label>
+      <input class="inp" value="${esc(mus.url||'')}" oninput="ST.cfg.vitrine_musica.url=this.value;save('cfg')" placeholder="https://.../background.mp3"></div>
+      <div class="fs11 t3">URL direta de arquivo MP3 ou stream Icecast/Shoutcast. Funciona com autoplay total.</div>`:''}
       ${mus.tipo&&mus.tipo!=='off'?`
       <div class="fg"><label class="fl">Volume — <span class="mono am">${Math.round((mus.volume||0.6)*100)}%</span></label>
       <input type="range" min="0" max="1" step="0.05" value="${mus.volume||0.6}" style="width:100%;accent-color:var(--ac)" oninput="ST.cfg.vitrine_musica=ST.cfg.vitrine_musica||{};ST.cfg.vitrine_musica.volume=parseFloat(this.value);save('cfg');this.previousElementSibling.querySelector('.mono').textContent=Math.round(parseFloat(this.value)*100)+'%'"></div>
