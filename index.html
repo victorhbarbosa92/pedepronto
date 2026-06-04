@@ -16991,7 +16991,44 @@ _renderCfgSection=function(sec){
     const vd=cfg.vitrine_duracao||6;
     const vids=cfg.vitrine_videos||[];
     const mus=cfg.vitrine_musica||{};
+    const vitrineUrl=window.location.origin+window.location.pathname+'?menu=1';
+    const qrSrc='https://api.qrserver.com/v1/create-qr-code/?size=200x200&data='+encodeURIComponent(vitrineUrl);
+    const nomeEstab=cfg.nome||'PedePronto';
+    const waMsg=encodeURIComponent('Olá! Confira o cardápio digital de '+nomeEstab+':\n'+vitrineUrl);
     el.innerHTML=_cfgHeader('Vitrine Digital')+`
+    <!-- Card de Acesso à Vitrine -->
+    <div class="card mb10" style="padding:0;overflow:hidden;border:2px solid var(--ac);background:linear-gradient(135deg,var(--acbg),var(--s2))">
+      <div style="padding:14px 16px 10px;display:flex;align-items:center;gap:10px">
+        <div style="width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,var(--ac),var(--pu));display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🔗</div>
+        <div style="flex:1;min-width:0">
+          <div class="bold fs14">Link de acesso à Vitrine</div>
+          <div class="fs11 t3">Compartilhe com clientes para acessarem o cardápio</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:14px;padding:0 16px 14px;flex-wrap:wrap;align-items:center">
+        <div style="background:#fff;padding:8px;border-radius:10px;flex-shrink:0">
+          <img src="${qrSrc}" alt="QR Code da Vitrine" style="display:block;width:120px;height:120px">
+        </div>
+        <div style="flex:1;min-width:200px;display:flex;flex-direction:column;gap:8px">
+          <div style="background:var(--sf);border:1px solid var(--br2);border-radius:8px;padding:8px 10px;font-family:monospace;font-size:11px;word-break:break-all;color:var(--ac);line-height:1.5">${esc(vitrineUrl)}</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+            <button class="btn bp bsm" onclick="navigator.clipboard.writeText('${esc(vitrineUrl)}');toast('Link copiado!','g')">${ppIcon('copy',13,1.7)} Copiar link</button>
+            <button class="btn bs bsm" onclick="window.open('${esc(vitrineUrl)}','_blank')">${ppIcon('eye',13,1.7)} Abrir vitrine</button>
+            <button class="btn bs bsm" onclick="_printQRCardapio()">${ppIcon('printer',13,1.7)} Imprimir QR</button>
+            <button class="btn bsm" style="background:#25d366;color:#fff;border-color:#25d366" onclick="window.open('https://wa.me/?text=${waMsg}','_blank')">💬 WhatsApp</button>
+          </div>
+          ${navigator.share?`<button class="btn bb bsm bw" onclick="navigator.share({title:'Cardápio ${esc(nomeEstab)}',text:'Confira o cardápio digital!',url:'${esc(vitrineUrl)}'}).catch(()=>{})">📤 Compartilhar (sistema)</button>`:''}
+        </div>
+      </div>
+      <div style="padding:8px 16px;background:var(--s2);border-top:1px solid var(--br);font-size:11px;color:var(--t2);line-height:1.6">
+        💡 <b>Como usar a vitrine:</b><br>
+        • <b>TV/monitor do salão:</b> abra a vitrine em modo Carrossel num browser fullscreen (F11)<br>
+        • <b>Mesa do cliente:</b> imprima o QR Code e cole nas mesas — o cliente escaneia<br>
+        • <b>WhatsApp/Redes:</b> compartilhe o link diretamente em grupos e stories<br>
+        • <b>Tablet de menu:</b> deixe o link aberto num tablet à disposição
+      </div>
+    </div>
+
     <div class="card mb10">
       <div class="fs13 bold mb8">Modo de exibicao</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
