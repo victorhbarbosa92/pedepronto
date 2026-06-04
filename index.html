@@ -14823,6 +14823,11 @@ function _renderPublicMenu(){
   function _esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
   // Detecta se o logo é uma imagem (data URL / http url) ou um emoji
   function _isImg(v){return typeof v==='string'&&(v.startsWith('data:image')||v.startsWith('http')||v.startsWith('/'));}
+
+  // Decide entre Grid (cardápio público) e Carrossel (TV/monitor do salão)
+  if((cfg.vitrine_modo||'grid')==='carousel'){
+    return _renderPublicCarousel(cfg,prods,catsComProd,_esc,_isImg);
+  }
   const logoHtml=cfg.logo
     ?(_isImg(cfg.logo)
       ?`<img src="${_esc(cfg.logo)}" alt="${_esc(cfg.nome||'Logo')}" style="width:84px;height:84px;border-radius:50%;object-fit:cover;border:3px solid rgba(247,227,139,.4);box-shadow:0 4px 20px rgba(0,0,0,.4)">`
@@ -14922,6 +14927,265 @@ function _renderPublicMenu(){
   document.body.style.background='#0d1117';
   document.body.style.margin='0';
 }
+// ═══════════════════════════════════════════
+//  VITRINE CARROSSEL — Modo TV/Monitor do salão
+// ═══════════════════════════════════════════
+function _renderPublicCarousel(cfg,prods,catsComProd,_esc,_isImg){
+  const duracao=Math.max(3,parseInt(cfg.vitrine_duracao||6))*1000;
+  const videos=cfg.vitrine_videos||[];
+  const musica=cfg.vitrine_musica||{};
+
+  // Monta a sequência de slides: produtos + vídeos intercalados
+  const allProds=[];
+  catsComProd.forEach(c=>prods.filter(p=>p.cat_id===c.id).forEach(p=>allProds.push({...p,_cat:c})));
+  // Sequência: produto, produto, produto, video, produto, produto, produto, video...
+  const seq=[];
+  let videoIdx=0;
+  allProds.forEach((p,i)=>{
+    seq.push({tipo:'produto',data:p});
+    // Insere um vídeo a cada 4 produtos
+    if(videos.length&&(i+1)%4===0){
+      seq.push({tipo:'video',data:videos[videoIdx%videos.length]});
+      videoIdx++;
+    }
+  });
+  // Se não tem produto algum, mostra só vídeos
+  if(!seq.length&&videos.length){videos.forEach(v=>seq.push({tipo:'video',data:v}));}
+  // Slide de boas-vindas como primeiro
+  seq.unshift({tipo:'welcome'});
+
+  const logoHtml=cfg.logo
+    ?(_isImg(cfg.logo)
+      ?`<img src="${_esc(cfg.logo)}" alt="Logo" style="width:72px;height:72px;border-radius:50%;object-fit:cover;border:3px solid rgba(247,227,139,.5);box-shadow:0 4px 20px rgba(0,0,0,.5)">`
+      :`<div style="font-size:62px;line-height:1">${_esc(cfg.logo)}</div>`)
+    :`<div style="font-size:62px;line-height:1">🍔</div>`;
+
+  const css=`
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;background:#000;color:#fff;overflow:hidden;-webkit-font-smoothing:antialiased}
+    .carousel-root{position:fixed;inset:0;background:#000;display:flex;flex-direction:column}
+    .carousel-header{position:absolute;top:0;left:0;right:0;padding:18px 28px;display:flex;align-items:center;gap:14px;z-index:10;background:linear-gradient(180deg,rgba(0,0,0,.7) 0%,transparent 100%)}
+    .carousel-header-logo{flex-shrink:0}
+    .carousel-header-text{flex:1;min-width:0}
+    .carousel-header-nome{font-size:22px;font-weight:900;color:#f7e38b;letter-spacing:-.02em;line-height:1.1}
+    .carousel-header-slogan{font-size:13px;color:#c9d1d9;margin-top:3px;opacity:.85}
+    .carousel-clock{font-size:18px;font-weight:700;color:#f7e38b;font-variant-numeric:tabular-nums;text-align:right}
+    .carousel-clock-data{font-size:11px;color:#c9d1d9;opacity:.7;text-transform:capitalize}
+    .carousel-slide{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .8s ease;pointer-events:none}
+    .carousel-slide.active{opacity:1;pointer-events:auto}
+    .slide-welcome{flex-direction:column;text-align:center;background:radial-gradient(circle at center,#1a1f3a 0%,#000 100%)}
+    .slide-welcome-logo{margin-bottom:24px}
+    .slide-welcome-logo img,.slide-welcome-logo div{width:160px!important;height:160px!important;font-size:120px!important}
+    .slide-welcome-nome{font-size:64px;font-weight:900;color:#f7e38b;letter-spacing:-.04em;margin-bottom:12px;text-shadow:0 4px 30px rgba(247,227,139,.3)}
+    .slide-welcome-slogan{font-size:22px;color:#c9d1d9;margin-bottom:36px;font-style:italic}
+    .slide-welcome-cta{font-size:16px;color:#8b949e;letter-spacing:3px;text-transform:uppercase}
+    .slide-produto{display:grid;grid-template-columns:1fr 1fr;gap:48px;padding:96px 64px 96px;width:100%;height:100%;align-items:center}
+    .slide-produto-img-wrap{height:100%;max-height:600px;display:flex;align-items:center;justify-content:center}
+    .slide-produto-img{width:100%;height:100%;max-height:600px;border-radius:24px;object-fit:cover;box-shadow:0 20px 80px rgba(0,0,0,.6),0 0 0 1px rgba(247,227,139,.2)}
+    .slide-produto-img-emoji{font-size:280px;line-height:1;text-align:center;filter:drop-shadow(0 20px 40px rgba(247,227,139,.3))}
+    .slide-produto-info{padding:0 16px}
+    .slide-produto-cat{display:inline-block;font-size:14px;color:#f7e38b;background:rgba(247,227,139,.12);padding:6px 16px;border-radius:99px;letter-spacing:1.5px;text-transform:uppercase;font-weight:700;margin-bottom:20px;border:1px solid rgba(247,227,139,.3)}
+    .slide-produto-nome{font-size:54px;font-weight:900;color:#fff;line-height:1.1;letter-spacing:-.03em;margin-bottom:18px}
+    .slide-produto-desc{font-size:19px;color:#c9d1d9;line-height:1.5;margin-bottom:32px;max-width:540px}
+    .slide-produto-preco{display:inline-flex;align-items:baseline;gap:6px;background:linear-gradient(135deg,#f7e38b,#e6b800);color:#1a1a1a;padding:14px 28px;border-radius:14px;box-shadow:0 8px 30px rgba(247,227,139,.4)}
+    .slide-produto-preco-rs{font-size:18px;font-weight:700}
+    .slide-produto-preco-val{font-size:42px;font-weight:900;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+    .slide-video{width:100%;height:100%}
+    .slide-video video{width:100%;height:100%;object-fit:cover}
+    @media(max-width:768px){
+      .slide-produto{grid-template-columns:1fr;padding:80px 24px;gap:24px;text-align:center}
+      .slide-produto-info{padding:0}
+      .slide-produto-nome{font-size:34px}
+      .slide-produto-desc{font-size:15px;margin:0 auto 20px}
+      .slide-produto-img-emoji{font-size:160px}
+      .slide-welcome-nome{font-size:42px}
+      .slide-welcome-slogan{font-size:16px}
+    }
+    .carousel-progress{position:absolute;bottom:0;left:0;right:0;height:4px;background:rgba(255,255,255,.08);z-index:10}
+    .carousel-progress-bar{height:100%;background:linear-gradient(90deg,#f7e38b,#e6b800);width:0;transition:width .1s linear}
+    .carousel-footer{position:absolute;bottom:20px;left:28px;right:28px;display:flex;align-items:center;justify-content:space-between;z-index:8;pointer-events:none}
+    .carousel-pager{display:flex;gap:6px}
+    .carousel-pager-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.2);transition:background .3s,width .3s}
+    .carousel-pager-dot.active{background:#f7e38b;width:24px;border-radius:99px}
+    .carousel-brand{font-size:11px;color:rgba(255,255,255,.4);letter-spacing:2px;text-transform:uppercase}
+    .play-overlay{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:opacity .4s}
+    .play-overlay.hidden{opacity:0;pointer-events:none}
+    .play-overlay-icon{width:120px;height:120px;border-radius:50%;background:linear-gradient(135deg,#f7e38b,#e6b800);display:flex;align-items:center;justify-content:center;margin-bottom:24px;box-shadow:0 0 60px rgba(247,227,139,.5);animation:pulse 2s infinite}
+    @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+    .play-overlay-text{font-size:24px;color:#fff;font-weight:700;margin-bottom:6px}
+    .play-overlay-sub{font-size:14px;color:#8b949e}
+    .spotify-embed{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+  `;
+
+  const renderSlide=(s,idx)=>{
+    if(s.tipo==='welcome'){
+      return `<div class="carousel-slide slide-welcome${idx===0?' active':''}" data-idx="${idx}">
+        <div class="slide-welcome-logo">${logoHtml}</div>
+        <div class="slide-welcome-nome">${_esc(cfg.nome||'Bem-vindo')}</div>
+        ${cfg.slogan?`<div class="slide-welcome-slogan">${_esc(cfg.slogan)}</div>`:''}
+        <div class="slide-welcome-cta">— Confira nosso cardápio —</div>
+      </div>`;
+    }
+    if(s.tipo==='video'){
+      return `<div class="carousel-slide slide-video" data-idx="${idx}" data-type="video">
+        <video src="${_esc(s.data.url)}" muted playsinline preload="metadata"></video>
+      </div>`;
+    }
+    const p=s.data;
+    const temFoto=p.foto&&_isImg(p.foto);
+    return `<div class="carousel-slide" data-idx="${idx}">
+      <div class="slide-produto">
+        <div class="slide-produto-img-wrap">
+          ${temFoto
+            ?`<img class="slide-produto-img" src="${_esc(p.foto)}" alt="${_esc(p.nome)}">`
+            :`<div class="slide-produto-img-emoji">${_esc(p.ico||'🍽️')}</div>`}
+        </div>
+        <div class="slide-produto-info">
+          <div class="slide-produto-cat">${_esc(p._cat?.emoji||'')} ${_esc(p._cat?.nome||'')}</div>
+          <div class="slide-produto-nome">${_esc(p.nome)}</div>
+          ${p.desc?`<div class="slide-produto-desc">${_esc(p.desc)}</div>`:''}
+          <div class="slide-produto-preco">
+            <span class="slide-produto-preco-rs">R$</span>
+            <span class="slide-produto-preco-val">${(p.preco||0).toFixed(2).replace('.',',')}</span>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  };
+
+  // Música: spotify embed (iframe oculto) ou audio URL
+  let musicaHtml='';
+  if(musica.tipo==='spotify'&&musica.spotify_url){
+    const spotEmbed=musica.spotify_url.replace('open.spotify.com/','open.spotify.com/embed/');
+    musicaHtml=`<iframe class="spotify-embed" src="${_esc(spotEmbed)}?utm_source=generator&autoplay=1" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>`;
+  } else if(musica.tipo==='url'&&musica.url){
+    musicaHtml=`<audio id="vitrine-audio" src="${_esc(musica.url)}" loop preload="auto"></audio>`;
+  }
+
+  document.body.innerHTML=`<style>${css}</style>
+    <div class="play-overlay" id="play-overlay">
+      <div class="play-overlay-icon">
+        <svg width="56" height="56" viewBox="0 0 24 24" fill="#1a1a1a"><path d="M8 5v14l11-7z"/></svg>
+      </div>
+      <div class="play-overlay-text">Toque para iniciar a vitrine</div>
+      <div class="play-overlay-sub">${seq.length} slides · ${musica.tipo!=='off'&&musica.tipo?'com música de fundo':'sem música'}</div>
+    </div>
+
+    <div class="carousel-root">
+      <header class="carousel-header">
+        <div class="carousel-header-logo">${logoHtml.replace('width:72px','width:48px').replace('height:72px','height:48px').replace('font-size:62px','font-size:36px')}</div>
+        <div class="carousel-header-text">
+          <div class="carousel-header-nome">${_esc(cfg.nome||'Cardápio')}</div>
+          ${cfg.slogan?`<div class="carousel-header-slogan">${_esc(cfg.slogan)}</div>`:''}
+        </div>
+        <div>
+          <div class="carousel-clock" id="vitrine-clock">--:--</div>
+          <div class="carousel-clock-data" id="vitrine-data">—</div>
+        </div>
+      </header>
+
+      ${seq.map(renderSlide).join('')}
+
+      <div class="carousel-footer">
+        <div class="carousel-pager">
+          ${seq.map((_,i)=>`<div class="carousel-pager-dot${i===0?' active':''}"></div>`).join('')}
+        </div>
+        <div class="carousel-brand">PedePronto PDV</div>
+      </div>
+      <div class="carousel-progress"><div class="carousel-progress-bar" id="carousel-progress-bar"></div></div>
+    </div>
+    ${musicaHtml}
+  `;
+  document.title=(cfg.nome||'Vitrine')+' · Cardápio';
+
+  // Relógio
+  function updateClock(){
+    const now=new Date();
+    const hh=String(now.getHours()).padStart(2,'0');
+    const mm=String(now.getMinutes()).padStart(2,'0');
+    const dia=now.toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'short'});
+    const clk=document.getElementById('vitrine-clock');
+    const dat=document.getElementById('vitrine-data');
+    if(clk)clk.textContent=hh+':'+mm;
+    if(dat)dat.textContent=dia;
+  }
+  updateClock(); setInterval(updateClock,30000);
+
+  // Lógica do carrossel
+  let currentIdx=0;
+  let slideTimer=null;
+  let progressTimer=null;
+  const slides=document.querySelectorAll('.carousel-slide');
+  const dots=document.querySelectorAll('.carousel-pager-dot');
+  const progressBar=document.getElementById('carousel-progress-bar');
+  const audio=document.getElementById('vitrine-audio');
+  const volumeNormal=(musica.volume!=null?musica.volume:0.6);
+
+  function nextSlide(){
+    slides[currentIdx]?.classList.remove('active');
+    dots[currentIdx]?.classList.remove('active');
+    // Pausa vídeo anterior
+    const prevVid=slides[currentIdx]?.querySelector('video');
+    if(prevVid){try{prevVid.pause();prevVid.currentTime=0;}catch(e){}}
+    currentIdx=(currentIdx+1)%slides.length;
+    slides[currentIdx]?.classList.add('active');
+    dots[currentIdx]?.classList.add('active');
+    startSlide();
+  }
+
+  function startSlide(){
+    if(slideTimer)clearTimeout(slideTimer);
+    if(progressTimer)clearInterval(progressTimer);
+    const slide=slides[currentIdx];
+    const isVideo=slide?.dataset.type==='video';
+    let slideDur=duracao;
+    if(isVideo){
+      const vid=slide.querySelector('video');
+      if(vid){
+        try{
+          vid.currentTime=0;
+          vid.play().catch(()=>{});
+          // Diminui música durante vídeo (audio ducking)
+          if(audio){audio.volume=musica.duck_volume!=null?musica.duck_volume:0.05;}
+          slideDur=(vid.duration&&isFinite(vid.duration)?vid.duration*1000:duracao);
+          vid.onended=()=>nextSlide();
+        }catch(e){}
+      }
+    } else {
+      // Restaura volume normal em slides não-vídeo
+      if(audio){try{audio.volume=volumeNormal;}catch(e){}}
+    }
+    // Barra de progresso
+    const start=Date.now();
+    if(progressBar){
+      progressBar.style.width='0%';
+      progressTimer=setInterval(()=>{
+        const elapsed=Date.now()-start;
+        const pct=Math.min(100,(elapsed/slideDur)*100);
+        progressBar.style.width=pct+'%';
+      },80);
+    }
+    if(!isVideo) slideTimer=setTimeout(nextSlide,slideDur);
+  }
+
+  // Botão de iniciar (necessário para autoplay com som)
+  const playOverlay=document.getElementById('play-overlay');
+  playOverlay.addEventListener('click',()=>{
+    playOverlay.classList.add('hidden');
+    if(audio){
+      try{audio.volume=volumeNormal;audio.play().catch(()=>{});}catch(e){}
+    }
+    startSlide();
+    // Tenta fullscreen
+    try{document.documentElement.requestFullscreen?.().catch(()=>{});}catch(e){}
+  },{once:true});
+
+  // Tecla ESC sai do fullscreen, espaço pausa
+  document.addEventListener('keydown',e=>{
+    if(e.key===' '||e.key==='ArrowRight'){e.preventDefault();nextSlide();}
+  });
+}
+
 function _printQRCardapio(){
   const url=window.location.origin+window.location.pathname+'?menu=1';
   const nome=ST.cfg.nome||'PedePronto';
