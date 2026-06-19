@@ -2553,7 +2553,76 @@ function _setSyncStatus(s){
 }
 let _dirtyKeys=new Set(); // chaves modificadas localmente pendentes de push
 let _pushInFlight=false; // true enquanto fsPush está em andamento
+function _stampUpdatedPedidos() {
+  const prevPedidos = DB.get('pedidos') || [];
+  const prevMap = new Map(prevPedidos.map(p => [p.id, p]));
+  ST.pedidos.forEach(p => {
+    const prev = prevMap.get(p.id);
+    if (!prev) {
+      p.updated = Date.now();
+    } else {
+      const pCopy = { ...p, updated: undefined };
+      const prevCopy = { ...prev, updated: undefined };
+      if (JSON.stringify(pCopy) !== JSON.stringify(prevCopy)) {
+        p.updated = Date.now();
+      }
+    }
+  });
+}
+function _mergePedidos(localList, remoteList) {
+  const mergedMap = new Map();
+  const statusWeight = {
+    'cancelado': 4,
+    'pago': 4,
+    'rota': 3,
+    'preparo': 2,
+    'aberto': 1
+  };
+  const getWeight = (status) => statusWeight[status] || 0;
+
+  (remoteList || []).forEach(p => {
+    if (p.id) mergedMap.set(p.id, p);
+  });
+
+  (localList || []).forEach(local => {
+    if (!local.id) return;
+    const remote = mergedMap.get(local.id);
+    if (!remote) {
+      const createdTime = local.created ? new Date(local.created).getTime() : 0;
+      if (Date.now() - createdTime < 24 * 60 * 60 * 1000) {
+        mergedMap.set(local.id, local);
+      }
+      return;
+    }
+
+    const localUpdated = local.updated || 0;
+    const remoteUpdated = remote.updated || 0;
+
+    if (localUpdated !== remoteUpdated) {
+      if (localUpdated > remoteUpdated) {
+        mergedMap.set(local.id, local);
+      }
+    } else {
+      const localW = getWeight(local.status);
+      const remoteW = getWeight(remote.status);
+      if (localW > remoteW) {
+        mergedMap.set(local.id, local);
+      } else if (localW === remoteW) {
+        const localItems = (local.itens || []).length;
+        const remoteItems = (remote.itens || []).length;
+        if (localItems >= remoteItems) {
+          mergedMap.set(local.id, local);
+        }
+      }
+    }
+  });
+
+  return Array.from(mergedMap.values());
+}
 function save(k){
+  if(k==='pedidos'){
+    _stampUpdatedPedidos();
+  }
   ST.cfg._savedAt=new Date().toISOString();
   DB.set(k,ST[k]);
   DB.set('cfg',ST.cfg); // persiste _savedAt para sobreviver a reload
@@ -14492,16 +14561,17 @@ function fsListen(uid){
     // Merge inteligente: para pedidos, fazer merge ao invés de sobrescrever
     const _KEYS=['cfg','caixa','produtos','categorias','clientes','obs_grupos_globais','pedidos','funcionarios','vouchers','pedidos_cancelados','alertas'];
     if(!_listenFirst&&rData.pedidos&&ST.pedidos.length>0){
-      // Merge de pedidos: aceita todos do remoto + pedidos locais que não existem no remoto
-      const remotePedIds=new Set((rData.pedidos||[]).map(p=>p.id));
-      const localOnly=ST.pedidos.filter(p=>p.id&&!remotePedIds.has(p.id)&&(Date.now()-new Date(p.created||0).getTime()<60000));
-      // Pedidos locais criados há menos de 60s e que não estão no remoto = provavelmente ainda não sincronizaram
-      if(localOnly.length>0){
-        rData.pedidos=[...rData.pedidos,...localOnly];
-        console.log('[PedePronto] 🔀 Merge: '+localOnly.length+' pedidos locais preservados');
-      }
+      rData.pedidos=_mergePedidos(ST.pedidos,rData.pedidos);
     }
-    _KEYS.forEach(k=>{if(rData[k]!=null)ST[k]=rData[k];});
+    _KEYS.forEach(k=>{
+      if(rData[k]!=null){
+        if(!_listenFirst&&_dirtyKeys.has(k)){
+          console.log('[PedePronto] 🛡️ Guard: chave local \''+k+'\' está suja (unsaved). Ignorando sobrescrita remota.');
+        } else {
+          ST[k]=rData[k];
+        }
+      }
+    });
     saveAll(true);
     if(_listenFirst){_listenFirst=false;}
     _localDirty=false;
