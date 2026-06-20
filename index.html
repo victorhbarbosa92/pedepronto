@@ -9190,6 +9190,17 @@ function pedidoRota(id){const p=ST.pedidos.find(x=>x.id===id);if(p){p.status='ro
 // ═══════════════════════════════════════════
 //  PRODUÇÃO (KDS)
 // ═══════════════════════════════════════════
+window.showNovoPedidoProd = function(){
+  const html = `<div class="g2">
+    <button class="btn bw" style="flex-direction:column;gap:8px;padding:24px 12px" onclick="closeMc('mc-novo-pedido-prod');novoBalcao()">${ppIcon('counter',28,1.7)}<span class="bold">Balcão</span></button>
+    <button class="btn bw" style="flex-direction:column;gap:8px;padding:24px 12px" onclick="closeMc('mc-novo-pedido-prod');novoVendaDireta()">${ppIcon('zap',28,1.7)}<span class="bold">Venda Rápida</span></button>
+    <button class="btn bw" style="flex-direction:column;gap:8px;padding:24px 12px" onclick="closeMc('mc-novo-pedido-prod');nav('mesas')">${ppIcon('table',28,1.7)}<span class="bold">Mesas</span></button>
+    <button class="btn bw" style="flex-direction:column;gap:8px;padding:24px 12px" onclick="closeMc('mc-novo-pedido-prod');novoDelivery()">${ppIcon('bike',28,1.7)}<span class="bold">Delivery</span></button>
+  </div>`;
+  if(typeof showModal === 'function') {
+    showModal('mc-novo-pedido-prod', 'Novo Pedido', html);
+  }
+};
 function renderProducao(){
   const tab=ST._kdsTab||'cozinha';ST._kdsTab=tab;
   const dest=tab==='cozinha'?'coz':'bar';
@@ -9221,12 +9232,15 @@ function renderProducao(){
       <button class="btn bs bxs" style="gap:4px" onclick="_exitKitchenMode()">${ppIcon('xCircle',14,1.7)} Sair</button>
     </div>
   </div>`:''}
-  <div class="rb mb10">
-    <div class="tabbar" style="flex:1">
+  <div class="rb mb10" style="flex-wrap:wrap;gap:10px">
+    <div class="tabbar" style="flex:1;min-width:200px">
       <button class="tabitem kds-coz ${tab==='cozinha'?'on':''}" style="gap:5px" onclick="ST._kdsTab='cozinha';renderProducao()">${ppIcon('fire',14,1.7)} Cozinha ${cozAtivos>0?`<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--ac);margin-left:4px;vertical-align:middle"></span>`:''}${cozProntos>0?`<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--gn);margin-left:3px;vertical-align:middle"></span>`:''}</button>
       <button class="tabitem kds-bar ${tab==='bar'?'on':''}" style="gap:5px" onclick="ST._kdsTab='bar';renderProducao()">${ppIcon('utensils',14,1.7)} Bar ${barAtivos>0?`<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--bl);margin-left:4px;vertical-align:middle"></span>`:''}${barProntos>0?`<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--gn);margin-left:3px;vertical-align:middle"></span>`:''}</button>
     </div>
-    <span class="fs12 t3" style="padding-left:10px;white-space:nowrap">${peds.length} preparo · ${prontos.length} pronto${prontos.length!==1?'s':''}</span>
+    <div style="display:flex;align-items:center;gap:12px">
+      <span class="fs12 t3" style="white-space:nowrap">${peds.length} preparo · ${prontos.length} pronto${prontos.length!==1?'s':''}</span>
+      <button class="btn bp bw bsm" style="gap:5px;font-weight:600" onclick="window.showNovoPedidoProd()">${ppIcon('plus',14,1.7)} Novo Pedido</button>
+    </div>
   </div>
   ${peds.length===0&&prontos.length===0?`<div class="card" style="text-align:center;color:var(--t2);padding:40px">
     <div style="margin-bottom:8px;display:flex;justify-content:center;color:var(--gn)">${ppIcon('checkCircle',36)}</div>
@@ -9234,17 +9248,20 @@ function renderProducao(){
     <div class="fs12 t3 mt4">Nenhum pedido em produção no momento.</div>
   </div>`:''}
   ${prontos.length?`<div class="sec-title" style="color:var(--gn);display:flex;align-items:center;gap:6px">${ppIcon('checkCircle',16)} Prontos — aguardando retirada</div>
-  ${prontos.map(p=>`<div class="card mb8" style="border-color:var(--gnbr);background:var(--gnbg)">
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px;margin-bottom:14px">
+  ${prontos.map(p=>`<div class="card" style="border-color:var(--gnbr);background:var(--gnbg)">
     <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px">
       <span class="bold fs15">${p.num}</span>
       <span class="bold t2">·</span>
       <span class="bold fs14">${p.mesa_label||p.tipo}</span>
-      ${p.cliente_nome?`<span class="fs12 t2" style="display:inline-flex;align-items:center;gap:3px">${ppIcon('user',12,1.7)} ${p.cliente_nome}</span>`:''}
+      ${p.tipo==='delivery'?`<span class="fs12 t2" style="display:inline-flex;align-items:center;gap:3px">${ppIcon('user',12,1.7)} ${p.cliente_nome||''} ${p.telefone?'· '+ppIcon('phone',12,1.7)+' '+p.telefone:''}</span>`:`${p.cliente_nome?`<span class="fs12 t2" style="display:inline-flex;align-items:center;gap:3px">${ppIcon('user',12,1.7)} ${p.cliente_nome}</span>`:''}`}
       <span class="bdg ${p.consumo==='viagem'?'bpu':'bg'}" style="font-size:10px;display:inline-flex;align-items:center;gap:3px">${p.consumo==='viagem'?'🛍️ Viagem':'🍽️ Local'}</span>
     </div>
     <div class="fs12 t2 mb10">${p.itens.filter(i=>_itemPraDest(i,dest)).map(i=>i.qty+'× '+i.nome).join(' · ')}</div>
     <button class="btn bg bw bsm" style="gap:5px" onclick="confirmarEntrega('${p.id}')">${ppIcon('check',14,1.7)} Confirmar entrega</button>
-  </div>`).join('')}<div class="sec-title mt8">Em preparo</div>`:''}
+  </div>`).join('')}
+  </div><div class="sec-title mt8">Em preparo</div>`:''}
+  ${peds.length?`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;align-items:start">`:''}
   ${peds.map((p,qi)=>{
     const created=new Date(p.created).getTime();
     const prev=dest==='coz'?p.prev_coz:p.prev_bar;
@@ -9276,7 +9293,7 @@ function renderProducao(){
             ${qi>0?`<span style="font-size:10px;font-weight:800;color:var(--am);background:var(--ambg);padding:2px 7px;border-radius:99px;border:1px solid var(--ambr);display:inline-flex;align-items:center;gap:3px">${ppIcon('clock',10,1.7)} +${qi}min na fila</span>`:''}
             ${late?`<span class="kds-late-badge" style="display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:800;color:var(--rd);background:var(--rdbg);padding:2px 8px;border-radius:99px;border:1px solid var(--rdbr)">${ppIcon('alertTriangle',11,1.7)} +${Math.ceil((Date.now()-prevMs)/60000)}min</span>`:'<span class="kds-late-badge" style="display:none"></span>'}
           </div>
-          <div class="fs12 t2" style="display:flex;align-items:center;gap:4px">${p.cliente_nome?ppIcon('user',12,1.7)+' '+p.cliente_nome:''}</div>
+          <div class="fs12 t2" style="display:flex;align-items:center;gap:4px">${p.tipo==='delivery'?`${p.cliente_nome?ppIcon('user',12,1.7)+' '+p.cliente_nome:''} ${p.telefone?'· '+ppIcon('phone',12,1.7)+' '+p.telefone:''}`:`${p.cliente_nome?ppIcon('user',12,1.7)+' '+p.cliente_nome:''}`}</div>
         </div>
         <!-- 2.1 ANEL DE PROGRESSO -->
         <div class="kds-ring-wrap">
@@ -9313,7 +9330,8 @@ function renderProducao(){
         <button class="btn bs bxs" onclick="showCupomPrevia('${p.id}','comanda')">${ppIcon('printer',14,1.7)}</button>
       </div>
     </div>`;
-  }).join('')}`;
+  }).join('')}
+  ${peds.length?'</div>':''}`;
   _kdsStartTick();
 }
 function concluirItem(pedId,itIdx){
