@@ -1999,7 +1999,7 @@ const _PP_PUBKEY_JWK={"crv":"P-256","ext":true,"key_ops":["verify"],"kty":"EC","
     </div>
 
     <div class="rb mb12">
-      <div><div class="fs13 bold">Venda Direta</div><div class="fs11 t3">Aparece no modo venda rápida</div></div>
+      <div><div class="fs13 bold">Venda Rápida</div><div class="fs11 t3">Aparece no modo venda rápida</div></div>
       <button class="sw" id="sw-prod-vd" onclick="toggleSw(this)"></button>
     </div>
     <div class="rb mb12">
@@ -5857,7 +5857,7 @@ window.PPOnboard = (function(){
       ],
       garcom: [
         '👆 Toque na mesa para abrir comanda nova',
-        '⚡ Use <b>Venda Direta</b> para vendas rápidas no balcão',
+        '⚡ Use <b>Venda Rápida</b> para vendas rápidas no balcão',
         '👨‍🍳 Use <b>Modo Garçom</b> para interface ultra-simplificada',
         '📱 No celular, arraste o carrinho pra baixo para esconder',
       ],
@@ -6042,7 +6042,7 @@ window.PPSearch = (function(){
     // ── Ações rápidas (comandos) ──
     const comandos = [
       {nome:'Novo Pedido (Balcão)', ico:'⚡', cond:()=>ST.caixa.aberto, act:()=>novoBalcao()},
-      {nome:'Nova Venda Direta', ico:'⚡', cond:()=>ST.caixa.aberto, act:()=>novoVendaDireta()},
+      {nome:'Nova Venda Rápida', ico:'⚡', cond:()=>ST.caixa.aberto, act:()=>novoVendaDireta()},
       {nome:'Novo Delivery', ico:'🛵', cond:()=>ST.caixa.aberto, act:()=>novoDelivery()},
       {nome:'Abrir Caixa', ico:'🔓', cond:()=>!ST.caixa.aberto, act:()=>pedirAberturaCaixa()},
       {nome:'Fechar Caixa', ico:'🔒', cond:()=>ST.caixa.aberto, act:()=>fecharCaixa()},
@@ -7413,7 +7413,7 @@ function renderDash(){try{
     const _btns=[
       _mb?{ico:'table',lbl:'Mesas',act:"nav('mesas')",cls:'tile-orange',c:'bp'}:null,
       _bb?{ico:'counter',lbl:'Balcao',act:'novoBalcao()',cls:'tile-blue',c:'bb'}:null,
-      _bb?{ico:'zap',lbl:'Venda Direta',act:'novoVendaDireta()',cls:'tile-green',c:'bg'}:null,
+      _bb?{ico:'zap',lbl:'Venda Rápida',act:'novoVendaDireta()',cls:'tile-green',c:'bg'}:null,
       _db?{ico:'bike',lbl:'Delivery',act:'novoDelivery()',cls:'tile-purple',c:'bpu'}:null,
       _pb?{ico:'monitor',lbl:'Producao',act:"nav('producao')",cls:'tile-teal',c:'bcy'}:null
     ].filter(Boolean);
@@ -7496,7 +7496,7 @@ function _renderDashSkin(skin){
   if(hasPermission('pdv')){
     const tiles=[];
     if(_bb)tiles.push({ico:'counter',lbl:'Balcao',act:'novoBalcao()',dt:'dt-balcao',badge:''});
-    if(_bb)tiles.push({ico:'zap',lbl:'Venda Direta',act:'novoVendaDireta()',dt:'dt-vdireta',badge:''});
+    if(_bb)tiles.push({ico:'zap',lbl:'Venda Rápida',act:'novoVendaDireta()',dt:'dt-vdireta',badge:''});
     if(_mb)tiles.push({ico:'table',lbl:'Mesas',act:"nav('mesas')",dt:'dt-mesas',badge:mesasOcup>0?mesasOcup:''});
     if(_db)tiles.push({ico:'bike',lbl:'Delivery',act:'novoDelivery()',dt:'dt-delivery',badge:''});
     if(tiles.length){
@@ -8987,7 +8987,7 @@ function _wizPinOverride(){
   });
 }
 
-// ── Venda Direta: fluxo rápido ──
+// ── Venda Rápida: fluxo rápido ──
 function _getVendaDiretaProds(){
   const catIds=ST.categorias.filter(c=>c.venda_direta).map(c=>c.id);
   return ST.produtos.filter(p=>p.ativo&&(p.venda_direta||catIds.includes(p.cat_id))&&_prodDisponivel(p));
@@ -9006,21 +9006,21 @@ function _prodDisponivel(p){
   return true;
 }
 function novoVendaDireta(){
-  ST.novoPedido={tipo:'balcao',mesa_id:null,mesa_label:'Venda Direta',cliente_nome:'',cart:[],obs:{},endereco:'',consumo:'local',
-    _vendaDireta:true,_wizStep:0,_wizCatIdx:0,_wizCats:[],_loyaltyPhone:'',_loyaltyClientId:null,_loyaltyClientName:''};
+  ST.novoPedido={tipo:'balcao',mesa_id:null,mesa_label:'Venda Rápida',cliente_nome:'',cart:[],obs:{},endereco:'',consumo:'local',
+    _vendaDireta:true,_wizStep:1,_wizCatIdx:0,_wizCats:[],_loyaltyPhone:'',_loyaltyClientId:null,_loyaltyClientName:''};
   ST._prodFilter='todos';nav('pedido');
 }
 
-// ── Venda Direta Wizard (3 steps: Nome → Produtos → Confirmar) ──
+// ── Venda Rápida Wizard (2 steps: Produtos → Confirmar) ──
 function renderVendaDiretaWizard(){
   const np=ST.novoPedido;
-  const step=np._wizStep||0;
-  const totalSteps=3;
+  const step=np._wizStep||1;
+  const totalSteps=2;
   const total=np.cart.reduce((s,i)=>s+(i.preco+(i.obs_extras||0))*i.qty,0);
   const cartCount=np.cart.reduce((s,i)=>s+i.qty,0);
 
   let progressHtml='<div class="wiz-progress">';
-  for(let i=0;i<totalSteps;i++){
+  for(let i=1;i<=totalSteps;i++){
     const cls=i<step?'done':i===step?'cur':'';
     progressHtml+=`<div class="wiz-progress-step ${cls}"></div>`;
   }
@@ -9037,23 +9037,12 @@ function renderVendaDiretaWizard(){
 
   let bodyHtml='',headerHtml='',navHtml='';
 
-  if(step===0){
-    headerHtml=`<div class="wiz-header"><div class="wiz-step-title">⚡ Venda Direta</div><div class="wiz-step-sub">Nome do cliente</div></div>`;
-    bodyHtml=`<div class="wiz-body" style="padding-top:24px">
-      <input class="wiz-input" id="wiz-nome" value="${esc(np.cliente_nome)}" placeholder="Nome..." autofocus
-        oninput="ST.novoPedido.cliente_nome=this.value" autocomplete="off"
-        onkeydown="if(event.key==='Enter'){_vdNext()}">
-      <div class="wiz-nav-inline">
-        <button class="btn bs" onclick="_wizCancel()">✕ Cancelar</button>
-        <button class="btn bp" onclick="_vdNext()">Próximo →</button>
-      </div>
-    </div>`;
-  } else if(step===1){
+  if(step===1){
     const prods=_getVendaDiretaProds();
     const cartQtyMap={};np.cart.forEach(i=>{cartQtyMap[i.prod_id]=(cartQtyMap[i.prod_id]||0)+i.qty;});
-    headerHtml=`<div class="wiz-header"><div class="wiz-step-title">Escolha os itens</div><div class="wiz-step-sub">${prods.length} produto${prods.length!==1?'s':''} disponíve${prods.length!==1?'is':'l'}</div></div>`;
+    headerHtml=`<div class="wiz-header"><div class="wiz-step-title">⚡ Venda Rápida</div><div class="wiz-step-sub">${prods.length} produto${prods.length!==1?'s':''} disponíve${prods.length!==1?'is':'l'}</div></div>`;
     bodyHtml=`<div class="wiz-body">
-      ${prods.length===0?'<div style="text-align:center;padding:40px;color:var(--t2)">Nenhum produto marcado para venda direta.<br><span style="font-size:12px">Ative em Cardápio > Editar produto > "Venda Direta"</span></div>':
+      ${prods.length===0?'<div style="text-align:center;padding:40px;color:var(--t2)">Nenhum produto marcado para venda rápida.<br><span style="font-size:12px">Ative em Cardápio > Editar produto > "Venda Rápida"</span></div>':
       `<div class="wiz-product-grid">
         ${prods.map(p=>{
           const inCart=cartQtyMap[p.id]||0;
@@ -9081,12 +9070,12 @@ function renderVendaDiretaWizard(){
         </div>`).join('')}
       </div>`:''}
       <div class="wiz-nav-inline" style="margin-top:16px;margin-bottom:8px">
-        <button class="btn bs" onclick="_vdBack()">← Voltar</button>
+        <button class="btn bs" onclick="_wizCancel()">✕ Cancelar</button>
         <button class="btn bp" ${cartCount===0?'disabled':''} onclick="_vdNext()">Revisar →</button>
       </div>
     </div>`;
   } else if(step===2){
-    headerHtml=`<div class="wiz-header"><div class="wiz-step-title">Confirmar Venda</div><div class="wiz-step-sub">${esc(np.cliente_nome||'—')}</div></div>`;
+    headerHtml=`<div class="wiz-header"><div class="wiz-step-title">Confirmar Venda</div><div class="wiz-step-sub">Revisão do pedido</div></div>`;
     bodyHtml=`<div class="wiz-body">
       ${np.cart.map((item,idx)=>{
         const unitTotal=(item.preco+(item.obs_extras||0))*item.qty;
@@ -9118,17 +9107,15 @@ function renderVendaDiretaWizard(){
   }
 
   document.getElementById('pg-pedido').innerHTML=`<div class="wiz-container">${progressHtml}${headerHtml}${miniCartHtml}${bodyHtml}</div>`;
-  if(step===0){const el=document.getElementById('wiz-nome');if(el)setTimeout(()=>el.focus(),100);}
 }
 function _vdNext(){
   const np=ST.novoPedido;
-  if(np._wizStep===0&&!(np.cliente_nome||'').trim()){toast('Informe o nome','r');return;}
-  np._wizStep=Math.min((np._wizStep||0)+1,2);
+  np._wizStep=Math.min((np._wizStep||1)+1,2);
   renderVendaDiretaWizard();
 }
 function _vdBack(){
   const np=ST.novoPedido;
-  if((np._wizStep||0)<=0){_wizCancel();return;}
+  if((np._wizStep||1)<=1){_wizCancel();return;}
   np._wizStep--;renderVendaDiretaWizard();
 }
 function _vdFinish(){
@@ -9640,7 +9627,7 @@ function editCat(id){
     <div class="fg"><label class="fl">Emoji</label>
     <input class="inp" id="ec-emoji" value="${esc(c?.emoji||'📂')}" placeholder="📂" style="font-size:22px;text-align:center" maxlength="4"></div>
     <div class="rb" style="padding:10px 0">
-      <div><div class="fs13 bold">Venda Direta</div><div class="fs11 t2">Produtos aparecem no modo venda rápida</div></div>
+      <div><div class="fs13 bold">Venda Rápida</div><div class="fs11 t2">Produtos aparecem no modo venda rápida</div></div>
       <button class="sw ${c?.venda_direta?'on':''}" id="sw-cat-vd" onclick="toggleSw(this)"></button>
     </div>
     <div class="g2 mt8">
