@@ -3745,12 +3745,12 @@ function nav(pg,extra){
   document.getElementById('top-title').textContent=PAGE_TTL[pg]||pg;
   document.querySelectorAll('.sb-item').forEach(s=>s.classList.remove('on'));
   const sbi=document.getElementById('sbm-'+pg);if(sbi)sbi.classList.add('on');
-  const renders={dash:renderDash,dados:renderDados,mesas:renderMesas,balcao:renderBalcao,delivery:renderDelivery,producao:renderProducao,cardapio:renderCardapio,clientes:renderClientes,roleta:renderRoleta,caixa:renderCaixa,relatorio:renderRelatorio,funcionarios:renderFuncionarios,config:renderConfig,admin:renderAdmin,agente:renderAgente,whatsapp:renderWhatsapp,despesas:renderDespesas,comissao:renderComissao,promos:renderPromocoes,relav:renderRelAvancado,garcom:renderGarcomMode,pedido:()=>{if(_cxFlow.tipo)return _renderCxFlow();const np=ST.novoPedido;if(np&&np._vendaDireta&&np._wizStep!==undefined)renderVendaDiretaWizard();else if(np&&np._wizStep!==undefined&&!np._addingTo&&np.tipo==='balcao')renderPedidoWizard();else renderPedido(extra);},fechar:()=>renderFechar(extra),pagamento:()=>renderPagamento(extra)};
+  const renders={dash:renderDash,dados:renderDados,mesas:renderMesas,balcao:renderBalcao,delivery:renderDelivery,producao:renderProducao,cardapio:renderCardapio,clientes:renderClientes,roleta:renderRoleta,caixa:renderCaixa,relatorio:renderRelatorio,funcionarios:renderFuncionarios,config:renderConfig,admin:renderAdmin,agente:renderAgente,whatsapp:renderWhatsapp,despesas:renderDespesas,comissao:renderComissao,promos:renderPromocoes,relav:renderRelAvancado,garcom:renderGarcomMode,pedido:()=>{if(_cxFlow.tipo)return _renderCxFlow(); renderPedido(extra);},fechar:()=>renderFechar(extra),pagamento:()=>renderPagamento(extra)};
   if(renders[pg])renders[pg]();
   // KDS tick: ligar no dash (produção inline) e producao, desligar ao sair
   if(pg==='producao'||pg==='dash')_kdsStartTick();else _kdsStopTick();
   // init consumo buttons after render (skip for wizard mode)
-  if(pg==='pedido'&&!(ST.novoPedido&&ST.novoPedido._wizStep!==undefined&&!ST.novoPedido._addingTo&&ST.novoPedido.tipo==='balcao')) setConsumo(ST.novoPedido.consumo||'local');
+  if(pg==='pedido') setConsumo(ST.novoPedido?ST.novoPedido.consumo||'local':'local');
   // ── SCROLL: só volta ao topo quando o usuário navega para uma página diferente
   if(isPageChange) document.getElementById('page').scrollTo(0,0);
   updateBadges();
