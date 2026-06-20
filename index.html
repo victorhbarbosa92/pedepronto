@@ -4169,62 +4169,91 @@ const BT={
       // FIX bug #1: filtro com helper multi-destino
       const itens=b==='coz'?ped.itens.filter(i=>_itemPraDest(i,'coz')):b==='bar'?ped.itens.filter(i=>_itemPraDest(i,'bar')):ped.itens;
 
-      // ═══ CABEÇALHO — Padronizado ═══
-      all.push(...CMD.center,...CMD.bold1,...CMD.dblH);
-      this.wrapText(cfg.nome.toUpperCase(),W).forEach(l=>all.push(...txt(l),...CMD.lf));
-      all.push(...CMD.normal,...CMD.bold0);
-      if(cfg.end)all.push(...CMD.center,...txt(this.norm(cfg.end)),...CMD.lf);
-      if(cfg.wa)all.push(...CMD.center,...txt('Tel: '+cfg.wa),...CMD.lf);
-      if(cfg.cnpj)all.push(...CMD.center,...txt('CNPJ: '+cfg.cnpj),...CMD.lf);
-      all.push(...CMD.left,...txt(dst()),...CMD.lf);
+      // ═══ CABEÇALHO ═══
+      if(b==='cli'){
+        all.push(...CMD.center,...CMD.bold1,...CMD.dblH);
+        this.wrapText(cfg.nome.toUpperCase(),W).forEach(l=>all.push(...txt(l),...CMD.lf));
+        all.push(...CMD.normal,...CMD.bold0);
+        if(cfg.end)all.push(...CMD.center,...txt(this.norm(cfg.end)),...CMD.lf);
+        if(cfg.wa)all.push(...CMD.center,...txt('Tel: '+cfg.wa),...CMD.lf);
+        if(cfg.cnpj)all.push(...CMD.center,...txt('CNPJ: '+cfg.cnpj),...CMD.lf);
+        all.push(...CMD.left,...txt(dst()),...CMD.lf);
+      }
 
-      // ═══ VIA E PEDIDO (Mesma linha) ═══
-      all.push(...CMD.center,...CMD.bold1,...CMD.dblH,...txt(lbl[b]+'  '+ped.num),...CMD.normal,...CMD.bold0,...CMD.lf);
-      if(ped.cliente_nome){
-        all.push(...CMD.bold1,...txt(ctr(this.norm(ped.cliente_nome).toUpperCase())),...CMD.bold0,...CMD.lf);
+      // ═══ VIA E PEDIDO ═══
+      if(b==='cli'){
+        all.push(...CMD.center,...CMD.bold1,...CMD.dblH,...txt(lbl[b]+'  #'+ped.num),...CMD.normal,...CMD.bold0,...CMD.lf);
+        if(ped.cliente_nome){
+          all.push(...CMD.bold1,...txt(ctr(this.norm(ped.cliente_nome).toUpperCase())),...CMD.bold0,...CMD.lf);
+        }
+      } else {
+        // Cozinha/Bar: Gigante para leitura rápida
+        all.push(...CMD.center,...CMD.dbl,...CMD.bold1,...txt(lbl[b]+' #'+ped.num),...CMD.normal,...CMD.bold0,...CMD.lf);
+        if(ped.cliente_nome) all.push(...CMD.center,...CMD.dblH,...CMD.bold1,...txt(this.norm(ped.cliente_nome).toUpperCase()),...CMD.normal,...CMD.bold0,...CMD.lf);
+        const prev=b==='coz'?ped.prev_coz:ped.prev_bar;
+        if(prev) all.push(...CMD.center,...CMD.dblH,...CMD.bold1,...txt('Previsao: '+fmtH(prev)),...CMD.normal,...CMD.bold0,...CMD.lf);
       }
       all.push(...CMD.left,...txt(dst()),...CMD.lf);
 
       // ═══ DADOS ═══
       all.push(...CMD.left);
       if(ped.mesa_label)all.push(...txt(row2('Mesa:',this.norm(ped.mesa_label))),...CMD.lf);
-      all.push(...txt(row2('Hora:',fmtDH(ped.created).split(' ')[1]||fmtDH(ped.created))),...CMD.lf);
+      if(b==='cli') all.push(...txt(row2('Hora:',fmtDH(ped.created).split(' ')[1]||fmtDH(ped.created))),...CMD.lf);
       const _modTxt=ped.tipo==='delivery'?'Delivery':ped.consumo==='viagem'?'Para Viagem':'Para consumo local';
       all.push(...CMD.center,...txt(_modTxt.toUpperCase()),...CMD.lf,...CMD.left);
+      
+      // Endereço de entrega na via do cliente
+      if(b==='cli' && ped.tipo==='delivery' && ped.cliente_end){
+        all.push(...CMD.lf,...CMD.bold1,...txt('-> ENDERECO DE ENTREGA:'),...CMD.bold0,...CMD.lf);
+        this.wrapText(this.norm(ped.cliente_end), W).forEach(l=>all.push(...txt(l),...CMD.lf));
+        if(ped.cliente_ref) this.wrapText('Ref: '+this.norm(ped.cliente_ref), W).forEach(l=>all.push(...txt(l),...CMD.lf));
+      }
       all.push(...txt(dst()),...CMD.lf);
 
-      // ═══ ITENS — Formato compacto (Tudo na mesma linha se couber) ═══
+      // ═══ ITENS ═══
       (itens.length?itens:ped.itens).forEach((it, i)=>{
         const nomeN=this.norm(it.nome).toUpperCase();
-        const totalStr=b==='cli'?'R$'+(it.qty*it.preco).toFixed(2):'';
         const prefix = (i+1)+'. '+it.qty+'x ';
 
-        const maxFirst=W-prefix.length-totalStr.length-(totalStr?1:0);
-        if(nomeN.length<=maxFirst){
-           all.push(...CMD.bold1,...txt(prefix+nomeN+' '.repeat(Math.max(1,W-prefix.length-nomeN.length-totalStr.length))+totalStr),...CMD.bold0,...CMD.lf);
+        if(b==='cli'){
+          // Cliente: Formato compacto na mesma linha
+          const totalStr='R$'+(it.qty*it.preco).toFixed(2);
+          const maxFirst=W-prefix.length-totalStr.length-1;
+          if(nomeN.length<=maxFirst){
+             all.push(...CMD.bold1,...txt(prefix+nomeN+' '.repeat(Math.max(1,W-prefix.length-nomeN.length-totalStr.length))+totalStr),...CMD.bold0,...CMD.lf);
+          } else {
+             const f=nomeN.substring(0,Math.max(1,maxFirst));
+             all.push(...CMD.bold1,...txt(prefix+f+' '.repeat(Math.max(1,W-prefix.length-f.length-totalStr.length))+totalStr),...CMD.bold0,...CMD.lf);
+             this.wrapText(nomeN.substring(Math.max(1,maxFirst)),W-4).forEach(l=>all.push(...txt('    '+l),...CMD.lf));
+          }
+          if(it.obs){
+            all.push(...CMD.uline1);
+            this.wrapText(this.norm(it.obs),W).forEach((ln,li)=>all.push(...txt((li===0?'> ':'  ')+ln),...CMD.lf));
+            all.push(...CMD.uline0);
+          }
+          if(it.obs_extras&&it.obs_extras>0)all.push(...txt('    +R$'+it.obs_extras.toFixed(2)+' extras'),...CMD.lf);
         } else {
-           const f=nomeN.substring(0,Math.max(1,maxFirst));
-           all.push(...CMD.bold1,...txt(prefix+f+' '.repeat(Math.max(1,W-prefix.length-f.length-totalStr.length))+totalStr),...CMD.bold0,...CMD.lf);
-           this.wrapText(nomeN.substring(Math.max(1,maxFirst)),W-4).forEach(l=>all.push(...txt('    '+l),...CMD.lf));
+          // Cozinha/Bar: Destaque visual gigante
+          all.push(...CMD.dblH,...CMD.bold1);
+          this.wrapText(prefix+nomeN,W).forEach(l=>all.push(...txt(l),...CMD.lf));
+          all.push(...CMD.normal,...CMD.bold0);
+          
+          if(it.obs){
+            all.push(...CMD.dblH,...CMD.bold1);
+            this.wrapText('  * '+this.norm(it.obs),W).forEach(l=>all.push(...txt(l),...CMD.lf));
+            all.push(...CMD.normal,...CMD.bold0);
+          }
+          all.push(...CMD.lf); // Separação para leitura
         }
-
-        if((b==='coz'||b==='bar')&&it.tempo)all.push(...txt('    ~'+it.tempo+'min'),...CMD.lf);
-
-        if(it.obs){
-          all.push(...CMD.uline1);
-          this.wrapText(this.norm(it.obs),W).forEach((ln,li)=>all.push(...txt((li===0?'> ':'  ')+ln),...CMD.lf));
-          all.push(...CMD.uline0);
-        }
-        if(it.obs_extras&&it.obs_extras>0)all.push(...txt('    +R$'+it.obs_extras.toFixed(2)+' extras'),...CMD.lf);
       });
       all.push(...txt(dst()),...CMD.lf);
 
-      // ═══ TOTAL E RODAPÉ ═══
+      // ═══ TOTAL E RODAPÉ (Apenas Cliente) ═══
       if(b==='cli'){
-        if(ped.desconto>0)all.push(...txt(row2('Desc:','-R$'+ped.desconto.toFixed(2))),...CMD.lf);
+        if(ped.taxa_entrega>0)all.push(...txt(row2('Taxa Entrega:','R$'+ped.taxa_entrega.toFixed(2))),...CMD.lf);
+        if(ped.taxa_servico>0)all.push(...txt(row2('Taxa Servico:','R$'+ped.taxa_servico.toFixed(2))),...CMD.lf);
+        if(ped.desconto>0)all.push(...txt(row2('Desconto:','-R$'+ped.desconto.toFixed(2))),...CMD.lf);
         all.push(...CMD.center,...CMD.dblH,...CMD.bold1,...txt('TOTAL: R$'+ped.total.toFixed(2)),...CMD.bold0,...CMD.normal,...CMD.lf,...CMD.left);
-        const prevCli=ped.prev_coz||ped.prev_bar;
-        if(prevCli)all.push(...CMD.center,...CMD.bold1,...txt('Previsao: '+fmtH(prevCli)),...CMD.bold0,...CMD.lf);
         
         if(ped.cliente_nome){
           const cli=ST.clientes.find(c=>c.nome===ped.cliente_nome);
@@ -4245,12 +4274,8 @@ const BT={
           if(cfg.tiktok)all.push(...txt('TT: @'+this.norm(cfg.tiktok)),...CMD.lf);
           all.push(...CMD.left);
         }
+        all.push(...CMD.lf,...CMD.center,...txt(this.norm(cfg.footer||'Obrigado!')),...CMD.lf,...CMD.left,...CMD.lf);
       }
-      if(b==='coz'||b==='bar'){
-        const prev=b==='coz'?ped.prev_coz:ped.prev_bar;
-        all.push(...CMD.center,...CMD.bold1,...txt('Previsao: '+(prev?fmtH(prev):'em breve')),...CMD.bold0,...CMD.lf);
-      }
-      all.push(...CMD.lf,...CMD.center,...txt(this.norm(cfg.footer||'Obrigado!')),...CMD.lf,...CMD.left,...CMD.lf);
 
       // Separador entre vias
       if(idx<blocosFilt.length-1){
