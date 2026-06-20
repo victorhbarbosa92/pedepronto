@@ -3986,13 +3986,13 @@ const BT={
   },
   async printRaw(txt,cut=true){
     const enc=new TextEncoder();
-    const b=[0x1B,0x40,0x1B,0x4D,0x01,...enc.encode(this.norm(txt))];
+    const b=[0x1B,0x40,...enc.encode(this.norm(txt))];
     if(cut)b.push(0x1B,0x64,0x04,0x1D,0x56,0x01);
     return this.write(new Uint8Array(b));
   },
   buildCupom(ped,tipo='pedido'){
     const cfg=ST.cfg;
-    const W=this.paper===58?42:64;
+    const W=this.paper===58?32:48;
     const N=(s)=>this.norm(s||'');
     const ctr=(s)=>{s=N(s).substring(0,W);const p=Math.max(0,Math.floor((W-s.length)/2));return ' '.repeat(p)+s};
     const row2=(l,r)=>{l=N(l).substring(0,W-N(r).length-1);const sp=W-l.length-N(r).length;return l+' '.repeat(Math.max(1,sp))+N(r)};
@@ -4133,13 +4133,13 @@ const BT={
   async printPedido(ped,blocos=['cli','coz','bar']){
     if(!this.char){openMc('mc-bt');return false}
     const enc=new TextEncoder();
-    const W=this.paper===58?42:64;
+    const W=this.paper===58?32:48;
     const ctr=s=>{s=s.substring(0,W);const p=Math.max(0,Math.floor((W-s.length)/2));return ' '.repeat(p)+s+' '.repeat(Math.max(0,W-p-s.length))};
     const row2=(l,r)=>{l=l.substring(0,W-r.length-1);const sp=W-l.length-r.length;return l+' '.repeat(Math.max(1,sp))+r};
     const dsh=()=>'-'.repeat(W);
     const dst=()=>'='.repeat(W);
     const CMD={
-      init:[0x1B,0x40],fontB:[0x1B,0x4D,0x01],lf:[0x0A],
+      init:[0x1B,0x40],lf:[0x0A],
       bold1:[0x1B,0x45,0x01],bold0:[0x1B,0x45,0x00],
       center:[0x1B,0x61,0x01],left:[0x1B,0x61,0x00],
       cut:[0x1D,0x56,0x01],feed:[0x1B,0x64,0x04],
@@ -4153,7 +4153,7 @@ const BT={
     const cfg=ST.cfg;
     const lbl={cli:'VIA CLIENTE',coz:'COZINHA',bar:'BAR',bal:'BALCAO'};
     const txt=(s)=>[...enc.encode(this.norm(s))];
-    let all=[...CMD.init,...CMD.fontB,...CMD.cp850,...CMD.lf];
+    let all=[...CMD.init,...CMD.cp850,...CMD.lf];
     const blocosFilt=blocos.filter(b=>{
       // FIX bug #1: usa helper que suporta dests array + dest legado
       if(b==='coz')return ped.itens.some(i=>_itemPraDest(i,'coz'));
@@ -4313,7 +4313,7 @@ const BT={
   },
     async testPrint(){
     if(!this.char){toast('Nenhuma impressora conectada','r');return}
-    const W=this.paper===58?42:64;
+    const W=this.paper===58?32:48;
     const enc=new TextEncoder();
     const N=(s)=>this.norm(s||'');
     const t=(s)=>[...enc.encode(N(s))];
@@ -4322,7 +4322,6 @@ const BT={
     const row2S=(l,r)=>{l=N(l).substring(0,W-N(r).length-1);const sp=W-l.length-N(r).length;return l+' '.repeat(Math.max(1,sp))+N(r)};
     let all=[
       0x1B,0x40,          // ESC @ — init
-      0x1B,0x4D,0x01,     // Font B (fonte pequena)
       0x1B,0x74,0x02,     // codepage CP850
       0x1B,0x61,0x01,     // center
       0x1B,0x45,0x01,     // bold on
