@@ -4178,80 +4178,72 @@ const BT={
       if(cfg.cnpj)all.push(...CMD.center,...txt('CNPJ: '+cfg.cnpj),...CMD.lf);
       all.push(...CMD.left,...txt(dst()),...CMD.lf);
 
-      // ═══ VIA (CLIENTE/COZINHA/BAR) — tamanho duplo ═══
-      all.push(...CMD.center,...CMD.dbl,...txt(lbl[b]),...CMD.normal,...CMD.lf);
-      all.push(...CMD.left,...txt(dst()),...CMD.lf,...CMD.lf);
+      // ═══ VIA (CLIENTE/COZINHA/BAR) ═══
+      all.push(...CMD.center,...CMD.bold1,...txt(lbl[b]),...CMD.bold0,...CMD.normal,...CMD.lf);
+      all.push(...CMD.left,...txt(dst()),...CMD.lf);
 
-      // ═══ NÚMERO DO PEDIDO — tamanho duplo, centralizado ═══
+      // ═══ NÚMERO DO PEDIDO E NOME — Destaque central ═══
       all.push(...CMD.center,...CMD.dbl,...txt(ped.num),...CMD.normal,...CMD.lf);
-
-      // ═══ NOME DO CLIENTE — tamanho duplo, logo abaixo do número ═══
       if(ped.cliente_nome){
-        const nomeUp=this.norm(ped.cliente_nome).toUpperCase();
-        all.push(...CMD.dbl,...txt(ctr2(nomeUp)),...CMD.normal,...CMD.lf);
+        all.push(...CMD.bold1,...txt(ctr(this.norm(ped.cliente_nome).toUpperCase())),...CMD.bold0,...CMD.lf);
       }
       all.push(...CMD.lf);
 
-      // ═══ DADOS — tamanho duplo (tudo grande) ═══
-      all.push(...CMD.left,...CMD.dbl);
-      if(ped.mesa_label)all.push(...txt(row2b('Mesa:',this.norm(ped.mesa_label))),...CMD.lf);
-      all.push(...txt(row2b('Hora:',fmtDH(ped.created).split(' ')[1]||fmtDH(ped.created))),...CMD.lf);
+      // ═══ DADOS — Tamanho normal otimizado ═══
+      all.push(...CMD.left);
+      if(ped.mesa_label)all.push(...txt(row2('Mesa:',this.norm(ped.mesa_label))),...CMD.lf);
+      all.push(...txt(row2('Hora:',fmtDH(ped.created).split(' ')[1]||fmtDH(ped.created))),...CMD.lf);
       const _modTxt=ped.tipo==='delivery'?'Delivery':ped.consumo==='viagem'?'Para Viagem':'Para consumo local';
-      all.push(...txt(ctr2(_modTxt.toUpperCase())),...CMD.lf);
-      all.push(...CMD.normal,...CMD.left,...CMD.lf);
-      all.push(...txt(dst()),...CMD.lf,...CMD.lf);
+      all.push(...CMD.center,...txt(_modTxt.toUpperCase()),...CMD.lf,...CMD.left);
+      all.push(...txt(dst()),...CMD.lf);
 
-      // ═══ ITENS — tamanho duplo para visibilidade ═══
-      (itens.length?itens:ped.itens).forEach(it=>{
+      // ═══ ITENS — Formato compacto (Tudo na mesma linha se couber) ═══
+      (itens.length?itens:ped.itens).forEach((it, i)=>{
         const nomeN=this.norm(it.nome).toUpperCase();
         const totalStr=b==='cli'?'R$'+(it.qty*it.preco).toFixed(2):'';
+        const prefix = (i+1)+'. '+it.qty+'x ';
 
-        // Linha 1: QTD em double-size
-        all.push(...CMD.dbl,...txt(it.qty+'x'),...CMD.normal,...CMD.lf);
-
-        // Linha 2: Nome em double-height (cabe mais chars)
-        this.wrapText(nomeN,W).forEach(l=>all.push(...CMD.dblH,...CMD.bold1,...txt(l),...CMD.bold0,...CMD.normal,...CMD.lf));
-
-        // Preço (só via cliente)
-        if(totalStr)all.push(...CMD.dblH,...txt('   '+totalStr),...CMD.normal,...CMD.lf);
-
-        // Tempo de preparo (só cozinha/bar)
-        if((b==='coz'||b==='bar')&&it.tempo)all.push(...CMD.dblH,...txt('  ~'+it.tempo+'min'),...CMD.normal,...CMD.lf);
-
-        // Observações — double-height, sublinhado
-        if(it.obs){
-          all.push(...CMD.dblH,...CMD.uline1);
-          this.wrapText(this.norm(it.obs),W).forEach((ln,li)=>all.push(...txt((li===0?'> ':'  ')+ln),...CMD.lf));
-          all.push(...CMD.uline0,...CMD.normal);
+        const maxFirst=W-prefix.length-totalStr.length-(totalStr?1:0);
+        if(nomeN.length<=maxFirst){
+           all.push(...CMD.bold1,...txt(prefix+nomeN+' '.repeat(Math.max(1,W-prefix.length-nomeN.length-totalStr.length))+totalStr),...CMD.bold0,...CMD.lf);
+        } else {
+           const f=nomeN.substring(0,Math.max(1,maxFirst));
+           all.push(...CMD.bold1,...txt(prefix+f+' '.repeat(Math.max(1,W-prefix.length-f.length-totalStr.length))+totalStr),...CMD.bold0,...CMD.lf);
+           this.wrapText(nomeN.substring(Math.max(1,maxFirst)),W-4).forEach(l=>all.push(...txt('    '+l),...CMD.lf));
         }
-        if(it.obs_extras&&it.obs_extras>0)all.push(...CMD.dblH,...txt('  +R$'+it.obs_extras.toFixed(2)+' extras'),...CMD.normal,...CMD.lf);
 
-        // Separador leve entre itens
-        all.push(...CMD.lf);
+        if((b==='coz'||b==='bar')&&it.tempo)all.push(...txt('    ~'+it.tempo+'min'),...CMD.lf);
+
+        if(it.obs){
+          all.push(...CMD.uline1);
+          this.wrapText(this.norm(it.obs),W).forEach((ln,li)=>all.push(...txt((li===0?'> ':'  ')+ln),...CMD.lf));
+          all.push(...CMD.uline0);
+        }
+        if(it.obs_extras&&it.obs_extras>0)all.push(...txt('    +R$'+it.obs_extras.toFixed(2)+' extras'),...CMD.lf);
       });
       all.push(...txt(dst()),...CMD.lf);
 
-      // ═══ TOTAL — tamanho duplo + bold ═══
+      // ═══ TOTAL E RODAPÉ ═══
       if(b==='cli'){
-        if(ped.desconto>0)all.push(...CMD.dblH,...txt(row2b('Desc:','-R$'+ped.desconto.toFixed(2))),...CMD.normal,...CMD.lf);
-        all.push(...CMD.center,...CMD.dbl,...CMD.bold1,...txt('R$'+ped.total.toFixed(2)),...CMD.bold0,...CMD.normal,...CMD.lf,...CMD.left,...CMD.lf);
+        if(ped.desconto>0)all.push(...txt(row2('Desc:','-R$'+ped.desconto.toFixed(2))),...CMD.lf);
+        all.push(...CMD.center,...CMD.dblH,...CMD.bold1,...txt('TOTAL: R$'+ped.total.toFixed(2)),...CMD.bold0,...CMD.normal,...CMD.lf,...CMD.left);
         const prevCli=ped.prev_coz||ped.prev_bar;
-        if(prevCli)all.push(...CMD.center,...CMD.dblH,...CMD.bold1,...txt('Previsao: '+fmtH(prevCli)),...CMD.bold0,...CMD.normal,...CMD.lf);
-        // Fidelidade — nível do cliente
+        if(prevCli)all.push(...CMD.center,...CMD.bold1,...txt('Previsao: '+fmtH(prevCli)),...CMD.bold0,...CMD.lf);
+        
         if(ped.cliente_nome){
           const cli=ST.clientes.find(c=>c.nome===ped.cliente_nome);
           if(cli){
             const tier=_getLoyaltyTier(cli);
             const st=_loyaltyStatus(cli);
-            all.push(...CMD.lf,...txt(dsh()),...CMD.lf);
-            all.push(...CMD.center,...CMD.dblH,...CMD.bold1,...txt('FIDELIDADE'),...CMD.bold0,...CMD.normal,...CMD.lf);
-            all.push(...CMD.center,...CMD.dblH,...txt('Nv.'+tier.nivel+' '+tier.nome.toUpperCase()),...CMD.normal,...CMD.lf);
-            if(st&&st.girosDisp>0) all.push(...CMD.center,...CMD.dblH,...txt(st.girosDisp+' giro(s) na roleta!'),...CMD.normal,...CMD.lf);
+            all.push(...txt(dsh()),...CMD.lf);
+            all.push(...CMD.center,...CMD.bold1,...txt('FIDELIDADE'),...CMD.bold0,...CMD.lf);
+            all.push(...CMD.center,...txt('Nv.'+tier.nivel+' '+tier.nome.toUpperCase()),...CMD.lf);
+            if(st&&st.girosDisp>0) all.push(...CMD.center,...txt(st.girosDisp+' giro(s) na roleta!'),...CMD.lf);
           }
         }
-        // Redes sociais
+        
         if(cfg.instagram||cfg.facebook||cfg.tiktok){
-          all.push(...CMD.lf,...txt(dsh()),...CMD.lf,...CMD.center);
+          all.push(...txt(dsh()),...CMD.lf,...CMD.center);
           if(cfg.instagram)all.push(...txt('IG: @'+this.norm(cfg.instagram)),...CMD.lf);
           if(cfg.facebook)all.push(...txt('FB: '+this.norm(cfg.facebook)),...CMD.lf);
           if(cfg.tiktok)all.push(...txt('TT: @'+this.norm(cfg.tiktok)),...CMD.lf);
@@ -4260,15 +4252,15 @@ const BT={
       }
       if(b==='coz'||b==='bar'){
         const prev=b==='coz'?ped.prev_coz:ped.prev_bar;
-        all.push(...CMD.center,...CMD.dblH,...CMD.bold1,...txt('Previsao: '+(prev?fmtH(prev):'em breve')),...CMD.bold0,...CMD.normal,...CMD.lf);
+        all.push(...CMD.center,...CMD.bold1,...txt('Previsao: '+(prev?fmtH(prev):'em breve')),...CMD.bold0,...CMD.lf);
       }
-      all.push(...CMD.lf,...CMD.center,...CMD.dblH,...txt(this.norm(cfg.footer||'Obrigado!')),...CMD.normal,...CMD.lf,...CMD.left,...CMD.lf,...CMD.lf);
+      all.push(...CMD.lf,...CMD.center,...txt(this.norm(cfg.footer||'Obrigado!')),...CMD.lf,...CMD.left,...CMD.lf);
 
       // Separador entre vias
       if(idx<blocosFilt.length-1){
         const nextLbl=lbl[blocosFilt[idx+1]]||blocosFilt[idx+1];
         all.push(...txt('- '.repeat(W/2).slice(0,W)),...CMD.lf);
-        all.push(...CMD.center,...CMD.dbl,...txt(nextLbl),...CMD.normal,...CMD.lf);
+        all.push(...CMD.center,...CMD.bold1,...txt(nextLbl),...CMD.bold0,...CMD.lf);
         all.push(...txt('- '.repeat(W/2).slice(0,W)),...CMD.lf,...CMD.lf);
       }
     });
