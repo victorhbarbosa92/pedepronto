@@ -4169,27 +4169,23 @@ const BT={
       // FIX bug #1: filtro com helper multi-destino
       const itens=b==='coz'?ped.itens.filter(i=>_itemPraDest(i,'coz')):b==='bar'?ped.itens.filter(i=>_itemPraDest(i,'bar')):ped.itens;
 
-      // ═══ CABEÇALHO — nome grande + endereço/telefone ═══
-      all.push(...CMD.center,...CMD.dbl,...CMD.bold1);
-      this.wrapText(cfg.nome.toUpperCase(),W2).forEach(l=>all.push(...txt(l),...CMD.lf));
-      all.push(...CMD.bold0,...CMD.normal);
+      // ═══ CABEÇALHO — Padronizado ═══
+      all.push(...CMD.center,...CMD.bold1,...CMD.dblH);
+      this.wrapText(cfg.nome.toUpperCase(),W).forEach(l=>all.push(...txt(l),...CMD.lf));
+      all.push(...CMD.normal,...CMD.bold0);
       if(cfg.end)all.push(...CMD.center,...txt(this.norm(cfg.end)),...CMD.lf);
       if(cfg.wa)all.push(...CMD.center,...txt('Tel: '+cfg.wa),...CMD.lf);
       if(cfg.cnpj)all.push(...CMD.center,...txt('CNPJ: '+cfg.cnpj),...CMD.lf);
       all.push(...CMD.left,...txt(dst()),...CMD.lf);
 
-      // ═══ VIA (CLIENTE/COZINHA/BAR) ═══
-      all.push(...CMD.center,...CMD.bold1,...txt(lbl[b]),...CMD.bold0,...CMD.normal,...CMD.lf);
-      all.push(...CMD.left,...txt(dst()),...CMD.lf);
-
-      // ═══ NÚMERO DO PEDIDO E NOME — Destaque central ═══
-      all.push(...CMD.center,...CMD.dbl,...txt(ped.num),...CMD.normal,...CMD.lf);
+      // ═══ VIA E PEDIDO (Mesma linha) ═══
+      all.push(...CMD.center,...CMD.bold1,...CMD.dblH,...txt(lbl[b]+'  '+ped.num),...CMD.normal,...CMD.bold0,...CMD.lf);
       if(ped.cliente_nome){
         all.push(...CMD.bold1,...txt(ctr(this.norm(ped.cliente_nome).toUpperCase())),...CMD.bold0,...CMD.lf);
       }
-      all.push(...CMD.lf);
+      all.push(...CMD.left,...txt(dst()),...CMD.lf);
 
-      // ═══ DADOS — Tamanho normal otimizado ═══
+      // ═══ DADOS ═══
       all.push(...CMD.left);
       if(ped.mesa_label)all.push(...txt(row2('Mesa:',this.norm(ped.mesa_label))),...CMD.lf);
       all.push(...txt(row2('Hora:',fmtDH(ped.created).split(' ')[1]||fmtDH(ped.created))),...CMD.lf);
