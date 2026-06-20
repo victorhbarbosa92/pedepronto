@@ -1723,6 +1723,7 @@ const _PP_PUBKEY_JWK={"crv":"P-256","ext":true,"key_ops":["verify"],"kty":"EC","
     <!-- ── 6. SISTEMA ── -->
     <div class="sb-sec">Sistema</div>
     <button class="sb-item" id="sbm-agente" title="Agente IA" onclick="nav('agente')" style="display:none"><span class="sb-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a4 4 0 014 4v2H8V6a4 4 0 014-4zM5 12h14v7a3 3 0 01-3 3H8a3 3 0 01-3-3v-7zM8 8v4M16 8v4M9 16h6"/></svg></span><span class="sb-lbl">Agente IA</span></button>
+    <button class="sb-item" id="sbm-whatsapp" title="WhatsApp" onclick="nav('whatsapp')"><span class="sb-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg></span><span class="sb-lbl">WhatsApp</span></button>
     <button class="sb-item" id="sbm-config" title="Configurações" onclick="nav('config')"><span class="sb-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 01-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 01-4 0v-.1a1.7 1.7 0 00-1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 01-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 010-4h.1a1.7 1.7 0 001.5-1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 012.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 014 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 012.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 010 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg></span><span class="sb-lbl">Configurações</span></button>
     <button class="sb-item" id="sbm-admin" title="Super Admin" onclick="nav('admin')" style="display:none;color:#f59e0b"><span class="sb-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 7.2H22l-6 4.8 2.4 7.2L12 16.4 5.6 21.2 8 14 2 9.2h7.6z"/></svg></span><span class="sb-lbl">Super Admin</span></button>
     <div class="sb-foot" id="sb-foot">
@@ -1772,6 +1773,7 @@ const _PP_PUBKEY_JWK={"crv":"P-256","ext":true,"key_ops":["verify"],"kty":"EC","
       <div class="pg" id="pg-config"></div>
       <div class="pg" id="pg-admin"></div>
       <div class="pg" id="pg-agente"></div>
+      <div class="pg" id="pg-whatsapp"></div>
       <div class="pg" id="pg-pedido"></div>
       <div class="pg" id="pg-fechar"></div>
       <div class="pg" id="pg-pagamento"></div>
@@ -3443,7 +3445,7 @@ function confirm2(ico,title,msg,okLbl,okCls,cb,cancelCb){
 // ═══════════════════════════════════════════
 //  NAVIGATION
 // ═══════════════════════════════════════════
-const PAGE_TTL={dash:'Início',dados:'Dados',funcionarios:'Funcionários',mesas:'Mesas',balcao:'Balcão',delivery:'Delivery',producao:'Produção',cardapio:'Cardápio',clientes:'Clientes',roleta:'Roleta',caixa:'Caixa',relatorio:'Relatórios',relav:'Relatórios Avançados',despesas:'Despesas',comissao:'Comissão',promos:'Promoções',garcom:'Modo Garçom',config:'Configurações',admin:'Super Admin',agente:'Agente IA',pedido:'Novo Pedido',fechar:'Fechar Conta',pagamento:'Pagamento'};
+const PAGE_TTL={dash:'Início',dados:'Dados',funcionarios:'Funcionários',mesas:'Mesas',balcao:'Balcão',delivery:'Delivery',producao:'Produção',cardapio:'Cardápio',clientes:'Clientes',roleta:'Roleta',caixa:'Caixa',relatorio:'Relatórios',relav:'Relatórios Avançados',despesas:'Despesas',comissao:'Comissão',promos:'Promoções',garcom:'Modo Garçom',config:'Configurações',admin:'Super Admin',agente:'Agente IA',whatsapp:'WhatsApp',pedido:'Novo Pedido',fechar:'Fechar Conta',pagamento:'Pagamento'};
 
 function applyResponsiveNav(){
   const mobile=isMobile();
@@ -3743,7 +3745,7 @@ function nav(pg,extra){
   document.getElementById('top-title').textContent=PAGE_TTL[pg]||pg;
   document.querySelectorAll('.sb-item').forEach(s=>s.classList.remove('on'));
   const sbi=document.getElementById('sbm-'+pg);if(sbi)sbi.classList.add('on');
-  const renders={dash:renderDash,dados:renderDados,mesas:renderMesas,balcao:renderBalcao,delivery:renderDelivery,producao:renderProducao,cardapio:renderCardapio,clientes:renderClientes,roleta:renderRoleta,caixa:renderCaixa,relatorio:renderRelatorio,funcionarios:renderFuncionarios,config:renderConfig,admin:renderAdmin,agente:renderAgente,despesas:renderDespesas,comissao:renderComissao,promos:renderPromocoes,relav:renderRelAvancado,garcom:renderGarcomMode,pedido:()=>{if(_cxFlow.tipo)return _renderCxFlow();const np=ST.novoPedido;if(np&&np._vendaDireta&&np._wizStep!==undefined)renderVendaDiretaWizard();else if(np&&np._wizStep!==undefined&&!np._addingTo&&np.tipo==='balcao')renderPedidoWizard();else renderPedido(extra);},fechar:()=>renderFechar(extra),pagamento:()=>renderPagamento(extra)};
+  const renders={dash:renderDash,dados:renderDados,mesas:renderMesas,balcao:renderBalcao,delivery:renderDelivery,producao:renderProducao,cardapio:renderCardapio,clientes:renderClientes,roleta:renderRoleta,caixa:renderCaixa,relatorio:renderRelatorio,funcionarios:renderFuncionarios,config:renderConfig,admin:renderAdmin,agente:renderAgente,whatsapp:renderWhatsapp,despesas:renderDespesas,comissao:renderComissao,promos:renderPromocoes,relav:renderRelAvancado,garcom:renderGarcomMode,pedido:()=>{if(_cxFlow.tipo)return _renderCxFlow();const np=ST.novoPedido;if(np&&np._vendaDireta&&np._wizStep!==undefined)renderVendaDiretaWizard();else if(np&&np._wizStep!==undefined&&!np._addingTo&&np.tipo==='balcao')renderPedidoWizard();else renderPedido(extra);},fechar:()=>renderFechar(extra),pagamento:()=>renderPagamento(extra)};
   if(renders[pg])renders[pg]();
   // KDS tick: ligar no dash (produção inline) e producao, desligar ao sair
   if(pg==='producao'||pg==='dash')_kdsStartTick();else _kdsStopTick();
@@ -3773,7 +3775,7 @@ function _silentRefresh(){
   const renders={
     dados:renderDados,dash:renderDash,mesas:renderMesas,balcao:renderBalcao,delivery:renderDelivery,
     producao:renderProducao,cardapio:renderCardapio,clientes:renderClientes,
-    caixa:renderCaixa,relatorio:renderRelatorio,funcionarios:renderFuncionarios,config:renderConfig,admin:renderAdmin,agente:renderAgente,
+    caixa:renderCaixa,relatorio:renderRelatorio,funcionarios:renderFuncionarios,config:renderConfig,admin:renderAdmin,agente:renderAgente,whatsapp:renderWhatsapp,
     despesas:renderDespesas,comissao:renderComissao,promos:renderPromocoes,relav:renderRelAvancado,garcom:renderGarcomMode
   };
   if(renders[ST.curNav])renders[ST.curNav]();
@@ -3809,7 +3811,8 @@ function openMenuSheet(){
       ['promos','tag','Promoções']
     ]},
     {nome:'Sistema', items:[
-      ['config','settings','Configurações']
+      ['config','settings','Configurações'],
+      ['whatsapp','messageSquare','WhatsApp']
     ].concat(ag?[['agente','bot','Agente IA']]:[]).concat(sa?[['admin','star','Super Admin']]:[])}
   ];
   var html = '<div class="sh-handle"></div>';
@@ -7306,6 +7309,56 @@ function _renderDashPedidosAtivos(_i){
   return html;
 }
 
+function _renderDashRecentChats(){
+  const msgs = [];
+  if (typeof _agentMsgs !== 'undefined' && _agentMsgs.length > 0) {
+    const last = _agentMsgs[_agentMsgs.length-1];
+    msgs.push({tipo: 'Agente IA', msg: last.content, role: last.role, act: "nav('agente')"});
+  }
+  if (typeof _guiaMsgs !== 'undefined' && _guiaMsgs.length > 0) {
+    const last = _guiaMsgs[_guiaMsgs.length-1];
+    msgs.push({tipo: 'Guia PedePronto', msg: last.content, role: last.role, act: "_openGuiaChat()"});
+  }
+  
+  let h = `<div class="dash-sec">Conversas Recentes</div><div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px">`;
+  
+  if(msgs.length === 0) {
+    h += `<div class="card" style="padding:16px;text-align:center;color:var(--t3);font-size:12px;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer" onclick="nav('agente')">
+      <div style="font-size:24px;opacity:0.5">${ppIcon('messageCircle', 24)}</div>
+      <div>Nenhuma conversa recente.<br>Clique aqui para falar com o Agente IA.</div>
+    </div>`;
+  } else {
+    msgs.forEach(m => {
+      const text = m.msg.replace(/<[^>]+>/g, '').substring(0, 80) + (m.msg.length > 80 ? '...' : '');
+      h += `<div class="card" style="padding:12px;cursor:pointer;display:flex;align-items:center;gap:12px" onclick="${m.act}">
+        <div style="width:36px;height:36px;border-radius:10px;background:var(--pubg);color:var(--pu);display:flex;align-items:center;justify-content:center;flex-shrink:0">${ppIcon('messageCircle', 18)}</div>
+        <div style="flex:1;min-width:0">
+          <div class="bold fs13">${m.tipo}</div>
+          <div class="fs12 t2" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${m.role==='user'?'Você: ':'IA: '}${text}</div>
+        </div>
+        <div style="color:var(--t3)">${ppIcon('arrowRight',16)}</div>
+      </div>`;
+    });
+  }
+  h += `</div>`;
+  return h;
+}
+
+function renderWhatsapp(){
+  document.getElementById('pg-whatsapp').innerHTML = `
+    <div style="max-width:700px;margin:0 auto;padding-top:16px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px">
+        <div style="width:42px;height:42px;border-radius:12px;background:var(--gnbg);color:var(--gn);display:flex;align-items:center;justify-content:center">${ppIcon('messageSquare', 24)}</div>
+        <div>
+          <div class="bold fs16">WhatsApp</div>
+          <div class="fs12 t2">Suas conversas recentes com o Agente IA e o Guia</div>
+        </div>
+      </div>
+      ${_renderDashRecentChats()}
+    </div>
+  `;
+}
+
 function renderDash(){try{
   const skin=_getDashSkin();
   if(skin!=='classic')return _renderDashSkin(skin);
@@ -7355,6 +7408,7 @@ function renderDash(){try{
     </div>
   </div>`:''}
   ${_renderDashStatusBar(_i)}
+  ${_renderDashRecentChats()}
   ${typeof PPInsights!=='undefined' && (ST.currentUser?.cargo==='dono'||_userCargo==='dono'||_userRole==='dono') ? PPInsights.renderInsightsCard() : ''}
   ${_renderSolicitacoesCancelamento(_i)}
   ${_renderDashProducao(_i,origemIco,origemLbl,origemCls)}`;
@@ -7478,6 +7532,9 @@ function _renderDashSkin(skin){
     });
     h+=`</div>`;
   }
+
+  // ── RECENT CHATS ──
+  h+=_renderDashRecentChats();
 
   // ── CANCELAMENTOS PENDENTES ──
   h+=_renderSolicitacoesCancelamento(_i);
@@ -16914,7 +16971,7 @@ function _showTrialBlockModal(){
 // ═══════════════════════════════════════════
 //  AGENTE IA — Chat + CRM
 // ═══════════════════════════════════════════
-let _agentMsgs=[];
+let _agentMsgs=DB.get('agentMsgs')||[];
 let _agentLoading=false;
 
 function renderAgente(){
@@ -16938,7 +16995,7 @@ function renderAgente(){
         <div class="bold fs14">Assistente PedePronto</div>
         <div class="fs11 t3">Vendas · Upselling · CRM</div>
       </div>
-      <button class="btn bxs bs" onclick="_agentMsgs=[];renderAgente()">Limpar</button>
+      <button class="btn bxs bs" onclick="_agentMsgs=[];DB.set('agentMsgs',_agentMsgs);renderAgente()">Limpar</button>
     </div>
     <div id="agent-msgs" style="flex:1;overflow-y:auto;padding:12px 0;display:flex;flex-direction:column;gap:10px">
       ${_agentMsgs.length===0?`
@@ -16985,6 +17042,7 @@ function _agentSendFromInput(){
 async function _agentSend(text){
   if(_agentLoading)return;
   _agentMsgs.push({role:'user',content:text});
+  DB.set('agentMsgs',_agentMsgs);
   _agentLoading=true;
   renderAgente();
 
@@ -16994,6 +17052,7 @@ async function _agentSend(text){
 
   if(!endpoint){
     _agentMsgs.push({role:'assistant',content:'Endpoint da IA nao configurado. Va em Configuracoes > Agente IA para configurar.'});
+    DB.set('agentMsgs',_agentMsgs);
     _agentLoading=false;renderAgente();return;
   }
 
@@ -17019,6 +17078,7 @@ async function _agentSend(text){
   }catch(e){
     _agentMsgs.push({role:'assistant',content:'Erro ao conectar com a IA: '+e.message});
   }
+  DB.set('agentMsgs',_agentMsgs);
   _agentLoading=false;
   renderAgente();
 }
@@ -19327,7 +19387,7 @@ async function _adminExecutarExclusao(){
 //  PP GUIDE — Guia IA de navegação (não executa ações, só orienta)
 // ═══════════════════════════════════════════════════════════════════
 
-let _guiaMsgs = [];
+let _guiaMsgs = DB.get('guiaMsgs')||[];
 let _guiaLoading = false;
 
 function _buildGuideSystemPrompt() {
@@ -19673,6 +19733,7 @@ function _closeGuiaChat() {
 
 function _guiaClearChat() {
   _guiaMsgs = [];
+  DB.set('guiaMsgs',_guiaMsgs);
   _openGuiaChat();
 }
 
@@ -19686,10 +19747,12 @@ function _guiaSendFromInput() {
 async function _guiaSend(text) {
   if(_guiaLoading) return;
   _guiaMsgs.push({role:'user', content:text});
+  DB.set('guiaMsgs',_guiaMsgs);
 
   const cfg = ST.cfg?.ai_agent || {};
   if(!cfg.endpoint || !cfg.api_key) {
     _guiaMsgs.push({role:'assistant', content:'⚠️ Nenhuma IA configurada.\n\nVá em <b>Configurações → Agente IA</b>, selecione um provedor (ex: Groq gratuito) e preencha a chave de API. Depois volte aqui.'});
+    DB.set('guiaMsgs',_guiaMsgs);
     _openGuiaChat(); return;
   }
 
@@ -19724,6 +19787,7 @@ async function _guiaSend(text) {
   } catch(e) {
     _guiaMsgs.push({role:'assistant', content:'❌ Erro ao conectar com a IA: <b>'+esc(e.message)+'</b>\n\nVerifique o endpoint e chave em Configurações → Agente IA.'});
   }
+  DB.set('guiaMsgs',_guiaMsgs);
   _guiaLoading = false;
   _openGuiaChat();
 }
