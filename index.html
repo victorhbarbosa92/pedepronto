@@ -3947,7 +3947,19 @@ const BT={
   },
   async write(bytes){
     if(!this.char)return false;
-    try{const CHUNK=512;for(let i=0;i<bytes.length;i+=CHUNK){await this.char.writeValueWithoutResponse(bytes.slice(i,i+CHUNK));await new Promise(r=>setTimeout(r,20))}return true}
+    try{
+      const CHUNK=100; // Chunk menor evita 'GATT operation failed' no Windows/Android
+      for(let i=0;i<bytes.length;i+=CHUNK){
+        try {
+          await this.char.writeValueWithoutResponse(bytes.slice(i,i+CHUNK));
+        } catch(e) {
+          // Se falhar o writeWithoutResponse (fila cheia), tenta com write comum ou apenas espera mais
+          await this.char.writeValue(bytes.slice(i,i+CHUNK));
+        }
+        await new Promise(r=>setTimeout(r,40)); // Aumentado para dar tempo ao buffer da impressora
+      }
+      return true;
+    }
     catch(e){toast('Erro: '+e.message,'r');return false}
   },
   norm(s){
