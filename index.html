@@ -7385,60 +7385,7 @@ function renderWhatsapp(){
 }
 
 function renderDash(){try{
-  const skin=_getDashSkin();
-  if(skin!=='classic')return _renderDashSkin(skin);
-  // ── CLASSIC DASHBOARD ──
-  const _i=(n,s=14)=>ppIcon(n,s,1.7);
-  const origemIco={mesa:_i('table'),balcao:_i('counter'),delivery:_i('bike')};
-  const origemLbl={mesa:'Mesa',balcao:'Balcão',delivery:'Delivery'};
-  const origemCls={mesa:'bg',balcao:'ba',delivery:'bpu'};
-  const _isProntoD=p=>p.itens.length>0&&p.itens.every(i=>i.concluido)||(p.status==='pago'&&!p.entregue);
-  const ativos=ST.pedidos.filter(p=>(p.status==='aberto'||p.status==='preparo')&&!_isProntoD(p));
-  const aguardando=ST.pedidos.filter(p=>_isProntoD(p)&&!p.entregue&&naFila(p));
-  document.getElementById('pg-dash').innerHTML=`
-  ${typeof renderAlertaEstoque==='function'?renderAlertaEstoque():''}
-  ${!ST.caixa.aberto?`<div style="background:var(--rdbg);border:1px solid var(--rdbr);border-radius:12px;padding:14px;margin-bottom:14px;text-align:center">
-    <div class="bold rd fs14" style="display:flex;align-items:center;justify-content:center;gap:6px">${_i('alertTriangle',16)} Caixa Fechado</div>
-    <div class="fs12 t2 mt4">${hasPermission('caixa_op')?'Abra o caixa para iniciar as operações do dia':'Aguardando abertura do caixa pelo administrador'}</div>
-    ${hasPermission('caixa_op')?`<button class="btn bp mt8" style="gap:6px" onclick="pedirAberturaCaixa()">${_i('cash',16)} Abrir Caixa</button>`:''}
-  </div>`:`<div style="background:var(--gnbg);border:1px solid var(--gnbr);border-radius:12px;padding:10px 14px;margin-bottom:14px">
-    <div class="rb"><div><div class="bold gn fs13" style="display:flex;align-items:center;gap:5px">${_i('checkCircle',14)} Caixa Aberto</div><div class="fs12 t2" style="display:flex;align-items:center;gap:4px">${_i('user',12)} ${ST.caixa.operador} · ${ST.caixa.turno||''} · desde ${fmtH(ST.caixa.abertura)}</div></div>
-    <div style="display:flex;gap:7px">
-      ${hasPermission('dados')?`<button class="btn bs bxs" style="gap:5px" onclick="nav('dados')">${_i('chart',14)} Dados</button>`:''}
-      ${hasPermission('caixa_op')?`<button class="btn bs bxs" style="gap:5px" onclick="nav('caixa')">${_i('cash',14)} Caixa</button>`:''}
-    </div></div>
-  </div>`}
-  ${hasPermission('pdv')?(()=>{
-    const _mb=_modAtivo('mesas'),_bb=_modAtivo('balcao'),_db=_modAtivo('delivery'),_pb=_modAtivo('producao');
-    const _btns=[
-      _mb?{ico:'table',lbl:'Mesas',act:"nav('mesas')",cls:'tile-orange',c:'bp'}:null,
-      _bb?{ico:'counter',lbl:'Balcao',act:'novoBalcao()',cls:'tile-blue',c:'bb'}:null,
-      _bb?{ico:'zap',lbl:'Venda Rápida',act:'novoVendaDireta()',cls:'tile-green',c:'bg'}:null,
-      _db?{ico:'bike',lbl:'Delivery',act:'novoDelivery()',cls:'tile-purple',c:'bpu'}:null,
-      _pb?{ico:'monitor',lbl:'Producao',act:"nav('producao')",cls:'tile-teal',c:'bcy'}:null
-    ].filter(Boolean);
-    if(!_btns.length)return'';
-    const cols=_btns.length;
-    return _isMetroTheme()?`<div class="g${Math.min(cols,4)} mb12" style="gap:4px">${_btns.map(b=>`<button class="btn metro-tile ${b.cls} bw" onclick="${b.act}">${_i(b.ico,32)}<span>${b.lbl}</span></button>`).join('')}</div>`
-    :`<div class="g${Math.min(cols,4)} mb12">${_btns.map(b=>`<button class="btn ${b.c} bw" style="padding:12px 6px;flex-direction:column;gap:4px;font-size:13px" onclick="${b.act}">${_i(b.ico,22)}<span>${b.lbl}</span></button>`).join('')}</div>`;
-  })():''}
-  ${(_userRole==='dono'||_userCargo==='dono')&&ST.cfg.ai_agent?.api_key&&_modAtivo('agente')?`<div class="card mb12" style="padding:12px;background:linear-gradient(135deg,var(--s2),var(--s3));border:1px solid var(--acg);cursor:pointer" onclick="_openCoachPanel()">
-    <div style="display:flex;align-items:center;gap:12px">
-      <div style="width:42px;height:42px;border-radius:11px;background:linear-gradient(135deg,var(--ac),var(--pu));display:flex;align-items:center;justify-content:center;flex-shrink:0">${_i('bot',22)}</div>
-      <div style="flex:1;min-width:0">
-        <div class="bold fs14">Coach IA</div>
-        <div class="fs11 t2">Briefing diario, combos, campanhas e ajuda do sistema</div>
-      </div>
-      <div style="color:var(--ac)">${_i('arrowRight',18)}</div>
-    </div>
-  </div>`:''}
-  ${_renderDashStatusBar(_i)}
-  ${_renderDashRecentChats()}
-  ${typeof PPInsights!=='undefined' && (ST.currentUser?.cargo==='dono'||_userCargo==='dono'||_userRole==='dono') ? PPInsights.renderInsightsCard() : ''}
-  ${_renderSolicitacoesCancelamento(_i)}
-  ${_renderDashProducao(_i,origemIco,origemLbl,origemCls)}`;
-  // Lista de Pedidos Ativos foi REMOVIDA do dashboard (era poluição visual).
-  // Para ver pedidos abertos: nav('mesas') / nav('balcao') / nav('delivery').
+  renderProducao();
 }catch(e){console.error('[renderDash] ERRO:',e);document.getElementById('pg-dash').innerHTML=`<div style="padding:20px;color:var(--rd)"><b>Erro no dashboard:</b><br><pre style="font-size:12px;margin-top:8px;white-space:pre-wrap;color:var(--t2)">${e.message}\n${e.stack||''}</pre><button class="btn bp mt12" onclick="renderDash()">Tentar novamente</button></div>`;}}
 
 // ── DASHBOARD SKIN RENDERER ──
@@ -9257,7 +9204,10 @@ function renderProducao(){
   const barAtivos=ST.pedidos.filter(p=>(p.status==='aberto'||p.status==='preparo')&&!_isPronto(p)&&p.itens.some(i=>_itemPraDest(i,'bar'))).length;
   const cozProntos=ST.pedidos.filter(p=>_isPronto(p)&&!p.entregue&&naFila(p)&&p.itens.some(i=>_itemPraDest(i,'coz'))).length;
   const barProntos=ST.pedidos.filter(p=>_isPronto(p)&&!p.entregue&&naFila(p)&&p.itens.some(i=>_itemPraDest(i,'bar'))).length;
-  document.getElementById('pg-producao').innerHTML=`
+  const targetId = (ST.curNav === 'dash') ? 'pg-dash' : 'pg-producao';
+  const targetEl = document.getElementById(targetId);
+  if(!targetEl) return;
+  targetEl.innerHTML=`
   ${_kitchenMode?`<div class="kds-kitchen-bar" style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;margin-bottom:10px;background:var(--s2);border-radius:12px">
     <div style="display:flex;align-items:center;gap:8px">
       ${ppIcon('fire',20,1.7,'var(--ac)')}
