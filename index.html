@@ -7634,7 +7634,7 @@ function renderPedido(){
 
   // ── Build form header (client name / delivery data) ──
   let formHtml='';
-  if(np.tipo==='balcao'){
+  if(np.tipo==='balcao' || np._vendaDireta){
     const _addPed=np._addingTo?ST.pedidos.find(p=>p.id===np._addingTo):null;
     formHtml=`<div class="pos-form-area">
       ${np._addingTo&&_addPed?`<div style="background:var(--blbg);border:1px solid var(--blbr);border-radius:8px;padding:8px 12px;margin-bottom:8px;display:flex;align-items:center;gap:8px">
@@ -7642,9 +7642,14 @@ function renderPedido(){
         <div style="flex:1"><div class="fs12 bold" style="color:var(--bl)">Adicionando itens ao ${esc(_addPed.num)}</div>
         <div class="fs11 t2">${esc(_addPed.cliente_nome||'')} · ${_addPed.itens.length} item(ns) · ${fmtR(_addPed.total)}</div></div>
       </div>`:''}
-      <input class="pos-inp-sm" id="inp-cli-nome" value="${esc(np.cliente_nome)}"
-        placeholder="Nome do cliente (obrigatório)" ${np._addingTo?'readonly style="opacity:.6"':''}
-        oninput="ST.novoPedido.cliente_nome=this.value" autocomplete="off">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <input class="pos-inp-sm" id="inp-cli-nome" value="${esc(np.cliente_nome||'')}"
+          placeholder="Nome do cliente (opcional)" ${np._addingTo?'readonly style="opacity:.6"':''}
+          oninput="ST.novoPedido.cliente_nome=this.value" autocomplete="off">
+        <input class="pos-inp-sm" id="inp-tel" value="${esc(np.telefone||'')}"
+          placeholder="Telefone / WhatsApp (opcional)" ${np._addingTo?'readonly style="opacity:.6"':''}
+          oninput="ST.novoPedido.telefone=this.value">
+      </div>
     </div>`;
   } else if(np.tipo==='delivery'){
     formHtml=`<div class="pos-form-area">
@@ -7664,8 +7669,9 @@ function renderPedido(){
       ${(np.del_pagamento||'dinheiro')==='dinheiro'?`<input class="pos-inp-sm" id="inp-troco-para" type="number" step="0.01" value="${esc(np.del_troco_para||'')}" placeholder="Troco para quanto? (opcional)" oninput="ST.novoPedido.del_troco_para=this.value" style="margin-top:8px">`:''}
     </div>`;
   } else if(np.tipo==='mesa'){
-    formHtml=`<div class="pos-form-area" style="display:flex;align-items:center;gap:8px">
-      <input class="pos-inp-sm" id="inp-cli-nome" value="${esc(np.cliente_nome)}" placeholder="Nome do responsável (opcional)" oninput="ST.novoPedido.cliente_nome=this.value" autocomplete="off">
+    formHtml=`<div class="pos-form-area" style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <input class="pos-inp-sm" id="inp-cli-nome" value="${esc(np.cliente_nome||'')}" placeholder="Nome do responsável (opcional)" oninput="ST.novoPedido.cliente_nome=this.value" autocomplete="off">
+      <input class="pos-inp-sm" id="inp-tel" value="${esc(np.telefone||'')}" placeholder="Telefone (opcional)" oninput="ST.novoPedido.telefone=this.value">
     </div>`;
   }
 
@@ -8604,9 +8610,7 @@ function _getWizardCategories(){
   return ST.categorias.filter(c=>ST.produtos.some(p=>p.cat_id===c.id&&p.ativo)).sort((a,b)=>(a.ordem||0)-(b.ordem||0));
 }
 function novoBalcao(){
-  const wizCats=_getWizardCategories();
-  ST.novoPedido={tipo:'balcao',mesa_id:null,mesa_label:'Balcão',cliente_nome:'',cart:[],obs:{},endereco:'',consumo:'local',
-    _wizStep:0,_wizCatIdx:0,_wizCats:wizCats,_loyaltyPhone:'',_loyaltyClientId:null,_loyaltyClientName:''};
+  ST.novoPedido={tipo:'balcao',mesa_id:null,mesa_label:'Balcão',cliente_nome:'',telefone:'',cart:[],obs:{},endereco:'',consumo:'local',_loyaltyPhone:'',_loyaltyClientId:null,_loyaltyClientName:''};
   ST._prodFilter='todos';nav('pedido');
 }
 
@@ -8953,8 +8957,8 @@ function _prodDisponivel(p){
   return true;
 }
 function novoVendaDireta(){
-  ST.novoPedido={tipo:'balcao',mesa_id:null,mesa_label:'Venda Rápida',cliente_nome:'',cart:[],obs:{},endereco:'',consumo:'local',
-    _vendaDireta:true,_wizStep:1,_wizCatIdx:0,_wizCats:[],_loyaltyPhone:'',_loyaltyClientId:null,_loyaltyClientName:''};
+  ST.novoPedido={tipo:'balcao',mesa_id:null,mesa_label:'Venda Rápida',cliente_nome:'',telefone:'',cart:[],obs:{},endereco:'',consumo:'local',
+    _vendaDireta:true,_loyaltyPhone:'',_loyaltyClientId:null,_loyaltyClientName:''};
   ST._prodFilter='todos';nav('pedido');
 }
 
