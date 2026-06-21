@@ -7151,8 +7151,8 @@ function _renderDashProducao(_i,origemIco,origemLbl,origemCls){
   const tab=ST._dashKdsTab||'cozinha';ST._dashKdsTab=tab;
   const dest=tab==='cozinha'?'coz':'bar';
   const _isPronto=p=>p.itens.length>0&&p.itens.filter(i=>_itemPraDest(i,'coz')||_itemPraDest(i,'bar')).every(i=>i.concluido)||(p.status==='pago'&&!p.entregue);
-  const peds=ST.pedidos.filter(p=>(p.status==='aberto'||p.status==='preparo')&&!_isPronto(p)&&p.itens.some(i=>_itemPraDest(i,dest)&&!i.concluido));
-  const prontos=ST.pedidos.filter(p=>_isPronto(p)&&!p.entregue&&naFila(p)&&p.itens.some(i=>_itemPraDest(i,dest)));
+  const peds=ST.pedidos.filter(p=>(p.status==='aberto'||p.status==='preparo')&&!_isPronto(p)&&p.itens.some(i=>_itemPraDest(i,dest)&&!i.concluido)).sort((a,b)=>new Date(a.created)-new Date(b.created));
+  const prontos=ST.pedidos.filter(p=>_isPronto(p)&&!p.entregue&&naFila(p)&&p.itens.some(i=>_itemPraDest(i,dest))).sort((a,b)=>new Date(a.created)-new Date(b.created));
   // Detecta novos pedidos — som e voz
   const primLoad=_kdsSeenIds.size===0;
   peds.forEach(p=>{if(!_kdsSeenIds.has(p.id)){_kdsSeenIds.add(p.id);if(!primLoad)anunciar('novo_pedido',p);}});
@@ -7971,6 +7971,12 @@ function confirmarPedido(){
     }
     nav(pedExist.tipo==='mesa'?'mesas':pedExist.tipo==='balcao'?'balcao':'delivery');
     return;
+  }
+  const today = new Date().toLocaleDateString();
+  const lastDate = DB.get('pedido_seq_date');
+  if(lastDate !== today){
+    ST.pedido_seq = 1;
+    DB.set('pedido_seq_date', today);
   }
   if(!ST.pedido_seq)ST.pedido_seq=1;
   const num='#'+String(ST.pedido_seq).padStart(3,'0');
@@ -9094,9 +9100,9 @@ function novoDelivery(){
 }
 function setDelPag(v){ST.novoPedido.del_pagamento=v;renderPedido();}
 function renderBalcao(){
-  const peds=ST.pedidos.filter(p=>p.tipo==='balcao'&&(p.status==='aberto'||p.status==='preparo'));
-  const aguardando=ST.pedidos.filter(p=>p.tipo==='balcao'&&p.status==='pago'&&!p.entregue);
-  const hist=ST.pedidos.filter(p=>p.tipo==='balcao'&&p.status==='pago'&&p.entregue).slice(-6).reverse();
+  const peds=ST.pedidos.filter(p=>p.tipo==='balcao'&&(p.status==='aberto'||p.status==='preparo')).sort((a,b)=>new Date(a.created)-new Date(b.created));
+  const aguardando=ST.pedidos.filter(p=>p.tipo==='balcao'&&p.status==='pago'&&!p.entregue).sort((a,b)=>new Date(a.created)-new Date(b.created));
+  const hist=ST.pedidos.filter(p=>p.tipo==='balcao'&&p.status==='pago'&&p.entregue).sort((a,b)=>new Date(b.entregue_em)-new Date(a.entregue_em)).slice(0,6);
   const totalVal=peds.reduce((s,p)=>s+(p.total||0),0);
   const agora=Date.now();
   const tempoMed=peds.length?Math.round(peds.reduce((s,p)=>s+(agora-new Date(p.created).getTime()),0)/peds.length/60000):0;
@@ -9210,8 +9216,8 @@ function renderProducao(){
   const dest=tab==='cozinha'?'coz':'bar';
   // "pronto" = todos os itens concluídos (pago ou não) OU pago e não entregue
   const _isPronto=p=>p.itens.length>0&&p.itens.filter(i=>_itemPraDest(i,'coz')||_itemPraDest(i,'bar')).every(i=>i.concluido)||(p.status==='pago'&&!p.entregue);
-  const peds=ST.pedidos.filter(p=>(p.status==='aberto'||p.status==='preparo')&&!_isPronto(p)&&p.itens.some(i=>_itemPraDest(i,dest)&&!i.concluido));
-  const prontos=ST.pedidos.filter(p=>_isPronto(p)&&!p.entregue&&naFila(p)&&p.itens.some(i=>_itemPraDest(i,dest)));
+  const peds=ST.pedidos.filter(p=>(p.status==='aberto'||p.status==='preparo')&&!_isPronto(p)&&p.itens.some(i=>_itemPraDest(i,dest)&&!i.concluido)).sort((a,b)=>new Date(a.created)-new Date(b.created));
+  const prontos=ST.pedidos.filter(p=>_isPronto(p)&&!p.entregue&&naFila(p)&&p.itens.some(i=>_itemPraDest(i,dest))).sort((a,b)=>new Date(a.created)-new Date(b.created));
   // detecta novos pedidos e toca som
   const primLoad=_kdsSeenIds.size===0;
   peds.forEach(p=>{if(!_kdsSeenIds.has(p.id)){_kdsSeenIds.add(p.id);if(!primLoad)anunciar('novo_pedido',p);}});
