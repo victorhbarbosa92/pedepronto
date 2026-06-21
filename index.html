@@ -7150,8 +7150,8 @@ function _renderDashProducao(_i,origemIco,origemLbl,origemCls){
   if(!hasPermission('producao')&&!hasPermission('pdv'))return'';
   const tab=ST._dashKdsTab||'cozinha';ST._dashKdsTab=tab;
   const dest=tab==='cozinha'?'coz':'bar';
-  const _isPronto=p=>p.itens.length>0&&p.itens.every(i=>i.concluido)||(p.status==='pago'&&!p.entregue);
-  const peds=ST.pedidos.filter(p=>(p.status==='aberto'||p.status==='preparo')&&!_isPronto(p)&&p.itens.some(i=>_itemPraDest(i,dest)));
+  const _isPronto=p=>p.itens.length>0&&p.itens.filter(i=>_itemPraDest(i,'coz')||_itemPraDest(i,'bar')).every(i=>i.concluido)||(p.status==='pago'&&!p.entregue);
+  const peds=ST.pedidos.filter(p=>(p.status==='aberto'||p.status==='preparo')&&!_isPronto(p)&&p.itens.some(i=>_itemPraDest(i,dest)&&!i.concluido));
   const prontos=ST.pedidos.filter(p=>_isPronto(p)&&!p.entregue&&naFila(p)&&p.itens.some(i=>_itemPraDest(i,dest)));
   // Detecta novos pedidos — som e voz
   const primLoad=_kdsSeenIds.size===0;
@@ -7399,7 +7399,7 @@ function _renderDashSkin(skin){
   const abertos=ST.pedidos.filter(naFila);
   const ticketMedio=pedHoje.length?receita/pedHoje.length:0;
   // Producao
-  const _isPronto=p=>p.itens.length>0&&p.itens.every(i=>i.concluido)||(p.status==='pago'&&!p.entregue);
+  const _isPronto=p=>p.itens.length>0&&p.itens.filter(i=>_itemPraDest(i,'coz')||_itemPraDest(i,'bar')).every(i=>i.concluido)||(p.status==='pago'&&!p.entregue);
   const emPreparo=ST.pedidos.filter(p=>(p.status==='aberto'||p.status==='preparo')&&!_isPronto(p)).length;
   const prontos=ST.pedidos.filter(p=>_isPronto(p)&&!p.entregue&&naFila(p)).length;
   // Mesas ocupadas
@@ -9209,8 +9209,8 @@ function renderProducao(){
   const tab=ST._kdsTab||'cozinha';ST._kdsTab=tab;
   const dest=tab==='cozinha'?'coz':'bar';
   // "pronto" = todos os itens concluídos (pago ou não) OU pago e não entregue
-  const _isPronto=p=>p.itens.length>0&&p.itens.every(i=>i.concluido)||(p.status==='pago'&&!p.entregue);
-  const peds=ST.pedidos.filter(p=>(p.status==='aberto'||p.status==='preparo')&&!_isPronto(p)&&p.itens.some(i=>_itemPraDest(i,dest)));
+  const _isPronto=p=>p.itens.length>0&&p.itens.filter(i=>_itemPraDest(i,'coz')||_itemPraDest(i,'bar')).every(i=>i.concluido)||(p.status==='pago'&&!p.entregue);
+  const peds=ST.pedidos.filter(p=>(p.status==='aberto'||p.status==='preparo')&&!_isPronto(p)&&p.itens.some(i=>_itemPraDest(i,dest)&&!i.concluido));
   const prontos=ST.pedidos.filter(p=>_isPronto(p)&&!p.entregue&&naFila(p)&&p.itens.some(i=>_itemPraDest(i,dest)));
   // detecta novos pedidos e toca som
   const primLoad=_kdsSeenIds.size===0;
