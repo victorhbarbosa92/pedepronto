@@ -7849,6 +7849,77 @@ function renderPedido(){
     </div>`;
   }
 
+  function buildSheet(){
+    const extras=calcExtras();
+    const ok=checkObrig();
+    const curQty=ST.novoPedido.cart[cartIdx]?.qty||1;
+    sh.innerHTML=`
+    <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--br2);padding-bottom:12px;margin-bottom:12px">
+      <div class="sh-title" style="margin:0;font-size:18px;letter-spacing:-0.5px;flex:1">${ppIcon('edit',18,1.7)} ${esc(item.nome)}</div>
+      <div style="display:flex;align-items:center;gap:16px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="fs12 bold t2" style="text-transform:uppercase;letter-spacing:0.5px">Qtd:</span>
+          <div style="display:flex;align-items:center;gap:0;border:1px solid var(--br2);border-radius:8px;overflow:hidden;background:var(--s2);height:32px">
+            <button style="width:32px;height:32px;background:transparent;border:none;color:var(--tx);font-size:16px;cursor:pointer" onclick="obsQty(${cartIdx},-1)">−</button>
+            <div style="min-width:32px;text-align:center;font-size:14px;font-weight:900;font-family:monospace;line-height:32px">${curQty}</div>
+            <button style="width:32px;height:32px;background:transparent;border:none;color:var(--tx);font-size:16px;cursor:pointer" onclick="obsQty(${cartIdx},1)">+</button>
+          </div>
+        </div>
+        <button class="btn bs" style="width:34px;height:34px;padding:0;border-radius:50%" onclick="closeOv('ov-obs')">${ppIcon('x',20)}</button>
+      </div>
+    </div>
+    
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:16px">
+    ${grupos.map(g=>{
+      const isSim = simNao[g.id]===true;
+      const isNao = simNao[g.id]===false;
+      const faltaObrig=g.obrigatorio && (g.pergunta_sim_nao ? simNao[g.id]===undefined || (isSim && !(sel[g.id]||[]).length) : !(sel[g.id]||[]).length);
+      
+      let html = `<div class="obs-group" style="${faltaObrig?'border-left:3px solid var(--rd);padding-left:8px':''}; margin-bottom:0; background:var(--s2); padding:12px; border-radius:12px; border:1px solid var(--br2)">
+      <div class="obs-group-title" style="margin-bottom:10px;font-size:11px">
+        ${esc(g.nome)}
+        ${g.obrigatorio?'<span class="obs-group-badge" style="background:var(--rdbg);color:var(--rd);border-color:var(--rdbr);font-size:9px">OBRIGATÓRIO</span>':''}
+        <span class="obs-group-badge" style="font-size:9px">${g.multi?'MÚLTIPLA':'ÚNICA'}</span>
+      </div>`;
+
+      if(g.pergunta_sim_nao){
+        html += `<div style="display:flex;gap:6px;margin-bottom:10px">
+          <button class="btn bsm bw ${isSim?'bp':'bs'}" style="flex:1;padding:6px;font-size:13px;min-height:32px" onclick="setSimNao('${g.id}', true)">Sim</button>
+          <button class="btn bsm bw ${isNao?'bp':'bs'}" style="flex:1;padding:6px;font-size:13px;min-height:32px" onclick="setSimNao('${g.id}', false)">Não</button>
+        </div>`;
+      }
+
+      if(!g.pergunta_sim_nao || isSim){
+        html += `<div class="obs-chips" style="gap:6px">
+          ${g.opcoes.map((rawOp,i)=>{
+            const op=norm(rawOp);
+            const on=(sel[g.id]||[]).includes(i);
+            return`<button class="obs-chip ${on?'on':''}" style="padding:6px 12px;font-size:13px;border-radius:20px" onclick="toggleObsSel('${g.id}',${i},${g.multi})">
+              ${esc(op.nome)}${op.preco>0?`<span class="obs-chip-preco" style="font-size:11px;opacity:0.8;margin-left:4px">+${fmtR(op.preco)}</span>`:''}
+            </button>`;
+          }).join('')}
+        </div>`;
+      }
+      html += `</div>`;
+      return html;
+    }).join('')}
+    </div>
+    
+    <div style="display:flex;gap:12px;align-items:flex-end">
+      <div style="flex:1">
+        <label style="font-size:11px;font-weight:700;color:var(--t2);margin-bottom:6px;display:block;letter-spacing:0.5px">OBSERVAÇÃO LIVRE (OPCIONAL)</label>
+        <textarea class="inp" id="obs-livre" rows="1" placeholder="Ex: sem sal, bem gelado..." style="min-height:42px;padding:10px 12px;font-size:13px">${esc(curObs)}</textarea>
+      </div>
+      <button class="btn bp bw" ${ok?'':'disabled style="opacity:.5;pointer-events:none"'} style="height:42px;padding:0 24px;font-size:14px;border-radius:10px;min-width:160px" onclick="salvarObs(${cartIdx})">${ppIcon('check',16,1.8)} ${ok?'Confirmar':'Pendente'}</button>
+    </div>
+    
+    <div style="display:flex;justify-content:space-between;margin-top:8px;align-items:center;min-height:18px">
+      <div>${!ok?'<span class="fs12" style="color:var(--rd);font-weight:700">'+ppIcon('alertTriangle',12,1.7)+' Preencha os campos obrigatórios</span>':''}</div>
+      <div>${extras>0?'<span class="fs12 t2">Adicionais:</span><span class="bold am mono ml4">+'+fmtR(extras)+'</span>':''}</div>
+    </div>
+    `;
+  }
+
   // ── Cart items HTML ──
   const cartItemsHtml = np.cart.length===0
     ? `<div class="cart-empty"><div class="cart-empty-ico" style="color:var(--t3)">${ppIcon('cart',32)}</div><div class="cart-empty-txt">Nenhum item adicionado<br><span style="font-size:11px;font-weight:400">Clique em um produto para adicionar</span></div></div>`
