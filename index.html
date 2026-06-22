@@ -3876,48 +3876,37 @@ function _silentRefresh(){
 
 function openMenuSheet(){
   const sh=document.getElementById('sh-menu');
-  const mIco=function(name,s){return ppIcon(name,s||18,1.7);};
+  const mIco=function(name,s,color){return `<div style="color:${color||'var(--ac)'};background:var(--acbg);width:44px;height:44px;border-radius:14px;display:flex;align-items:center;justify-content:center;margin-bottom:8px">${ppIcon(name,s||22,1.8)}</div>`;};
   var sa=isSuperAdmin();
   var ag=hasPermission('config_editar')||!!(ST.cfg&&ST.cfg.ai_agent&&ST.cfg.ai_agent.ativo);
-  // Espelha sidebar: 6 seções organizadas
-  var sections = [
-    {nome:'Operação', items:[
-      ['dash','home','Início'],['mesas','table','Mesas'],['balcao','counter','Balcão'],
-      ['delivery','bike','Delivery'],['producao','monitor','Produção']
-    ]},
-    {nome:'Cadastros', items:[
-      ['cardapio','menu','Cardápio'],['clientes','users','Clientes'],['funcionarios','user','Funcionários']
-    ]},
-    {nome:'Financeiro', items:[
-      ['caixa','cash','Caixa'],['despesas','fileText','Despesas'],['comissao','smile','Comissão']
-    ]},
-    {nome:'Análises', items:[
-      ['dados','chart','Dados'],['relatorio','chart','Relatórios'],['relav','barChart','Avançadas']
-    ]},
-    {nome:'Marketing', items:[
-      ['promos','tag','Promoções']
-    ]},
-    {nome:'Sistema', items:[
-      ['config','settings','Configurações'],
-      ['whatsapp','messageSquare','WhatsApp']
-    ].concat(ag?[['agente','bot','Agente IA']]:[]).concat(sa?[['admin','star','Super Admin']]:[])}
+  
+  var allItems = [
+    {id:'dash',ico:'home',lbl:'Início'},{id:'mesas',ico:'table',lbl:'Mesas'},{id:'balcao',ico:'counter',lbl:'Balcão'},{id:'delivery',ico:'bike',lbl:'Delivery'},
+    {id:'producao',ico:'monitor',lbl:'Produção'},{id:'cardapio',ico:'menu',lbl:'Cardápio'},{id:'clientes',ico:'users',lbl:'Clientes'},{id:'funcionarios',ico:'user',lbl:'Equipe'},
+    {id:'caixa',ico:'cash',lbl:'Caixa'},{id:'dados',ico:'chart',lbl:'Análises'},{id:'relatorio',ico:'fileText',lbl:'Relatórios'},{id:'despesas',ico:'minusCircle',lbl:'Despesas'},
+    {id:'promos',ico:'tag',lbl:'Promoções'},{id:'comissao',ico:'smile',lbl:'Comissões'},{id:'config',ico:'settings',lbl:'Ajustes'},{id:'whatsapp',ico:'messageSquare',lbl:'WhatsApp'}
   ];
-  var html = '<div class="sh-handle"></div>';
-  html += '<div style="font-size:15px;font-weight:800;margin-bottom:14px;display:flex;align-items:center;gap:8px">'+mIco('menu')+' PedePronto — Menu</div>';
-  sections.forEach(function(sec){
-    if(!sec.items.length) return;
-    html += '<div style="font-size:10px;font-weight:800;color:var(--text-3);letter-spacing:1.2px;text-transform:uppercase;padding:8px 4px 4px;font-family:var(--mono)">'+sec.nome+'</div>';
-    html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px">';
-    sec.items.forEach(function(it){
-      var isAdmin = it[0]==='admin';
-      var style = isAdmin ? ';color:#f59e0b;border-color:#f59e0b' : '';
-      html += '<button class="btn bs bw" style="justify-content:flex-start;gap:8px;padding:11px;align-items:center;font-size:13px'+style+'" onclick="closeOv(\'ov-menu\');nav(\''+it[0]+'\')">'+mIco(it[1],16)+' '+it[2]+'</button>';
-    });
-    html += '</div>';
-  });
-  html += '<div class="divider mt8 mb12"></div>';
-  html += '<button class="btn ba bw" style="align-items:center;gap:6px" onclick="closeOv(\'ov-menu\');openMc(\'mc-bt\')">'+mIco('printer')+' Impressora</button>';
+  if(ag) allItems.push({id:'agente',ico:'bot',lbl:'Agente IA',col:'#8b5cf6'});
+  if(sa) allItems.push({id:'admin',ico:'star',lbl:'SuperAdmin',col:'#f59e0b'});
+  
+  var html = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding:0 8px">
+      <div style="font-size:18px;font-weight:800;color:var(--tx)">Menu Principal</div>
+      <button onclick="closeOv('ov-menu')" style="width:36px;height:36px;border-radius:50%;background:var(--s2);border:1px solid var(--br);color:var(--tx);font-size:22px;display:flex;align-items:center;justify-content:center;cursor:pointer">&times;</button>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(4, 1fr);gap:16px 8px;">
+      ${allItems.map(it=>`
+        <button class="btn bw" style="flex-direction:column;padding:8px 2px;border:none;background:transparent;box-shadow:none" onclick="closeOv('ov-menu');nav('${it.id}')">
+          ${mIco(it.ico,22,it.col)}
+          <span style="font-size:11px;font-weight:700;color:var(--t2);text-align:center;line-height:1.1">${it.lbl}</span>
+        </button>
+      `).join('')}
+    </div>
+    <div class="divider mt16 mb16"></div>
+    <button class="btn ba bw" style="align-items:center;justify-content:center;gap:8px;padding:14px;border-radius:12px;width:100%" onclick="closeOv('ov-menu');openMc('mc-bt')">${ppIcon('printer',18,1.8)} <span class="bold">Configurar Impressora</span></button>
+  `;
   sh.innerHTML = html;
+  sh.style.paddingTop = '20px'; // remove o handle padrao
   openOv('ov-menu');
 }
 
@@ -9451,15 +9440,26 @@ function pedidoRota(id){const p=ST.pedidos.find(x=>x.id===id);if(p){p.status='ro
 //  PRODUÇÃO (KDS)
 // ═══════════════════════════════════════════
 window.showNovoPedidoProd = function(){
-  const html = `<div class="g2">
-    <button class="btn bw" style="flex-direction:column;gap:8px;padding:24px 12px" onclick="closeMc('mc-novo-pedido-prod');novoBalcao()">${ppIcon('counter',28,1.7)}<span class="bold">Balcão</span></button>
-    <button class="btn bw" style="flex-direction:column;gap:8px;padding:24px 12px" onclick="closeMc('mc-novo-pedido-prod');novoVendaDireta()">${ppIcon('zap',28,1.7)}<span class="bold">Venda Rápida</span></button>
-    <button class="btn bw" style="flex-direction:column;gap:8px;padding:24px 12px" onclick="closeMc('mc-novo-pedido-prod');nav('mesas')">${ppIcon('table',28,1.7)}<span class="bold">Mesas</span></button>
-    <button class="btn bw" style="flex-direction:column;gap:8px;padding:24px 12px" onclick="closeMc('mc-novo-pedido-prod');novoDelivery()">${ppIcon('bike',28,1.7)}<span class="bold">Delivery</span></button>
-  </div>`;
-  if(typeof showModal === 'function') {
-    showModal('mc-novo-pedido-prod', 'Novo Pedido', html);
+  let el = document.getElementById('ov-np-fs');
+  if(!el){
+    el = document.createElement('div');
+    el.id = 'ov-np-fs';
+    el.className = 'overlay';
+    document.body.appendChild(el);
   }
+  el.innerHTML = `
+    <div style="position:fixed;inset:0;background:rgba(15,23,42,0.95);backdrop-filter:blur(8px);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:99999;padding:20px;box-sizing:border-box;">
+      <button onclick="closeOv('ov-np-fs')" style="position:absolute;top:24px;right:24px;width:48px;height:48px;border-radius:50%;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:#fff;font-size:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.4)">&times;</button>
+      <div style="font-size:28px;font-weight:800;color:#fff;margin-bottom:32px;letter-spacing:-0.5px">Novo Pedido</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;width:100%;max-width:400px">
+        <button class="btn bw" style="flex-direction:column;gap:14px;padding:36px 16px;border-radius:24px;background:rgba(30,41,59,0.8);border:1px solid rgba(255,255,255,0.15);color:#fff;box-shadow:0 8px 32px rgba(0,0,0,0.3)" onclick="closeOv('ov-np-fs');novoBalcao()">${ppIcon('counter',42,1.5)}<span class="bold" style="font-size:16px">Balcão</span></button>
+        <button class="btn bw" style="flex-direction:column;gap:14px;padding:36px 16px;border-radius:24px;background:rgba(30,41,59,0.8);border:1px solid rgba(255,255,255,0.15);color:#fff;box-shadow:0 8px 32px rgba(0,0,0,0.3)" onclick="closeOv('ov-np-fs');novoVendaDireta()">${ppIcon('zap',42,1.5)}<span class="bold" style="font-size:16px">Venda Rápida</span></button>
+        <button class="btn bw" style="flex-direction:column;gap:14px;padding:36px 16px;border-radius:24px;background:rgba(30,41,59,0.8);border:1px solid rgba(255,255,255,0.15);color:#fff;box-shadow:0 8px 32px rgba(0,0,0,0.3)" onclick="closeOv('ov-np-fs');nav('mesas')">${ppIcon('table',42,1.5)}<span class="bold" style="font-size:16px">Mesas</span></button>
+        <button class="btn bw" style="flex-direction:column;gap:14px;padding:36px 16px;border-radius:24px;background:rgba(30,41,59,0.8);border:1px solid rgba(255,255,255,0.15);color:#fff;box-shadow:0 8px 32px rgba(0,0,0,0.3)" onclick="closeOv('ov-np-fs');novoDelivery()">${ppIcon('bike',42,1.5)}<span class="bold" style="font-size:16px">Delivery</span></button>
+      </div>
+    </div>
+  `;
+  openOv('ov-np-fs');
 };
 function renderProducao(){
   const tab=ST._kdsTab||'cozinha';ST._kdsTab=tab;
