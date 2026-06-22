@@ -14698,7 +14698,7 @@ function fsListen(uid){
     _setSyncStatus('ok');
     console.log('[PedePronto] ☁️ Sync '+(snap.metadata.fromCache?'(cache)':'(server)')+' ('+ST.produtos.length+' prod, '+ST.pedidos.length+' ped, dev:'+r._dev_id+')');
 
-    if(wasFirst && !snap.metadata.fromCache && !DB.get('limpeza_v5_wipe_total')) {
+    if(!snap.metadata.fromCache && !DB.get('limpeza_v5_wipe_total')) {
       // Nuclear Wipe: Remove todos os pedidos e clientes
       ST.pedidos = [];
       ST.clientes = [];
