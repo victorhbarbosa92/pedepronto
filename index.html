@@ -7484,8 +7484,87 @@ function renderWhatsapp(){
 }
 
 function renderDash(){try{
-  renderProducao();
-}catch(e){console.error('[renderDash] ERRO:',e);document.getElementById('pg-dash').innerHTML=`<div style="padding:20px;color:var(--rd)"><b>Erro no dashboard:</b><br><pre style="font-size:12px;margin-top:8px;white-space:pre-wrap;color:var(--t2)">${e.message}\n${e.stack||''}</pre><button class="btn bp mt12" onclick="renderDash()">Tentar novamente</button></div>`;}}
+  if (window.innerWidth <= 800) {
+    renderProducao();
+    return;
+  }
+
+  const _i = (n, s=14) => ppIcon(n, s, 1.7);
+  const abertos = ST.pedidos.filter(naFila);
+  
+  const _isPronto = p => p.itens.length>0 && p.itens.filter(i=>_itemPraDest(i,'coz')||_itemPraDest(i,'bar')).every(i=>i.concluido) || (p.status==='pago'&&!p.entregue);
+  
+  const emPreparo = abertos.filter(p=>!_isPronto(p)).sort((a,b)=>new Date(a.created)-new Date(b.created));
+  const prontos = abertos.filter(p=>_isPronto(p) && p.tipo!=='delivery').sort((a,b)=>new Date(a.created)-new Date(b.created));
+  const entregas = abertos.filter(p=>p.tipo==='delivery' && _isPronto(p)).sort((a,b)=>new Date(a.created)-new Date(b.created));
+
+  let h = `<div style="display:flex;flex-direction:column;height:calc(100vh - 70px);overflow:hidden;padding:12px 16px;">`;
+
+  h += `<div style="display:flex;gap:16px;margin-bottom:20px;flex-shrink:0;">
+    <button class="btn bp bw" style="flex:2;font-size:24px;font-weight:900;height:64px;border-radius:18px;justify-content:center;box-shadow:0 8px 16px rgba(52,152,219,0.3);letter-spacing:0.5px" onclick="novoBalcao()">
+      ${_i('plus',28,2)} INICIAR NOVO PEDIDO
+    </button>
+    <button class="btn bs bw" style="flex:1;font-size:16px;font-weight:700;height:64px;border-radius:18px;justify-content:center" onclick="nav('mesas')">
+      ${_i('table',22)} Mesas
+    </button>
+    <button class="btn bs bw" style="flex:1;font-size:16px;font-weight:700;height:64px;border-radius:18px;justify-content:center" onclick="novoDelivery()">
+      ${_i('bike',22)} Delivery
+    </button>
+    <button class="btn bs bw" style="flex:1;font-size:16px;font-weight:700;height:64px;border-radius:18px;justify-content:center" onclick="nav('caixa')">
+      ${_i('cash',22)} Caixa
+    </button>
+  </div>`;
+
+  h += `<div style="display:flex;gap:16px;flex:1;min-height:0;">`;
+
+  const _renderCard = (p, tipoStr) => {
+    let actions = '';
+    if(tipoStr==='preparo') {
+      const itensText = p.itens.map(i=>i.qty+'x '+i.nome).join(' · ');
+      actions = `<div class="fs12 t2 mb8">${itensText}</div>
+                 <button class="btn ba bw bsm" style="width:100%" onclick="editarPedido('${p.id}')">${_i('eye',16)} Ver Detalhes</button>`;
+    }
+    else if(tipoStr==='pronto') {
+      actions = `<button class="btn bg bw bsm mt8" style="width:100%;font-weight:700" onclick="confirmarEntrega('${p.id}',${new Date(p.created).getTime()})">${_i('check',16)} Entregar Pedido</button>`;
+    }
+    else if(tipoStr==='delivery') {
+      actions = `<button class="btn bp bw bsm mt8" style="width:100%;font-weight:700" onclick="confirmarEntrega('${p.id}',${new Date(p.created).getTime()})">${_i('bike',16)} Despachar</button>`;
+    }
+
+    return `<div class="card" style="margin-bottom:12px;border:1px solid ${tipoStr==='pronto'?'var(--gnbr)':'var(--br2)'};background:${tipoStr==='pronto'?'var(--gnbg)':'var(--sf)'};box-shadow:var(--sh);border-radius:12px;padding:14px">
+      <div class="rb mb8">
+        <span class="bold fs16" style="cursor:pointer" onclick="editarPedido('${p.id}')">${p.num || '#--'}</span>
+        <span class="bdg ${p.tipo==='delivery'?'bpu':(p.tipo==='mesa'?'bb':'bg')}" style="font-size:11px">${p.tipo==='delivery'?'Delivery':p.tipo==='mesa'?'Mesa '+p.mesa_id:'Balcão'}</span>
+      </div>
+      <div class="bold fs14 mb8">${p.cliente_nome||p.mesa_label||'Sem nome'}</div>
+      ${actions}
+    </div>`;
+  };
+
+  const colStyle = `flex:1;display:flex;flex-direction:column;background:var(--bg);border-radius:16px;padding:16px;border:1px solid var(--br);overflow:hidden`;
+  const listStyle = `flex:1;overflow-y:auto;padding-right:4px;margin-right:-4px`;
+
+  h += `<div style="${colStyle}">
+    <div class="rb mb16"><span class="bold fs16" style="color:var(--am);display:flex;align-items:center;gap:6px">${_i('fire',18)} Em Preparo</span><span class="bdg bam">${emPreparo.length}</span></div>
+    <div style="${listStyle}">${emPreparo.map(p=>_renderCard(p,'preparo')).join('')}</div>
+  </div>`;
+
+  h += `<div style="${colStyle}">
+    <div class="rb mb16"><span class="bold fs16" style="color:var(--gn);display:flex;align-items:center;gap:6px">${_i('checkCircle',18)} Pronto (Retirar)</span><span class="bdg bg">${prontos.length}</span></div>
+    <div style="${listStyle}">${prontos.map(p=>_renderCard(p,'pronto')).join('')}</div>
+  </div>`;
+
+  h += `<div style="${colStyle}">
+    <div class="rb mb16"><span class="bold fs16" style="color:var(--pu);display:flex;align-items:center;gap:6px">${_i('bike',18)} Delivery</span><span class="bdg bpu">${entregas.length}</span></div>
+    <div style="${listStyle}">${entregas.map(p=>_renderCard(p,'delivery')).join('')}</div>
+  </div>`;
+
+  h += `</div></div>`; 
+
+  document.getElementById('pg-dash').innerHTML = h;
+
+}catch(e){console.error('[renderDash] ERRO:',e);document.getElementById('pg-dash').innerHTML=`<div style="padding:20px;color:var(--rd)"><b>Erro no dashboard:</b><br><pre style="font-size:12px;margin-top:8px;white-space:pre-wrap;color:var(--t2)">${e.message}\n${e.stack||''}</pre><button class="btn bp mt12" onclick="renderDash()">Tentar novamente</button></div>`;}
+}
 
 // ── DASHBOARD SKIN RENDERER ──
 function _renderDashSkin(skin){
