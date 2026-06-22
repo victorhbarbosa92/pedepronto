@@ -7751,7 +7751,11 @@ function getMesaStatus(mid){
   if(!peds.length)return{status:'livre',label:'',timer:''};
   const p=peds[0];
   const mins=Math.floor((Date.now()-new Date(p.created).getTime())/60000);
-  return{status:mins>60?'fech':mins>30?'aten':'ocu',label:p.cliente_nome||p.num,timer:mins+'min',ped:p};
+  
+  let label = p.cliente_nome||p.num;
+  if(peds.length>1) label = peds.length + ' comandas';
+  
+  return{status:mins>60?'fech':mins>30?'aten':'ocu',label:label,timer:mins+'min'};
 }
 function renderMesas(){
   const total=ST.cfg.mesas_total||10;
@@ -7776,9 +7780,33 @@ function renderMesas(){
   <div class="fs12 t2 mt12">${ocu} de ${total} mesas ocupadas</div>`;
 }
 function clickMesa(mid,num){
-  const s=getMesaStatus(mid);
-  if(s.ped)nav('fechar',s.ped.id);
-  else{ST.novoPedido={tipo:'mesa',mesa_id:mid,mesa_label:'Mesa '+num,cliente_nome:'',cart:[],obs:{},endereco:'',consumo:'local'};nav('pedido');}
+  const peds=ST.pedidos.filter(p=>p.mesa_id===mid&&(p.status==='aberto'||p.status==='preparo'));
+  if(!peds.length){
+    ST.novoPedido={tipo:'mesa',mesa_id:mid,mesa_label:'Mesa '+num,cliente_nome:'',cart:[],obs:{},endereco:'',consumo:'local'};
+    nav('pedido');
+  } else {
+    // Modal de múltiplas comandas
+    const h = `
+      <div style="display:flex;flex-direction:column;gap:12px;padding:12px 0;max-height:60vh;overflow-y:auto">
+        <button class="btn bw" style="padding:16px;border:2px dashed var(--ac);color:var(--ac);background:var(--acbg);border-radius:12px;display:flex;align-items:center;justify-content:center;gap:8px" onclick="closeMc('mc-mesa-comandas');ST.novoPedido={tipo:'mesa',mesa_id:'${mid}',mesa_label:'Mesa ${num}',cliente_nome:'',cart:[],obs:{},endereco:'',consumo:'local'};nav('pedido')">
+          ${ppIcon('plus',18,2)} <span class="bold">Nova Comanda nesta Mesa</span>
+        </button>
+        
+        ${peds.map(p=>{
+          const total=fmtR(p.total);
+          const items=p.itens.reduce((s,i)=>s+i.qty,0);
+          return \`<div class="btn bw" style="padding:16px;border:1px solid var(--br2);border-radius:12px;display:flex;align-items:center;justify-content:space-between;background:var(--s2);text-align:left;box-shadow:0 2px 8px var(--sh);flex-direction:row" onclick="closeMc('mc-mesa-comandas');nav('fechar','\${p.id}')">
+            <div style="flex:1">
+              <div class="bold fs15">\${esc(p.cliente_nome||'Comanda '+p.num)}</div>
+              <div class="fs12 t2 mt4">\${items} ite\${items===1?'m':'ns'} · \${fmtDH(p.created)}</div>
+            </div>
+            <div class="bold gn fs15">\${total}</div>
+          </div>\`;
+        }).join('')}
+      </div>
+    `;
+    showModal('mc-mesa-comandas', 'Mesa '+num+' — Comandas', h);
+  }
 }
 function novoMesaCustom(){
   const total=ST.cfg.mesas_total||10;
