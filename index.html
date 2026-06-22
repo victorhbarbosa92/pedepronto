@@ -9607,6 +9607,21 @@ function renderProducao(){
         </div>
       </div>`;
     }
+    const _i = (n, s=14) => ppIcon(n, s, 1.7);
+    metricsHtml += `<div style="display:flex;gap:16px;margin-bottom:20px;flex-shrink:0;">
+      <button class="btn bp bw" style="flex:2;font-size:24px;font-weight:900;height:64px;border-radius:18px;justify-content:center;box-shadow:0 8px 16px var(--acg);letter-spacing:0.5px" onclick="window.showNovoPedidoProd()">
+        ${_i('plus',28,2)} INICIAR NOVO PEDIDO
+      </button>
+      <button class="btn bs bw" style="flex:1;font-size:16px;font-weight:700;height:64px;border-radius:18px;justify-content:center" onclick="nav('mesas')">
+        ${_i('table',22)} Mesas
+      </button>
+      <button class="btn bs bw" style="flex:1;font-size:16px;font-weight:700;height:64px;border-radius:18px;justify-content:center" onclick="novoDelivery()">
+        ${_i('bike',22)} Delivery
+      </button>
+      <button class="btn bs bw" style="flex:1;font-size:16px;font-weight:700;height:64px;border-radius:18px;justify-content:center" onclick="nav('caixa')">
+        ${_i('cash',22)} Caixa
+      </button>
+    </div>`;
   }
 
   targetEl.innerHTML= metricsHtml + `
