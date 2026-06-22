@@ -16167,15 +16167,16 @@ const MAQ={
   // ── Mercado Pago Point API ──────────────────────────
   async mpCobrar(ped){
     const cfg=ST.cfg.maquininha||{};
-    if(!cfg.mp_token||!cfg.mp_device_id){
+    const device_id = (cfg.mp_device_id || '').trim();
+    if(!cfg.mp_token||!device_id){
       toast('Configure o Access Token e Device ID do Mercado Pago em ⚙️ Configurações','r',5000);
       return null;
     }
     const amount=Math.round(ped.total*100);
     try{
       // Ativar modo PDV antes de cobrar
-      try{await _mpCall({action:'set_pdv_mode',token:cfg.mp_token,device_id:cfg.mp_device_id});}catch(e){}
-      const d=await _mpCall({action:'create_intent',token:cfg.mp_token,device_id:cfg.mp_device_id,
+      try{await _mpCall({action:'set_pdv_mode',token:cfg.mp_token,device_id:device_id});}catch(e){}
+      const d=await _mpCall({action:'create_intent',token:cfg.mp_token,device_id:device_id,
         amount:amount,description:'PedePronto '+ped.num,
         idempotency_key:ped.id+'-'+Date.now()});
       return d.id;
@@ -16184,16 +16185,16 @@ const MAQ={
       if(e.message&&e.message.indexOf('queued')>=0){
         toast('Cancelando cobrança anterior...','i',2000);
         try{
-          var list=await _mpCall({action:'list_intents',token:cfg.mp_token,device_id:cfg.mp_device_id});
+          var list=await _mpCall({action:'list_intents',token:cfg.mp_token,device_id:device_id});
           var intents=list.payment_intents||list;
           if(Array.isArray(intents)){
             for(var i=0;i<intents.length;i++){
               var iid=intents[i].id||intents[i].payment_intent_id;
-              if(iid){try{await _mpCall({action:'cancel_intent',token:cfg.mp_token,device_id:cfg.mp_device_id,intent_id:iid});}catch(e2){}}
+              if(iid){try{await _mpCall({action:'cancel_intent',token:cfg.mp_token,device_id:device_id,intent_id:iid});}catch(e2){}}
             }
           }
           await new Promise(r=>setTimeout(r,1000));
-          var d2=await _mpCall({action:'create_intent',token:cfg.mp_token,device_id:cfg.mp_device_id,
+          var d2=await _mpCall({action:'create_intent',token:cfg.mp_token,device_id:device_id,
             amount:amount,description:'PedePronto '+ped.num,
             idempotency_key:ped.id+'-'+Date.now()});
           return d2.id;
@@ -16250,6 +16251,7 @@ async function _mpCall(body){
     var msg=d.message||d.error||'';
     if(r.status===401||msg.indexOf('unauthorized')>=0||msg.indexOf('invalid_token')>=0) throw new Error('Token expirado ou inválido. Gere um novo Access Token no Mercado Pago.');
     if(r.status===404) throw new Error('Maquininha não encontrada. Verifique o Device ID.');
+    if(r.status===405) throw new Error('Erro 405: Device ID pode estar em branco, inválido ou o Mercado Pago atualizou sua conta para a nova API de Orders.');
     throw new Error(msg||'Erro '+r.status);
   }
   return d;
