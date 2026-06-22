@@ -7702,7 +7702,7 @@ function novoMesaCustom(){
 function renderPedido(){
   const wasSearchFocused = document.activeElement && document.activeElement.id === 'pos-search';
   const np=ST.novoPedido;
-  const cats=[{id:'todos',nome:'Todos',emoji:'⭐'},...ST.categorias];
+  const cats=[...ST.categorias];
   const sq=(ST._searchQuery||'').trim().toLowerCase();
   const prods=ST.produtos.filter(p=>{
     if(!p.ativo) return false;
