@@ -7792,6 +7792,47 @@ function novoMesaCustom(){
 function renderPedido(){
   const wasSearchFocused = document.activeElement && document.activeElement.id === 'pos-search';
   const np=ST.novoPedido;
+  
+  // -- NOVO FLUXO MOBILE (Tela Única Inicial) --
+  if(_isMobile() && np && !np.id && !np._addingTo && np._mobStep!=='cardapio'){
+    let extraFields = '';
+    if(np.tipo==='delivery'){
+      extraFields = `
+      <label class="fs12 bold t2" style="margin-bottom:8px;display:block;margin-top:16px">ENDEREÇO DE ENTREGA</label>
+      <div style="display:grid;grid-template-columns:1fr 100px;gap:8px;margin-bottom:12px">
+        <input class="inp" value="${esc(np.rua||'')}" placeholder="Rua / Av." oninput="ST.novoPedido.rua=this.value" style="height:50px">
+        <input class="inp" value="${esc(np.numero||'')}" placeholder="Nº" oninput="ST.novoPedido.numero=this.value" style="height:50px">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+        <input class="inp" value="${esc(np.bairro||'')}" placeholder="Bairro" oninput="ST.novoPedido.bairro=this.value" style="height:50px">
+        <input class="inp" value="${esc(np.complemento||'')}" placeholder="Complemento" oninput="ST.novoPedido.complemento=this.value" style="height:50px">
+      </div>
+      `;
+    }
+    
+    const h=`<div style="padding:24px;display:flex;flex-direction:column;height:calc(100vh - 60px);box-sizing:border-box;overflow-y:auto">
+      <div style="font-size:28px;font-weight:800;margin-bottom:8px;color:var(--tx)">${np.tipo==='delivery'?'Delivery':'Novo Pedido'}</div>
+      <div style="font-size:14px;color:var(--t2);margin-bottom:24px">Preencha os dados do cliente para continuar</div>
+      
+      <label class="fs12 bold t2" style="margin-bottom:8px;display:block">NOME DO CLIENTE</label>
+      <input class="inp" value="${esc(np.cliente_nome||'')}" placeholder="Como o cliente se chama?" oninput="ST.novoPedido.cliente_nome=this.value" style="margin-bottom:16px;height:50px;font-size:16px">
+      
+      <label class="fs12 bold t2" style="margin-bottom:8px;display:block">WHATSAPP / CELULAR (FIDELIDADE)</label>
+      <input class="inp" type="tel" value="${esc(np.telefone||'')}" placeholder="(00) 00000-0000" oninput="ST.novoPedido.telefone=this.value" style="margin-bottom:16px;height:50px;font-size:16px">
+
+      ${extraFields}
+
+      <div style="flex:1;min-height:24px"></div>
+      
+      <div style="display:flex;gap:12px;margin-top:16px;padding-bottom:16px">
+        <button class="btn bs bw" style="flex:1;height:56px;font-size:16px;border-radius:14px" onclick="nav('dash')">Cancelar</button>
+        <button class="btn bp bw" style="flex:2;height:56px;font-size:16px;font-weight:700;border-radius:14px" onclick="ST.novoPedido._mobStep='cardapio'; ST._prodFilter='none'; renderPedido()">Seguinte →</button>
+      </div>
+    </div>`;
+    document.getElementById('app').innerHTML=h;
+    return;
+  }
+  
   const cats=[...ST.categorias];
   const sq=(ST._searchQuery||'').trim().toLowerCase();
   const prods=ST.produtos.filter(p=>{
@@ -7945,7 +7986,9 @@ function renderPedido(){
 
   // ── Product cards HTML ──
   const prodCardsHtml = prods.length===0
-    ? `<div style="grid-column:1/-1;text-align:center;padding:40px 20px;color:var(--pos-text-muted);font-size:14px">Nenhum produto nesta categoria</div>`
+    ? `<div style="grid-column:1/-1;text-align:center;padding:40px 20px;color:var(--pos-text-muted);font-size:14px">
+        ${ST._prodFilter==='none' ? 'Selecione uma categoria acima para ver os itens' : 'Nenhum produto nesta categoria'}
+      </div>`
     : prods.map(p=>{
         const inCart=cartQtyMap[p.id]||0;
         return`<div class="pos-prod-card${p.ativo?'':' off'}" onclick="addCart('${p.id}')">
