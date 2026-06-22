@@ -4113,7 +4113,11 @@ const BT={
           t+=prefix+f+' '.repeat(Math.max(1,W-prefix.length-f.length-preco.length))+preco+LF;
           this.wrapText(nomeN.substring(Math.max(1,maxFirst)),W-4).forEach(l=>t+='    '+l+LF);
         }
-        if(it.obs)this.wrapText(N(it.obs),W-4).forEach((l,li)=>t+=(li===0?'  * ':'    ')+l+LF);
+        if(it.obs){
+          it.obs.split(/,|\n/).map(s=>s.trim()).filter(Boolean).forEach(obsPart=>{
+            this.wrapText(">> "+N(obsPart).toUpperCase(),W-2).forEach(l=>t+='  '+l+LF);
+          });
+        }
         if(it.obs_extras&&it.obs_extras>0)t+='    +R$'+it.obs_extras.toFixed(2)+' (extras)'+LF;
       });
       t+=dsh()+LF;
@@ -4147,7 +4151,11 @@ const BT={
           t+=prefix+f+' '.repeat(Math.max(1,W-prefix.length-f.length-preco.length))+preco+LF;
           this.wrapText(nomeN.substring(Math.max(1,maxFirst)),W-4).forEach(l=>t+='    '+l+LF);
         }
-        if(it.obs)this.wrapText(N(it.obs),W-4).forEach((l,li)=>t+=(li===0?'  * ':'    ')+l+LF);
+        if(it.obs){
+          it.obs.split(/,|\n/).map(s=>s.trim()).filter(Boolean).forEach(obsPart=>{
+            this.wrapText(">> "+N(obsPart).toUpperCase(),W-2).forEach(l=>t+='  '+l+LF);
+          });
+        }
         if(it.obs_extras&&it.obs_extras>0)t+='    +R$'+it.obs_extras.toFixed(2)+' (extras)'+LF;
       });
       t+=dsh()+LF;
@@ -8533,7 +8541,9 @@ function showCupomPrevia(ped_id, tipo='cupom'){
           <span style="flex:1;margin-right:8px">${i+1}. ${it.qty}x <b>${it.nome}</b></span>
           ${mostraTotal?`<span class="tb" style="white-space:nowrap">R$${(it.qty*it.preco).toFixed(2)}</span>`:''}
         </div>
-        ${it.obs?`<div style="font-size:11px;color:var(--t2);margin-left:14px;padding-left:4px;border-left:2px solid var(--br2)">> ${it.obs}</div>`:''}
+        ${it.obs ? `<div style="font-size:11px;color:var(--t2);margin-left:14px;padding-left:4px;border-left:2px solid var(--br2);font-weight:700;text-transform:uppercase">
+          ${it.obs.split(/,|\n/).map(s=>s.trim()).filter(Boolean).map(obsPart => `<div>>> ${esc(obsPart)}</div>`).join('')}
+        </div>` : ''}
         ${(it.obs_extras&&it.obs_extras>0)?`<div style="font-size:11px;color:var(--t2);margin-left:14px">+R$${it.obs_extras.toFixed(2)} (extras)</div>`:''}
       </div>`).join('')}
       <hr class="td">
