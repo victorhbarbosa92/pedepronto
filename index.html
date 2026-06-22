@@ -1124,7 +1124,7 @@ html.tam-g .tbtn,html.tam-g .tbtn-ico{font-size:17px;min-height:44px}
 
 /* ── POS TOP BAR (dentro do pg-pedido) ── */
 .pos-topbar{
-  display:flex;align-items:center;gap:10px;
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
   padding:10px 14px 8px;
   flex-shrink:0
 }
@@ -2314,6 +2314,7 @@ const _PP_PUBKEY_JWK={"crv":"P-256","ext":true,"key_ops":["verify"],"kty":"EC","
 // ═══════════════════════════════════════════
 const PP_ICONS={
   home:'M3 11l9-8 9 8M5 10v10h14V10',
+  barcode:'M4 6h2v12H4zm4 0h1v12H8zm3 0h2v12h-2zm4 0h1v12h-1zm3 0h2v12h-2z',
   table:'M3 6h18v12H3zM3 12h18M8 6V4M16 6V4M8 18v2M16 18v2',
   counter:'M3 8h18l-1 4H4zM5 12v8h14v-8M9 16h6',
   bike:'M6 17a3 3 0 100-6 3 3 0 000 6zM18 17a3 3 0 100-6 3 3 0 000 6zM9 17h6l-3-8h-2M14 9l2-4h3',
@@ -7699,9 +7700,15 @@ function novoMesaCustom(){
 //  NOVO PEDIDO + OBSERVAÇÕES
 // ═══════════════════════════════════════════
 function renderPedido(){
+  const wasSearchFocused = document.activeElement && document.activeElement.id === 'pos-search';
   const np=ST.novoPedido;
   const cats=[{id:'todos',nome:'Todos',emoji:'⭐'},...ST.categorias];
-  const prods=ST.produtos.filter(p=>(ST._prodFilter==='todos'||p.cat_id===ST._prodFilter)&&p.ativo);
+  const sq=(ST._searchQuery||'').trim().toLowerCase();
+  const prods=ST.produtos.filter(p=>{
+    if(!p.ativo) return false;
+    if(sq) return p.nome.toLowerCase().includes(sq);
+    return ST._prodFilter==='todos'||p.cat_id===ST._prodFilter;
+  });
   const total=np.cart.reduce((s,i)=>s+(i.preco+(i.obs_extras||0))*i.qty,0);
   const cartCount=np.cart.reduce((s,i)=>s+i.qty,0);
 
@@ -7803,9 +7810,14 @@ function renderPedido(){
     <div class="pos-left">
       <!-- Top bar: order title + cancel -->
       <div class="pos-topbar">
-        <div>
-          <div class="pos-order-label">${esc(np.mesa_label||'Novo Pedido')}</div>
-          <div class="pos-order-sub">${np.tipo==='mesa'?'Mesa':np.tipo==='balcao'?'Balcão':'Delivery'}</div>
+        <div style="flex:1; display:flex; align-items:center; gap:8px;">
+          <div class="pos-search-box" style="display:flex;align-items:center;background:var(--pos-bg-card);border-radius:10px;padding:0 12px;flex:1;height:40px;border:1px solid var(--pos-border)">
+            <span style="color:var(--pos-text-muted);display:flex">${ppIcon('search',16,2)}</span>
+            <input type="text" id="pos-search" value="${esc(ST._searchQuery||'')}" placeholder="Pesquisar produto..." autocomplete="off" oninput="ST._searchQuery=this.value;renderPedido()" style="border:none;background:transparent;outline:none;padding:0 8px;width:100%;color:var(--pos-text-main);font-size:14px;font-family:inherit">
+          </div>
+          <button class="pos-cancel-btn" title="Ler Código de Barras" onclick="setTimeout(()=>{document.getElementById('pos-search').focus()},50);toast('Pronto para ler código de barras!','i')" style="padding:0;width:40px;height:40px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            ${ppIcon('barcode',20,1.5)}
+          </button>
         </div>
         <button class="pos-cancel-btn" onclick="nav(ST.backNav||'mesas')">✕ Cancelar</button>
       </div>
@@ -7862,6 +7874,17 @@ function renderPedido(){
     ` : ''}
 
   </div>`;
+
+  if(wasSearchFocused){
+    setTimeout(()=>{
+      const srch = document.getElementById('pos-search');
+      if(srch){
+        srch.focus();
+        const len = srch.value.length;
+        srch.setSelectionRange(len, len);
+      }
+    }, 0);
+  }
 }
 
 // OBSERVAÇÕES AO ADICIONAR ITEM

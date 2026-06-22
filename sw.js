@@ -2,7 +2,7 @@
 // Garante que toda abertura do app puxe a versão mais nova do servidor.
 // Cache só é usado como FALLBACK quando offline.
 
-const VERSION = 'v15-' + Date.now(); // muda toda vez que o SW é re-registrado pelo client
+const VERSION = 'v16-' + Date.now(); // muda toda vez que o SW é re-registrado pelo client
 const STATIC_CACHE = 'pp-static-' + VERSION;
 const ASSETS_CACHE = 'pp-assets-v5'; // assets quase nunca mudam
 
