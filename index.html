@@ -2244,6 +2244,18 @@ const _PP_PUBKEY_JWK={"crv":"P-256","ext":true,"key_ops":["verify"],"kty":"EC","
       </div>
       <button class="sw" id="og-obrigatorio" onclick="toggleSw(this)"></button>
     </div>
+    <div class="rb mb14" style="padding:10px 12px;background:var(--s2);border-radius:10px;border:1px solid var(--br2)">
+      <div>
+        <div class="fs13 bold">Perguntar "Sim / Não"?</div>
+        <div class="fs11 t2">Oculta opções até que seja clicado em Sim</div>
+      </div>
+      <button class="sw" id="og-pergunta" onclick="toggleSw(this)"></button>
+    </div>
+    <div class="mb14">
+      <div class="fs13 bold mb4">Aplicar automaticamente em Categorias</div>
+      <div class="fs11 t2 mb8">Produtos dessas categorias vão herdar este grupo.</div>
+      <div id="og-cats-list" style="display:flex;flex-wrap:wrap;gap:6px;max-height:100px;overflow-y:auto;padding:2px"></div>
+    </div>
     <div class="rb mb10">
       <div>
         <div class="fs13 bold">Opções</div>
@@ -7891,10 +7903,13 @@ function renderPedido(){
 function openObsSheet(cartIdx){
   const item=ST.novoPedido.cart[cartIdx];
   const prod=ST.produtos.find(p=>p.id===item.prod_id)||{};
-  const grupos=(prod.obs_grupos||[]).map(gid=>ST.obs_grupos_globais.find(g=>g.id===gid)).filter(Boolean);
+  const catGroups = ST.obs_grupos_globais.filter(g => g.categorias && g.categorias.includes(prod.cat_id)).map(g => g.id);
+  const allGroupsIds = [...new Set([...(prod.obs_grupos||[]), ...catGroups])];
+  const grupos = allGroupsIds.map(gid=>ST.obs_grupos_globais.find(g=>g.id===gid)).filter(Boolean);
   let curObs=item.obs_livre||'';
   // sel[gid] = array de índices selecionados
   let sel={};
+  let simNao={}; // simNao[gid] = true/false para grupos condicionais
   const sh=document.getElementById('sh-obs');
 
   // helper: normaliza opcao para {nome,preco}
@@ -7908,7 +7923,14 @@ function openObsSheet(cartIdx){
     },0);
   }
   function checkObrig(){
-    return grupos.filter(g=>g.obrigatorio).every(g=>(sel[g.id]||[]).length>0);
+    return grupos.filter(g=>g.obrigatorio).every(g=>{
+      if(g.pergunta_sim_nao){
+        if(simNao[g.id]===false) return true; // Disse 'Não' -> dispensado
+        if(simNao[g.id]===true) return (sel[g.id]||[]).length>0; // Disse 'Sim' -> tem que marcar
+        return false; // Obrigatório e não respondeu sim/não
+      }
+      return (sel[g.id]||[]).length>0;
+    });
   }
   function buildSheet(){
     const extras=calcExtras();
@@ -7925,23 +7947,37 @@ function openObsSheet(cartIdx){
       </div>
     </div>
     ${grupos.map(g=>{
-      const faltaObrig=g.obrigatorio&&!(sel[g.id]||[]).length;
-      return`<div class="obs-group" style="${faltaObrig?'border-left:3px solid var(--rd);padding-left:8px':''}">
+      const isSim = simNao[g.id]===true;
+      const isNao = simNao[g.id]===false;
+      const faltaObrig=g.obrigatorio && (g.pergunta_sim_nao ? simNao[g.id]===undefined || (isSim && !(sel[g.id]||[]).length) : !(sel[g.id]||[]).length);
+      
+      let html = `<div class="obs-group" style="${faltaObrig?'border-left:3px solid var(--rd);padding-left:8px':''}">
       <div class="obs-group-title">
         ${esc(g.nome)}
         ${g.obrigatorio?`<span class="obs-group-badge" style="background:var(--rdbg);color:var(--rd);border-color:var(--rdbr)">OBRIGATÓRIO</span>`:''}
         <span class="obs-group-badge">${g.multi?'MÚLTIPLA':'ÚNICA'}</span>
-      </div>
-      <div class="obs-chips">
-        ${g.opcoes.map((rawOp,i)=>{
-          const op=norm(rawOp);
-          const on=(sel[g.id]||[]).includes(i);
-          return`<button class="obs-chip ${on?'on':''}" onclick="toggleObsSel('${g.id}',${i},${g.multi})">
-            ${esc(op.nome)}${op.preco>0?`<span class="obs-chip-preco">+${fmtR(op.preco)}</span>`:''}
-          </button>`;
-        }).join('')}
-      </div>
-    </div>`;
+      </div>`;
+
+      if(g.pergunta_sim_nao){
+        html += `<div style="display:flex;gap:6px;margin-bottom:10px">
+          <button class="btn bsm bw ${isSim?'bp':'bs'}" onclick="setSimNao('${g.id}', true)">Sim</button>
+          <button class="btn bsm bw ${isNao?'bp':'bs'}" onclick="setSimNao('${g.id}', false)">Não</button>
+        </div>`;
+      }
+
+      if(!g.pergunta_sim_nao || isSim){
+        html += `<div class="obs-chips">
+          ${g.opcoes.map((rawOp,i)=>{
+            const op=norm(rawOp);
+            const on=(sel[g.id]||[]).includes(i);
+            return`<button class="obs-chip ${on?'on':''}" onclick="toggleObsSel('${g.id}',${i},${g.multi})">
+              ${esc(op.nome)}${op.preco>0?`<span class="obs-chip-preco">+${fmtR(op.preco)}</span>`:''}
+            </button>`;
+          }).join('')}
+        </div>`;
+      }
+      html += `</div>`;
+      return html;
     }).join('')}
     <div class="fg mt8"><label class="fl">Observação livre (opcional)</label>
     <textarea class="inp" id="obs-livre" rows="2" placeholder="Ex: sem sal, bem gelado, capricha...">${esc(curObs)}</textarea></div>
@@ -7957,6 +7993,12 @@ function openObsSheet(cartIdx){
     const pos=sel[gid].indexOf(idx);
     if(pos>=0)sel[gid].splice(pos,1);
     else{if(!multi)sel[gid]=[];sel[gid].push(idx);}
+    curObs=document.getElementById('obs-livre')?.value||curObs;
+    buildSheet();
+  };
+  window.setSimNao=function(gid, val){
+    simNao[gid]=val;
+    if(!val) sel[gid]=[]; // limpa seleção se disser não
     curObs=document.getElementById('obs-livre')?.value||curObs;
     buildSheet();
   };
@@ -8031,8 +8073,9 @@ function addCart(prod_id){
     toast(p.nome+' está '+motivo,'r',3500);
     return;
   }
-  // só agrupa se não tem grupos de obs
-  const hasObs=(p.obs_grupos||[]).length>0;
+  // junta obs globais do produto com obs globais da categoria
+  const catGroups = ST.obs_grupos_globais.filter(g => g.categorias && g.categorias.includes(p.cat_id)).map(g => g.id);
+  const hasObs=(p.obs_grupos||[]).length>0 || catGroups.length>0;
   if(!hasObs){const ex=ST.novoPedido.cart.find(c=>c.prod_id===prod_id&&!c.obs);if(ex){ex.qty++;renderPedido();toast('+ '+p.nome,'g',1200);return;}}
   // FIX bug #1: preserva TODOS os destinos (cozinha + bar se for o caso)
   const dests=Array.isArray(p.dest)?[...p.dest]:[p.dest||'coz'];
@@ -9747,12 +9790,14 @@ function delCat(id){
 }
 
 // GRUPOS DE OBS GLOBAIS — modal
-let _editObsGrupoId=null, _ogOpcoes=[], _ogMulti=false, _ogObrigatorio=false;
+let _editObsGrupoId=null, _ogOpcoes=[], _ogMulti=false, _ogObrigatorio=false, _ogPergunta=false, _ogCategorias=[];
 function editObsGrupoGlobal(id){
   const g=id?ST.obs_grupos_globais.find(x=>x.id===id):null;
   _editObsGrupoId=id||null;
   _ogMulti=g?.multi||false;
   _ogObrigatorio=g?.obrigatorio||false;
+  _ogPergunta=g?.pergunta_sim_nao||false;
+  _ogCategorias=g?.categorias||[];
   const normOp=op=>typeof op==='string'?{nome:op,preco:0}:op;
   _ogOpcoes=g?(g.opcoes||[]).map(normOp).map(o=>({...o})):[];
   document.getElementById('mc-og-title').textContent=g?'Editar Grupo':'Novo Grupo';
@@ -9762,6 +9807,19 @@ function editObsGrupoGlobal(id){
   // toggle obrigatório
   const swOb=document.getElementById('og-obrigatorio');
   if(swOb){swOb.className='sw'+(_ogObrigatorio?' on':'');}
+  // toggle pergunta
+  const swPer=document.getElementById('og-pergunta');
+  if(swPer){swPer.className='sw'+(_ogPergunta?' on':'');}
+  // render categorias
+  const catsList = document.getElementById('og-cats-list');
+  if(catsList){
+    catsList.innerHTML = ST.categorias.map(c => `
+      <label style="display:flex;align-items:center;gap:4px;cursor:pointer;background:var(--pos-bg);padding:4px 8px;border-radius:6px;border:1px solid var(--pos-border)">
+        <input type="checkbox" class="og-cat-cbx" value="${c.id}" ${_ogCategorias.includes(c.id)?'checked':''}>
+        <span class="fs12">${c.emoji||''} ${c.nome}</span>
+      </label>
+    `).join('') || '<div class="fs12 t3">Nenhuma categoria cadastrada</div>';
+  }
   openMc('mc-obs-grupo');
 }
 function ogSetTipo(tipo){
@@ -9813,8 +9871,10 @@ function salvarObsGrupo(){
   if(!opcoes.length){toast('Adicione ao menos uma opção','r');return}
   const g=_editObsGrupoId?ST.obs_grupos_globais.find(x=>x.id===_editObsGrupoId):null;
   const obrig=swVal('og-obrigatorio');
-  if(g){g.nome=nome;g.opcoes=opcoes;g.multi=_ogMulti;g.obrigatorio=obrig;}
-  else ST.obs_grupos_globais.push({id:uid(),nome,opcoes,multi:_ogMulti,obrigatorio:obrig});
+  const perg=swVal('og-pergunta');
+  const cats = Array.from(document.querySelectorAll('.og-cat-cbx:checked')).map(cb => cb.value);
+  if(g){g.nome=nome;g.opcoes=opcoes;g.multi=_ogMulti;g.obrigatorio=obrig;g.pergunta_sim_nao=perg;g.categorias=cats;}
+  else ST.obs_grupos_globais.push({id:uid(),nome,opcoes,multi:_ogMulti,obrigatorio:obrig,pergunta_sim_nao:perg,categorias:cats});
   save('obs_grupos_globais');
   closeMc('mc-obs-grupo');
   renderCardapio();
