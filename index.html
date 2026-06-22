@@ -602,6 +602,9 @@ select.inp { cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg x
 .ov.on{display:flex;animation:fi .15s ease}
 .sheet{background:var(--sf);border-radius:22px 22px 0 0;width:100%;max-width:560px;padding:18px 18px 44px;max-height:92vh;overflow-y:auto;animation:su .28s cubic-bezier(.34,1.05,.64,1);border-top:1px solid var(--br2)}
 .sheet::-webkit-scrollbar{display:none}
+@keyframes slideLeft { from{transform:translateX(100%)} to{transform:translateX(0)} }
+.side-panel { position:absolute; right:0; top:0; bottom:0; width:100%; max-width:480px; background:var(--sf); padding:24px 24px 80px; overflow-y:auto; border-radius:0 !important; animation:slideLeft .3s cubic-bezier(.17,.84,.44,1); border-left:1px solid var(--br2); border-top:none !important; max-height:100vh !important; }
+.side-panel::-webkit-scrollbar{display:none}
 .sh-handle{width:40px;height:5px;border-radius:99px;background:var(--br3);margin:0 auto 16px}
 .sh-title{font-size:18px;font-weight:800;margin-bottom:16px;letter-spacing:-.3px}
 .mc{position:fixed;inset:0;z-index:600;background:rgba(0,0,0,.82);backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;padding:14px}
@@ -961,6 +964,7 @@ select.inp { cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg x
 
   /* sheet mais larga */
   .sheet{border-radius:16px 16px 0 0;padding:14px 14px 44px}
+  .side-panel{max-width:100%;animation:su .28s cubic-bezier(.34,1.05,.64,1);padding:18px 18px 60px}
 
   /* login cards maiores */
   .login-grid{grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:9px}
@@ -1840,7 +1844,7 @@ const _PP_PUBKEY_JWK={"crv":"P-256","ext":true,"key_ops":["verify"],"kty":"EC","
 
 <!-- SHEET: OBS CARRINHO -->
 <div class="ov" id="ov-obs" onclick="if(event.target===this)closeOv('ov-obs')">
-  <div class="sheet" id="sh-obs"></div>
+  <div class="sheet side-panel" id="sh-obs"></div>
 </div>
 
 <!-- SHEET: IMPRESSAO / CUPOM -->
@@ -7944,10 +7948,14 @@ function openObsSheet(cartIdx){
     const extras=calcExtras();
     const ok=checkObrig();
     const curQty=ST.novoPedido.cart[cartIdx]?.qty||1;
-    sh.innerHTML=`<div class="sh-handle"></div>
-    <div class="rb mb12">
-      <div class="sh-title" style="margin:0">${ppIcon('edit',16,1.7)} ${esc(item.nome)}</div>
-      <!-- 6.2 qty no modal -->
+    sh.innerHTML=`
+    <div class="rb mb12" style="border-bottom:1px solid var(--br2);padding-bottom:12px;margin-bottom:18px">
+      <div class="sh-title" style="margin:0;font-size:19px;letter-spacing:-0.5px">${ppIcon('edit',18,1.7)} ${esc(item.nome)}</div>
+      <button class="btn bs" style="width:36px;height:36px;padding:0;border-radius:50%" onclick="closeOv('ov-obs')">${ppIcon('x',22)}</button>
+    </div>
+    <!-- 6.2 qty no modal -->
+    <div class="rb mb16">
+      <div class="fs14 bold t2">Quantidade:</div>
       <div style="display:flex;align-items:center;gap:0;border:1px solid var(--br2);border-radius:10px;overflow:hidden;flex-shrink:0">
         <button style="width:38px;height:38px;background:var(--s2);border:none;color:var(--tx);font-size:18px;cursor:pointer;font-family:inherit" onclick="obsQty(${cartIdx},-1)">−</button>
         <div style="min-width:36px;text-align:center;font-size:15px;font-weight:900;font-family:monospace;padding:0 4px">${curQty}</div>
