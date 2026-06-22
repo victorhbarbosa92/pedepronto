@@ -1847,7 +1847,10 @@ const _PP_PUBKEY_JWK={"crv":"P-256","ext":true,"key_ops":["verify"],"kty":"EC","
 
 <!-- SHEET: IMPRESSAO / CUPOM -->
 <div class="ov" id="ov-imp" onclick="if(event.target===this)closeOv('ov-imp')">
-  <div class="sheet" id="sh-imp" style="max-height:95vh;padding-bottom:50px"></div>
+  <div class="sheet" id="sh-imp-wrap" style="max-height:95vh;width:100%;max-width:500px;display:flex;flex-direction:column;padding:0;overflow:hidden;border-radius:16px 16px 0 0">
+    <div id="sh-imp" style="overflow-y:auto;flex:1;padding:20px 16px 8px"></div>
+    <div id="sh-imp-footer" style="padding:10px 16px 24px;background:var(--sf);border-top:1px solid var(--br2);display:flex;gap:8px;flex-shrink:0"></div>
+  </div>
 </div>
 
 <!-- SHEET: PAGAMENTO -->
@@ -8831,11 +8834,15 @@ function showCupomPrevia(ped_id, tipo='cupom'){
   }
   html+=`</div></div>`;
   html+=`<div class="ttail" style="max-width:${W}px;margin:0 auto"></div>`;
-  html+=`<div style="display:flex;gap:8px;margin-top:14px">
-    <button class="btn bp bw" onclick="${tipo==='cupom'?`BT.printCupom(ST.pedidos.find(p=>p.id==='${ped_id}'))`:`BT.printPedido(ST.pedidos.find(p=>p.id==='${ped_id}'))`}">${ppIcon('printer',14,1.7)} Imprimir via BT</button>
-    <button class="btn bs bw" onclick="closeOv('ov-imp')">✕ Fechar</button>
-  </div>`;
   document.getElementById('sh-imp').innerHTML=html;
+  // Botões fixos no rodapé — sempre visíveis independente do tamanho do cupom
+  const footerBtns = tipo==='cupom'
+    ? `BT.printCupom(ST.pedidos.find(p=>p.id==='${ped_id}'))`
+    : `BT.printPedido(ST.pedidos.find(p=>p.id==='${ped_id}'))`;
+  document.getElementById('sh-imp-footer').innerHTML=`
+    <button class="btn bp bw" style="flex:2;padding:14px;font-size:14px;font-weight:700" onclick="${footerBtns}">${ppIcon('printer',16,1.7)} Imprimir via BT</button>
+    <button class="btn bs bw" style="flex:1;padding:14px;font-size:14px" onclick="closeOv('ov-imp')">✕ Fechar</button>
+  `;
   openOv('ov-imp');
 }
 
