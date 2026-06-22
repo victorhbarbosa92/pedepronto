@@ -7822,7 +7822,7 @@ function renderPedido(){
   const np=ST.novoPedido;
   
   // -- NOVO FLUXO MOBILE (Tela Única Inicial) --
-  if(_isMobile() && np && !np.id && !np._addingTo && np._mobStep!=='cardapio'){
+  if(window.innerWidth<=768 && np && !np.id && !np._addingTo && np._mobStep!=='cardapio'){
     let extraFields = '';
     if(np.tipo==='delivery'){
       extraFields = `
