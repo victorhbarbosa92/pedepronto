@@ -14698,24 +14698,16 @@ function fsListen(uid){
     _setSyncStatus('ok');
     console.log('[PedePronto] ☁️ Sync '+(snap.metadata.fromCache?'(cache)':'(server)')+' ('+ST.produtos.length+' prod, '+ST.pedidos.length+' ped, dev:'+r._dev_id+')');
 
-    if(wasFirst && !snap.metadata.fromCache && !DB.get('limpeza_v4')) {
-      let limpou = false;
-      if (ST.pedidos) ST.pedidos.forEach(p => {
-        const createdTime = p.created ? new Date(p.created).getTime() : NaN;
-        const age = Date.now() - createdTime;
-        if ((isNaN(age) || age > 2 * 60 * 60 * 1000) && !p.entregue) {
-          p.status = 'entregue';
-          p.entregue = true;
-          p.entregue_em = new Date().toISOString();
-          if (p.itens) p.itens.forEach(i => i.concluido = true);
-          limpou = true;
-        }
-      });
-      if (limpou) {
-         save('pedidos');
-         setTimeout(()=>toast('Pedidos antigos removidos da Nuvem com sucesso!','g', 5000), 3000);
-      }
-      DB.set('limpeza_v4', true);
+    if(wasFirst && !snap.metadata.fromCache && !DB.get('limpeza_v5_wipe_total')) {
+      // Nuclear Wipe: Remove todos os pedidos e clientes
+      ST.pedidos = [];
+      ST.clientes = [];
+      
+      save('pedidos');
+      save('clientes');
+      
+      DB.set('limpeza_v5_wipe_total', true);
+      setTimeout(()=>toast('⚠️ SISTEMA ZERADO (Pedidos e Clientes) ⚠️','r', 8000), 2000);
     }
   },e=>{
     console.warn('[PedePronto] Listen erro:',e.code||e.message);
