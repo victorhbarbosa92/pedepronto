@@ -1107,7 +1107,20 @@ html.tam-g .tbtn,html.tam-g .tbtn-ico{font-size:17px;min-height:44px}
 @media(min-width:681px){
   .pos-right-backdrop { display: none; }
   .pos-right-close { display: none; }
+  .pos-floating-cart { display: none !important; }
 }
+
+/* Botão flutuante de carrinho (mobile) */
+.pos-floating-cart {
+  position: fixed; bottom: 20px; left: 20px; right: 20px; z-index: 100;
+  background: var(--ac); color: #fff; border: none; border-radius: 12px;
+  padding: 14px 16px; display: flex; align-items: center; justify-content: space-between;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3); font-weight: 600; font-size: 15px; cursor: pointer;
+  transition: transform var(--d-fast);
+}
+.pos-floating-cart:active { transform: scale(0.97); }
+.pfc-count { background: rgba(0,0,0,0.2); width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: #fff; }
+.pfc-label { flex: 1; text-align: center; }
 
 /* ── POS TOP BAR (dentro do pg-pedido) ── */
 .pos-topbar{
@@ -6376,16 +6389,20 @@ window._cartDrawer = (function(){
   }
 
   function dismiss(){
+    if(ST.novoPedido) ST.novoPedido._cartOpen = false;
     if(!drawer) return;
     drawer.classList.remove('has-items', 'expanded');
     if(backdrop) backdrop.classList.remove('on');
     try{ if(navigator.vibrate) navigator.vibrate(10); }catch(e){}
+    renderPedido(); // re-render para mostrar o botao flutuante
   }
 
   function show(){
+    if(ST.novoPedido) ST.novoPedido._cartOpen = true;
     if(!drawer) return;
     drawer.classList.add('has-items');
     if(backdrop) backdrop.classList.add('on');
+    renderPedido();
   }
 
   // Re-bind sempre que renderPedido roda (DOM novo)
@@ -7686,6 +7703,7 @@ function renderPedido(){
   const cats=[{id:'todos',nome:'Todos',emoji:'⭐'},...ST.categorias];
   const prods=ST.produtos.filter(p=>(ST._prodFilter==='todos'||p.cat_id===ST._prodFilter)&&p.ativo);
   const total=np.cart.reduce((s,i)=>s+(i.preco+(i.obs_extras||0))*i.qty,0);
+  const cartCount=np.cart.reduce((s,i)=>s+i.qty,0);
 
   // map prodId → total qty in cart (for badge indicator)
   const cartQtyMap={};
@@ -7804,9 +7822,9 @@ function renderPedido(){
     </div>
 
     <!-- ── Backdrop da gaveta (mobile only) — escurece tela conforme abre ── -->
-    <div class="pos-right-backdrop ${np.cart.length > 0 ? 'on' : ''}" onclick="window._cartDrawer&&window._cartDrawer.dismiss()"></div>
+    <div class="pos-right-backdrop ${np._cartOpen ? 'on' : ''}" onclick="window._cartDrawer&&window._cartDrawer.dismiss()"></div>
     <!-- ── RIGHT: cart panel (gaveta no mobile) ── -->
-    <div class="pos-right ${np.cart.length > 0 ? 'has-items' : ''}" id="pos-right-drawer">
+    <div class="pos-right ${np._cartOpen ? 'has-items' : ''}" id="pos-right-drawer">
       <button class="pos-right-close" type="button" onclick="window._cartDrawer&&window._cartDrawer.dismiss()" aria-label="Fechar carrinho" title="Esconder carrinho">✕</button>
       <div class="cart-panel-head">
         <div class="cart-panel-title">Pedido atual</div>
@@ -7833,6 +7851,16 @@ function renderPedido(){
         <button class="btn-cancel-order" onclick="nav(ST.backNav||'mesas')">✕ Cancelar pedido</button>
       </div>
     </div>
+
+    <!-- ── Floating Cart Button (Mobile only) ── -->
+    ${np.cart.length > 0 && !np._cartOpen ? `
+    <button class="pos-floating-cart" onclick="ST.novoPedido._cartOpen=true;renderPedido()">
+      <div class="pfc-count">${cartCount}</div>
+      <div class="pfc-label">Ver Pedido</div>
+      <div class="pfc-total">${fmtR(total)}</div>
+    </button>
+    ` : ''}
+
   </div>`;
 }
 
