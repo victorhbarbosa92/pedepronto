@@ -2970,7 +2970,69 @@ function loadAll(){
   ['cfg','caixa','produtos','categorias','clientes','obs_grupos_globais','pedidos','funcionarios','vouchers'].forEach(k=>{
     const v=DB.get(k);if(v!=null)ST[k]=v;
   });
+  if (ST.pedidos && ST.pedidos.length > 0) {
+    const seenIds = new Set();
+    let changed = false;
+    ST.pedidos.forEach(p => {
+      if (seenIds.has(p.id)) {
+        p.id = String(p.id) + '_' + Math.random().toString(36).slice(2, 7);
+        changed = true;
+      }
+      seenIds.add(p.id);
+    });
+    if (changed) {
+      DB.set('pedidos', ST.pedidos);
+      if(typeof _dirtyKeys !== 'undefined' && _dirtyKeys) _dirtyKeys.add('pedidos');
+    }
+  }
   ST.pedido_seq=DB.get('pedido_seq',1);
+  if (!DB.get('limpou_testes_hoje_v1')) {
+    let fixou = false;
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    if(ST.pedidos) ST.pedidos.forEach(p => {
+      const pDate = new Date(p.created).getTime();
+      if (pDate >= today.getTime() && p.status !== 'cancelado' && p.status !== 'pago') {
+        p.status = 'pago';
+        p.pagamentos = [{ forma: 'credito', valor: p.total || 0, ts: Date.now() }];
+        p.entregue = true;
+        p.entregue_em = new Date().toISOString();
+        if (p.itens) p.itens.forEach(i => i.concluido = true);
+        
+        if (ST.caixa && ST.caixa.aberto) {
+           ST.caixa.movs.push({ id: 'testfix_' + p.id, tipo: 'entrada', valor: p.total || 0, desc: 'Pedido ' + (p.num||'') + ' · Cartão de Crédito', created: Date.now() });
+           if(typeof _dirtyKeys !== 'undefined' && _dirtyKeys) _dirtyKeys.add('caixa');
+           DB.set('caixa', ST.caixa);
+        }
+        fixou = true;
+      }
+    });
+    if (fixou) {
+      DB.set('pedidos', ST.pedidos);
+      if(typeof _dirtyKeys !== 'undefined' && _dirtyKeys) _dirtyKeys.add('pedidos');
+      setTimeout(() => toast('Pedidos de teste de hoje foram baixados como Crédito com sucesso!','g', 8000), 2000);
+    }
+    DB.set('limpou_testes_hoje_v1', true);
+  }
+  
+  if (ST.pedidos && ST.pedidos.length > 0) {
+    let forceClean = false;
+    ST.pedidos.forEach(p => {
+      const createdTime = p.created ? new Date(p.created).getTime() : NaN;
+      const age = Date.now() - createdTime;
+      if ((isNaN(age) || age > 2 * 60 * 60 * 1000) && !p.entregue) {
+        p.status = 'entregue';
+        p.entregue = true;
+        p.entregue_em = new Date().toISOString();
+        if (p.itens) p.itens.forEach(i => i.concluido = true);
+        forceClean = true;
+      }
+    });
+    if (forceClean) {
+      DB.set('pedidos', ST.pedidos);
+      if(typeof _dirtyKeys !== 'undefined' && _dirtyKeys) _dirtyKeys.add('pedidos');
+    }
+  }
   // M5: carrega alertas do localStorage (máx 50, apenas os últimos 24h)
   const alts=DB.get('alertas',[]);
   const cutoff=Date.now()-24*60*60*1000;
@@ -7311,7 +7373,7 @@ function _renderDashPedidosAtivos(_i){
     const mins=Math.floor((Date.now()-new Date(p.created).getTime())/60000);
     return`<div class="card mb8">
       <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:8px">
-        <div class="senha-badge">${(p.num||'').replace('#','')}</div>
+        <div class="senha-badge">${String(p.num||'').replace('#','')}</div>
         <div style="flex:1;min-width:0">
           <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px">
             <span class="bold fs13">${esc(p.cliente_nome||'Sem nome')}</span>
@@ -9123,7 +9185,7 @@ function renderBalcao(){
   </div>`:''}
   ${peds.map(p=>`<div class="card mb8">
     <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:8px">
-      <div class="senha-badge">${p.num.replace('#','')}</div>
+      <div class="senha-badge">${String(p.num||'').replace('#','')}</div>
       <div style="flex:1;min-width:0">
         <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px">
           <span class="bold fs13">${esc(p.cliente_nome||'Sem nome')}</span>
@@ -9144,7 +9206,7 @@ function renderBalcao(){
   ${aguardando.length?`<div class="sec-title mt4">Aguardando retirada</div>
   ${aguardando.map(p=>`<div class="card mb8" style="border-color:var(--gnbr);background:var(--gnbg)">
     <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:8px">
-      <div class="senha-badge" style="background:linear-gradient(135deg,var(--gn),#27ae60)">${p.num.replace('#','')}</div>
+      <div class="senha-badge" style="background:linear-gradient(135deg,var(--gn),#27ae60)">${String(p.num||'').replace('#','')}</div>
       <div style="flex:1;min-width:0">
         <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px">
           <span class="bold fs13">${esc(p.cliente_nome||'Sem nome')}</span>
@@ -9268,7 +9330,7 @@ function renderProducao(){
       <span class="bdg ${p.consumo==='viagem'?'bpu':'bg'}" style="font-size:10px;display:inline-flex;align-items:center;gap:3px">${p.consumo==='viagem'?'🛍️ Viagem':'🍽️ Local'}</span>
     </div>
     <div class="fs12 t2 mb10">${p.itens.filter(i=>_itemPraDest(i,dest)).map(i=>i.qty+'× '+i.nome).join(' · ')}</div>
-    <button class="btn bg bw bsm" style="gap:5px" onclick="confirmarEntrega('${p.id}')">${ppIcon('check',14,1.7)} Confirmar entrega</button>
+    <button class="btn bg bw bsm" style="gap:5px" onclick="confirmarEntrega('${p.id}',${new Date(p.created).getTime()})">${ppIcon('check',14,1.7)} Confirmar entrega</button>
   </div>`).join('')}
   </div><div class="sec-title mt8">Em preparo</div>`:''}
   ${peds.length?`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;align-items:start">`:''}
@@ -9329,14 +9391,14 @@ function renderProducao(){
             </div>
             ${it.concluido
               ?`<span class="bdg bg" style="font-size:11px;display:inline-flex;align-items:center;gap:3px">${ppIcon('check',11,1.7)} Pronto</span>`
-              :`<button class="btn bg bxs" onclick="concluirItem('${p.id}',${itIdx})" style="flex-shrink:0">${ppIcon('check',14,1.7)}</button>`}
+              :`<button class="btn bg bxs" onclick="concluirItem('${p.id}',${itIdx},${created})" style="flex-shrink:0">${ppIcon('check',14,1.7)}</button>`}
           </div>`;
         }).join('')}
       </div>
       <div style="display:flex;gap:8px">
         ${todoConcluido
           ?`<div class="btn bg bw bsm" style="flex:1;opacity:.5;pointer-events:none;gap:5px">${ppIcon('checkCircle',14,1.7)} Tudo pronto</div>`
-          :`<button class="btn bg bw bsm" style="flex:1;gap:5px" onclick="concluirKDS('${p.id}','${dest}')">${ppIcon('checkCircle',14,1.7)} Tudo pronto</button>`}
+          :`<button class="btn bg bw bsm" style="flex:1;gap:5px" onclick="concluirKDS('${p.id}','${dest}',${created})">${ppIcon('checkCircle',14,1.7)} Tudo pronto</button>`}
         <button class="btn bs bxs" onclick="showCupomPrevia('${p.id}','comanda')">${ppIcon('printer',14,1.7)}</button>
       </div>
     </div>`;
@@ -9344,25 +9406,34 @@ function renderProducao(){
   ${peds.length?'</div>':''}`;
   _kdsStartTick();
 }
-function concluirItem(pedId,itIdx){
-  const p=ST.pedidos.find(x=>x.id===pedId);if(!p)return;
-  p.itens[itIdx].concluido=true;
-  save('pedidos');renderProducao();playSound('sucesso');
+function concluirItem(pedId,itIdx,createdMs){
+  const p=ST.pedidos.find(x=>String(x.id)===String(pedId) || (createdMs && x.created && new Date(x.created).getTime()===createdMs));
+  if(!p){ toast('Erro: Pedido não encontrado na memória.','r'); return; }
+  try {
+    p.itens[itIdx].concluido=true;
+    save('pedidos');
+    renderProducao();
+    playSound('sucesso');
+  } catch(e) { toast('Erro KDS: '+e.message,'r'); }
 }
-function concluirKDS(id,dest){
-  const p=ST.pedidos.find(x=>x.id===id);if(!p)return;
-  p.itens.filter(i=>_itemPraDest(i,dest)).forEach(i=>i.concluido=true);
-  const allDone=p.itens.every(i=>i.concluido);
-  if(allDone){p.status='preparo';}
-  save('pedidos');
-  // usa o dispatcher central — já cuida de chime + voz
-  anunciar('pronto', p);
-  renderProducao();
-  toast('Pedido '+p.num+' marcado como pronto!','g',3500);
-  updateBadges();
+function concluirKDS(id,dest,createdMs){
+  const p=ST.pedidos.find(x=>String(x.id)===String(id) || (createdMs && x.created && new Date(x.created).getTime()===createdMs));
+  if(!p){ toast('Erro: Pedido não encontrado na memória.','r'); return; }
+  try {
+    p.itens.filter(i=>_itemPraDest(i,dest)).forEach(i=>i.concluido=true);
+    const allDone=p.itens.every(i=>i.concluido);
+    if(allDone){p.status='preparo';}
+    save('pedidos');
+    try{ anunciar('pronto', p); }catch(e){console.warn('Falha audio',e);}
+    document.querySelectorAll('.kds-c[data-id="'+id+'"]').forEach(c=>c.style.display='none');
+    renderProducao();
+    toast('Pedido '+p.num+' marcado como pronto!','g',3500);
+    updateBadges();
+  } catch(e) { toast('Erro KDS: '+e.message,'r'); }
 }
-function confirmarEntrega(id){
-  const p=ST.pedidos.find(x=>x.id===id);if(!p)return;
+function confirmarEntrega(id,createdMs){
+  const p=ST.pedidos.find(x=>String(x.id)===String(id) || (createdMs && x.created && new Date(x.created).getTime()===createdMs));
+  if(!p){ toast('Erro: Pedido não encontrado na memória.','r'); return; }
   p.entregue=true;
   p.entregue_em=new Date().toISOString();
   save('pedidos');
@@ -12699,7 +12770,7 @@ function anunciar(tipo,dados){
   const ped=dados||{};
   const estab=(ST.cfg.nome||'PedePronto').replace(/[^\w\sÀ-ÿ]/g,'');
   const cliente=ped.cliente_nome||'';
-  const num=(ped.num||'').replace('#','número ');
+  const num=String(ped.num||'').replace('#','número ');
   const tipoLabel={mesa:'Mesa',balcao:'Balcão',delivery:'Delivery'}[ped.tipo]||'';
   const local=ped.tipo==='delivery'?'O entregador está a caminho.':
               ped.tipo==='balcao'?'Retire no balcão.':
