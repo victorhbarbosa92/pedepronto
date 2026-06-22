@@ -7784,30 +7784,30 @@ function clickMesa(mid,num){
   if(!peds.length){
     ST.novoPedido={tipo:'mesa',mesa_id:mid,mesa_label:'Mesa '+num,cliente_nome:'',cart:[],obs:{},endereco:'',consumo:'local'};
     nav('pedido');
-  } else {
-    // Modal de múltiplas comandas
-    const h = `
-      <div style="display:flex;flex-direction:column;gap:12px;padding:12px 0;max-height:60vh;overflow-y:auto">
-        <button class="btn bw" style="padding:16px;border:2px dashed var(--ac);color:var(--ac);background:var(--acbg);border-radius:12px;display:flex;align-items:center;justify-content:center;gap:8px" onclick="closeMc('mc-mesa-comandas');ST.novoPedido={tipo:'mesa',mesa_id:'${mid}',mesa_label:'Mesa ${num}',cliente_nome:'',cart:[],obs:{},endereco:'',consumo:'local'};nav('pedido')">
-          ${ppIcon('plus',18,2)} <span class="bold">Nova Comanda nesta Mesa</span>
-        </button>
-        
-        ${peds.map(p=>{
-          const total=fmtR(p.total);
-          const items=p.itens.reduce((s,i)=>s+i.qty,0);
-          return \`<div class="btn bw" style="padding:16px;border:1px solid var(--br2);border-radius:12px;display:flex;align-items:center;justify-content:space-between;background:var(--s2);text-align:left;box-shadow:0 2px 8px var(--sh);flex-direction:row" onclick="closeMc('mc-mesa-comandas');nav('fechar','\${p.id}')">
-            <div style="flex:1">
-              <div class="bold fs15">\${esc(p.cliente_nome||'Comanda '+p.num)}</div>
-              <div class="fs12 t2 mt4">\${items} ite\${items===1?'m':'ns'} · \${fmtDH(p.created)}</div>
-            </div>
-            <div class="bold gn fs15">\${total}</div>
-          </div>\`;
-        }).join('')}
-      </div>
-    `;
-    showModal('mc-mesa-comandas', 'Mesa '+num+' — Comandas', h);
+    return;
   }
+  // Modal de múltiplas comandas
+  let rows = '';
+  peds.forEach(function(p){
+    const tot=fmtR(p.total);
+    const items=p.itens.reduce(function(s,i){return s+i.qty;},0);
+    rows += '<div class="btn bw" style="padding:16px;border:1px solid var(--br2);border-radius:12px;display:flex;align-items:center;justify-content:space-between;background:var(--s2);text-align:left;box-shadow:0 2px 8px var(--sh);flex-direction:row" onclick="closeMc(\'mc-mesa-comandas\');nav(\'fechar\',\''+p.id+'\')">'
+           + '<div style="flex:1">'
+           + '<div class="bold fs15">'+esc(p.cliente_nome||'Comanda '+p.num)+'</div>'
+           + '<div class="fs12 t2 mt4">'+items+' ite'+(items===1?'m':'ns')+' · '+fmtDH(p.created)+'</div>'
+           + '</div>'
+           + '<div class="bold gn fs15">'+tot+'</div>'
+           + '</div>';
+  });
+  const h = '<div style="display:flex;flex-direction:column;gap:12px;padding:12px 0;max-height:60vh;overflow-y:auto">'
+    + '<button class="btn bw" style="padding:16px;border:2px dashed var(--ac);color:var(--ac);background:var(--acbg);border-radius:12px;display:flex;align-items:center;justify-content:center;gap:8px" onclick="closeMc(\'mc-mesa-comandas\');ST.novoPedido={tipo:\'mesa\',mesa_id:\''+mid+'\',mesa_label:\'Mesa '+num+'\',cliente_nome:\'\',cart:[],obs:{},endereco:\'\',consumo:\'local\'};nav(\'pedido\')">'
+    + ppIcon('plus',18,2)+' <span class="bold">Nova Comanda nesta Mesa</span>'
+    + '</button>'
+    + rows
+    + '</div>';
+  showModal('mc-mesa-comandas', 'Mesa '+num+' — Comandas', h);
 }
+
 function novoMesaCustom(){
   const total=ST.cfg.mesas_total||10;
   for(let i=1;i<=total;i++){const mid='m'+i;if(getMesaStatus(mid).status==='livre'){ST.novoPedido={tipo:'mesa',mesa_id:mid,mesa_label:'Mesa '+i,cliente_nome:'',cart:[],obs:{},endereco:'',consumo:'local'};nav('pedido');return;}}
