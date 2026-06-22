@@ -10404,8 +10404,9 @@ function _renderCfgSection(sec){
       </div>
       ${_userRole==='membro'?`<div class="fs12 t3" style="display:flex;align-items:center;gap:4px;margin-top:4px">${ppIcon('store',12,1.5)} Vinculado a: ${esc(cfg.nome||'Estabelecimento')}</div>
       <div class="fs11 t3 mt4">Cargo: ${_CARGO_LABELS[_userCargo]||'Membro'}</div>`:''}
-      <div style="display:flex;gap:6px;margin-top:10px">
+      <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">
         <button class="btn br_ bsm" onclick="trocarUsuario()" style="gap:5px">${ppIcon('xCircle',13,1.7)} Sair da conta</button>
+        <button class="btn br bw bsm" onclick="window.WIPE_NUCLEAR_FIREBASE()" style="gap:5px">${ppIcon('trash',13,1.7)} ZERAR PEDIDOS E CLIENTES (WIPE TOTAL)</button>
       </div>`:'<div class="fs13 t2">Nenhuma conta conectada</div>'}
     </div>`+_cfgFooter();
     break;
@@ -14725,8 +14726,35 @@ function fsListen(uid){
         },30000);
       }
     }
+    }
   });
 }
+
+window.WIPE_NUCLEAR_FIREBASE = function() {
+   if(!confirm("TEM CERTEZA QUE DESEJA APAGAR TODOS OS PEDIDOS E CLIENTES?")) return;
+   if(!confirm("ESSA AÇÃO NÃO TEM VOLTA E APAGARÁ NA NUVEM! CONFIRMA?")) return;
+   
+   ST.pedidos = [];
+   ST.clientes = [];
+   
+   const uid = window._estabUid || (window.fbAuth && window.fbAuth.currentUser && window.fbAuth.currentUser.uid);
+   if (uid && window.fbDB) {
+       toast("Apagando dados da nuvem...", "am", 3000);
+       window.fbDB.collection('estabelecimentos').doc(uid).collection('dados').doc('principal').set({
+           pedidos: [],
+           clientes: []
+       }, {merge: true}).then(() => {
+           toast("WIPE EXECUTADO COM SUCESSO!", "g", 5000);
+           save('pedidos');
+           save('clientes');
+           setTimeout(() => window.location.reload(), 2000);
+       }).catch(e => {
+           alert("Erro ao apagar: " + e.message);
+       });
+   } else {
+       alert("Erro: Firebase não conectado ou UID não encontrado.");
+   }
+};
 
 function updateDriveBtn(){
   if(!fbAuth){
