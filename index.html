@@ -9685,7 +9685,7 @@ function toggleProdObsGrupo(gid){
   const i=_editObsGrupos.indexOf(gid);
   if(i>=0)_editObsGrupos.splice(i,1);else _editObsGrupos.push(gid);
 }
-function addObsGrupo(){renderCardapio();ST._cardTab='obs';}
+function addObsGrupo(){editObsGrupoGlobal(null);}
 function saveProd(){
   const nome=document.getElementById('ep-nome').value.trim();
   if(!nome){toast('Nome obrigatório','r');return}
@@ -9818,6 +9818,7 @@ function salvarObsGrupo(){
   save('obs_grupos_globais');
   closeMc('mc-obs-grupo');
   renderCardapio();
+  if(typeof renderProdObsGrupos==='function') renderProdObsGrupos();
   toast('Grupo salvo!','g');
 }
 function delObsGrupo(id){
