@@ -10010,9 +10010,9 @@ function editCat(id){
   const c=id?ST.categorias.find(x=>x.id===id):null;
   showModal('mc-editcat',c?'Editar Categoria':'Nova Categoria',`
     <div class="fg"><label class="fl">Nome da categoria</label>
-    <input class="inp" id="ec-nome" value="${esc(c?.nome||'')}" placeholder="Ex: Lanches" autofocus></div>
+    <input class="inp" id="ecat-nome" value="${esc(c?.nome||'')}" placeholder="Ex: Lanches" autofocus></div>
     <div class="fg"><label class="fl">Emoji</label>
-    <input class="inp" id="ec-emoji" value="${esc(c?.emoji||'📂')}" placeholder="📂" style="font-size:22px;text-align:center" maxlength="4"></div>
+    <input class="inp" id="ecat-emoji" value="${esc(c?.emoji||'📂')}" placeholder="📂" style="font-size:22px;text-align:center" maxlength="4"></div>
     <div class="rb" style="padding:10px 0">
       <div><div class="fs13 bold">Venda Rápida</div><div class="fs11 t2">Produtos aparecem no modo venda rápida</div></div>
       <button class="sw ${c?.venda_direta?'on':''}" id="sw-cat-vd" onclick="toggleSw(this)"></button>
@@ -10023,9 +10023,9 @@ function editCat(id){
     </div>`);
 }
 function _saveCatModal(id){
-  const nome=(document.getElementById('ec-nome')?.value||'').trim();
+  const nome=(document.getElementById('ecat-nome')?.value||'').trim();
   if(!nome){toast('Nome obrigatório','r');return;}
-  const emoji=document.getElementById('ec-emoji')?.value||'📂';
+  const emoji=document.getElementById('ecat-emoji')?.value||'📂';
   const vd=swVal('sw-cat-vd');
   const c=id?ST.categorias.find(x=>x.id===id):null;
   if(c){c.nome=nome;c.emoji=emoji;c.venda_direta=vd;}else ST.categorias.push({id:uid(),nome,emoji,venda_direta:vd});
