@@ -1937,7 +1937,18 @@ const _PP_PUBKEY_JWK={"crv":"P-256","ext":true,"key_ops":["verify"],"kty":"EC","
   </div>
 </div>
 
-<!-- MODAL: ABERTURA CAIXA -->
+<!-- MODAL: COMANDAS DA MESA -->
+<div class="mc" id="mc-mesa-comandas">
+  <div class="mb" style="max-width:400px;width:100%">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <div style="font-size:15px;font-weight:800" id="mc-mesa-comandas-title">Comandas</div>
+      <button class="btn bs bxs" onclick="closeMc('mc-mesa-comandas')" style="padding:4px 10px;font-size:13px">✕</button>
+    </div>
+    <div id="mc-mesa-comandas-body" style="display:flex;flex-direction:column;gap:10px;max-height:60vh;overflow-y:auto"></div>
+  </div>
+</div>
+
+
 <div class="mc" id="mc-abrir-caixa">
   <div class="mb" style="max-width:380px">
     <div style="text-align:center;margin-bottom:8px"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--ac)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6h20v12H2zM12 12a3 3 0 100-6 3 3 0 000 6zM6 9v6M18 9v6"/></svg></div>
@@ -7799,13 +7810,35 @@ function clickMesa(mid,num){
            + '<div class="bold gn fs15">'+tot+'</div>'
            + '</div>';
   });
-  const h = '<div style="display:flex;flex-direction:column;gap:12px;padding:12px 0;max-height:60vh;overflow-y:auto">'
-    + '<button class="btn bw" style="padding:16px;border:2px dashed var(--ac);color:var(--ac);background:var(--acbg);border-radius:12px;display:flex;align-items:center;justify-content:center;gap:8px" onclick="closeMc(\'mc-mesa-comandas\');ST.novoPedido={tipo:\'mesa\',mesa_id:\''+mid+'\',mesa_label:\'Mesa '+num+'\',cliente_nome:\'\',cart:[],obs:{},endereco:\'\',consumo:\'local\'};nav(\'pedido\')">'
-    + ppIcon('plus',18,2)+' <span class="bold">Nova Comanda nesta Mesa</span>'
-    + '</button>'
-    + rows
-    + '</div>';
-  showModal('mc-mesa-comandas', 'Mesa '+num+' — Comandas', h);
+  // Preenche o modal estático e abre
+  var titleEl = document.getElementById('mc-mesa-comandas-title');
+  var bodyEl = document.getElementById('mc-mesa-comandas-body');
+  if(titleEl) titleEl.textContent = 'Mesa '+num+' — Comandas';
+  if(bodyEl){
+    var btnNova = document.createElement('button');
+    btnNova.className = 'btn bw';
+    btnNova.style.cssText = 'padding:16px;border:2px dashed var(--ac);color:var(--ac);background:var(--acbg);border-radius:12px;display:flex;align-items:center;justify-content:center;gap:8px;width:100%';
+    btnNova.innerHTML = ppIcon('plus',18,2)+' <span class="bold">Nova Comanda nesta Mesa</span>';
+    btnNova.onclick = function(){
+      closeMc('mc-mesa-comandas');
+      ST.novoPedido={tipo:'mesa',mesa_id:mid,mesa_label:'Mesa '+num,cliente_nome:'',cart:[],obs:{},endereco:'',consumo:'local'};
+      nav('pedido');
+    };
+    bodyEl.innerHTML = '';
+    bodyEl.appendChild(btnNova);
+    peds.forEach(function(p){
+      var tot=fmtR(p.total);
+      var items=p.itens.reduce(function(s,i){return s+i.qty;},0);
+      var card = document.createElement('div');
+      card.style.cssText = 'padding:16px;border:1px solid var(--br2);border-radius:12px;display:flex;align-items:center;justify-content:space-between;background:var(--s2);cursor:pointer';
+      card.innerHTML = '<div style="flex:1"><div class="bold fs15">'+esc(p.cliente_nome||'Comanda '+p.num)+'</div>'
+        +'<div class="fs12 t2 mt4">'+items+' ite'+(items===1?'m':'ns')+' · '+fmtDH(p.created)+'</div></div>'
+        +'<div class="bold gn fs15">'+tot+'</div>';
+      card.onclick = (function(pid){ return function(){ closeMc('mc-mesa-comandas'); nav('fechar',pid); }; })(p.id);
+      bodyEl.appendChild(card);
+    });
+  }
+  openMc('mc-mesa-comandas');
 }
 
 function novoMesaCustom(){
