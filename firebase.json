@@ -30,7 +30,8 @@
       "generate-icons.js",
       "*.keystore",
       "package.json",
-      "package-lock.json"
+      "package-lock.json",
+      "*.bat"
     ],
     "headers": [
       {

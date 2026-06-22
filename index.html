@@ -3001,15 +3001,13 @@ function loadAll(){
         
         if (ST.caixa && ST.caixa.aberto) {
            ST.caixa.movs.push({ id: 'testfix_' + p.id, tipo: 'entrada', valor: p.total || 0, desc: 'Pedido ' + (p.num||'') + ' · Cartão de Crédito', created: Date.now() });
-           if(typeof _dirtyKeys !== 'undefined' && _dirtyKeys) _dirtyKeys.add('caixa');
-           DB.set('caixa', ST.caixa);
+           save('caixa');
         }
         fixou = true;
       }
     });
     if (fixou) {
-      DB.set('pedidos', ST.pedidos);
-      if(typeof _dirtyKeys !== 'undefined' && _dirtyKeys) _dirtyKeys.add('pedidos');
+      save('pedidos');
       setTimeout(() => toast('Pedidos de teste de hoje foram baixados como Crédito com sucesso!','g', 8000), 2000);
     }
     DB.set('limpou_testes_hoje_v1', true);
@@ -3029,8 +3027,7 @@ function loadAll(){
       }
     });
     if (forceClean) {
-      DB.set('pedidos', ST.pedidos);
-      if(typeof _dirtyKeys !== 'undefined' && _dirtyKeys) _dirtyKeys.add('pedidos');
+      save('pedidos');
     }
   }
   // M5: carrega alertas do localStorage (máx 50, apenas os últimos 24h)
