@@ -14688,6 +14688,7 @@ function fsListen(uid){
       }
     });
     saveAll(true);
+    let wasFirst = _listenFirst;
     if(_listenFirst){_listenFirst=false;}
     _localDirty=false;
     _dirtyKeys.clear();
@@ -14696,6 +14697,26 @@ function fsListen(uid){
     _lastRemoteTs=remoteTs;
     _setSyncStatus('ok');
     console.log('[PedePronto] ☁️ Sync '+(snap.metadata.fromCache?'(cache)':'(server)')+' ('+ST.produtos.length+' prod, '+ST.pedidos.length+' ped, dev:'+r._dev_id+')');
+
+    if(wasFirst && !snap.metadata.fromCache && !DB.get('limpeza_v4')) {
+      let limpou = false;
+      if (ST.pedidos) ST.pedidos.forEach(p => {
+        const createdTime = p.created ? new Date(p.created).getTime() : NaN;
+        const age = Date.now() - createdTime;
+        if ((isNaN(age) || age > 2 * 60 * 60 * 1000) && !p.entregue) {
+          p.status = 'entregue';
+          p.entregue = true;
+          p.entregue_em = new Date().toISOString();
+          if (p.itens) p.itens.forEach(i => i.concluido = true);
+          limpou = true;
+        }
+      });
+      if (limpou) {
+         save('pedidos');
+         setTimeout(()=>toast('Pedidos antigos removidos da Nuvem com sucesso!','g', 5000), 3000);
+      }
+      DB.set('limpeza_v4', true);
+    }
   },e=>{
     console.warn('[PedePronto] Listen erro:',e.code||e.message);
     _setSyncStatus('error');
