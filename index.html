@@ -2724,13 +2724,29 @@ async function fsPush(){
   const keysToSync=new Set(_dirtyKeys);
   try{
     let d={_savedAt:new Date().toISOString(),_dev_id:_DEV_ID,_ts:firebase.firestore.FieldValue.serverTimestamp()};
-    // Envia TODOS os campos (para manter consistência), mas usa merge
-    ['cfg','caixa','produtos','categorias','clientes','obs_grupos_globais','pedidos','funcionarios','vouchers','pedidos_cancelados','alertas'].forEach(k=>{if(ST[k]!=null)d[k]=ST[k];});
+    // Envia campos que não sofrem conflitos concorrentes pesados como arrays diretos
+    ['cfg','caixa','produtos','categorias','clientes','obs_grupos_globais','funcionarios','vouchers','alertas'].forEach(k=>{if(ST[k]!=null)d[k]=ST[k];});
+    
+    // Arrays críticos (pedidos e cancelados) sofrem conflito em merge:true. Convertemos para Map.
+    const _toDel = ST._del_peds ? [...ST._del_peds] : [];
+    if(ST.pedidos!=null){
+      d.pedidos_map={};
+      ST.pedidos.forEach(p=>{ d.pedidos_map[p.id]=p; });
+      _toDel.forEach(id=>{ d.pedidos_map[id]=firebase.firestore.FieldValue.delete(); });
+    }
+    if(ST.pedidos_cancelados!=null){
+      d.pedidos_cancelados_map={};
+      ST.pedidos_cancelados.forEach(p=>{ d.pedidos_cancelados_map[p.id]=p; });
+    }
+    // Remove as arrays antigas para não trafegar atoa (se possível, mas d.pedidos não vai porque tiramos do foreach)
+
     if(E2EE._enabled) d=await E2EE.encryptData(d);
     await fbDB.collection('estabelecimentos').doc(uid).collection('dados').doc('principal').set(d,{merge:true});
     // Limpa apenas as chaves que foram sincronizadas
     keysToSync.forEach(k=>_dirtyKeys.delete(k));
     if(_dirtyKeys.size===0) _localDirty=false;
+    // Limpa os deletados do rastreamento local (apenas os que conseguimos enviar)
+    if(ST._del_peds) ST._del_peds = ST._del_peds.filter(id=>!_toDel.includes(id));
     _lastSyncAt=Date.now();
     _setSyncStatus('ok');
     console.log('[PedePronto] ☁️ Sync OK (dev:'+_DEV_ID.slice(0,6)+', dirty:'+_dirtyKeys.size+')');
@@ -13483,6 +13499,7 @@ function _confirmarCancelamento(pid){
   DB.set('pedidos_cancelados',ST.pedidos_cancelados);
   // Remover dos ativos
   ST.pedidos=ST.pedidos.filter(x=>x.id!==pid);
+  if(!ST._del_peds) ST._del_peds = []; ST._del_peds.push(pid);
   save('pedidos');
   closeOv('ov-obs');
   nav(ST.curNav==='fechar'?'dash':'dash');
@@ -13544,6 +13561,7 @@ function _aprovarCancelamento(pid){
   if(ST.pedidos_cancelados.length>100)ST.pedidos_cancelados.length=100;
   DB.set('pedidos_cancelados',ST.pedidos_cancelados);
   ST.pedidos=ST.pedidos.filter(x=>x.id!==pid);
+  if(!ST._del_peds) ST._del_peds = []; ST._del_peds.push(pid);
   save('pedidos');
   toast('Cancelamento aprovado — Pedido #'+p.num,'r');
   renderDash();
@@ -15033,8 +15051,17 @@ function fsListen(uid){
     if(r._e2ee&&E2EE._enabled){
       try{rData=await E2EE.decryptData(r);if(!rData)rData=r;}catch(e){console.warn('[E2EE] Listen decrypt error:',e.message);rData=r;}
     }
-    // Merge inteligente: para pedidos, fazer merge ao invés de sobrescrever
-    const _KEYS=['cfg','caixa','produtos','categorias','clientes','obs_grupos_globais','pedidos','funcionarios','vouchers','pedidos_cancelados','alertas'];
+    // Merge inteligente: converte os novos Maps que criamos em Arrays ordenados
+    const _KEYS=['cfg','caixa','produtos','categorias','clientes','obs_grupos_globais','funcionarios','vouchers','alertas','pedidos','pedidos_cancelados'];
+    
+    // Tratamento dos Maps para Arrays (Pedidos)
+    if(rData.pedidos_map){
+      rData.pedidos = Object.values(rData.pedidos_map).sort((a,b)=>new Date(a.created)-new Date(b.created));
+    }
+    if(rData.pedidos_cancelados_map){
+      rData.pedidos_cancelados = Object.values(rData.pedidos_cancelados_map).sort((a,b)=>new Date(b.cancelado_em||0)-new Date(a.cancelado_em||0));
+    }
+
     if(!_listenFirst&&rData.pedidos&&ST.pedidos.length>0){
       rData.pedidos=_mergePedidos(ST.pedidos,rData.pedidos);
     }
@@ -15058,17 +15085,7 @@ function fsListen(uid){
     _setSyncStatus('ok');
     console.log('[PedePronto] ☁️ Sync '+(snap.metadata.fromCache?'(cache)':'(server)')+' ('+ST.produtos.length+' prod, '+ST.pedidos.length+' ped, dev:'+r._dev_id+')');
 
-    if(!snap.metadata.fromCache && !DB.get('limpeza_v5_wipe_total')) {
-      // Nuclear Wipe: Remove todos os pedidos e clientes
-      ST.pedidos = [];
-      ST.clientes = [];
-      
-      save('pedidos');
-      save('clientes');
-      
-      DB.set('limpeza_v5_wipe_total', true);
-      setTimeout(()=>toast('⚠️ SISTEMA ZERADO (Pedidos e Clientes) ⚠️','r', 8000), 2000);
-    }
+
   },e=>{
     console.warn('[PedePronto] Listen erro:',e.code||e.message);
     _setSyncStatus('error');
