@@ -14098,10 +14098,14 @@ function registerSW(){
     if(_swCheckTimer)clearInterval(_swCheckTimer);
     _swCheckTimer=setInterval(()=>{try{reg.update();}catch(e){}},30000);
 
-    // ── 5. Quando aba volta a ficar visível, força check ──
+    // ── 5. Quando aba volta a ficar visível, força check do SW e reconexão do Firebase ──
     document.addEventListener('visibilitychange',()=>{
-      if(!document.hidden&&_swReg){
-        try{_swReg.update();}catch(e){}
+      if(!document.hidden){
+        if(_swReg)try{_swReg.update();}catch(e){}
+        // Evita WebSockets congelados no mobile (dados atrasados)
+        if(window.db && typeof window.db.disableNetwork === 'function'){
+          window.db.disableNetwork().then(()=>window.db.enableNetwork()).catch(e=>console.warn('[DB] sync force erro',e));
+        }
       }
     });
 
