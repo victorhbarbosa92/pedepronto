@@ -4107,7 +4107,7 @@ const BT={
       t+=row2('Modalidade:',ped.consumo==='viagem'?'Para Viagem':'Consumo Local')+LF;
       t+=dsh()+LF;
       ped.itens.forEach((it,i)=>{
-        const prefix=N((i+1)+'. '+it.qty+'x ');
+        const prefix=N(it.qty+'x ');
         const nomeN=N(it.nome);
         const preco='R$'+(it.qty*it.preco).toFixed(2);
         const maxFirst=W-prefix.length-preco.length-1;
@@ -4311,7 +4311,7 @@ const BT={
       // ═══ ITENS ═══
       (itens.length?itens:ped.itens).forEach((it, i)=>{
         const nomeN=this.norm(it.nome).toUpperCase();
-        const prefix = (i+1)+'. '+it.qty+'x ';
+        const prefix = it.qty+'x ';
 
         if(b==='cli'){
           // Cliente: Formato compacto na mesma linha
@@ -8714,7 +8714,7 @@ function showCupomPrevia(ped_id, tipo='cupom'){
       <hr class="td">
       ${itens.map((it,i)=>`<div style="margin-bottom:3px">
         <div class="tr" style="font-size:13px">
-          <span style="flex:1;margin-right:8px">${i+1}. ${it.qty}x <b>${it.nome}</b></span>
+          <span style="flex:1;margin-right:8px">${it.qty}x <b>${it.nome}</b></span>
           ${mostraTotal?`<span class="tb" style="white-space:nowrap">R$${(it.qty*it.preco).toFixed(2)}</span>`:''}
         </div>
         ${it.obs ? `<div style="font-size:11px;color:var(--t2);margin-left:14px;padding-left:4px;border-left:2px solid var(--br2);font-weight:700;text-transform:uppercase">
