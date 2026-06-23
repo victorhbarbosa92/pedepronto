@@ -8327,7 +8327,7 @@ function confirmarPedido(){
   // ID anti-duplicação offline: T{AAAAMMDDhh}#seq_deviceId
   const _dtNow=new Date();
   const _dtStr=_dtNow.getFullYear()+String(_dtNow.getMonth()+1).padStart(2,'0')+String(_dtNow.getDate()).padStart(2,'0')+String(_dtNow.getHours()).padStart(2,'0');
-  const _offlineId='T'+_dtStr+'#'+ST.pedido_seq+'_'+_DEV_ID.slice(0,5);
+  const _offlineId='T'+_dtStr+'#'+ST.pedido_seq+'_'+_DEV_ID.slice(0,5)+'_'+uid();
   // Promoções automáticas (happy hour, etc.) — alteram preço dos itens
   try{aplicarPromosAuto({itens:np.cart});}catch(e){console.warn('[Promos]',e);}
   const total=np.cart.reduce((s,i)=>s+(i.preco+(i.obs_extras||0))*i.qty,0);
@@ -16501,7 +16501,7 @@ function checkoutExpress(prod_id, forma) {
 
   const _dtNow = new Date();
   const _dtStr = _dtNow.getFullYear() + String(_dtNow.getMonth()+1).padStart(2,'0') + String(_dtNow.getDate()).padStart(2,'0') + String(_dtNow.getHours()).padStart(2,'0');
-  const _offlineId = 'T' + _dtStr + '#' + ST.pedido_seq + '_' + _DEV_ID.slice(0,5);
+  const _offlineId = 'T' + _dtStr + '#' + ST.pedido_seq + '_' + _DEV_ID.slice(0,5) + '_' + uid();
   const isInstantPaid = ['dinheiro', 'credito', 'debito'].includes(forma);
 
   // FIX bug #1: multi-destino preservado
