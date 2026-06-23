@@ -8314,12 +8314,7 @@ function confirmarPedido(){
     nav(pedExist.tipo==='mesa'?'mesas':pedExist.tipo==='balcao'?'balcao':'delivery');
     return;
   }
-  const today = new Date().toLocaleDateString();
-  const lastDate = DB.get('pedido_seq_date');
-  if(lastDate !== today){
-    ST.pedido_seq = 1;
-    DB.set('pedido_seq_date', today);
-  }
+
   if(!ST.pedido_seq)ST.pedido_seq=1;
   const num='#'+String(ST.pedido_seq).padStart(3,'0');
   ST.pedido_seq++;
