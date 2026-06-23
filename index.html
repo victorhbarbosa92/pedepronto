@@ -8967,6 +8967,7 @@ function novoBalcao(){
 function renderPedidoWizard(){
   const np=ST.novoPedido;
   if(!np){ nav('dash'); return; } // guard: estado limpo retorna pro dash
+  if(!np._wizCats) np._wizCats=ST.categorias.filter(c=>c.ativo).sort((a,b)=>a.ordem-b.ordem);
   const step=np._wizStep||0;
   const totalSteps=5; // 0-4: Nome, Telefone, Local/Viagem, Cardápio, Revisão
   const total=np.cart.reduce((s,i)=>s+(i.preco+(i.obs_extras||0))*i.qty,0);
@@ -9180,7 +9181,7 @@ function _wizBack(){
   if(step<=0){_wizCancel();return;}
   np._wizStep=step-1;renderPedidoWizard();
 }
-function _wizCancel(){nav(ST.backNav||'dash');}
+function _wizCancel(){nav(ST.backNav || (hasPermission('pdv') ? 'dash' : 'garcom'));}
 function _wizSkipCat(){
   const np=ST.novoPedido;
   _wizNextCat();
