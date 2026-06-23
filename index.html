@@ -4119,7 +4119,7 @@ const BT={
           this.wrapText(nomeN.substring(Math.max(1,maxFirst)),W-4).forEach(l=>t+='    '+l+LF);
         }
         if(it.obs){
-          it.obs.split(/,|\n/).map(s=>s.trim()).filter(Boolean).forEach(obsPart=>{
+          it.obs.split(/,|\n|·/).map(s=>s.trim()).filter(Boolean).forEach(obsPart=>{
             this.wrapText(">> "+N(obsPart).toUpperCase(),W-2).forEach(l=>t+='  '+l+LF);
           });
         }
@@ -4157,7 +4157,7 @@ const BT={
           this.wrapText(nomeN.substring(Math.max(1,maxFirst)),W-4).forEach(l=>t+='    '+l+LF);
         }
         if(it.obs){
-          it.obs.split(/,|\n/).map(s=>s.trim()).filter(Boolean).forEach(obsPart=>{
+          it.obs.split(/,|\n|·/).map(s=>s.trim()).filter(Boolean).forEach(obsPart=>{
             this.wrapText(">> "+N(obsPart).toUpperCase(),W-2).forEach(l=>t+='  '+l+LF);
           });
         }
@@ -4326,7 +4326,7 @@ const BT={
           }
           if(it.obs){
             all.push(...CMD.uline1);
-            it.obs.split(/,|\n/).map(s=>s.trim()).filter(Boolean).forEach((obsPart) => {
+            it.obs.split(/,|\n|·/).map(s=>s.trim()).filter(Boolean).forEach((obsPart) => {
               this.wrapText(this.norm(obsPart),W).forEach((ln,li)=>all.push(...txt((li===0?'> ':'  ')+ln),...CMD.lf));
             });
             all.push(...CMD.uline0);
@@ -4340,7 +4340,7 @@ const BT={
           
           if(it.obs){
             all.push(...CMD.dblH,...CMD.bold1);
-            it.obs.split(/,|\n/).map(s=>s.trim()).filter(Boolean).forEach((obsPart) => {
+            it.obs.split(/,|\n|·/).map(s=>s.trim()).filter(Boolean).forEach((obsPart) => {
               this.wrapText('  * '+this.norm(obsPart),W).forEach(l=>all.push(...txt(l),...CMD.lf));
             });
             all.push(...CMD.normal,...CMD.bold0);
@@ -8718,7 +8718,7 @@ function showCupomPrevia(ped_id, tipo='cupom'){
           ${mostraTotal?`<span class="tb" style="white-space:nowrap">R$${(it.qty*it.preco).toFixed(2)}</span>`:''}
         </div>
         ${it.obs ? `<div style="font-size:11px;color:var(--t2);margin-left:14px;padding-left:4px;border-left:2px solid var(--br2);font-weight:700;text-transform:uppercase">
-          ${it.obs.split(/,|\n/).map(s=>s.trim()).filter(Boolean).map(obsPart => `<div>>> ${esc(obsPart)}</div>`).join('')}
+          ${it.obs.split(/,|\n|·/).map(s=>s.trim()).filter(Boolean).map(obsPart => `<div>>> ${esc(obsPart)}</div>`).join('')}
         </div>` : ''}
         ${(it.obs_extras&&it.obs_extras>0)?`<div style="font-size:11px;color:var(--t2);margin-left:14px">+R$${it.obs_extras.toFixed(2)} (extras)</div>`:''}
       </div>`).join('')}
